@@ -97,6 +97,39 @@ function parseBRL(text: string): number | null {
   return isNaN(n) ? null : n;
 }
 
+// Parser do formato AJAX Delta do ASP.NET: "len|type|id|content|len|type|id|content|..."
+// Retorna a concatenação dos blocos de content (HTML) — útil para casar regex de margem.
+function parseAjaxDelta(body: string, log: LogFn): string {
+  const out: string[] = [];
+  let i = 0;
+  let blocks = 0;
+  while (i < body.length) {
+    const pipe1 = body.indexOf("|", i);
+    if (pipe1 < 0) break;
+    const lenStr = body.slice(i, pipe1);
+    const len = parseInt(lenStr, 10);
+    if (isNaN(len)) break;
+    const pipe2 = body.indexOf("|", pipe1 + 1);
+    if (pipe2 < 0) break;
+    const type = body.slice(pipe1 + 1, pipe2);
+    const pipe3 = body.indexOf("|", pipe2 + 1);
+    if (pipe3 < 0) break;
+    const id = body.slice(pipe2 + 1, pipe3);
+    const content = body.slice(pipe3 + 1, pipe3 + 1 + len);
+    blocks++;
+    // Coleta blocos que tipicamente carregam HTML/markup
+    if (/updatePanel|pageRedirect|hiddenField|scriptStartupBlock|asyncPostBackError/i.test(type)) {
+      out.push(`[delta:${type}#${id}] ${content}`);
+    }
+    if (/asyncPostBackError/i.test(type)) {
+      void log("error", `[ajax-delta] erro async: ${content.slice(0, 500)}`);
+    }
+    i = pipe3 + 1 + len + 1; // pula '|'
+  }
+  void log("info", `[ajax-delta] ${blocks} blocos parseados, ${out.length} relevantes`);
+  return out.join("\n");
+}
+
 // ---------- Fluxo ConsigUp ----------
 
 async function login(s: Session, user: string, pass: string): Promise<boolean> {
