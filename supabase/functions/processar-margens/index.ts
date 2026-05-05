@@ -193,20 +193,38 @@ async function consultarMargemNoOrgao(s: Session, cpf: string): Promise<number |
 }
 
 async function descobrirMenu(s: Session) {
-  const URL_CONSULTA = `${CONSIGUP_BASE}/Consignacoes/Margem/ConsultaMargem.aspx`;
-  const r = await s.request(URL_CONSULTA);
-  console.log("[desc] page status:", r.status, "len:", r.body.length);
-  // Lista todos selects (com options)
-  const selects = r.body.match(/<select[\s\S]*?<\/select>/gi) || [];
-  selects.forEach((sel, i) => console.log(`[desc] select#${i}:`, sel.replace(/\s+/g," ").slice(0, 800)));
-  // Lista todos inputs (name + id + type)
-  const inputs = [...r.body.matchAll(/<input[^>]+>/gi)].map(m => m[0]);
-  inputs.forEach((inp, i) => {
-    if (i < 30) console.log(`[desc] input#${i}:`, inp.replace(/\s+/g," ").slice(0, 300));
+  const home = await s.request(HOME_URL);
+  console.log("[home] len:", home.body.length);
+  const selects = home.body.match(/<select[\s\S]*?<\/select>/gi) || [];
+  selects.forEach((sel, i) => console.log(`[home] select#${i}:`, sel.replace(/\s+/g," ").slice(0, 1000)));
+  // Procura links/botões com órgão
+  const orgaoLinks = [...home.body.matchAll(/orgao|conveniad/gi)].length;
+  console.log("[home] mentions orgao/conveniado:", orgaoLinks);
+
+  // Faz uma consulta real do CPF de teste com o órgão ATUAL
+  const URL_C = `${CONSIGUP_BASE}/Consignacoes/Margem/ConsultaMargem.aspx`;
+  const page = await s.request(URL_C);
+  const hidden = extractAllHidden(page.body);
+  const form = new URLSearchParams();
+  for (const [k, v] of Object.entries(hidden)) form.set(k, v);
+  form.set("ctl00$MainContent$dropServico", "1"); // empréstimo consignado
+  form.set("ctl00$MainContent$txtCPF", "138.671.135-72");
+  form.set("ctl00$MainContent$txtMatricula", "");
+  form.set("ctl00$MainContent$btnConsultar", "Consultar");
+  const res = await s.request(URL_C, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: form.toString(),
   });
-  // Lista botões
-  const btns = r.body.match(/<(input|button)[^>]+(submit|button)[^>]*>/gi) || [];
-  btns.forEach((b, i) => console.log(`[desc] btn#${i}:`, b.replace(/\s+/g," ").slice(0,300)));
+  console.log("[consulta-real] status:", res.status, "len:", res.body.length);
+  // Captura a parte com a resposta
+  const margemSection = res.body.match(/[Mm]argem[\s\S]{0,500}/);
+  if (margemSection) console.log("[consulta-real] margem-section:", margemSection[0].replace(/\s+/g," ").slice(0,800));
+  const popup = res.body.match(/mostraPopUpAlert\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/);
+  if (popup) console.log("[consulta-real] popup:", popup[1], "-", popup[2]);
+  // Lista todos os labels/spans com valor R$
+  const valores = [...res.body.matchAll(/<(span|label|td)[^>]*>[^<]*R\$[^<]+<\/\1>/gi)].map(m => m[0]);
+  valores.slice(0, 20).forEach((v, i) => console.log(`[consulta-real] valor#${i}:`, v.replace(/\s+/g," ").slice(0,300)));
 }
 
 async function consultarCpfTodosOrgaos(cpf: string): Promise<{ margem: number | null; erro: string | null; detalhes: Record<string, number | null> }> {
