@@ -1,5 +1,5 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,7 @@ export const Route = createFileRoute("/dashboard")({ component: Page });
 
 interface Stats { total: number; pendente: number; processando: number; concluido: number; erro: number; avg: number | null; }
 interface Consulta { id: string; cpf: string; nome: string; status: string; margem_disponivel: number | null; erro: string | null; processed_at: string | null; updated_at: string; }
+interface DebugLog { id: number; level: string; message: string; created_at: string; }
 
 function Page() {
   const { user, loading } = useAuth();
@@ -25,28 +26,43 @@ function Page() {
   const [manualCpf, setManualCpf] = useState<string>("");
   const [manualNome, setManualNome] = useState<string>("");
   const [debugRow, setDebugRow] = useState<Consulta | null>(null);
-  const [debugLogs, setDebugLogs] = useState<{ id: number; level: string; message: string; created_at: string }[]>([]);
+  const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
   const [running, setRunning] = useState(false);
+
+  const loadDebugPanel = useCallback(async (consultaId: string) => {
+    const [{ data: logs }, { data: row }] = await Promise.all([
+      supabase
+        .from("processar_logs")
+        .select("id, level, message, created_at")
+        .eq("consulta_id", consultaId)
+        .order("id", { ascending: true }),
+      supabase
+        .from("consultas_margem")
+        .select("id, cpf, nome, status, margem_disponivel, erro, processed_at, updated_at")
+        .eq("id", consultaId)
+        .maybeSingle(),
+    ]);
+    if (logs) setDebugLogs(logs as DebugLog[]);
+    if (row) setDebugRow(row as Consulta);
+  }, []);
 
   // Realtime: logs do CPF em debug
   useEffect(() => {
     if (!debugRow?.id) return;
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("processar_logs")
-        .select("id, level, message, created_at")
-        .eq("consulta_id", debugRow.id)
-        .order("id", { ascending: true });
-      if (!cancelled && data) setDebugLogs(data as any);
+      if (!cancelled) await loadDebugPanel(debugRow.id);
     })();
     const ch = supabase
       .channel(`logs-${debugRow.id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "processar_logs", filter: `consulta_id=eq.${debugRow.id}` },
-        (payload) => setDebugLogs((prev) => [...prev, payload.new as any]))
+        (payload) => setDebugLogs((prev) => [...prev, payload.new as DebugLog]))
       .subscribe();
-    return () => { cancelled = true; supabase.removeChannel(ch); };
-  }, [debugRow?.id]);
+    const poll = window.setInterval(() => {
+      if (!cancelled) void loadDebugPanel(debugRow.id);
+    }, 1500);
+    return () => { cancelled = true; window.clearInterval(poll); supabase.removeChannel(ch); };
+  }, [debugRow?.id, loadDebugPanel]);
 
   useEffect(() => {
     if (!user) return;
