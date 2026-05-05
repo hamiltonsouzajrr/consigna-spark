@@ -20,7 +20,18 @@ interface Consulta {
   id: string; cpf: string; nome: string; status: Status;
   margem_disponivel: number | null; erro: string | null;
   created_at: string; processed_at: string | null;
+  margem_emprestimo: number | null;
+  margem_cartao_credito: number | null;
+  margem_cartao_beneficio: number | null;
+  servidor_nome: string | null;
+  matricula: string | null;
+  categoria: string | null;
+  situacao: string | null;
+  orgao: string | null;
 }
+
+const brl = (n: number | null | undefined) =>
+  n == null ? "—" : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const PAGE_SIZE = 25;
 
