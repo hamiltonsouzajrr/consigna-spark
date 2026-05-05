@@ -6,9 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Clock, CheckCircle2, AlertCircle, FileText, Loader2, Bug, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { formatCpf } from "@/lib/cpf";
+import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
 
 export const Route = createFileRoute("/dashboard")({ component: Page });
 
@@ -20,6 +22,8 @@ function Page() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [consultas, setConsultas] = useState<Consulta[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
+  const [manualCpf, setManualCpf] = useState<string>("");
+  const [manualNome, setManualNome] = useState<string>("");
   const [debugRow, setDebugRow] = useState<Consulta | null>(null);
   const [running, setRunning] = useState(false);
 
@@ -73,6 +77,61 @@ function Page() {
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
       toast.success("Processamento iniciado", { description: "Acompanhe o status logo abaixo." });
+    } catch (e: any) {
+      toast.error("Falha ao processar", { description: e.message });
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const processarManual = async () => {
+    if (!user) return;
+    const cpf = normalizeCpf(manualCpf);
+    if (!isValidCpf(cpf)) { toast.error("CPF inválido"); return; }
+    const nome = manualNome.trim() || "DEBUG MANUAL";
+    setRunning(true);
+    try {
+      // Reusa registro existente do mesmo user/CPF, ou cria um novo
+      const { data: existing } = await supabase
+        .from("consultas_margem")
+        .select("id, cpf, nome, status, margem_disponivel, erro, processed_at, updated_at")
+        .eq("user_id", user.id)
+        .eq("cpf", cpf)
+        .maybeSingle();
+
+      let id = existing?.id as string | undefined;
+      if (!id) {
+        const { data: ins, error: insErr } = await supabase
+          .from("consultas_margem")
+          .insert({ user_id: user.id, cpf, nome, status: "pendente" })
+          .select("id, cpf, nome, status, margem_disponivel, erro, processed_at, updated_at")
+          .single();
+        if (insErr) throw insErr;
+        id = ins.id;
+        setDebugRow(ins as Consulta);
+      } else {
+        // Reseta para pendente para que a função pegue
+        await supabase.from("consultas_margem")
+          .update({ status: "pendente", erro: null, margem_disponivel: null })
+          .eq("id", id);
+        setDebugRow({ ...(existing as Consulta), status: "pendente", erro: null, margem_disponivel: null });
+      }
+
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/processar-margens`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ ids: [id] }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      toast.success("Processamento iniciado", { description: formatCpf(cpf) });
     } catch (e: any) {
       toast.error("Falha ao processar", { description: e.message });
     } finally {
@@ -145,6 +204,33 @@ function Page() {
             {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
             Processar este CPF
           </Button>
+        </div>
+
+        <div className="mt-6 border-t pt-4">
+          <Label className="mb-2 block text-sm font-medium">Ou digite um CPF manualmente</Label>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Cria/reutiliza o registro e dispara a Edge Function. Útil para testar um CPF avulso sem subir planilha.
+          </p>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Input
+              placeholder="CPF (somente números ou com máscara)"
+              value={manualCpf}
+              maxLength={14}
+              onChange={(e) => setManualCpf(e.target.value)}
+              className="sm:max-w-[220px]"
+            />
+            <Input
+              placeholder="Nome (opcional)"
+              value={manualNome}
+              maxLength={120}
+              onChange={(e) => setManualNome(e.target.value)}
+              className="sm:max-w-xs"
+            />
+            <Button onClick={processarManual} disabled={running || !manualCpf} variant="secondary">
+              {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bug className="mr-2 h-4 w-4" />}
+              Processar CPF manual
+            </Button>
+          </div>
         </div>
 
         {debugRow && (
