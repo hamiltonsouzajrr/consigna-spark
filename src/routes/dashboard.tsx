@@ -220,28 +220,6 @@ function Page() {
           <Bug className="h-6 w-6 text-primary" />
           <h2 className="text-lg font-semibold">Consulta de margem (modo debug)</h2>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Select value={selectedId} onValueChange={setSelectedId}>
-            <SelectTrigger className="sm:max-w-md">
-              <SelectValue placeholder="Selecione um CPF da lista" />
-            </SelectTrigger>
-            <SelectContent>
-              {consultas.length === 0 && (
-                <div className="px-3 py-2 text-sm text-muted-foreground">Nenhum CPF cadastrado</div>
-              )}
-              {consultas.slice(0, 50).map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {formatCpf(c.cpf)} — {c.nome} <span className="ml-2 text-xs text-muted-foreground">[{c.status}]</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button onClick={processarUm} disabled={running || !selectedId}>
-            {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-            Processar este CPF
-          </Button>
-        </div>
-
         <div className="mt-6 border-t pt-4">
           <Label className="mb-2 block text-sm font-medium">Ou digite um CPF manualmente</Label>
           <p className="mb-3 text-xs text-muted-foreground">
