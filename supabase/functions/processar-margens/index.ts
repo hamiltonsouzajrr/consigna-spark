@@ -185,10 +185,9 @@ function listarLinksSidebar(html: string): { href: string; text: string }[] {
   return out;
 }
 
-async function consultarMargemNoOrgao(s: Session, cpf: string): Promise<number | null> {
-  // TODO calibrar: caminho real da tela de consulta de margem dentro do menu
-  // "Consignações". Usamos um endpoint provável; ajustar após primeiro run.
-  const CONSULTA_URL = `${CONSIGUP_BASE}/Consignacoes/ConsultaMargem.aspx`;
+async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: string, log: LogFn): Promise<number | null> {
+  const CONSULTA_URL = consultaPath.startsWith("http") ? consultaPath : `${CONSIGUP_BASE}${consultaPath.startsWith("/") ? "" : "/"}${consultaPath}`;
+  await log("info", `GET ${CONSULTA_URL}`);
   const page = await s.request(CONSULTA_URL);
   if (page.status !== 200) {
     console.warn("[consulta] GET", CONSULTA_URL, "status", page.status);
