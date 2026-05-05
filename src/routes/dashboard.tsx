@@ -209,34 +209,16 @@ function Page() {
 
   return (
     <AppShell>
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Visão geral das consultas de margem.</p>
+        <p className="text-sm text-muted-foreground">Consulta de margem — modo debug em destaque.</p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {cards.map((c) => (
-          <Card key={c.label} className="p-5">
-            <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg ${c.color}`}>
-              <c.icon className="h-5 w-5" />
-            </div>
-            <p className="text-2xl font-bold">{c.value}</p>
-            <p className="text-sm text-muted-foreground">{c.label}</p>
-          </Card>
-        ))}
-      </div>
-      <Card className="mt-6 p-6">
-        <h3 className="text-sm font-medium text-muted-foreground">Tempo médio de processamento</h3>
-        <p className="mt-1 text-3xl font-bold">
-          {stats?.avg ? `${stats.avg.toFixed(1)}s` : "—"}
-        </p>
-        <p className="text-xs text-muted-foreground">por registro concluído</p>
-      </Card>
 
-      {/* Modo debug — 1 CPF por vez */}
-      <Card className="mt-6 p-6">
+      {/* Modo debug — em destaque no topo */}
+      <Card className="mb-8 border-primary/40 bg-primary/5 p-6 shadow-lg ring-1 ring-primary/20">
         <div className="mb-4 flex items-center gap-2">
-          <Bug className="h-5 w-5 text-primary" />
-          <h3 className="text-base font-semibold">Modo debug — processar 1 CPF</h3>
+          <Bug className="h-6 w-6 text-primary" />
+          <h2 className="text-lg font-semibold">Consulta de margem (modo debug)</h2>
         </div>
         <p className="mb-4 text-sm text-muted-foreground">
           Selecione um CPF cadastrado e dispare apenas ele para a Edge Function. O status atualiza em tempo real abaixo. Para ver os logs detalhados (HTML retornado, dropdowns, postbacks), abra o painel de logs da função <code className="rounded bg-muted px-1">processar-margens</code> no backend.
@@ -400,6 +382,28 @@ function Page() {
             </div>
           </div>
         )}
+      </Card>
+
+      <div className="mb-3 mt-2">
+        <h3 className="text-sm font-semibold text-muted-foreground">Visão geral</h3>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {cards.map((c) => (
+          <Card key={c.label} className="p-5">
+            <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg ${c.color}`}>
+              <c.icon className="h-5 w-5" />
+            </div>
+            <p className="text-2xl font-bold">{c.value}</p>
+            <p className="text-sm text-muted-foreground">{c.label}</p>
+          </Card>
+        ))}
+      </div>
+      <Card className="mt-6 p-6">
+        <h3 className="text-sm font-medium text-muted-foreground">Tempo médio de processamento</h3>
+        <p className="mt-1 text-3xl font-bold">
+          {stats?.avg ? `${stats.avg.toFixed(1)}s` : "—"}
+        </p>
+        <p className="text-xs text-muted-foreground">por registro concluído</p>
       </Card>
     </AppShell>
   );
