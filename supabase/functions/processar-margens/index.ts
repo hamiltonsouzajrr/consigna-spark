@@ -194,37 +194,69 @@ async function consultarMargemNoOrgao(s: Session, cpf: string): Promise<number |
 
 async function descobrirMenu(s: Session) {
   const home = await s.request(HOME_URL);
-  console.log("[home] len:", home.body.length);
-  const selects = home.body.match(/<select[\s\S]*?<\/select>/gi) || [];
-  selects.forEach((sel, i) => console.log(`[home] select#${i}:`, sel.replace(/\s+/g," ").slice(0, 1000)));
-  // Procura links/botões com órgão
-  const orgaoLinks = [...home.body.matchAll(/orgao|conveniad/gi)].length;
-  console.log("[home] mentions orgao/conveniado:", orgaoLinks);
+  console.log("[home] status:", home.status, "len:", home.body.length);
 
-  // Faz uma consulta real do CPF de teste com o órgão ATUAL
-  const URL_C = `${CONSIGUP_BASE}/Consignacoes/Margem/ConsultaMargem.aspx`;
-  const page = await s.request(URL_C);
-  const hidden = extractAllHidden(page.body);
-  const form = new URLSearchParams();
-  for (const [k, v] of Object.entries(hidden)) form.set(k, v);
-  form.set("ctl00$MainContent$dropServico", "1"); // empréstimo consignado
-  form.set("ctl00$MainContent$txtCPF", "256.331.985-49");
-  form.set("ctl00$MainContent$txtMatricula", "");
-  form.set("ctl00$MainContent$btnConsultar", "Consultar");
-  const res = await s.request(URL_C, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: form.toString(),
+  // 1) Todos os <select> da página (procuramos o de órgão)
+  const selects = home.body.match(/<select[\s\S]*?<\/select>/gi) || [];
+  console.log("[home] total selects:", selects.length);
+  selects.forEach((sel, i) => {
+    const nameM = sel.match(/name="([^"]+)"/);
+    const idM = sel.match(/id="([^"]+)"/);
+    const opts = [...sel.matchAll(/<option[^>]*value="([^"]*)"[^>]*>([\s\S]*?)<\/option>/gi)]
+      .map(m => `${m[1]}=${m[2].replace(/<[^>]+>/g,"").trim()}`);
+    console.log(`[home] select#${i} name=${nameM?.[1]} id=${idM?.[1]} opts=${opts.length}:`, opts.slice(0, 12).join(" | "));
   });
-  console.log("[consulta-real] status:", res.status, "len:", res.body.length);
-  // Captura a parte com a resposta
-  const margemSection = res.body.match(/[Mm]argem[\s\S]{0,500}/);
-  if (margemSection) console.log("[consulta-real] margem-section:", margemSection[0].replace(/\s+/g," ").slice(0,800));
-  const popup = res.body.match(/mostraPopUpAlert\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/);
-  if (popup) console.log("[consulta-real] popup:", popup[1], "-", popup[2]);
-  // Lista todos os labels/spans com valor R$
-  const valores = [...res.body.matchAll(/<(span|label|td)[^>]*>[^<]*R\$[^<]+<\/\1>/gi)].map(m => m[0]);
-  valores.slice(0, 20).forEach((v, i) => console.log(`[consulta-real] valor#${i}:`, v.replace(/\s+/g," ").slice(0,300)));
+
+  // 2) Links/âncoras com __doPostBack (menu lateral / topo)
+  const postbacks = [...home.body.matchAll(/__doPostBack\(['"]([^'"]+)['"]\s*,\s*['"]([^'"]*)['"]\)/g)];
+  console.log("[home] postbacks:", postbacks.length);
+  postbacks.slice(0, 40).forEach((m, i) => console.log(`[home] pb#${i} target=${m[1]} arg=${m[2]}`));
+
+  // 3) Âncoras cujo texto/href cite "órgão", "trocar", "convênio", "entidade"
+  const anchors = [...home.body.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/gi)];
+  const interesting = anchors.filter(a => /[óo]rg[ãa]o|trocar|conv[êe]nio|entidade|prefeit|aracaju|smtt|funcaju/i.test(a[0]));
+  console.log("[home] anchors interessantes:", interesting.length);
+  interesting.slice(0, 25).forEach((a, i) =>
+    console.log(`[home] a#${i}:`, a[0].replace(/\s+/g, " ").slice(0, 400))
+  );
+
+  // 4) Procurar nomes/códigos dos 8 órgãos no HTML cru
+  const palavras = ["Aracaju Previd", "FUNCAJU", "SMTT", "EMSURB", "FUNDAT", "Conselhos Tutelares", "Cidade de Aracaju", "CTM"];
+  for (const p of palavras) {
+    const idx = home.body.indexOf(p);
+    if (idx >= 0) {
+      const snippet = home.body.slice(Math.max(0, idx - 200), idx + 300).replace(/\s+/g, " ");
+      console.log(`[home] ctx '${p}':`, snippet);
+    } else {
+      console.log(`[home] ctx '${p}': NÃO ENCONTRADO`);
+    }
+  }
+
+  // 5) Tentar URLs candidatas de "trocar órgão"
+  const candidatos = [
+    "/Inicio/TrocarOrgao.aspx",
+    "/Inicio/SelecionarOrgao.aspx",
+    "/Login/SelecionarOrgao.aspx",
+    "/SelecionarOrgao.aspx",
+    "/Inicio/EscolherEntidade.aspx",
+  ];
+  for (const path of candidatos) {
+    const r = await s.request(`${CONSIGUP_BASE}${path}`);
+    console.log(`[probe] ${path} -> status=${r.status} len=${r.body.length} finalUrl=${r.finalUrl}`);
+    if (r.status === 200 && r.body.length > 500) {
+      const sels = r.body.match(/<select[\s\S]*?<\/select>/gi) || [];
+      sels.forEach((sel, i) => {
+        const nameM = sel.match(/name="([^"]+)"/);
+        const opts = [...sel.matchAll(/<option[^>]*value="([^"]*)"[^>]*>([\s\S]*?)<\/option>/gi)]
+          .map(m => `${m[1]}=${m[2].replace(/<[^>]+>/g,"").trim()}`);
+        console.log(`[probe ${path}] select#${i} name=${nameM?.[1]} opts:`, opts.slice(0, 12).join(" | "));
+      });
+    }
+  }
+
+  // 6) Header/topbar isolado
+  const header = home.body.match(/<(header|div)[^>]*(topo|header|navbar|topbar)[^>]*>[\s\S]{0,4000}/i);
+  if (header) console.log("[home] header-snippet:", header[0].replace(/\s+/g, " ").slice(0, 2000));
 }
 
 async function consultarCpfTodosOrgaos(cpf: string): Promise<{ margem: number | null; erro: string | null; detalhes: Record<string, number | null> }> {
