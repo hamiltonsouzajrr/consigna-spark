@@ -206,6 +206,33 @@ function Page() {
           </Button>
         </div>
 
+        <div className="mt-6 border-t pt-4">
+          <Label className="mb-2 block text-sm font-medium">Ou digite um CPF manualmente</Label>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Cria/reutiliza o registro e dispara a Edge Function. Útil para testar um CPF avulso sem subir planilha.
+          </p>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Input
+              placeholder="CPF (somente números ou com máscara)"
+              value={manualCpf}
+              maxLength={14}
+              onChange={(e) => setManualCpf(e.target.value)}
+              className="sm:max-w-[220px]"
+            />
+            <Input
+              placeholder="Nome (opcional)"
+              value={manualNome}
+              maxLength={120}
+              onChange={(e) => setManualNome(e.target.value)}
+              className="sm:max-w-xs"
+            />
+            <Button onClick={processarManual} disabled={running || !manualCpf} variant="secondary">
+              {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bug className="mr-2 h-4 w-4" />}
+              Processar CPF manual
+            </Button>
+          </div>
+        </div>
+
         {debugRow && (
           <div className="mt-6 rounded-lg border bg-muted/30 p-4 text-sm">
             <div className="grid gap-2 sm:grid-cols-2">
