@@ -22,6 +22,8 @@ function Page() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [consultas, setConsultas] = useState<Consulta[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
+  const [manualCpf, setManualCpf] = useState<string>("");
+  const [manualNome, setManualNome] = useState<string>("");
   const [debugRow, setDebugRow] = useState<Consulta | null>(null);
   const [running, setRunning] = useState(false);
 
