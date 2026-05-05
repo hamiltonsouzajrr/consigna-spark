@@ -20,12 +20,43 @@ function LoginPage() {
 
   useEffect(() => { if (user) nav({ to: "/dashboard" }); }, [user, nav]);
 
+  const translateError = (msg: string): { title: string; description?: string } => {
+    const m = msg.toLowerCase();
+    if (m.includes("pwned") || m.includes("compromised") || m.includes("leaked") || m.includes("breach")) {
+      return {
+        title: "Senha bloqueada por segurança",
+        description:
+          "Esta senha já apareceu em vazamentos públicos e não pode ser usada. Escolha uma senha forte: pelo menos 8 caracteres, combine letras maiúsculas, minúsculas, números e símbolos, e evite palavras comuns ou sequências (ex.: 123456, senha, qwerty).",
+      };
+    }
+    if (m.includes("password should be at least") || m.includes("password is too short") || m.includes("weak password")) {
+      return {
+        title: "Senha muito fraca",
+        description: "Use no mínimo 8 caracteres, misturando letras, números e símbolos.",
+      };
+    }
+    if (m.includes("invalid login") || m.includes("invalid credentials")) {
+      return { title: "Email ou senha incorretos", description: "Verifique seus dados e tente novamente." };
+    }
+    if (m.includes("user already registered") || m.includes("already registered")) {
+      return { title: "Este email já possui cadastro", description: "Tente entrar ou recuperar a senha." };
+    }
+    if (m.includes("email") && m.includes("invalid")) {
+      return { title: "Email inválido", description: "Informe um endereço de email válido." };
+    }
+    return { title: "Não foi possível concluir", description: msg };
+  };
+
   const handle = async (mode: "in" | "up") => {
     setBusy(true);
     const { error } = mode === "in" ? await signIn(email, password) : await signUp(email, password);
     setBusy(false);
-    if (error) toast.error(error);
-    else if (mode === "up") toast.success("Conta criada! Faça login.");
+    if (error) {
+      const { title, description } = translateError(error);
+      toast.error(title, { description, duration: 8000 });
+    } else if (mode === "up") {
+      toast.success("Conta criada! Faça login.");
+    }
   };
 
   return (
