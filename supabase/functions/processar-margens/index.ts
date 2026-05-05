@@ -334,6 +334,7 @@ async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<{ marge
   if (orgaos.length === 0) { await log("error", "Nenhum órgão encontrado no header"); return { margem: null, erro: "Nenhum órgão encontrado no header", detalhes: {} }; }
 
   const detalhes: Record<string, number | null> = {};
+  let melhor: number | null = null;
   for (const o of orgaos) {
     await log("info", `=== Órgão ${o.codigo} ${o.nome} ===`);
     const sw = await selecionarOrgao(s, o.eventTarget);
@@ -341,20 +342,32 @@ async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<{ marge
 
     const links = listarLinksSidebar(sw.html);
     await log("info", `[${o.codigo}] Sidebar: ${links.length} links`);
-    const sample = links.slice(0, 30).map(l => `[${l.text}] -> ${l.href}`).join(" | ");
-    if (sample) await log("info", `[${o.codigo}] amostra: ${sample}`);
 
-    const margemLink = links.find(l => /margem|consulta.*margem/i.test(l.text));
-    if (margemLink) {
-      await log("info", `[${o.codigo}] >>> candidato margem: ${margemLink.text} -> ${margemLink.href}`);
-    } else {
-      const candidatos = links.filter(l => /consigna|servidor|cpf|matr[íi]cula/i.test(l.text)).slice(0, 10);
-      await log("warn", `[${o.codigo}] sem link óbvio de margem; candidatos: ${candidatos.map(c=>c.text).join(", ") || "nenhum"}`);
+    const margemLink = links.find(l =>
+      /margem|consulta.*margem|pr[ée]\s*-?\s*reservar|consultar/i.test(l.text)
+      || /Margem|ConsultaMargem/i.test(l.href)
+    );
+    if (!margemLink) {
+      await log("warn", `[${o.codigo}] sem link de margem`);
+      detalhes[o.codigo] = null;
+      continue;
     }
-    detalhes[o.codigo] = null;
+    await log("info", `[${o.codigo}] usando link: ${margemLink.text} -> ${margemLink.href}`);
+    try {
+      const m = await consultarMargemNoOrgao(s, cpf, margemLink.href, log);
+      detalhes[o.codigo] = m;
+      await log("info", `[${o.codigo}] margem = ${m}`);
+      if (m !== null && (melhor === null || m > melhor)) melhor = m;
+    } catch (e) {
+      await log("error", `[${o.codigo}] erro consulta: ${String(e).slice(0,300)}`);
+      detalhes[o.codigo] = null;
+    }
   }
 
-  return { margem: null, erro: "MODO_DESCOBERTA_ORGAOS: ver logs", detalhes };
+  if (melhor === null) {
+    return { margem: null, erro: "Margem não localizada em nenhum órgão", detalhes };
+  }
+  return { margem: melhor, erro: null, detalhes };
 }
 
 // ---------- Handler ----------
