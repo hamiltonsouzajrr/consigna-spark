@@ -213,7 +213,7 @@ function Page() {
     <AppShell>
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Consulta de margem — modo debug em destaque.</p>
+        <p className="text-sm text-muted-foreground">Consulta de margem</p>
       </div>
 
       {/* Modo debug — em destaque no topo */}
