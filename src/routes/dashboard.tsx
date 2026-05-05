@@ -218,7 +218,7 @@ function Page() {
       <Card className="mb-8 border-primary/40 bg-primary/5 p-6 shadow-lg ring-1 ring-primary/20">
         <div className="mb-4 flex items-center gap-2">
           <Check className="h-6 w-6 text-primary" />
-          <h2 className="text-lg font-semibold">Consulta de margem (modo debug)</h2>
+          <h2 className="text-lg font-semibold uppercase tracking-wider">CONSULTA DE MARGEM ARACAJU</h2>
         </div>
         <div className="mt-6 border-t pt-4">
           <Label className="mb-2 block text-sm font-medium">Ou digite um CPF manualmente</Label>
