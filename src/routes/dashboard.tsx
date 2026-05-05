@@ -138,6 +138,11 @@ function Page() {
         setDebugRow({ ...(existing as Consulta), status: "pendente", erro: null, margem_disponivel: null });
       }
 
+      // Limpa logs anteriores deste CPF para acompanhar a execução nova
+      await supabase.from("processar_logs").delete().eq("consulta_id", id);
+      setDebugLogs([]);
+
+      let id_str = id as string;
       const { data: sess } = await supabase.auth.getSession();
       const token = sess.session?.access_token;
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/processar-margens`;
@@ -148,7 +153,7 @@ function Page() {
           "Authorization": `Bearer ${token}`,
           "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
-        body: JSON.stringify({ ids: [id] }),
+        body: JSON.stringify({ ids: [id_str] }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
