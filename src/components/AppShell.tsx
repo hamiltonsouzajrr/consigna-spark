@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Upload, List, LogOut, Wallet } from "lucide-react";
+import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import type { ReactNode } from "react";
@@ -19,7 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className="hidden w-64 shrink-0 border-r bg-sidebar md:flex md:flex-col">
         <div className="flex items-center gap-2 px-6 py-5 border-b">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Wallet className="h-5 w-5" />
+            <BadgeDollarSign className="h-5 w-5" />
           </div>
           <div>
             <p className="text-sm font-semibold leading-tight">Grupo Positive</p>
@@ -60,7 +60,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="flex-1 overflow-x-hidden">
         <div className="md:hidden flex items-center justify-between border-b bg-card px-4 py-3">
           <div className="flex items-center gap-2">
-            <Wallet className="h-5 w-5 text-primary" />
+            <BadgeDollarSign className="h-5 w-5 text-primary" />
             <span className="font-semibold">Grupo Positive</span>
           </div>
           <div className="flex gap-1">
