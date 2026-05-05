@@ -56,7 +56,7 @@ function Page() {
         .maybeSingle(),
     ]);
     if (logs) setDebugLogs(logs as DebugLog[]);
-    if (row) setDebugRow(row as Consulta);
+    if (row) setDebugRow(row as unknown as Consulta);
   }, []);
 
   // Realtime: logs do CPF em debug
@@ -160,13 +160,13 @@ function Page() {
           .single();
         if (insErr) throw insErr;
         id = ins.id;
-        setDebugRow(ins as Consulta);
+        setDebugRow(ins as unknown as Consulta);
       } else {
         // Reseta para pendente para que a função pegue
         await supabase.from("consultas_margem")
           .update({ status: "pendente", erro: null, margem_disponivel: null })
           .eq("id", id);
-        setDebugRow({ ...(existing as Consulta), status: "pendente", erro: null, margem_disponivel: null });
+        setDebugRow({ ...(existing as unknown as Consulta), status: "pendente", erro: null, margem_disponivel: null });
       }
 
       // Limpa logs anteriores deste CPF para acompanhar a execução nova
