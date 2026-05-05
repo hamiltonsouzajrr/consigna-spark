@@ -108,9 +108,12 @@ async function login(s: Session, user: string, pass: string): Promise<boolean> {
   const hidden = extractAllHidden(page.body);
   const form = new URLSearchParams();
   for (const [k, v] of Object.entries(hidden)) form.set(k, v);
-  form.set("txtLogin", user);
+  // ConsigUp aceita CPF com máscara no login. Formata se vier só dígitos.
+  const userFmt = /^\d{11}$/.test(user)
+    ? `${user.slice(0,3)}.${user.slice(3,6)}.${user.slice(6,9)}-${user.slice(9)}`
+    : user;
+  form.set("txtLogin", userFmt);
   form.set("txtSenha", pass);
-  // Botão de submit — nome real pode variar; tenta comuns
   form.set("btnEntrar", "Entrar");
 
   const res = await s.request(LOGIN_URL, {
@@ -119,17 +122,14 @@ async function login(s: Session, user: string, pass: string): Promise<boolean> {
     body: form.toString(),
   });
 
-  // Sucesso = redirect para Inicio.aspx OU body contém algo da home
   const ok = /Inicio\.aspx/i.test(res.finalUrl) || /P[áa]gina Inicial/i.test(res.body) || /Consigna[çc][õo]es/i.test(res.body);
-  console.log("[login] finalUrl:", res.finalUrl, "status:", res.status, "ok:", ok);
+  console.log("[login] finalUrl:", res.finalUrl, "status:", res.status, "ok:", ok, "userFmt:", userFmt);
   console.log("[login] cookies:", [...s.cookies.keys()].join(","));
-  // Procura mensagens de erro típicas do ASP.NET / ConsigUp
-  const errMatch = res.body.match(/<span[^>]*id="[^"]*(lblMsg|lblErro|lblMensagem)[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
-    || res.body.match(/(Usu[áa]rio[^<]{0,80}senha[^<]{0,80}inv[áa]lid[ao][^<]{0,80})/i)
-    || res.body.match(/(senha[^<]{0,80}inv[áa]lid[ao][^<]{0,80})/i)
-    || res.body.match(/alert\(['"]([^'"]+)['"]\)/i);
-  if (errMatch) console.error("[login] mensagem:", errMatch[0].slice(0, 300));
-  if (!ok) console.error("[login] snippet body 500..1500:", res.body.slice(500, 1500));
+  // Procura mostraPopUpAlert('Titulo','Mensagem',...)
+  const popup = res.body.match(/mostraPopUpAlert\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/);
+  if (popup) console.error("[login] popup:", popup[1], "-", popup[2]);
+  const errMatch = res.body.match(/<span[^>]*id="[^"]*(lblMsg|lblErro|lblMensagem)[^"]*"[^>]*>([\s\S]*?)<\/span>/i);
+  if (errMatch) console.error("[login] lbl:", errMatch[0].slice(0, 300));
   return ok;
 }
 
