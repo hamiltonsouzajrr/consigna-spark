@@ -20,6 +20,7 @@ interface Consulta {
   id: string; cpf: string; nome: string; status: Status;
   margem_disponivel: number | null; erro: string | null;
   created_at: string; processed_at: string | null;
+  updated_at: string;
   margem_emprestimo: number | null;
   margem_cartao_credito: number | null;
   margem_cartao_beneficio: number | null;
@@ -60,7 +61,7 @@ function Page() {
       const { data, error } = await supabase
         .from("consultas_margem")
         .select("*")
-        .order("created_at", { ascending: false })
+        .order("updated_at", { ascending: false })
         .limit(1000);
       if (error) toast.error(error.message);
       else setItems((data ?? []) as Consulta[]);
@@ -150,6 +151,41 @@ function Page() {
           <Button variant="outline" onClick={() => exportCsv(false)}><Download className="mr-2 h-4 w-4" /> Todos</Button>
         </div>
       </div>
+
+      {(() => {
+        const recentes = items
+          .filter((i) => i.processed_at)
+          .slice()
+          .sort((a, b) => +new Date(b.processed_at!) - +new Date(a.processed_at!))
+          .slice(0, 5);
+        if (recentes.length === 0) return null;
+        return (
+          <Card className="mb-6 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Consultas recentes</h2>
+              <span className="text-xs text-muted-foreground">últimas {recentes.length} processadas</span>
+            </div>
+            <ul className="divide-y">
+              {recentes.map((r) => (
+                <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                  <div className="flex items-center gap-3">
+                    {statusBadge(r.status)}
+                    <span className="font-mono text-xs text-muted-foreground">{r.cpf}</span>
+                    <span className="font-medium">{r.servidor_nome ?? r.nome}</span>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="text-muted-foreground">{r.orgao ?? "—"}</span>
+                    <span className="tabular-nums font-semibold">{brl(r.margem_disponivel)}</span>
+                    <span className="text-muted-foreground">
+                      {r.processed_at ? new Date(r.processed_at).toLocaleString("pt-BR") : "—"}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        );
+      })()}
 
       <Card className="overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 border-b p-4">
