@@ -218,13 +218,60 @@ function listarLinksSidebar(html: string): { href: string; text: string }[] {
   return out;
 }
 
-async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: string, log: LogFn): Promise<number | null> {
+// Parser do grid de resultado: <table id="MainContent_gvCons...">
+// Colunas: Servidor | CPF | Matrícula | Categoria | Situação | Margem Disponível
+function parseGridServidor(html: string): {
+  servidor?: string; cpf?: string; matricula?: string;
+  categoria?: string; situacao?: string; margem: number | null;
+} {
+  const tableM = html.match(/<table[^>]*id="[^"]*MainContent_(?:gv|grd)[A-Za-z]*"[^>]*>[\s\S]*?<\/table>/i);
+  if (!tableM) return { margem: null };
+  const rows = [...tableM[0].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)];
+  for (const row of rows) {
+    // Pula cabeçalhos (têm <th>)
+    if (/<th\b/i.test(row[1])) continue;
+    const cells = [...row[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)]
+      .map((m) => m[1]
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&amp;/g, "&")
+        .replace(/\s+/g, " ")
+        .trim());
+    if (cells.length >= 6) {
+      // Margem normalmente é a última coluna numérica
+      const margem = parseBRL(cells[5]) ?? parseBRL(cells[cells.length - 1]);
+      return {
+        servidor: cells[0] || undefined,
+        cpf: cells[1] || undefined,
+        matricula: cells[2] || undefined,
+        categoria: cells[3] || undefined,
+        situacao: cells[4] || undefined,
+        margem,
+      };
+    }
+  }
+  return { margem: null };
+}
+
+interface ConsultaServicoResult {
+  margem: number | null;
+  servidor?: string;
+  matricula?: string;
+  categoria?: string;
+  situacao?: string;
+  motivo: string;
+}
+
+// Consulta UM serviço (1=Empréstimo, 2=Cartão Crédito, 3=Cartão Benefício)
+async function consultarServico(
+  s: Session, cpf: string, consultaPath: string, servicoId: string, log: LogFn,
+): Promise<ConsultaServicoResult> {
   const CONSULTA_URL = consultaPath.startsWith("http") ? consultaPath : `${CONSIGUP_BASE}${consultaPath.startsWith("/") ? "" : "/"}${consultaPath}`;
-  await log("info", `GET ${CONSULTA_URL}`);
+  await log("info", `[svc=${servicoId}] GET ${CONSULTA_URL}`);
   const page = await s.request(CONSULTA_URL);
   if (page.status !== 200) {
-    await log("warn", `[consulta] GET status ${page.status}`);
-    return null;
+    await log("warn", `[consulta svc=${servicoId}] GET status ${page.status}`);
+    return { margem: null, motivo: `get_status_${page.status}` };
   }
   const hidden = extractAllHidden(page.body);
   const form = new URLSearchParams();
