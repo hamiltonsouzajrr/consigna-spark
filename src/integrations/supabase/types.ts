@@ -16,37 +16,61 @@ export type Database = {
     Tables: {
       consultas_margem: {
         Row: {
+          categoria: string | null
           cpf: string
           created_at: string
           erro: string | null
           id: string
+          margem_cartao_beneficio: number | null
+          margem_cartao_credito: number | null
           margem_disponivel: number | null
+          margem_emprestimo: number | null
+          matricula: string | null
           nome: string
+          orgao: string | null
           processed_at: string | null
+          servidor_nome: string | null
+          situacao: string | null
           status: Database["public"]["Enums"]["consulta_status"]
           updated_at: string
           user_id: string
         }
         Insert: {
+          categoria?: string | null
           cpf: string
           created_at?: string
           erro?: string | null
           id?: string
+          margem_cartao_beneficio?: number | null
+          margem_cartao_credito?: number | null
           margem_disponivel?: number | null
+          margem_emprestimo?: number | null
+          matricula?: string | null
           nome: string
+          orgao?: string | null
           processed_at?: string | null
+          servidor_nome?: string | null
+          situacao?: string | null
           status?: Database["public"]["Enums"]["consulta_status"]
           updated_at?: string
           user_id: string
         }
         Update: {
+          categoria?: string | null
           cpf?: string
           created_at?: string
           erro?: string | null
           id?: string
+          margem_cartao_beneficio?: number | null
+          margem_cartao_credito?: number | null
           margem_disponivel?: number | null
+          margem_emprestimo?: number | null
+          matricula?: string | null
           nome?: string
+          orgao?: string | null
           processed_at?: string | null
+          servidor_nome?: string | null
+          situacao?: string | null
           status?: Database["public"]["Enums"]["consulta_status"]
           updated_at?: string
           user_id?: string
