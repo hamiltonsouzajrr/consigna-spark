@@ -94,9 +94,9 @@ function Page() {
       });
       s.avg = durations.length ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
       setStats(s);
-      setConsultas(data as Consulta[]);
+      setConsultas(data as unknown as Consulta[]);
       // Atualiza linha em debug se ela mudou
-      setDebugRow((prev) => prev ? (data.find((d: any) => d.id === prev.id) as Consulta) ?? prev : prev);
+      setDebugRow((prev) => prev ? ((data as unknown as Consulta[]).find((d) => d.id === prev.id) ?? prev) : prev);
     };
     load();
     const ch = supabase
