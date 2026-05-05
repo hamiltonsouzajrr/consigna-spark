@@ -218,13 +218,60 @@ function listarLinksSidebar(html: string): { href: string; text: string }[] {
   return out;
 }
 
-async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: string, log: LogFn): Promise<number | null> {
+// Parser do grid de resultado: <table id="MainContent_gvCons...">
+// Colunas: Servidor | CPF | Matrícula | Categoria | Situação | Margem Disponível
+function parseGridServidor(html: string): {
+  servidor?: string; cpf?: string; matricula?: string;
+  categoria?: string; situacao?: string; margem: number | null;
+} {
+  const tableM = html.match(/<table[^>]*id="[^"]*MainContent_(?:gv|grd)[A-Za-z]*"[^>]*>[\s\S]*?<\/table>/i);
+  if (!tableM) return { margem: null };
+  const rows = [...tableM[0].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)];
+  for (const row of rows) {
+    // Pula cabeçalhos (têm <th>)
+    if (/<th\b/i.test(row[1])) continue;
+    const cells = [...row[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)]
+      .map((m) => m[1]
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&amp;/g, "&")
+        .replace(/\s+/g, " ")
+        .trim());
+    if (cells.length >= 6) {
+      // Margem normalmente é a última coluna numérica
+      const margem = parseBRL(cells[5]) ?? parseBRL(cells[cells.length - 1]);
+      return {
+        servidor: cells[0] || undefined,
+        cpf: cells[1] || undefined,
+        matricula: cells[2] || undefined,
+        categoria: cells[3] || undefined,
+        situacao: cells[4] || undefined,
+        margem,
+      };
+    }
+  }
+  return { margem: null };
+}
+
+interface ConsultaServicoResult {
+  margem: number | null;
+  servidor?: string;
+  matricula?: string;
+  categoria?: string;
+  situacao?: string;
+  motivo: string;
+}
+
+// Consulta UM serviço (1=Empréstimo, 2=Cartão Crédito, 3=Cartão Benefício)
+async function consultarServico(
+  s: Session, cpf: string, consultaPath: string, servicoId: string, log: LogFn,
+): Promise<ConsultaServicoResult> {
   const CONSULTA_URL = consultaPath.startsWith("http") ? consultaPath : `${CONSIGUP_BASE}${consultaPath.startsWith("/") ? "" : "/"}${consultaPath}`;
-  await log("info", `GET ${CONSULTA_URL}`);
+  await log("info", `[svc=${servicoId}] GET ${CONSULTA_URL}`);
   const page = await s.request(CONSULTA_URL);
   if (page.status !== 200) {
-    await log("warn", `[consulta] GET status ${page.status}`);
-    return null;
+    await log("warn", `[consulta svc=${servicoId}] GET status ${page.status}`);
+    return { margem: null, motivo: `get_status_${page.status}` };
   }
   const hidden = extractAllHidden(page.body);
   const form = new URLSearchParams();
@@ -238,42 +285,35 @@ async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: str
     : cpf;
   form.set(cpfField, cpfFmt);
 
-  // Detecta botões: input submit, button, ou LinkButton (anchor com __doPostBack)
-  // 1) input submit/button
+  // Detecta o nome do dropdown de Serviço e seleciona conforme servicoId
+  const dropMatch = page.body.match(/<select[^>]+name="([^"]*[Ss]ervico[^"]*)"/);
+  const dropName = dropMatch ? dropMatch[1] : "ctl00$MainContent$dropServico";
+  form.set(dropName, servicoId);
+
+  // Detecta botão Consultar
   let btnName = "";
   let btnValue = "";
-  const inputBtn = page.body.match(/<input[^>]+type="(?:submit|button)"[^>]*name="([^"]+)"[^>]*value="([^"]*(?:Consultar|Pesquisar|Buscar)[^"]*)"/i)
-                || page.body.match(/<input[^>]+type="(?:submit|button)"[^>]*value="([^"]*(?:Consultar|Pesquisar|Buscar)[^"]*)"[^>]*name="([^"]+)"/i);
+  const inputBtn = page.body.match(/<input[^>]+type="(?:submit|button)"[^>]*name="([^"]+)"[^>]*value="([^"]*Consultar[^"]*)"/i)
+                || page.body.match(/<input[^>]+type="(?:submit|button)"[^>]*value="([^"]*Consultar[^"]*)"[^>]*name="([^"]+)"/i);
   if (inputBtn) {
     const isFirst = inputBtn[0].indexOf("name=") < inputBtn[0].indexOf("value=");
     btnName = isFirst ? inputBtn[1] : inputBtn[2];
     btnValue = isFirst ? inputBtn[2] : inputBtn[1];
   }
-  // 2) LinkButton: <a id="..." href="javascript:__doPostBack('ctl00$...$btnConsultar','')">Consultar</a>
   let linkBtnTarget = "";
-  const linkBtn = page.body.match(/<a[^>]+href="javascript:__doPostBack\(&#39;([^&]+(?:btnConsultar|btnPesquisar|btnBuscar|lnkConsultar)[^&]*)&#39;,&#39;[^&]*&#39;\)"[^>]*>\s*([^<]*(?:Consultar|Pesquisar|Buscar)[^<]*)/i);
+  const linkBtn = page.body.match(/<a[^>]+href="javascript:__doPostBack\(&#39;([^&]+btnConsultar[^&]*)&#39;,&#39;[^&]*&#39;\)"/i);
   if (linkBtn) linkBtnTarget = linkBtn[1];
 
-  // SEMPRE envia __EVENTTARGET + __EVENTARGUMENT para garantir o postback do WebForms.
-  // Default conhecido: ctl00$MainContent$btnConsultar (confirmado nos logs anteriores).
   const eventTarget = linkBtnTarget || btnName || "ctl00$MainContent$btnConsultar";
   form.set("__EVENTTARGET", eventTarget);
   form.set("__EVENTARGUMENT", "");
-  // Também envia o name=value do submit (alguns handlers checam Request.Form[btnName])
-  if (btnName) {
-    form.set(btnName, btnValue || "Consultar");
-  } else if (!linkBtnTarget) {
-    form.set("ctl00$MainContent$btnConsultar", "Consultar");
-  }
-  // Campos auxiliares que ASP.NET às vezes exige
+  if (btnName) form.set(btnName, btnValue || "Consultar");
+  else form.set("ctl00$MainContent$btnConsultar", "Consultar");
   if (!form.has("__LASTFOCUS")) form.set("__LASTFOCUS", "");
 
-  // ===== DETECÇÃO DE UpdatePanel / ScriptManager (AJAX async postback) =====
-  // Sinais: ScriptResource/MicrosoftAjax/WebForms.js, <span id="...ScriptManager...">,
-  // hidden __ASYNCPOST=true, ou um UpdatePanel cujo trigger seja o nosso botão.
+  // Detecção AJAX/UpdatePanel
   const hasScriptManager = /ScriptResource\.axd|MicrosoftAjax|WebForms\.js|Sys\.WebForms\.PageRequestManager/i.test(page.body);
   const hasAsyncPost = /name="__ASYNCPOST"/i.test(page.body) || hasScriptManager;
-  // Procura UpdatePanel cujo ID contenha o botão como child (heurística leve)
   const updatePanelMatch = page.body.match(/<div[^>]+id="([^"]*UpdatePanel[^"]*)"/i);
   const updatePanelId = updatePanelMatch ? updatePanelMatch[1] : "";
 
@@ -281,112 +321,54 @@ async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: str
     "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
     Referer: CONSULTA_URL,
   };
-
   if (hasAsyncPost) {
-    // Sinaliza ao ASP.NET que é um async postback do UpdatePanel
     form.set("__ASYNCPOST", "true");
     headers["X-MicrosoftAjax"] = "Delta=true";
     headers["X-Requested-With"] = "XMLHttpRequest";
     headers["Accept"] = "*/*";
-    if (updatePanelId) {
-      // Força o async postback a ser tratado por este UpdatePanel específico
-      form.set("ctl00$ScriptManager1", `${updatePanelId}|${eventTarget}`);
-    }
-    await log("info", `[consulta] AJAX/UpdatePanel detectado (scriptMgr=${hasScriptManager} updatePanel=${updatePanelId || "n/a"}) — usando X-MicrosoftAjax=Delta=true`);
-  } else {
-    await log("info", `[consulta] postback síncrono (sem ScriptManager/UpdatePanel)`);
+    if (updatePanelId) form.set("ctl00$ScriptManager1", `${updatePanelId}|${eventTarget}`);
   }
 
-  await log("info", `[consulta] POST __EVENTTARGET=${eventTarget} btnName=${btnName || "(none)"} cpfField=${cpfField}`);
+  await log("info", `[consulta svc=${servicoId}] POST drop=${dropName}=${servicoId} target=${eventTarget}`);
 
-  const res = await s.request(CONSULTA_URL, {
-    method: "POST",
-    headers,
-    body: form.toString(),
-  });
+  const res = await s.request(CONSULTA_URL, { method: "POST", headers, body: form.toString() });
 
-  // Se for resposta AJAX delta, o body começa com "<len>|<type>|..." — parseia para extrair o HTML
   let bodyForParse = res.body;
   if (hasAsyncPost && /^\d+\|/.test(res.body)) {
-    await log("info", `[consulta] resposta delta AJAX recebida, parseando blocos`);
     bodyForParse = parseAjaxDelta(res.body, log);
   }
-  // Substitui res.body para o resto do fluxo de parsing
-  (res as any).body = bodyForParse;
+  const body = bodyForParse;
+  await log("info", `[consulta svc=${servicoId}] response len=${body.length}`);
 
-  // ===== DUMP DIAGNÓSTICO DO RESPONSE =====
-  await log("info", `[consulta] response len=${res.body.length}`);
-  const head2k = res.body.slice(0, 2048).replace(/\s+/g, " ");
-  await log("info", `[consulta] HTML[0..2048]: ${head2k}`);
-
-  const palavrasResultado = ["Margem", "Disponível", "Disponivel", "Servidor", "Matrícula", "Matricula", "Resultado", "Erro", "Aviso", "Atenção", "Atencao"];
-  for (const p of palavrasResultado) {
-    const idx = res.body.toLowerCase().indexOf(p.toLowerCase());
-    if (idx >= 0) {
-      const snippet = res.body.slice(Math.max(0, idx - 200), idx + 400).replace(/\s+/g, " ");
-      await log("info", `[consulta] ctx '${p}'@${idx}: ${snippet}`);
-    }
+  // 1) Tenta parsear o grid de resultado (Servidor / CPF / Matrícula / Categoria / Situação / Margem)
+  const grid = parseGridServidor(body);
+  if (grid.margem !== null && grid.margem !== undefined) {
+    await log("info", `[consulta svc=${servicoId}] OK servidor='${grid.servidor}' matr=${grid.matricula} margem=${grid.margem}`);
+    return {
+      margem: grid.margem,
+      servidor: grid.servidor,
+      matricula: grid.matricula,
+      categoria: grid.categoria,
+      situacao: grid.situacao,
+      motivo: "ok",
+    };
   }
 
-  const lblAll = [...res.body.matchAll(/<span[^>]*id="[^"]*(lbl[A-Z][A-Za-z]*|ValidationSummary)[^"]*"[^>]*>([\s\S]{0,400}?)<\/span>/gi)];
-  for (const m of lblAll.slice(0, 10)) {
-    const txt = m[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
-    if (txt) await log("info", `[consulta] ${m[1]}: ${txt.slice(0, 400)}`);
-  }
-  const popup = res.body.match(/mostraPopUpAlert\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/);
-  if (popup) await log("warn", `[consulta] popup: ${popup[1]} - ${popup[2]}`);
-  const mcIdx = res.body.indexOf("MainContent");
-  if (mcIdx >= 0) {
-    await log("info", `[consulta] MainContent@${mcIdx}: ${res.body.slice(mcIdx, mcIdx + 1800).replace(/\s+/g, " ")}`);
-  }
-  // ===== FIM DUMP =====
-
-  // ===== Categorização do motivo (fallback quando não acha "Margem Disponível") =====
-  const body = res.body;
-
-  // 1) servidor não localizado / CPF inválido
-  if (/n[ãa]o\s+(localizado|encontrado|cadastrado)|cpf\s+inv[áa]lido|servidor\s+inativo/i.test(body)) {
-    await log("info", `[consulta] motivo: servidor não localizado/CPF inválido`);
-    (consultarMargemNoOrgao as any)._lastMotivo = "servidor_nao_localizado";
-    return 0;
-  }
-
-  // 2) Margem encontrada
-  const marker = body.match(/Margem\s+Dispon[íi]vel[\s\S]{0,400}/i)
-              || body.match(/(Margem\s+Livre|Valor\s+Dispon[íi]vel)[\s\S]{0,400}/i);
-  if (marker) {
-    (consultarMargemNoOrgao as any)._lastMotivo = "ok";
-    return parseBRL(marker[0]);
-  }
-
-  // 3) Fallback: identificar por que NÃO veio resultado
-  let motivo = "sem_resultado_desconhecido";
+  // 2) Categoriza motivo da falha
+  let motivo = "sem_resultado";
   let detalhe = "";
-
-  // 3a) Sessão expirada / redirect para login
-  if (/Login\.aspx|Sess[ãa]o\s+expirada|fa[çc]a\s+login|n[ãa]o\s+autorizado/i.test(body)) {
+  if (/n[ãa]o\s+(localizado|encontrado|cadastrado)|cpf\s+inv[áa]lido|servidor\s+inativo/i.test(body)) {
+    motivo = "servidor_nao_localizado";
+  } else if (/Login\.aspx|Sess[ãa]o\s+expirada/i.test(body)) {
     motivo = "sessao_expirada";
-  }
-  // 3b) Erro do servidor ASP.NET (yellow screen)
-  else if (/Server\s+Error\s+in|Runtime\s+Error|HTTP\s+Error\s+500|Exception\s+Details/i.test(body)) {
-    motivo = "erro_servidor_aspnet";
-    const exMatch = body.match(/Exception\s+Details:\s*([^<\n]+)/i);
-    if (exMatch) detalhe = exMatch[1].trim().slice(0, 200);
-  }
-  // 3c) Mensagem de validação ASP.NET visível
-  else if (/<span[^>]*ValidationSummary[^>]*>[\s\S]*?<li>([^<]+)<\/li>/i.test(body)) {
-    motivo = "erro_validacao";
-    const m = body.match(/<span[^>]*ValidationSummary[^>]*>[\s\S]*?<li>([^<]+)<\/li>/i);
-    if (m) detalhe = m[1].trim().slice(0, 200);
-  }
-  // 3d) Popup de alerta JS
-  else if (/mostraPopUpAlert\s*\(/i.test(body)) {
+  } else if (/mostraPopUpAlert\s*\(/i.test(body)) {
     motivo = "popup_alerta";
     const m = body.match(/mostraPopUpAlert\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/);
     if (m) detalhe = `${m[1]} - ${m[2]}`.slice(0, 200);
-  }
-  // 3e) lblMsg/lblErro/lblMensagem com texto
-  else {
+    // Caso típico: hiddenResposta com mensagem do servidor
+    const hiddenResp = body.match(/id="MainContent_hiddenResposta"\s+value="([^"]+)"/);
+    if (hiddenResp && hiddenResp[1]) detalhe = (detalhe ? `${detalhe} | ` : "") + `hiddenResposta='${hiddenResp[1]}'`;
+  } else {
     const lbl = body.match(/<span[^>]*id="[^"]*(lbl(?:Msg|Erro|Mensagem|Aviso))[^"]*"[^>]*>([\s\S]{0,400}?)<\/span>/i);
     if (lbl) {
       const txt = lbl[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
@@ -394,25 +376,47 @@ async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: str
     }
   }
 
-  // 3f) Página recarregada (mesmo formulário, sem área de resultado renderizada)
-  if (motivo === "sem_resultado_desconhecido") {
-    const temFormCpf = /name="[^"]*[Cc][Pp][Ff][^"]*"/.test(body) && /__VIEWSTATE/.test(body);
-    const temAreaResultado = /grdResult|gvResult|grvResult|tblResult|divResult|dgResult|MainContent_(?:gv|grd|div|tbl)/i.test(body);
-    if (temFormCpf && !temAreaResultado) {
-      motivo = "pagina_recarregada_sem_resultado";
-      detalhe = `len=${body.length}`;
+  await log("warn", `[consulta svc=${servicoId}] sem margem motivo='${motivo}'${detalhe ? ` detalhe='${detalhe}'` : ""}`);
+  return { margem: null, motivo: detalhe ? `${motivo}: ${detalhe}` : motivo };
+}
+
+// Consulta os 3 serviços (1, 2, 3) no mesmo órgão e retorna agregado
+interface OrgaoConsultaResult {
+  margem_emprestimo: number | null;
+  margem_cartao_credito: number | null;
+  margem_cartao_beneficio: number | null;
+  servidor?: string; matricula?: string; categoria?: string; situacao?: string;
+  motivos: Record<string, string>;
+}
+
+async function consultarMargensNoOrgao(
+  s: Session, cpf: string, consultaPath: string, log: LogFn,
+): Promise<OrgaoConsultaResult> {
+  const out: OrgaoConsultaResult = {
+    margem_emprestimo: null, margem_cartao_credito: null, margem_cartao_beneficio: null,
+    motivos: {},
+  };
+  const servicos: { id: string; nome: string; key: "margem_emprestimo" | "margem_cartao_credito" | "margem_cartao_beneficio" }[] = [
+    { id: "1", nome: "Empréstimo Consignado", key: "margem_emprestimo" },
+    { id: "2", nome: "Cartão de Crédito", key: "margem_cartao_credito" },
+    { id: "3", nome: "Cartão Benefício", key: "margem_cartao_beneficio" },
+  ];
+  for (const svc of servicos) {
+    try {
+      const r = await consultarServico(s, cpf, consultaPath, svc.id, log);
+      out[svc.key] = r.margem;
+      out.motivos[svc.id] = r.motivo;
+      // Guarda dados do servidor a partir do primeiro serviço que retornar
+      if (r.servidor && !out.servidor) out.servidor = r.servidor;
+      if (r.matricula && !out.matricula) out.matricula = r.matricula;
+      if (r.categoria && !out.categoria) out.categoria = r.categoria;
+      if (r.situacao && !out.situacao) out.situacao = r.situacao;
+    } catch (e) {
+      out.motivos[svc.id] = `excecao: ${String(e).slice(0, 150)}`;
+      await log("error", `[svc=${svc.id} ${svc.nome}] erro: ${String(e).slice(0, 300)}`);
     }
   }
-
-  // 3g) Resposta vazia / curta demais
-  if (body.length < 500) {
-    motivo = "resposta_vazia";
-    detalhe = `len=${body.length}`;
-  }
-
-  await log("warn", `[consulta] motivo='${motivo}'${detalhe ? ` detalhe='${detalhe}'` : ""} (len=${body.length})`);
-  (consultarMargemNoOrgao as any)._lastMotivo = detalhe ? `${motivo}: ${detalhe}` : motivo;
-  return null;
+  return out;
 }
 
 async function descobrirMenu(s: Session) {
@@ -484,76 +488,89 @@ async function descobrirMenu(s: Session) {
 
 type LogFn = (level: "info" | "warn" | "error", msg: string) => Promise<void> | void;
 
-async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<{ margem: number | null; erro: string | null; detalhes: Record<string, number | null> }> {
+interface ConsultaResultado {
+  margem: number | null;
+  margem_emprestimo: number | null;
+  margem_cartao_credito: number | null;
+  margem_cartao_beneficio: number | null;
+  servidor_nome: string | null;
+  matricula: string | null;
+  categoria: string | null;
+  situacao: string | null;
+  orgao: string | null;
+  erro: string | null;
+}
+
+async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<ConsultaResultado> {
+  const empty: ConsultaResultado = {
+    margem: null, margem_emprestimo: null, margem_cartao_credito: null, margem_cartao_beneficio: null,
+    servidor_nome: null, matricula: null, categoria: null, situacao: null, orgao: null, erro: null,
+  };
   const user = Deno.env.get("CONSIGUP_USER");
   const pass = Deno.env.get("CONSIGUP_PASS");
-  if (!user || !pass) { await log("error", "Credenciais ConsigUp ausentes"); return { margem: null, erro: "Credenciais ConsigUp ausentes", detalhes: {} }; }
+  if (!user || !pass) { await log("error", "Credenciais ConsigUp ausentes"); return { ...empty, erro: "Credenciais ConsigUp ausentes" }; }
 
   const s = new Session();
   await log("info", `Iniciando login no ConsigUp como ${user}`);
   const okLogin = await login(s, user, pass);
-  if (!okLogin) { await log("error", "Falha de login no ConsigUp"); return { margem: null, erro: "Falha de login no ConsigUp", detalhes: {} }; }
+  if (!okLogin) { await log("error", "Falha de login no ConsigUp"); return { ...empty, erro: "Falha de login no ConsigUp" }; }
   await log("info", "Login OK, carregando home");
 
   const home = await s.request(HOME_URL);
   const orgaos = listarOrgaosDoHtml(home.body);
   await log("info", `Órgãos descobertos: ${orgaos.length}`);
-  for (const o of orgaos) await log("info", `Órgão ${o.codigo} - ${o.nome} (target=${o.eventTarget})`);
+  if (orgaos.length === 0) return { ...empty, erro: "Nenhum órgão encontrado no header" };
 
-  if (orgaos.length === 0) { await log("error", "Nenhum órgão encontrado no header"); return { margem: null, erro: "Nenhum órgão encontrado no header", detalhes: {} }; }
+  const motivosOrgaos: Record<string, string> = {};
+  let melhor: ConsultaResultado | null = null;
+  let melhorTotal = -1;
 
-  const detalhes: Record<string, number | null> = {};
-  const motivos: Record<string, string> = {};
-  let melhor: number | null = null;
   for (const o of orgaos) {
     await log("info", `=== Órgão ${o.codigo} ${o.nome} ===`);
     const sw = await selecionarOrgao(s, o.eventTarget);
-    if (!sw.ok) { await log("warn", `[${o.codigo}] Falha ao trocar de órgão`); detalhes[o.codigo] = null; motivos[o.codigo] = "falha_trocar_orgao"; continue; }
+    if (!sw.ok) { motivosOrgaos[o.codigo] = "falha_trocar_orgao"; continue; }
 
     const links = listarLinksSidebar(sw.html);
-    await log("info", `[${o.codigo}] Sidebar: ${links.length} links`);
-
     const margemLink = links.find(l =>
       /margem|consulta.*margem|pr[ée]\s*-?\s*reservar|consultar/i.test(l.text)
       || /Margem|ConsultaMargem/i.test(l.href)
     );
-    if (!margemLink) {
-      await log("warn", `[${o.codigo}] sem link de margem`);
-      detalhes[o.codigo] = null;
-      motivos[o.codigo] = "sem_link_margem";
-      continue;
-    }
-    await log("info", `[${o.codigo}] usando link: ${margemLink.text} -> ${margemLink.href}`);
+    if (!margemLink) { motivosOrgaos[o.codigo] = "sem_link_margem"; continue; }
+
     try {
-      (consultarMargemNoOrgao as any)._lastMotivo = "";
-      const m = await consultarMargemNoOrgao(s, cpf, margemLink.href, log);
-      detalhes[o.codigo] = m;
-      const motivo = (consultarMargemNoOrgao as any)._lastMotivo as string;
-      if (m === null) motivos[o.codigo] = motivo || "sem_resultado";
-      else if (m === 0 && motivo === "servidor_nao_localizado") motivos[o.codigo] = "servidor_nao_localizado";
-      await log("info", `[${o.codigo}] margem = ${m}${motivo ? ` (motivo=${motivo})` : ""}`);
-      if (m !== null && m > 0 && (melhor === null || m > melhor)) melhor = m;
+      const r = await consultarMargensNoOrgao(s, cpf, margemLink.href, log);
+      const total = (r.margem_emprestimo ?? 0) + (r.margem_cartao_credito ?? 0) + (r.margem_cartao_beneficio ?? 0);
+      const algumaMargem = r.margem_emprestimo !== null || r.margem_cartao_credito !== null || r.margem_cartao_beneficio !== null;
+      const motivosStr = Object.entries(r.motivos).map(([k, v]) => `s${k}=${v}`).join("|");
+      motivosOrgaos[o.codigo] = algumaMargem ? `ok(${total.toFixed(2)})` : motivosStr;
+      await log("info", `[${o.codigo}] empréstimo=${r.margem_emprestimo} cartãoCred=${r.margem_cartao_credito} cartãoBenef=${r.margem_cartao_beneficio} total=${total.toFixed(2)}`);
+
+      if (algumaMargem && total > melhorTotal) {
+        melhorTotal = total;
+        melhor = {
+          margem: total,
+          margem_emprestimo: r.margem_emprestimo,
+          margem_cartao_credito: r.margem_cartao_credito,
+          margem_cartao_beneficio: r.margem_cartao_beneficio,
+          servidor_nome: r.servidor ?? null,
+          matricula: r.matricula ?? null,
+          categoria: r.categoria ?? null,
+          situacao: r.situacao ?? null,
+          orgao: `${o.codigo} - ${o.nome}`,
+          erro: null,
+        };
+      }
     } catch (e) {
-      await log("error", `[${o.codigo}] erro consulta: ${String(e).slice(0,300)}`);
-      detalhes[o.codigo] = null;
-      motivos[o.codigo] = `excecao: ${String(e).slice(0,150)}`;
+      motivosOrgaos[o.codigo] = `excecao: ${String(e).slice(0, 150)}`;
+      await log("error", `[${o.codigo}] erro consulta: ${String(e).slice(0, 300)}`);
     }
   }
 
-  if (melhor === null) {
-    // Categoriza o erro consolidado: motivo mais frequente entre os órgãos
-    const counts = new Map<string, number>();
-    for (const m of Object.values(motivos)) counts.set(m, (counts.get(m) || 0) + 1);
-    const ordenado = [...counts.entries()].sort((a, b) => b[1] - a[1]);
-    const top = ordenado[0]?.[0] || "sem_resultado";
-    const todosNaoLocalizado = Object.values(motivos).every((m) => m === "servidor_nao_localizado");
-    const erroFinal = todosNaoLocalizado
-      ? "CPF não cadastrado em nenhum órgão"
-      : `Margem não localizada — motivo principal: ${top} (${ordenado[0]?.[1]}/${orgaos.length} órgãos). Detalhes por órgão: ${Object.entries(motivos).map(([k,v])=>`${k}=${v}`).join(" | ")}`;
-    await log("warn", `[resumo] motivos: ${[...counts.entries()].map(([k,v])=>`${k}×${v}`).join(", ")}`);
-    return { margem: null, erro: erroFinal.slice(0, 1000), detalhes };
-  }
-  return { margem: melhor, erro: null, detalhes };
+  if (melhor) return melhor;
+
+  const erroFinal = `Margem não localizada em nenhum órgão. ${Object.entries(motivosOrgaos).map(([k, v]) => `${k}=${v}`).join(" | ")}`;
+  await log("warn", `[resumo] ${erroFinal}`);
+  return { ...empty, erro: erroFinal.slice(0, 1000) };
 }
 
 // ---------- Handler ----------
@@ -599,12 +616,20 @@ Deno.serve(async (req) => {
           } catch (e) { console.error("log insert err", e); }
         };
         await log("info", `Iniciando processamento do CPF ${row.cpf}`);
-        const { margem, erro } = await consultarCpfTodosOrgaos(row.cpf, log);
-        await log(erro ? "error" : "info", erro ? `Finalizado com erro: ${erro}` : `Finalizado. Margem: ${margem}`);
+        const r = await consultarCpfTodosOrgaos(row.cpf, log);
+        await log(r.erro ? "error" : "info", r.erro ? `Finalizado com erro: ${r.erro}` : `Finalizado. Margem total: ${r.margem} (órgão ${r.orgao})`);
         await supabase.from("consultas_margem").update({
-          margem_disponivel: margem,
-          erro,
-          status: erro ? "erro" : "concluido",
+          margem_disponivel: r.margem,
+          margem_emprestimo: r.margem_emprestimo,
+          margem_cartao_credito: r.margem_cartao_credito,
+          margem_cartao_beneficio: r.margem_cartao_beneficio,
+          servidor_nome: r.servidor_nome,
+          matricula: r.matricula,
+          categoria: r.categoria,
+          situacao: r.situacao,
+          orgao: r.orgao,
+          erro: r.erro,
+          status: r.erro ? "erro" : "concluido",
           processed_at: new Date().toISOString(),
         }).eq("id", row.id);
       }
