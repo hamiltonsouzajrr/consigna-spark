@@ -290,61 +290,53 @@ function Page() {
           </div>
         </div>
 
-        {debugRow && (
-          <div className="mt-6 rounded-lg border bg-muted/30 p-4 text-sm">
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div><span className="text-muted-foreground">CPF:</span> <strong>{formatCpf(debugRow.cpf)}</strong></div>
-              <div><span className="text-muted-foreground">Nome:</span> <strong>{debugRow.nome}</strong></div>
-              <div>
-                <span className="text-muted-foreground">Status:</span>{" "}
-                <strong className={
-                  debugRow.status === "concluido" ? "text-success" :
-                  debugRow.status === "erro" ? "text-destructive" :
-                  debugRow.status === "processando" ? "text-primary" : ""
-                }>
-                  {debugRow.status}
-                </strong>
-                {debugRow.status === "processando" && <Loader2 className="ml-2 inline h-3 w-3 animate-spin" />}
-              </div>
-              <div>
-                <span className="text-muted-foreground">Margem total:</span>{" "}
-                <strong>{debugRow.margem_disponivel != null ? `R$ ${Number(debugRow.margem_disponivel).toFixed(2)}` : "—"}</strong>
-              </div>
-              <div className="sm:col-span-2 grid gap-2 sm:grid-cols-3 rounded border bg-background/40 p-3">
+        {debugRow && (() => {
+          const brl = (n: number | null) =>
+            n == null ? "—" : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+          const concluido = debugRow.status === "concluido";
+          return (
+            <div className="mt-6 rounded-lg border bg-muted/30 p-4 text-sm">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <div className="text-xs text-muted-foreground">Empréstimo Consignado</div>
-                  <strong className="tabular-nums">{debugRow.margem_emprestimo != null ? `R$ ${Number(debugRow.margem_emprestimo).toFixed(2)}` : "—"}</strong>
+                  <span className="text-muted-foreground">CPF:</span>{" "}
+                  <strong>{formatCpf(debugRow.cpf)}</strong>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground">Cartão de Crédito</div>
-                  <strong className="tabular-nums">{debugRow.margem_cartao_credito != null ? `R$ ${Number(debugRow.margem_cartao_credito).toFixed(2)}` : "—"}</strong>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Cartão Benefício</div>
-                  <strong className="tabular-nums">{debugRow.margem_cartao_beneficio != null ? `R$ ${Number(debugRow.margem_cartao_beneficio).toFixed(2)}` : "—"}</strong>
+                  <span className="text-muted-foreground">Status:</span>{" "}
+                  <strong className={
+                    concluido ? "text-success" :
+                    debugRow.status === "erro" ? "text-destructive" :
+                    debugRow.status === "processando" ? "text-primary" : ""
+                  }>
+                    {debugRow.status}
+                  </strong>
+                  {debugRow.status === "processando" && <Loader2 className="ml-2 inline h-3 w-3 animate-spin" />}
                 </div>
               </div>
-              {(debugRow.servidor_nome || debugRow.matricula || debugRow.orgao || debugRow.situacao || debugRow.categoria) && (
-                <div className="sm:col-span-2 grid gap-2 sm:grid-cols-2 rounded border bg-background/40 p-3">
-                  {debugRow.servidor_nome && <div><span className="text-muted-foreground">Servidor:</span> <strong>{debugRow.servidor_nome}</strong></div>}
-                  {debugRow.matricula && <div><span className="text-muted-foreground">Matrícula:</span> <strong className="font-mono">{debugRow.matricula}</strong></div>}
-                  {debugRow.categoria && <div><span className="text-muted-foreground">Categoria:</span> <strong>{debugRow.categoria}</strong></div>}
-                  {debugRow.situacao && <div><span className="text-muted-foreground">Situação:</span> <strong>{debugRow.situacao}</strong></div>}
-                  {debugRow.orgao && <div className="sm:col-span-2"><span className="text-muted-foreground">Órgão:</span> <strong>{debugRow.orgao}</strong></div>}
+
+              {concluido && (
+                <div className="space-y-1 rounded border bg-background/60 p-4 leading-relaxed">
+                  <div><span className="text-muted-foreground">Servidor</span> <strong>{debugRow.servidor_nome ?? "—"}</strong> <span className="text-muted-foreground ml-2">Matrícula</span><strong>{debugRow.matricula ?? "—"}</strong></div>
+                  <div><span className="text-muted-foreground">Órgão</span><strong>{debugRow.orgao ?? "—"}</strong></div>
+                  <div><span className="text-muted-foreground">Situação</span> <strong>{debugRow.situacao ?? "—"}</strong></div>
+                  <div><span className="text-muted-foreground">Margem Empréstimo</span> <strong>{brl(debugRow.margem_emprestimo)}</strong></div>
+                  <div><span className="text-muted-foreground">Margem Cartão Crédito</span> <strong>{brl(debugRow.margem_cartao_credito)}</strong></div>
+                  <div><span className="text-muted-foreground">Margem Cartão Benefício</span> <strong>{brl(debugRow.margem_cartao_beneficio)}</strong></div>
                 </div>
               )}
-              <div className="sm:col-span-2">
-                <span className="text-muted-foreground">Última atualização:</span>{" "}
-                {new Date(debugRow.updated_at).toLocaleString("pt-BR")}
+
+              <div className="mt-3 text-xs text-muted-foreground">
+                Última atualização: {new Date(debugRow.updated_at).toLocaleString("pt-BR")}
               </div>
+
               {debugRow.erro && (
-                <div className="sm:col-span-2 rounded border border-destructive/30 bg-destructive/10 p-2 text-destructive">
+                <div className="mt-3 rounded border border-destructive/30 bg-destructive/10 p-2 text-destructive">
                   <strong>Erro / mensagem:</strong> {debugRow.erro}
                 </div>
               )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {debugRow && (
           <div className="mt-4">
