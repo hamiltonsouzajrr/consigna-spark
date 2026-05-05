@@ -503,11 +503,12 @@ async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<{ marge
   if (orgaos.length === 0) { await log("error", "Nenhum órgão encontrado no header"); return { margem: null, erro: "Nenhum órgão encontrado no header", detalhes: {} }; }
 
   const detalhes: Record<string, number | null> = {};
+  const motivos: Record<string, string> = {};
   let melhor: number | null = null;
   for (const o of orgaos) {
     await log("info", `=== Órgão ${o.codigo} ${o.nome} ===`);
     const sw = await selecionarOrgao(s, o.eventTarget);
-    if (!sw.ok) { await log("warn", `[${o.codigo}] Falha ao trocar de órgão`); detalhes[o.codigo] = null; continue; }
+    if (!sw.ok) { await log("warn", `[${o.codigo}] Falha ao trocar de órgão`); detalhes[o.codigo] = null; motivos[o.codigo] = "falha_trocar_orgao"; continue; }
 
     const links = listarLinksSidebar(sw.html);
     await log("info", `[${o.codigo}] Sidebar: ${links.length} links`);
@@ -519,22 +520,38 @@ async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<{ marge
     if (!margemLink) {
       await log("warn", `[${o.codigo}] sem link de margem`);
       detalhes[o.codigo] = null;
+      motivos[o.codigo] = "sem_link_margem";
       continue;
     }
     await log("info", `[${o.codigo}] usando link: ${margemLink.text} -> ${margemLink.href}`);
     try {
+      (consultarMargemNoOrgao as any)._lastMotivo = "";
       const m = await consultarMargemNoOrgao(s, cpf, margemLink.href, log);
       detalhes[o.codigo] = m;
-      await log("info", `[${o.codigo}] margem = ${m}`);
-      if (m !== null && (melhor === null || m > melhor)) melhor = m;
+      const motivo = (consultarMargemNoOrgao as any)._lastMotivo as string;
+      if (m === null) motivos[o.codigo] = motivo || "sem_resultado";
+      else if (m === 0 && motivo === "servidor_nao_localizado") motivos[o.codigo] = "servidor_nao_localizado";
+      await log("info", `[${o.codigo}] margem = ${m}${motivo ? ` (motivo=${motivo})` : ""}`);
+      if (m !== null && m > 0 && (melhor === null || m > melhor)) melhor = m;
     } catch (e) {
       await log("error", `[${o.codigo}] erro consulta: ${String(e).slice(0,300)}`);
       detalhes[o.codigo] = null;
+      motivos[o.codigo] = `excecao: ${String(e).slice(0,150)}`;
     }
   }
 
   if (melhor === null) {
-    return { margem: null, erro: "Margem não localizada em nenhum órgão", detalhes };
+    // Categoriza o erro consolidado: motivo mais frequente entre os órgãos
+    const counts = new Map<string, number>();
+    for (const m of Object.values(motivos)) counts.set(m, (counts.get(m) || 0) + 1);
+    const ordenado = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    const top = ordenado[0]?.[0] || "sem_resultado";
+    const todosNaoLocalizado = Object.values(motivos).every((m) => m === "servidor_nao_localizado");
+    const erroFinal = todosNaoLocalizado
+      ? "CPF não cadastrado em nenhum órgão"
+      : `Margem não localizada — motivo principal: ${top} (${ordenado[0]?.[1]}/${orgaos.length} órgãos). Detalhes por órgão: ${Object.entries(motivos).map(([k,v])=>`${k}=${v}`).join(" | ")}`;
+    await log("warn", `[resumo] motivos: ${[...counts.entries()].map(([k,v])=>`${k}×${v}`).join(", ")}`);
+    return { margem: null, erro: erroFinal.slice(0, 1000), detalhes };
   }
   return { margem: melhor, erro: null, detalhes };
 }
