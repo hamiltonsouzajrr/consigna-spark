@@ -6,9 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Clock, CheckCircle2, AlertCircle, FileText, Loader2, Bug, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { formatCpf } from "@/lib/cpf";
+import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
 
 export const Route = createFileRoute("/dashboard")({ component: Page });
 
