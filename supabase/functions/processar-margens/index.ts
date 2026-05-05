@@ -118,7 +118,15 @@ async function login(s: Session, user: string, pass: string): Promise<boolean> {
 
   // Sucesso = redirect para Inicio.aspx OU body contém algo da home
   const ok = /Inicio\.aspx/i.test(res.finalUrl) || /P[áa]gina Inicial/i.test(res.body) || /Consigna[çc][õo]es/i.test(res.body);
-  if (!ok) console.error("[login] falhou. snippet:", res.body.slice(0, 400));
+  console.log("[login] finalUrl:", res.finalUrl, "status:", res.status, "ok:", ok);
+  console.log("[login] cookies:", [...s.cookies.keys()].join(","));
+  // Procura mensagens de erro típicas do ASP.NET / ConsigUp
+  const errMatch = res.body.match(/<span[^>]*id="[^"]*(lblMsg|lblErro|lblMensagem)[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
+    || res.body.match(/(Usu[áa]rio[^<]{0,80}senha[^<]{0,80}inv[áa]lid[ao][^<]{0,80})/i)
+    || res.body.match(/(senha[^<]{0,80}inv[áa]lid[ao][^<]{0,80})/i)
+    || res.body.match(/alert\(['"]([^'"]+)['"]\)/i);
+  if (errMatch) console.error("[login] mensagem:", errMatch[0].slice(0, 300));
+  if (!ok) console.error("[login] snippet body 500..1500:", res.body.slice(500, 1500));
   return ok;
 }
 
