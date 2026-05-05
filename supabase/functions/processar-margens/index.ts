@@ -52,7 +52,10 @@ class Session {
 
   async request(url: string, init: RequestInit = {}): Promise<{ status: number; body: string; finalUrl: string }> {
     const headers = new Headers(init.headers);
-    headers.set("User-Agent", "Mozilla/5.0 (compatible; LovableMarginBot/1.0)");
+    headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
+    headers.set("Accept-Language", "pt-BR,pt;q=0.9,en;q=0.8");
+    headers.set("Origin", CONSIGUP_BASE);
+    headers.set("Referer", LOGIN_URL);
     if (this.cookies.size) headers.set("Cookie", this.cookieHeader());
     if (!headers.has("Accept")) headers.set("Accept", "text/html,application/xhtml+xml");
 
@@ -105,9 +108,12 @@ async function login(s: Session, user: string, pass: string): Promise<boolean> {
   const hidden = extractAllHidden(page.body);
   const form = new URLSearchParams();
   for (const [k, v] of Object.entries(hidden)) form.set(k, v);
-  form.set("txtLogin", user);
+  // ConsigUp aceita CPF com máscara no login. Formata se vier só dígitos.
+  const userFmt = /^\d{11}$/.test(user)
+    ? `${user.slice(0,3)}.${user.slice(3,6)}.${user.slice(6,9)}-${user.slice(9)}`
+    : user;
+  form.set("txtLogin", userFmt);
   form.set("txtSenha", pass);
-  // Botão de submit — nome real pode variar; tenta comuns
   form.set("btnEntrar", "Entrar");
 
   const res = await s.request(LOGIN_URL, {
@@ -116,9 +122,14 @@ async function login(s: Session, user: string, pass: string): Promise<boolean> {
     body: form.toString(),
   });
 
-  // Sucesso = redirect para Inicio.aspx OU body contém algo da home
   const ok = /Inicio\.aspx/i.test(res.finalUrl) || /P[áa]gina Inicial/i.test(res.body) || /Consigna[çc][õo]es/i.test(res.body);
-  if (!ok) console.error("[login] falhou. snippet:", res.body.slice(0, 400));
+  console.log("[login] finalUrl:", res.finalUrl, "status:", res.status, "ok:", ok, "userFmt:", userFmt);
+  console.log("[login] cookies:", [...s.cookies.keys()].join(","));
+  // Procura mostraPopUpAlert('Titulo','Mensagem',...)
+  const popup = res.body.match(/mostraPopUpAlert\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/);
+  if (popup) console.error("[login] popup:", popup[1], "-", popup[2]);
+  const errMatch = res.body.match(/<span[^>]*id="[^"]*(lblMsg|lblErro|lblMensagem)[^"]*"[^>]*>([\s\S]*?)<\/span>/i);
+  if (errMatch) console.error("[login] lbl:", errMatch[0].slice(0, 300));
   return ok;
 }
 
@@ -181,6 +192,41 @@ async function consultarMargemNoOrgao(s: Session, cpf: string): Promise<number |
   return parseBRL(marker[0]);
 }
 
+async function descobrirMenu(s: Session) {
+  const home = await s.request(HOME_URL);
+  console.log("[home] len:", home.body.length);
+  const selects = home.body.match(/<select[\s\S]*?<\/select>/gi) || [];
+  selects.forEach((sel, i) => console.log(`[home] select#${i}:`, sel.replace(/\s+/g," ").slice(0, 1000)));
+  // Procura links/botões com órgão
+  const orgaoLinks = [...home.body.matchAll(/orgao|conveniad/gi)].length;
+  console.log("[home] mentions orgao/conveniado:", orgaoLinks);
+
+  // Faz uma consulta real do CPF de teste com o órgão ATUAL
+  const URL_C = `${CONSIGUP_BASE}/Consignacoes/Margem/ConsultaMargem.aspx`;
+  const page = await s.request(URL_C);
+  const hidden = extractAllHidden(page.body);
+  const form = new URLSearchParams();
+  for (const [k, v] of Object.entries(hidden)) form.set(k, v);
+  form.set("ctl00$MainContent$dropServico", "1"); // empréstimo consignado
+  form.set("ctl00$MainContent$txtCPF", "138.671.135-72");
+  form.set("ctl00$MainContent$txtMatricula", "");
+  form.set("ctl00$MainContent$btnConsultar", "Consultar");
+  const res = await s.request(URL_C, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: form.toString(),
+  });
+  console.log("[consulta-real] status:", res.status, "len:", res.body.length);
+  // Captura a parte com a resposta
+  const margemSection = res.body.match(/[Mm]argem[\s\S]{0,500}/);
+  if (margemSection) console.log("[consulta-real] margem-section:", margemSection[0].replace(/\s+/g," ").slice(0,800));
+  const popup = res.body.match(/mostraPopUpAlert\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/);
+  if (popup) console.log("[consulta-real] popup:", popup[1], "-", popup[2]);
+  // Lista todos os labels/spans com valor R$
+  const valores = [...res.body.matchAll(/<(span|label|td)[^>]*>[^<]*R\$[^<]+<\/\1>/gi)].map(m => m[0]);
+  valores.slice(0, 20).forEach((v, i) => console.log(`[consulta-real] valor#${i}:`, v.replace(/\s+/g," ").slice(0,300)));
+}
+
 async function consultarCpfTodosOrgaos(cpf: string): Promise<{ margem: number | null; erro: string | null; detalhes: Record<string, number | null> }> {
   const user = Deno.env.get("CONSIGUP_USER");
   const pass = Deno.env.get("CONSIGUP_PASS");
@@ -190,23 +236,9 @@ async function consultarCpfTodosOrgaos(cpf: string): Promise<{ margem: number | 
   const okLogin = await login(s, user, pass);
   if (!okLogin) return { margem: null, erro: "Falha de login no ConsigUp", detalhes: {} };
 
-  const detalhes: Record<string, number | null> = {};
-  let maior: number | null = null;
-
-  for (const o of ORGAOS) {
-    try {
-      await selecionarOrgao(s, o.codigo);
-      const m = await consultarMargemNoOrgao(s, cpf);
-      detalhes[o.codigo] = m;
-      if (m != null && (maior == null || m > maior)) maior = m;
-    } catch (e) {
-      console.error(`[orgao ${o.codigo}]`, e);
-      detalhes[o.codigo] = null;
-    }
-  }
-
-  if (maior == null) return { margem: null, erro: "Nenhum órgão retornou margem", detalhes };
-  return { margem: maior, erro: null, detalhes };
+  // MODO DESCOBERTA — apenas mapeia o menu, não consulta ainda
+  await descobrirMenu(s);
+  return { margem: null, erro: "MODO_DESCOBERTA: ver logs", detalhes: {} };
 }
 
 // ---------- Handler ----------
