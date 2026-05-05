@@ -51,7 +51,7 @@ function Page() {
         .order("id", { ascending: true }),
       supabase
         .from("consultas_margem")
-        .select("id, cpf, nome, status, margem_disponivel, erro, processed_at, updated_at")
+        .select(SELECT_COLS)
         .eq("id", consultaId)
         .maybeSingle(),
     ]);
@@ -82,7 +82,7 @@ function Page() {
     const load = async () => {
       const { data } = await supabase
         .from("consultas_margem")
-        .select("id, cpf, nome, status, margem_disponivel, erro, processed_at, updated_at, created_at")
+        .select(SELECT_COLS + ", created_at")
         .order("updated_at", { ascending: false });
       if (!data) return setStats({ total: 0, pendente: 0, processando: 0, concluido: 0, erro: 0, avg: null });
       const s: Stats = { total: data.length, pendente: 0, processando: 0, concluido: 0, erro: 0, avg: null };
@@ -146,7 +146,7 @@ function Page() {
       // Reusa registro existente do mesmo user/CPF, ou cria um novo
       const { data: existing } = await supabase
         .from("consultas_margem")
-        .select("id, cpf, nome, status, margem_disponivel, erro, processed_at, updated_at")
+        .select(SELECT_COLS)
         .eq("user_id", user.id)
         .eq("cpf", cpf)
         .maybeSingle();
@@ -156,7 +156,7 @@ function Page() {
         const { data: ins, error: insErr } = await supabase
           .from("consultas_margem")
           .insert({ user_id: user.id, cpf, nome, status: "pendente" })
-          .select("id, cpf, nome, status, margem_disponivel, erro, processed_at, updated_at")
+          .select(SELECT_COLS)
           .single();
         if (insErr) throw insErr;
         id = ins.id;
