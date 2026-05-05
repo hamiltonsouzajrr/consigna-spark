@@ -83,6 +83,8 @@ function Page() {
     const row = consultas.find((c) => c.id === selectedId) ?? null;
     setDebugRow(row);
     try {
+      await supabase.from("processar_logs").delete().eq("consulta_id", selectedId);
+      setDebugLogs([]);
       const { data: sess } = await supabase.auth.getSession();
       const token = sess.session?.access_token;
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/processar-margens`;
