@@ -193,28 +193,20 @@ async function consultarMargemNoOrgao(s: Session, cpf: string): Promise<number |
 }
 
 async function descobrirMenu(s: Session) {
-  const home = await s.request(HOME_URL);
-  console.log("[descoberta] home status:", home.status, "len:", home.body.length);
-  // Coleta todos os hrefs/links do menu
-  const links = new Set<string>();
-  const re = /href=["']([^"']+\.aspx[^"']*)["']/gi;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(home.body)) !== null) links.add(m[1]);
-  const interessantes = [...links].filter(l => /consig|margem|servidor|consulta/i.test(l));
-  console.log("[descoberta] links interessantes:", JSON.stringify(interessantes));
-  // Também loga todas opções do dropdown de órgão
-  const sel = home.body.match(/<select[^>]*>[\s\S]*?<\/select>/gi) || [];
-  for (const s2 of sel) {
-    if (/option/i.test(s2)) console.log("[descoberta] select:", s2.slice(0, 600));
-  }
-  // Tenta seguir cada link interessante e logar o título
-  for (const l of interessantes.slice(0, 10)) {
-    const url = new URL(l, CONSIGUP_BASE).toString();
-    const r = await s.request(url);
-    const title = (r.body.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || "").trim();
-    const h1 = (r.body.match(/<h[12][^>]*>([\s\S]*?)<\/h[12]>/i)?.[1] || "").replace(/<[^>]+>/g, "").trim();
-    console.log("[descoberta]", url, "->", r.status, "| title:", title.slice(0,80), "| h:", h1.slice(0,80));
-  }
+  const URL_CONSULTA = `${CONSIGUP_BASE}/Consignacoes/Margem/ConsultaMargem.aspx`;
+  const r = await s.request(URL_CONSULTA);
+  console.log("[desc] page status:", r.status, "len:", r.body.length);
+  // Lista todos selects (com options)
+  const selects = r.body.match(/<select[\s\S]*?<\/select>/gi) || [];
+  selects.forEach((sel, i) => console.log(`[desc] select#${i}:`, sel.replace(/\s+/g," ").slice(0, 800)));
+  // Lista todos inputs (name + id + type)
+  const inputs = [...r.body.matchAll(/<input[^>]+>/gi)].map(m => m[0]);
+  inputs.forEach((inp, i) => {
+    if (i < 30) console.log(`[desc] input#${i}:`, inp.replace(/\s+/g," ").slice(0, 300));
+  });
+  // Lista botões
+  const btns = r.body.match(/<(input|button)[^>]+(submit|button)[^>]*>/gi) || [];
+  btns.forEach((b, i) => console.log(`[desc] btn#${i}:`, b.replace(/\s+/g," ").slice(0,300)));
 }
 
 async function consultarCpfTodosOrgaos(cpf: string): Promise<{ margem: number | null; erro: string | null; detalhes: Record<string, number | null> }> {
