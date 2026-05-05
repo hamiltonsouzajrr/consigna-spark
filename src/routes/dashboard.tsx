@@ -288,6 +288,7 @@ function Page() {
                     <div><span className="text-muted-foreground">Margem Empréstimo</span> <strong>{brl(debugRow.margem_emprestimo)}</strong>
                       {empValor != null && <span className="ml-2 text-primary">→ Valor liberado <strong>{brl(empValor)}</strong> <span className="text-xs text-muted-foreground">(margem ÷ {COEF_EMP.toString().replace(".", ",")})</span></span>}
                     </div>
+                    <SimuladorMargem margemDisponivel={debugRow.margem_emprestimo} defaultCoef={COEF_EMP} />
                   </div>
 
                   <div className="pt-1">
