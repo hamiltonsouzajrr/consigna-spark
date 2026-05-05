@@ -220,9 +220,6 @@ function Page() {
           <Bug className="h-6 w-6 text-primary" />
           <h2 className="text-lg font-semibold">Consulta de margem (modo debug)</h2>
         </div>
-        <p className="mb-4 text-sm text-muted-foreground">
-          Selecione um CPF cadastrado e dispare apenas ele para a Edge Function. O status atualiza em tempo real abaixo. Para ver os logs detalhados (HTML retornado, dropdowns, postbacks), abra o painel de logs da função <code className="rounded bg-muted px-1">processar-margens</code> no backend.
-        </p>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Select value={selectedId} onValueChange={setSelectedId}>
             <SelectTrigger className="sm:max-w-md">
