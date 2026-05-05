@@ -84,6 +84,61 @@ function Page() {
     }
   };
 
+  const processarManual = async () => {
+    if (!user) return;
+    const cpf = normalizeCpf(manualCpf);
+    if (!isValidCpf(cpf)) { toast.error("CPF inválido"); return; }
+    const nome = manualNome.trim() || "DEBUG MANUAL";
+    setRunning(true);
+    try {
+      // Reusa registro existente do mesmo user/CPF, ou cria um novo
+      const { data: existing } = await supabase
+        .from("consultas_margem")
+        .select("id, cpf, nome, status, margem_disponivel, erro, processed_at, updated_at")
+        .eq("user_id", user.id)
+        .eq("cpf", cpf)
+        .maybeSingle();
+
+      let id = existing?.id as string | undefined;
+      if (!id) {
+        const { data: ins, error: insErr } = await supabase
+          .from("consultas_margem")
+          .insert({ user_id: user.id, cpf, nome, status: "pendente" })
+          .select("id, cpf, nome, status, margem_disponivel, erro, processed_at, updated_at")
+          .single();
+        if (insErr) throw insErr;
+        id = ins.id;
+        setDebugRow(ins as Consulta);
+      } else {
+        // Reseta para pendente para que a função pegue
+        await supabase.from("consultas_margem")
+          .update({ status: "pendente", erro: null, margem_disponivel: null })
+          .eq("id", id);
+        setDebugRow({ ...(existing as Consulta), status: "pendente", erro: null, margem_disponivel: null });
+      }
+
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/processar-margens`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ ids: [id] }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      toast.success("Processamento iniciado", { description: formatCpf(cpf) });
+    } catch (e: any) {
+      toast.error("Falha ao processar", { description: e.message });
+    } finally {
+      setRunning(false);
+    }
+  };
+
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
 
