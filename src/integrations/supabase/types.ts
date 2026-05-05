@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      consultas_margem: {
+        Row: {
+          cpf: string
+          created_at: string
+          erro: string | null
+          id: string
+          margem_disponivel: number | null
+          nome: string
+          processed_at: string | null
+          status: Database["public"]["Enums"]["consulta_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cpf: string
+          created_at?: string
+          erro?: string | null
+          id?: string
+          margem_disponivel?: number | null
+          nome: string
+          processed_at?: string | null
+          status?: Database["public"]["Enums"]["consulta_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cpf?: string
+          created_at?: string
+          erro?: string | null
+          id?: string
+          margem_disponivel?: number | null
+          nome?: string
+          processed_at?: string | null
+          status?: Database["public"]["Enums"]["consulta_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +61,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      consulta_status: "pendente" | "processando" | "concluido" | "erro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +188,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      consulta_status: ["pendente", "processando", "concluido", "erro"],
+    },
   },
 } as const
