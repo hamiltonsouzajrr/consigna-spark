@@ -15,7 +15,20 @@ import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
 export const Route = createFileRoute("/dashboard")({ component: Page });
 
 interface Stats { total: number; pendente: number; processando: number; concluido: number; erro: number; avg: number | null; }
-interface Consulta { id: string; cpf: string; nome: string; status: string; margem_disponivel: number | null; erro: string | null; processed_at: string | null; updated_at: string; }
+interface Consulta {
+  id: string; cpf: string; nome: string; status: string;
+  margem_disponivel: number | null; erro: string | null;
+  processed_at: string | null; updated_at: string;
+  margem_emprestimo: number | null;
+  margem_cartao_credito: number | null;
+  margem_cartao_beneficio: number | null;
+  servidor_nome: string | null;
+  matricula: string | null;
+  categoria: string | null;
+  situacao: string | null;
+  orgao: string | null;
+}
+const SELECT_COLS = "id, cpf, nome, status, margem_disponivel, margem_emprestimo, margem_cartao_credito, margem_cartao_beneficio, servidor_nome, matricula, categoria, situacao, orgao, erro, processed_at, updated_at";
 interface DebugLog { id: number; level: string; message: string; created_at: string; }
 
 function Page() {
