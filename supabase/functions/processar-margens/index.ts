@@ -133,29 +133,56 @@ async function login(s: Session, user: string, pass: string): Promise<boolean> {
   return ok;
 }
 
-async function selecionarOrgao(s: Session, codigo: string): Promise<boolean> {
-  // No ConsigUp o dropdown de órgão dispara um __doPostBack na home.
-  // O nome real do control normalmente é algo como "ctl00$ddlOrgao" — precisa
-  // ser confirmado no DOM. Fazemos uma tentativa genérica.
-  const page = await s.request(HOME_URL);
+interface OrgaoLink { id: string; eventTarget: string; codigo: string; nome: string; }
+
+function listarOrgaosDoHtml(html: string): OrgaoLink[] {
+  const re = /<a\s+id="(lnkSecretaria\d+)"[^>]*href="javascript:__doPostBack\(&#39;([^&]+)&#39;,&#39;&#39;\)"[^>]*>([\s\S]*?)<\/a>/gi;
+  const out: OrgaoLink[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    const text = m[3].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    const codeM = text.match(/^(\d{2})\s+(.+)$/);
+    out.push({
+      id: m[1],
+      eventTarget: m[2],
+      codigo: codeM ? codeM[1] : "",
+      nome: codeM ? codeM[2] : text,
+    });
+  }
+  return out;
+}
+
+async function selecionarOrgao(s: Session, eventTarget: string, refererPath = "/Inicio/Inicio.aspx"): Promise<{ ok: boolean; html: string }> {
+  const page = await s.request(`${CONSIGUP_BASE}${refererPath}`);
   const hidden = extractAllHidden(page.body);
   const form = new URLSearchParams();
   for (const [k, v] of Object.entries(hidden)) form.set(k, v);
-
-  // Heurística: descobre o name do dropdown que contém os códigos
-  const ddlMatch = page.body.match(/<select[^>]+name="([^"]+)"[^>]*>[\s\S]*?<option[^>]+value="0?1"/i);
-  const ddlName = ddlMatch ? ddlMatch[1] : "ctl00$ddlOrgao";
-
-  form.set(ddlName, codigo);
-  form.set("__EVENTTARGET", ddlName);
+  form.set("__EVENTTARGET", eventTarget);
   form.set("__EVENTARGUMENT", "");
 
-  const res = await s.request(HOME_URL, {
+  const res = await s.request(`${CONSIGUP_BASE}${refererPath}`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: form.toString(),
   });
-  return res.status === 200;
+  return { ok: res.status === 200, html: res.body };
+}
+
+function listarLinksSidebar(html: string): { href: string; text: string }[] {
+  // Sidebar do AdminLTE: <aside class="main-sidebar"> ... <a href="...">
+  const sideM = html.match(/<aside[^>]*main-sidebar[\s\S]*?<\/aside>/i);
+  const scope = sideM ? sideM[0] : html;
+  const out: { href: string; text: string }[] = [];
+  const re = /<a\s+[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(scope)) !== null) {
+    const href = m[1];
+    if (href.startsWith("javascript:") || href.startsWith("#")) continue;
+    const text = m[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    if (!text) continue;
+    out.push({ href, text });
+  }
+  return out;
 }
 
 async function consultarMargemNoOrgao(s: Session, cpf: string): Promise<number | null> {
