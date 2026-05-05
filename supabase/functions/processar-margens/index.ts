@@ -246,29 +246,43 @@ async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: str
     body: form.toString(),
   });
 
-  // Erros comuns: "não localizado", "não encontrado", "sem margem"
+  // ===== DUMP DIAGNÓSTICO DO RESPONSE =====
+  await log("info", `[consulta] response len=${res.body.length}`);
+  const head2k = res.body.slice(0, 2048).replace(/\s+/g, " ");
+  await log("info", `[consulta] HTML[0..2048]: ${head2k}`);
+
+  const palavrasResultado = ["Margem", "Disponível", "Disponivel", "Servidor", "Matrícula", "Matricula", "Resultado", "Erro", "Aviso", "Atenção", "Atencao"];
+  for (const p of palavrasResultado) {
+    const idx = res.body.toLowerCase().indexOf(p.toLowerCase());
+    if (idx >= 0) {
+      const snippet = res.body.slice(Math.max(0, idx - 200), idx + 400).replace(/\s+/g, " ");
+      await log("info", `[consulta] ctx '${p}'@${idx}: ${snippet}`);
+    }
+  }
+
+  const lblAll = [...res.body.matchAll(/<span[^>]*id="[^"]*(lbl[A-Z][A-Za-z]*|ValidationSummary)[^"]*"[^>]*>([\s\S]{0,400}?)<\/span>/gi)];
+  for (const m of lblAll.slice(0, 10)) {
+    const txt = m[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    if (txt) await log("info", `[consulta] ${m[1]}: ${txt.slice(0, 400)}`);
+  }
+  const popup = res.body.match(/mostraPopUpAlert\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/);
+  if (popup) await log("warn", `[consulta] popup: ${popup[1]} - ${popup[2]}`);
+  const mcIdx = res.body.indexOf("MainContent");
+  if (mcIdx >= 0) {
+    await log("info", `[consulta] MainContent@${mcIdx}: ${res.body.slice(mcIdx, mcIdx + 1800).replace(/\s+/g, " ")}`);
+  }
+  // ===== FIM DUMP =====
+
   if (/n[ãa]o\s+(localizado|encontrado|cadastrado)/i.test(res.body)) {
     await log("info", `[consulta] servidor não localizado para CPF`);
     return 0;
   }
 
-  // Procura "Margem Disponível"
   const marker = res.body.match(/Margem\s+Dispon[íi]vel[\s\S]{0,400}/i);
   if (!marker) {
-    // tenta variantes
     const alt = res.body.match(/(Margem\s+Livre|Valor\s+Dispon[íi]vel)[\s\S]{0,400}/i);
     if (!alt) {
       await log("warn", `[consulta] sem 'Margem Disponível' no retorno (len=${res.body.length})`);
-      // Dump diagnóstico: trecho do <form> + procura por mensagens de validação/erro
-      const formSnip = res.body.match(/<form[\s\S]{0,2000}/i);
-      if (formSnip) await log("info", `[consulta] form-head: ${formSnip[0].replace(/\s+/g, " ").slice(0, 1500)}`);
-      const lblErr = res.body.match(/<span[^>]*id="[^"]*(lbl(?:Msg|Erro|Mensagem|Aviso|Validation)|ValidationSummary)[^"]*"[^>]*>([\s\S]{0,400}?)<\/span>/i);
-      if (lblErr) await log("warn", `[consulta] lbl: ${lblErr[0].replace(/\s+/g," ").slice(0,500)}`);
-      const popup = res.body.match(/mostraPopUpAlert\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/);
-      if (popup) await log("warn", `[consulta] popup: ${popup[1]} - ${popup[2]}`);
-      // Procura tabela / div que normalmente carrega resultado
-      const main = res.body.match(/MainContent[\s\S]{0,1500}/i);
-      if (main) await log("info", `[consulta] main-snip: ${main[0].replace(/\s+/g," ").slice(0,1500)}`);
       return null;
     }
     return parseBRL(alt[0]);
