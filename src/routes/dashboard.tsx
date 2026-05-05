@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Clock, CheckCircle2, AlertCircle, FileText, Loader2, Bug, RefreshCw } from "lucide-react";
+import { Clock, CheckCircle2, AlertCircle, FileText, Loader2, Check, RefreshCw, Bug } from "lucide-react";
 import { toast } from "sonner";
 import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
 
@@ -217,7 +217,7 @@ function Page() {
       {/* Modo debug — em destaque no topo */}
       <Card className="mb-8 border-primary/40 bg-primary/5 p-6 shadow-lg ring-1 ring-primary/20">
         <div className="mb-4 flex items-center gap-2">
-          <Bug className="h-6 w-6 text-primary" />
+          <Check className="h-6 w-6 text-primary" />
           <h2 className="text-lg font-semibold">Consulta de margem (modo debug)</h2>
         </div>
         <div className="mt-6 border-t pt-4">
