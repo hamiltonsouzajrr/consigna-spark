@@ -234,15 +234,15 @@ function Page() {
               className="sm:max-w-[220px]"
             />
             <Input
-              placeholder="Nome (opcional)"
+              placeholder=""
               value={manualNome}
               maxLength={120}
               onChange={(e) => setManualNome(e.target.value)}
               className="sm:max-w-xs"
             />
             <Button onClick={processarManual} disabled={running || !manualCpf} variant="secondary">
-              {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bug className="mr-2 h-4 w-4" />}
-              Processar CPF manual
+              {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+              Consultar CPF manual
             </Button>
           </div>
         </div>
