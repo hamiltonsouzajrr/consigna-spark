@@ -343,7 +343,6 @@ async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: str
 
   // ===== Categorização do motivo (fallback quando não acha "Margem Disponível") =====
   const body = res.body;
-  const lower = body.toLowerCase();
 
   // 1) servidor não localizado / CPF inválido
   if (/n[ãa]o\s+(localizado|encontrado|cadastrado)|cpf\s+inv[áa]lido|servidor\s+inativo/i.test(body)) {
