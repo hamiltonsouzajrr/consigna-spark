@@ -307,9 +307,32 @@ function Page() {
                 {debugRow.status === "processando" && <Loader2 className="ml-2 inline h-3 w-3 animate-spin" />}
               </div>
               <div>
-                <span className="text-muted-foreground">Margem:</span>{" "}
+                <span className="text-muted-foreground">Margem total:</span>{" "}
                 <strong>{debugRow.margem_disponivel != null ? `R$ ${Number(debugRow.margem_disponivel).toFixed(2)}` : "—"}</strong>
               </div>
+              <div className="sm:col-span-2 grid gap-2 sm:grid-cols-3 rounded border bg-background/40 p-3">
+                <div>
+                  <div className="text-xs text-muted-foreground">Empréstimo Consignado</div>
+                  <strong className="tabular-nums">{debugRow.margem_emprestimo != null ? `R$ ${Number(debugRow.margem_emprestimo).toFixed(2)}` : "—"}</strong>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Cartão de Crédito</div>
+                  <strong className="tabular-nums">{debugRow.margem_cartao_credito != null ? `R$ ${Number(debugRow.margem_cartao_credito).toFixed(2)}` : "—"}</strong>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Cartão Benefício</div>
+                  <strong className="tabular-nums">{debugRow.margem_cartao_beneficio != null ? `R$ ${Number(debugRow.margem_cartao_beneficio).toFixed(2)}` : "—"}</strong>
+                </div>
+              </div>
+              {(debugRow.servidor_nome || debugRow.matricula || debugRow.orgao || debugRow.situacao || debugRow.categoria) && (
+                <div className="sm:col-span-2 grid gap-2 sm:grid-cols-2 rounded border bg-background/40 p-3">
+                  {debugRow.servidor_nome && <div><span className="text-muted-foreground">Servidor:</span> <strong>{debugRow.servidor_nome}</strong></div>}
+                  {debugRow.matricula && <div><span className="text-muted-foreground">Matrícula:</span> <strong className="font-mono">{debugRow.matricula}</strong></div>}
+                  {debugRow.categoria && <div><span className="text-muted-foreground">Categoria:</span> <strong>{debugRow.categoria}</strong></div>}
+                  {debugRow.situacao && <div><span className="text-muted-foreground">Situação:</span> <strong>{debugRow.situacao}</strong></div>}
+                  {debugRow.orgao && <div className="sm:col-span-2"><span className="text-muted-foreground">Órgão:</span> <strong>{debugRow.orgao}</strong></div>}
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <span className="text-muted-foreground">Última atualização:</span>{" "}
                 {new Date(debugRow.updated_at).toLocaleString("pt-BR")}
