@@ -192,6 +192,31 @@ async function consultarMargemNoOrgao(s: Session, cpf: string): Promise<number |
   return parseBRL(marker[0]);
 }
 
+async function descobrirMenu(s: Session) {
+  const home = await s.request(HOME_URL);
+  console.log("[descoberta] home status:", home.status, "len:", home.body.length);
+  // Coleta todos os hrefs/links do menu
+  const links = new Set<string>();
+  const re = /href=["']([^"']+\.aspx[^"']*)["']/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(home.body)) !== null) links.add(m[1]);
+  const interessantes = [...links].filter(l => /consig|margem|servidor|consulta/i.test(l));
+  console.log("[descoberta] links interessantes:", JSON.stringify(interessantes));
+  // Também loga todas opções do dropdown de órgão
+  const sel = home.body.match(/<select[^>]*>[\s\S]*?<\/select>/gi) || [];
+  for (const s2 of sel) {
+    if (/option/i.test(s2)) console.log("[descoberta] select:", s2.slice(0, 600));
+  }
+  // Tenta seguir cada link interessante e logar o título
+  for (const l of interessantes.slice(0, 10)) {
+    const url = new URL(l, CONSIGUP_BASE).toString();
+    const r = await s.request(url);
+    const title = (r.body.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || "").trim();
+    const h1 = (r.body.match(/<h[12][^>]*>([\s\S]*?)<\/h[12]>/i)?.[1] || "").replace(/<[^>]+>/g, "").trim();
+    console.log("[descoberta]", url, "->", r.status, "| title:", title.slice(0,80), "| h:", h1.slice(0,80));
+  }
+}
+
 async function consultarCpfTodosOrgaos(cpf: string): Promise<{ margem: number | null; erro: string | null; detalhes: Record<string, number | null> }> {
   const user = Deno.env.get("CONSIGUP_USER");
   const pass = Deno.env.get("CONSIGUP_PASS");
@@ -201,23 +226,9 @@ async function consultarCpfTodosOrgaos(cpf: string): Promise<{ margem: number | 
   const okLogin = await login(s, user, pass);
   if (!okLogin) return { margem: null, erro: "Falha de login no ConsigUp", detalhes: {} };
 
-  const detalhes: Record<string, number | null> = {};
-  let maior: number | null = null;
-
-  for (const o of ORGAOS) {
-    try {
-      await selecionarOrgao(s, o.codigo);
-      const m = await consultarMargemNoOrgao(s, cpf);
-      detalhes[o.codigo] = m;
-      if (m != null && (maior == null || m > maior)) maior = m;
-    } catch (e) {
-      console.error(`[orgao ${o.codigo}]`, e);
-      detalhes[o.codigo] = null;
-    }
-  }
-
-  if (maior == null) return { margem: null, erro: "Nenhum órgão retornou margem", detalhes };
-  return { margem: maior, erro: null, detalhes };
+  // MODO DESCOBERTA — apenas mapeia o menu, não consulta ainda
+  await descobrirMenu(s);
+  return { margem: null, erro: "MODO_DESCOBERTA: ver logs", detalhes: {} };
 }
 
 // ---------- Handler ----------
