@@ -20,7 +20,18 @@ interface Consulta {
   id: string; cpf: string; nome: string; status: Status;
   margem_disponivel: number | null; erro: string | null;
   created_at: string; processed_at: string | null;
+  margem_emprestimo: number | null;
+  margem_cartao_credito: number | null;
+  margem_cartao_beneficio: number | null;
+  servidor_nome: string | null;
+  matricula: string | null;
+  categoria: string | null;
+  situacao: string | null;
+  orgao: string | null;
 }
+
+const brl = (n: number | null | undefined) =>
+  n == null ? "—" : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const PAGE_SIZE = 25;
 
@@ -98,7 +109,7 @@ function Page() {
   const exportCsv = (onlyDone: boolean) => {
     const data = onlyDone ? items.filter((i) => i.status === "concluido") : items;
     if (!data.length) return toast.info("Nada para exportar");
-    const header = ["cpf", "nome", "status", "margem_disponivel", "erro", "processed_at"];
+    const header = ["cpf", "nome", "status", "servidor_nome", "matricula", "categoria", "situacao", "orgao", "margem_emprestimo", "margem_cartao_credito", "margem_cartao_beneficio", "margem_disponivel", "erro", "processed_at"];
     const csv = [header.join(",")].concat(
       data.map((r) => header.map((h) => {
         const v = (r as unknown as Record<string, unknown>)[h];
@@ -169,27 +180,35 @@ function Page() {
                   />
                 </TableHead>
                 <TableHead>CPF</TableHead>
-                <TableHead>Nome</TableHead>
+                <TableHead>Servidor</TableHead>
+                <TableHead>Matrícula</TableHead>
+                <TableHead>Órgão</TableHead>
+                <TableHead>Situação</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Margem</TableHead>
+                <TableHead className="text-right">Empréstimo</TableHead>
+                <TableHead className="text-right">Cartão Crédito</TableHead>
+                <TableHead className="text-right">Cartão Benefício</TableHead>
+                <TableHead className="text-right">Total</TableHead>
                 <TableHead>Erro</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pageItems.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="py-12 text-center text-muted-foreground">Nenhum registro.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={12} className="py-12 text-center text-muted-foreground">Nenhum registro.</TableCell></TableRow>
               ) : pageItems.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell><Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggle(r.id)} /></TableCell>
                   <TableCell className="font-mono text-xs">{r.cpf}</TableCell>
-                  <TableCell className="max-w-[280px] truncate">{r.nome}</TableCell>
+                  <TableCell className="max-w-[220px] truncate">{r.servidor_nome ?? r.nome}</TableCell>
+                  <TableCell className="font-mono text-xs">{r.matricula ?? "—"}</TableCell>
+                  <TableCell className="max-w-[200px] truncate text-xs">{r.orgao ?? "—"}</TableCell>
+                  <TableCell className="text-xs">{r.situacao ?? "—"}</TableCell>
                   <TableCell>{statusBadge(r.status)}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {r.margem_disponivel != null
-                      ? r.margem_disponivel.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-                      : "—"}
-                  </TableCell>
-                  <TableCell className="max-w-[240px] truncate text-xs text-destructive">{r.erro ?? ""}</TableCell>
+                  <TableCell className="text-right tabular-nums">{brl(r.margem_emprestimo)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{brl(r.margem_cartao_credito)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{brl(r.margem_cartao_beneficio)}</TableCell>
+                  <TableCell className="text-right tabular-nums font-semibold">{brl(r.margem_disponivel)}</TableCell>
+                  <TableCell className="max-w-[200px] truncate text-xs text-destructive">{r.erro ?? ""}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -15,7 +15,20 @@ import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
 export const Route = createFileRoute("/dashboard")({ component: Page });
 
 interface Stats { total: number; pendente: number; processando: number; concluido: number; erro: number; avg: number | null; }
-interface Consulta { id: string; cpf: string; nome: string; status: string; margem_disponivel: number | null; erro: string | null; processed_at: string | null; updated_at: string; }
+interface Consulta {
+  id: string; cpf: string; nome: string; status: string;
+  margem_disponivel: number | null; erro: string | null;
+  processed_at: string | null; updated_at: string;
+  margem_emprestimo: number | null;
+  margem_cartao_credito: number | null;
+  margem_cartao_beneficio: number | null;
+  servidor_nome: string | null;
+  matricula: string | null;
+  categoria: string | null;
+  situacao: string | null;
+  orgao: string | null;
+}
+const SELECT_COLS = "id, cpf, nome, status, margem_disponivel, margem_emprestimo, margem_cartao_credito, margem_cartao_beneficio, servidor_nome, matricula, categoria, situacao, orgao, erro, processed_at, updated_at";
 interface DebugLog { id: number; level: string; message: string; created_at: string; }
 
 function Page() {
@@ -38,12 +51,12 @@ function Page() {
         .order("id", { ascending: true }),
       supabase
         .from("consultas_margem")
-        .select("id, cpf, nome, status, margem_disponivel, erro, processed_at, updated_at")
+        .select(SELECT_COLS)
         .eq("id", consultaId)
         .maybeSingle(),
     ]);
     if (logs) setDebugLogs(logs as DebugLog[]);
-    if (row) setDebugRow(row as Consulta);
+    if (row) setDebugRow(row as unknown as Consulta);
   }, []);
 
   // Realtime: logs do CPF em debug
@@ -69,7 +82,7 @@ function Page() {
     const load = async () => {
       const { data } = await supabase
         .from("consultas_margem")
-        .select("id, cpf, nome, status, margem_disponivel, erro, processed_at, updated_at, created_at")
+        .select(SELECT_COLS + ", created_at")
         .order("updated_at", { ascending: false });
       if (!data) return setStats({ total: 0, pendente: 0, processando: 0, concluido: 0, erro: 0, avg: null });
       const s: Stats = { total: data.length, pendente: 0, processando: 0, concluido: 0, erro: 0, avg: null };
@@ -81,9 +94,9 @@ function Page() {
       });
       s.avg = durations.length ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
       setStats(s);
-      setConsultas(data as Consulta[]);
+      setConsultas(data as unknown as Consulta[]);
       // Atualiza linha em debug se ela mudou
-      setDebugRow((prev) => prev ? (data.find((d: any) => d.id === prev.id) as Consulta) ?? prev : prev);
+      setDebugRow((prev) => prev ? ((data as unknown as Consulta[]).find((d) => d.id === prev.id) ?? prev) : prev);
     };
     load();
     const ch = supabase
@@ -133,7 +146,7 @@ function Page() {
       // Reusa registro existente do mesmo user/CPF, ou cria um novo
       const { data: existing } = await supabase
         .from("consultas_margem")
-        .select("id, cpf, nome, status, margem_disponivel, erro, processed_at, updated_at")
+        .select(SELECT_COLS)
         .eq("user_id", user.id)
         .eq("cpf", cpf)
         .maybeSingle();
@@ -143,17 +156,17 @@ function Page() {
         const { data: ins, error: insErr } = await supabase
           .from("consultas_margem")
           .insert({ user_id: user.id, cpf, nome, status: "pendente" })
-          .select("id, cpf, nome, status, margem_disponivel, erro, processed_at, updated_at")
+          .select(SELECT_COLS)
           .single();
         if (insErr) throw insErr;
         id = ins.id;
-        setDebugRow(ins as Consulta);
+        setDebugRow(ins as unknown as Consulta);
       } else {
         // Reseta para pendente para que a função pegue
         await supabase.from("consultas_margem")
           .update({ status: "pendente", erro: null, margem_disponivel: null })
           .eq("id", id);
-        setDebugRow({ ...(existing as Consulta), status: "pendente", erro: null, margem_disponivel: null });
+        setDebugRow({ ...(existing as unknown as Consulta), status: "pendente", erro: null, margem_disponivel: null });
       }
 
       // Limpa logs anteriores deste CPF para acompanhar a execução nova
@@ -294,9 +307,32 @@ function Page() {
                 {debugRow.status === "processando" && <Loader2 className="ml-2 inline h-3 w-3 animate-spin" />}
               </div>
               <div>
-                <span className="text-muted-foreground">Margem:</span>{" "}
+                <span className="text-muted-foreground">Margem total:</span>{" "}
                 <strong>{debugRow.margem_disponivel != null ? `R$ ${Number(debugRow.margem_disponivel).toFixed(2)}` : "—"}</strong>
               </div>
+              <div className="sm:col-span-2 grid gap-2 sm:grid-cols-3 rounded border bg-background/40 p-3">
+                <div>
+                  <div className="text-xs text-muted-foreground">Empréstimo Consignado</div>
+                  <strong className="tabular-nums">{debugRow.margem_emprestimo != null ? `R$ ${Number(debugRow.margem_emprestimo).toFixed(2)}` : "—"}</strong>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Cartão de Crédito</div>
+                  <strong className="tabular-nums">{debugRow.margem_cartao_credito != null ? `R$ ${Number(debugRow.margem_cartao_credito).toFixed(2)}` : "—"}</strong>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Cartão Benefício</div>
+                  <strong className="tabular-nums">{debugRow.margem_cartao_beneficio != null ? `R$ ${Number(debugRow.margem_cartao_beneficio).toFixed(2)}` : "—"}</strong>
+                </div>
+              </div>
+              {(debugRow.servidor_nome || debugRow.matricula || debugRow.orgao || debugRow.situacao || debugRow.categoria) && (
+                <div className="sm:col-span-2 grid gap-2 sm:grid-cols-2 rounded border bg-background/40 p-3">
+                  {debugRow.servidor_nome && <div><span className="text-muted-foreground">Servidor:</span> <strong>{debugRow.servidor_nome}</strong></div>}
+                  {debugRow.matricula && <div><span className="text-muted-foreground">Matrícula:</span> <strong className="font-mono">{debugRow.matricula}</strong></div>}
+                  {debugRow.categoria && <div><span className="text-muted-foreground">Categoria:</span> <strong>{debugRow.categoria}</strong></div>}
+                  {debugRow.situacao && <div><span className="text-muted-foreground">Situação:</span> <strong>{debugRow.situacao}</strong></div>}
+                  {debugRow.orgao && <div className="sm:col-span-2"><span className="text-muted-foreground">Órgão:</span> <strong>{debugRow.orgao}</strong></div>}
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <span className="text-muted-foreground">Última atualização:</span>{" "}
                 {new Date(debugRow.updated_at).toLocaleString("pt-BR")}
