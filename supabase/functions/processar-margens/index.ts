@@ -97,6 +97,39 @@ function parseBRL(text: string): number | null {
   return isNaN(n) ? null : n;
 }
 
+// Parser do formato AJAX Delta do ASP.NET: "len|type|id|content|len|type|id|content|..."
+// Retorna a concatenação dos blocos de content (HTML) — útil para casar regex de margem.
+function parseAjaxDelta(body: string, log: LogFn): string {
+  const out: string[] = [];
+  let i = 0;
+  let blocks = 0;
+  while (i < body.length) {
+    const pipe1 = body.indexOf("|", i);
+    if (pipe1 < 0) break;
+    const lenStr = body.slice(i, pipe1);
+    const len = parseInt(lenStr, 10);
+    if (isNaN(len)) break;
+    const pipe2 = body.indexOf("|", pipe1 + 1);
+    if (pipe2 < 0) break;
+    const type = body.slice(pipe1 + 1, pipe2);
+    const pipe3 = body.indexOf("|", pipe2 + 1);
+    if (pipe3 < 0) break;
+    const id = body.slice(pipe2 + 1, pipe3);
+    const content = body.slice(pipe3 + 1, pipe3 + 1 + len);
+    blocks++;
+    // Coleta blocos que tipicamente carregam HTML/markup
+    if (/updatePanel|pageRedirect|hiddenField|scriptStartupBlock|asyncPostBackError/i.test(type)) {
+      out.push(`[delta:${type}#${id}] ${content}`);
+    }
+    if (/asyncPostBackError/i.test(type)) {
+      void log("error", `[ajax-delta] erro async: ${content.slice(0, 500)}`);
+    }
+    i = pipe3 + 1 + len + 1; // pula '|'
+  }
+  void log("info", `[ajax-delta] ${blocks} blocos parseados, ${out.length} relevantes`);
+  return out.join("\n");
+}
+
 // ---------- Fluxo ConsigUp ----------
 
 async function login(s: Session, user: string, pass: string): Promise<boolean> {
@@ -234,14 +267,52 @@ async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: str
   }
   // Campos auxiliares que ASP.NET às vezes exige
   if (!form.has("__LASTFOCUS")) form.set("__LASTFOCUS", "");
-  await log("info", `[consulta] POST __EVENTTARGET=${eventTarget} btnName=${btnName || "(none)"} cpfField=${cpfField}`);
 
+  // ===== DETECÇÃO DE UpdatePanel / ScriptManager (AJAX async postback) =====
+  // Sinais: ScriptResource/MicrosoftAjax/WebForms.js, <span id="...ScriptManager...">,
+  // hidden __ASYNCPOST=true, ou um UpdatePanel cujo trigger seja o nosso botão.
+  const hasScriptManager = /ScriptResource\.axd|MicrosoftAjax|WebForms\.js|Sys\.WebForms\.PageRequestManager/i.test(page.body);
+  const hasAsyncPost = /name="__ASYNCPOST"/i.test(page.body) || hasScriptManager;
+  // Procura UpdatePanel cujo ID contenha o botão como child (heurística leve)
+  const updatePanelMatch = page.body.match(/<div[^>]+id="([^"]*UpdatePanel[^"]*)"/i);
+  const updatePanelId = updatePanelMatch ? updatePanelMatch[1] : "";
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+    Referer: CONSULTA_URL,
+  };
+
+  if (hasAsyncPost) {
+    // Sinaliza ao ASP.NET que é um async postback do UpdatePanel
+    form.set("__ASYNCPOST", "true");
+    headers["X-MicrosoftAjax"] = "Delta=true";
+    headers["X-Requested-With"] = "XMLHttpRequest";
+    headers["Accept"] = "*/*";
+    if (updatePanelId) {
+      // Força o async postback a ser tratado por este UpdatePanel específico
+      form.set("ctl00$ScriptManager1", `${updatePanelId}|${eventTarget}`);
+    }
+    await log("info", `[consulta] AJAX/UpdatePanel detectado (scriptMgr=${hasScriptManager} updatePanel=${updatePanelId || "n/a"}) — usando X-MicrosoftAjax=Delta=true`);
+  } else {
+    await log("info", `[consulta] postback síncrono (sem ScriptManager/UpdatePanel)`);
+  }
+
+  await log("info", `[consulta] POST __EVENTTARGET=${eventTarget} btnName=${btnName || "(none)"} cpfField=${cpfField}`);
 
   const res = await s.request(CONSULTA_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded", Referer: CONSULTA_URL },
+    headers,
     body: form.toString(),
   });
+
+  // Se for resposta AJAX delta, o body começa com "<len>|<type>|..." — parseia para extrair o HTML
+  let bodyForParse = res.body;
+  if (hasAsyncPost && /^\d+\|/.test(res.body)) {
+    await log("info", `[consulta] resposta delta AJAX recebida, parseando blocos`);
+    bodyForParse = parseAjaxDelta(res.body, log);
+  }
+  // Substitui res.body para o resto do fluxo de parsing
+  (res as any).body = bodyForParse;
 
   // ===== DUMP DIAGNÓSTICO DO RESPONSE =====
   await log("info", `[consulta] response len=${res.body.length}`);
