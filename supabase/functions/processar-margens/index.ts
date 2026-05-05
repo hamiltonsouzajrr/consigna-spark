@@ -208,7 +208,7 @@ async function descobrirMenu(s: Session) {
   const form = new URLSearchParams();
   for (const [k, v] of Object.entries(hidden)) form.set(k, v);
   form.set("ctl00$MainContent$dropServico", "1"); // empréstimo consignado
-  form.set("ctl00$MainContent$txtCPF", "138.671.135-72");
+  form.set("ctl00$MainContent$txtCPF", "256.331.985-49");
   form.set("ctl00$MainContent$txtMatricula", "");
   form.set("ctl00$MainContent$btnConsultar", "Consultar");
   const res = await s.request(URL_C, {
