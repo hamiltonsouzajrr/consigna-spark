@@ -233,13 +233,7 @@ function Page() {
               onChange={(e) => setManualCpf(e.target.value)}
               className="sm:max-w-[220px]"
             />
-            <Input
-              placeholder=""
-              value={manualNome}
-              maxLength={120}
-              onChange={(e) => setManualNome(e.target.value)}
-              className="sm:max-w-xs"
-            />
+            
             <Button onClick={processarManual} disabled={running || !manualCpf} variant="secondary">
               {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
               Consultar CPF manual
