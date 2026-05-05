@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Clock, CheckCircle2, AlertCircle, FileText, Loader2, Check, RefreshCw, Bug } from "lucide-react";
+import { Clock, CheckCircle2, AlertCircle, FileText, Loader2, Check, RefreshCw, Bug, ChevronDown, ChevronRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
 
@@ -41,6 +42,7 @@ function Page() {
   const [debugRow, setDebugRow] = useState<Consulta | null>(null);
   const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
   const [running, setRunning] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
 
   const loadDebugPanel = useCallback(async (consultaId: string) => {
     const [{ data: logs }, { data: row }] = await Promise.all([
@@ -327,30 +329,62 @@ function Page() {
         })()}
 
         {debugRow && (
-          <div className="mt-4">
-            <div className="mb-2 flex items-center justify-between">
-              <h4 className="text-sm font-semibold">Logs em tempo real</h4>
-              <span className="text-xs text-muted-foreground">{debugLogs.length} entrada(s)</span>
-            </div>
-            <div className="max-h-96 overflow-auto rounded-lg border bg-foreground/95 p-3 font-mono text-xs leading-relaxed text-background">
-              {debugLogs.length === 0 ? (
-                <p className="text-background/60">Aguardando logs… dispare o processamento para ver a execução em tempo real.</p>
-              ) : (
-                debugLogs.map((l) => (
-                  <div key={l.id} className="flex gap-2">
-                    <span className="text-background/50">{new Date(l.created_at).toLocaleTimeString("pt-BR")}</span>
-                    <span className={
-                      l.level === "error" ? "text-destructive" :
-                      l.level === "warn" ? "text-warning" :
-                      "text-background/90"
-                    }>[{l.level}]</span>
-                    <span className="whitespace-pre-wrap break-all">{l.message}</span>
+        {debugRow && (() => {
+          const TOTAL_STEPS = 24; // 8 órgãos x 3 serviços
+          const isProcessing = debugRow.status === "processando" || debugRow.status === "pendente" || running;
+          const isDone = debugRow.status === "concluido" || debugRow.status === "erro";
+          const progress = isDone ? 100 : Math.min(99, Math.round((debugLogs.length / TOTAL_STEPS) * 100));
+          return (
+            <div className="mt-4 space-y-3">
+              {(isProcessing || isDone) && (
+                <div>
+                  <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+                    <span>
+                      {debugRow.status === "concluido" ? "Consulta concluída" :
+                       debugRow.status === "erro" ? "Consulta finalizada com erro" :
+                       "Consultando órgãos e serviços…"}
+                    </span>
+                    <span>{progress}%</span>
                   </div>
-                ))
+                  <Progress value={progress} className="h-2" />
+                </div>
               )}
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowLogs((v) => !v)}
+                  className="flex w-full items-center justify-between rounded border bg-muted/40 px-3 py-2 text-sm hover:bg-muted"
+                >
+                  <span className="flex items-center gap-2 font-medium">
+                    {showLogs ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    Logs em tempo real
+                  </span>
+                  <span className="text-xs text-muted-foreground">{debugLogs.length} entrada(s)</span>
+                </button>
+                {showLogs && (
+                  <div className="mt-2 max-h-96 overflow-auto rounded-lg border bg-foreground/95 p-3 font-mono text-xs leading-relaxed text-background">
+                    {debugLogs.length === 0 ? (
+                      <p className="text-background/60">Aguardando logs… dispare a consulta para ver a execução em tempo real.</p>
+                    ) : (
+                      debugLogs.map((l) => (
+                        <div key={l.id} className="flex gap-2">
+                          <span className="text-background/50">{new Date(l.created_at).toLocaleTimeString("pt-BR")}</span>
+                          <span className={
+                            l.level === "error" ? "text-destructive" :
+                            l.level === "warn" ? "text-warning" :
+                            "text-background/90"
+                          }>[{l.level}]</span>
+                          <span className="whitespace-pre-wrap break-all">{l.message}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </Card>
 
       <div className="mb-3 mt-2">
