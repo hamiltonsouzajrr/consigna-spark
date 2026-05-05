@@ -25,7 +25,28 @@ function Page() {
   const [manualCpf, setManualCpf] = useState<string>("");
   const [manualNome, setManualNome] = useState<string>("");
   const [debugRow, setDebugRow] = useState<Consulta | null>(null);
+  const [debugLogs, setDebugLogs] = useState<{ id: number; level: string; message: string; created_at: string }[]>([]);
   const [running, setRunning] = useState(false);
+
+  // Realtime: logs do CPF em debug
+  useEffect(() => {
+    if (!debugRow?.id) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("processar_logs")
+        .select("id, level, message, created_at")
+        .eq("consulta_id", debugRow.id)
+        .order("id", { ascending: true });
+      if (!cancelled && data) setDebugLogs(data as any);
+    })();
+    const ch = supabase
+      .channel(`logs-${debugRow.id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "processar_logs", filter: `consulta_id=eq.${debugRow.id}` },
+        (payload) => setDebugLogs((prev) => [...prev, payload.new as any]))
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
+  }, [debugRow?.id]);
 
   useEffect(() => {
     if (!user) return;
