@@ -4,32 +4,45 @@ import { useAuth } from "@/lib/auth";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Clock, CheckCircle2, AlertCircle, FileText, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Clock, CheckCircle2, AlertCircle, FileText, Loader2, Bug, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
+import { formatCpf } from "@/lib/cpf";
 
 export const Route = createFileRoute("/dashboard")({ component: Page });
 
 interface Stats { total: number; pendente: number; processando: number; concluido: number; erro: number; avg: number | null; }
+interface Consulta { id: string; cpf: string; nome: string; status: string; margem_disponivel: number | null; erro: string | null; processed_at: string | null; updated_at: string; }
 
 function Page() {
   const { user, loading } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [consultas, setConsultas] = useState<Consulta[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [debugRow, setDebugRow] = useState<Consulta | null>(null);
+  const [running, setRunning] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     const load = async () => {
       const { data } = await supabase
         .from("consultas_margem")
-        .select("status, created_at, processed_at");
+        .select("id, cpf, nome, status, margem_disponivel, erro, processed_at, updated_at, created_at")
+        .order("updated_at", { ascending: false });
       if (!data) return setStats({ total: 0, pendente: 0, processando: 0, concluido: 0, erro: 0, avg: null });
       const s: Stats = { total: data.length, pendente: 0, processando: 0, concluido: 0, erro: 0, avg: null };
       const durations: number[] = [];
-      data.forEach((r) => {
+      data.forEach((r: any) => {
         const k = r.status as "pendente" | "processando" | "concluido" | "erro";
         s[k] = (s[k] as number) + 1;
         if (r.processed_at && r.created_at) durations.push((+new Date(r.processed_at) - +new Date(r.created_at)) / 1000);
       });
       s.avg = durations.length ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
       setStats(s);
+      setConsultas(data as Consulta[]);
+      // Atualiza linha em debug se ela mudou
+      setDebugRow((prev) => prev ? (data.find((d: any) => d.id === prev.id) as Consulta) ?? prev : prev);
     };
     load();
     const ch = supabase
@@ -38,6 +51,34 @@ function Page() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [user]);
+
+  const processarUm = async () => {
+    if (!selectedId) { toast.error("Selecione um CPF"); return; }
+    setRunning(true);
+    const row = consultas.find((c) => c.id === selectedId) ?? null;
+    setDebugRow(row);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/processar-margens`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ ids: [selectedId] }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      toast.success("Processamento iniciado", { description: "Acompanhe o status logo abaixo." });
+    } catch (e: any) {
+      toast.error("Falha ao processar", { description: e.message });
+    } finally {
+      setRunning(false);
+    }
+  };
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
@@ -73,6 +114,71 @@ function Page() {
           {stats?.avg ? `${stats.avg.toFixed(1)}s` : "—"}
         </p>
         <p className="text-xs text-muted-foreground">por registro concluído</p>
+      </Card>
+
+      {/* Modo debug — 1 CPF por vez */}
+      <Card className="mt-6 p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <Bug className="h-5 w-5 text-primary" />
+          <h3 className="text-base font-semibold">Modo debug — processar 1 CPF</h3>
+        </div>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Selecione um CPF cadastrado e dispare apenas ele para a Edge Function. O status atualiza em tempo real abaixo. Para ver os logs detalhados (HTML retornado, dropdowns, postbacks), abra o painel de logs da função <code className="rounded bg-muted px-1">processar-margens</code> no backend.
+        </p>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Select value={selectedId} onValueChange={setSelectedId}>
+            <SelectTrigger className="sm:max-w-md">
+              <SelectValue placeholder="Selecione um CPF da lista" />
+            </SelectTrigger>
+            <SelectContent>
+              {consultas.length === 0 && (
+                <div className="px-3 py-2 text-sm text-muted-foreground">Nenhum CPF cadastrado</div>
+              )}
+              {consultas.slice(0, 50).map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {formatCpf(c.cpf)} — {c.nome} <span className="ml-2 text-xs text-muted-foreground">[{c.status}]</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={processarUm} disabled={running || !selectedId}>
+            {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+            Processar este CPF
+          </Button>
+        </div>
+
+        {debugRow && (
+          <div className="mt-6 rounded-lg border bg-muted/30 p-4 text-sm">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div><span className="text-muted-foreground">CPF:</span> <strong>{formatCpf(debugRow.cpf)}</strong></div>
+              <div><span className="text-muted-foreground">Nome:</span> <strong>{debugRow.nome}</strong></div>
+              <div>
+                <span className="text-muted-foreground">Status:</span>{" "}
+                <strong className={
+                  debugRow.status === "concluido" ? "text-success" :
+                  debugRow.status === "erro" ? "text-destructive" :
+                  debugRow.status === "processando" ? "text-primary" : ""
+                }>
+                  {debugRow.status}
+                </strong>
+                {debugRow.status === "processando" && <Loader2 className="ml-2 inline h-3 w-3 animate-spin" />}
+              </div>
+              <div>
+                <span className="text-muted-foreground">Margem:</span>{" "}
+                <strong>{debugRow.margem_disponivel != null ? `R$ ${Number(debugRow.margem_disponivel).toFixed(2)}` : "—"}</strong>
+              </div>
+              <div className="sm:col-span-2">
+                <span className="text-muted-foreground">Última atualização:</span>{" "}
+                {new Date(debugRow.updated_at).toLocaleString("pt-BR")}
+              </div>
+              {debugRow.erro && (
+                <div className="sm:col-span-2 rounded border border-destructive/30 bg-destructive/10 p-2 text-destructive">
+                  <strong>Erro / mensagem:</strong> {debugRow.erro}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </Card>
     </AppShell>
   );
