@@ -288,6 +288,7 @@ function Page() {
                     <div><span className="text-muted-foreground">Margem Empréstimo</span> <strong>{brl(debugRow.margem_emprestimo)}</strong>
                       {empValor != null && <span className="ml-2 text-primary">→ Valor liberado <strong>{brl(empValor)}</strong> <span className="text-xs text-muted-foreground">(margem ÷ {COEF_EMP.toString().replace(".", ",")})</span></span>}
                     </div>
+                    <SimuladorMargem margemDisponivel={debugRow.margem_emprestimo} defaultCoef={COEF_EMP} />
                   </div>
 
                   <div className="pt-1">
@@ -408,5 +409,71 @@ function Page() {
         <p className="text-xs text-muted-foreground">por registro concluído</p>
       </Card>
     </AppShell>
+  );
+}
+
+function SimuladorMargem({ margemDisponivel, defaultCoef }: { margemDisponivel: number | null; defaultCoef: number }) {
+  const [coef, setCoef] = useState<string>(defaultCoef.toString().replace(".", ","));
+  const [modo, setModo] = useState<"valor" | "parcela">("valor");
+  const [parcela, setParcela] = useState<string>(
+    margemDisponivel != null ? Number(margemDisponivel).toFixed(2).replace(".", ",") : ""
+  );
+  const [valor, setValor] = useState<string>("");
+
+  const parseNum = (s: string) => {
+    const n = parseFloat(s.replace(/\./g, "").replace(",", "."));
+    return isNaN(n) ? null : n;
+  };
+  const brl = (n: number | null) =>
+    n == null ? "—" : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  const c = parseNum(coef);
+  const p = parseNum(parcela);
+  const v = parseNum(valor);
+  const valorCalc = modo === "valor" && c && p ? p / c : null;
+  const parcelaCalc = modo === "parcela" && c && v ? v * c : null;
+
+  return (
+    <div className="mt-3 rounded border bg-background/60 p-3">
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Simulador (margem principal)
+      </div>
+      <div className="grid gap-2 sm:grid-cols-3">
+        <div>
+          <Label className="text-xs">Coeficiente</Label>
+          <Input value={coef} onChange={(e) => setCoef(e.target.value)} placeholder="0,01862" />
+        </div>
+        <div>
+          <Label className="text-xs">Modo</Label>
+          <Select value={modo} onValueChange={(val) => setModo(val as "valor" | "parcela")}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="valor">Calcular valor liberado</SelectItem>
+              <SelectItem value="parcela">Calcular parcela</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {modo === "valor" ? (
+          <div>
+            <Label className="text-xs">Parcela (R$)</Label>
+            <Input value={parcela} onChange={(e) => setParcela(e.target.value)} placeholder="0,00" />
+          </div>
+        ) : (
+          <div>
+            <Label className="text-xs">Valor liberado (R$)</Label>
+            <Input value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0,00" />
+          </div>
+        )}
+      </div>
+      <div className="mt-3 text-sm">
+        {modo === "valor" ? (
+          <>Valor liberado estimado: <strong className="text-primary">{brl(valorCalc)}</strong>
+            <span className="ml-2 text-xs text-muted-foreground">(parcela ÷ coeficiente)</span></>
+        ) : (
+          <>Parcela estimada: <strong className="text-primary">{brl(parcelaCalc)}</strong>
+            <span className="ml-2 text-xs text-muted-foreground">(valor × coeficiente)</span></>
+        )}
+      </div>
+    </div>
   );
 }
