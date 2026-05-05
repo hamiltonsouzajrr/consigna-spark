@@ -190,30 +190,58 @@ async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: str
   await log("info", `GET ${CONSULTA_URL}`);
   const page = await s.request(CONSULTA_URL);
   if (page.status !== 200) {
-    console.warn("[consulta] GET", CONSULTA_URL, "status", page.status);
+    await log("warn", `[consulta] GET status ${page.status}`);
     return null;
   }
   const hidden = extractAllHidden(page.body);
   const form = new URLSearchParams();
   for (const [k, v] of Object.entries(hidden)) form.set(k, v);
 
-  // Heurística: nome do campo de CPF
-  const cpfMatch = page.body.match(/<input[^>]+name="([^"]*[Cc][Pp][Ff][^"]*)"/);
+  // Heurística: nome do campo de CPF (input text com 'cpf' no name/id)
+  const cpfMatch = page.body.match(/<input[^>]+name="([^"]*[Cc][Pp][Ff][^"]*)"[^>]*>/);
   const cpfField = cpfMatch ? cpfMatch[1] : "ctl00$ContentPlaceHolder1$txtCPF";
-  form.set(cpfField, cpf);
-  form.set("ctl00$ContentPlaceHolder1$btnConsultar", "Consultar");
+  const cpfFmt = /^\d{11}$/.test(cpf)
+    ? `${cpf.slice(0,3)}.${cpf.slice(3,6)}.${cpf.slice(6,9)}-${cpf.slice(9)}`
+    : cpf;
+  form.set(cpfField, cpfFmt);
+
+  // Detecta botão (input submit cujo name contenha Consultar/Pesquisar)
+  const btnMatch = page.body.match(/<input[^>]+type="submit"[^>]+name="([^"]+)"[^>]+value="([^"]*(?:Consultar|Pesquisar|Buscar)[^"]*)"/i)
+                || page.body.match(/<input[^>]+type="submit"[^>]+value="([^"]*(?:Consultar|Pesquisar|Buscar)[^"]*)"[^>]+name="([^"]+)"/i);
+  if (btnMatch) {
+    // primeira regex: name=1 value=2; segunda: value=1 name=2
+    const isFirst = /name=/.test(btnMatch[0].split("value=")[0]);
+    const name = isFirst ? btnMatch[1] : btnMatch[2];
+    const value = isFirst ? btnMatch[2] : btnMatch[1];
+    form.set(name, value);
+    await log("info", `[consulta] botão: ${name}=${value} cpfField=${cpfField}`);
+  } else {
+    form.set("ctl00$ContentPlaceHolder1$btnConsultar", "Consultar");
+    await log("warn", `[consulta] botão não detectado, usando default`);
+  }
 
   const res = await s.request(CONSULTA_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: { "Content-Type": "application/x-www-form-urlencoded", Referer: CONSULTA_URL },
     body: form.toString(),
   });
 
-  // Procura "Margem Disponível" no resultado
-  const marker = res.body.match(/Margem\s+Dispon[íi]vel[\s\S]{0,200}/i);
+  // Erros comuns: "não localizado", "não encontrado", "sem margem"
+  if (/n[ãa]o\s+(localizado|encontrado|cadastrado)/i.test(res.body)) {
+    await log("info", `[consulta] servidor não localizado para CPF`);
+    return 0;
+  }
+
+  // Procura "Margem Disponível"
+  const marker = res.body.match(/Margem\s+Dispon[íi]vel[\s\S]{0,400}/i);
   if (!marker) {
-    console.warn("[consulta] sem 'Margem Disponível' no retorno");
-    return null;
+    // tenta variantes
+    const alt = res.body.match(/(Margem\s+Livre|Valor\s+Dispon[íi]vel)[\s\S]{0,400}/i);
+    if (!alt) {
+      await log("warn", `[consulta] sem 'Margem Disponível' no retorno (len=${res.body.length})`);
+      return null;
+    }
+    return parseBRL(alt[0]);
   }
   return parseBRL(marker[0]);
 }
