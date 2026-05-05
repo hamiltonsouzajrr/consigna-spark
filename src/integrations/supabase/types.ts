@@ -53,6 +53,41 @@ export type Database = {
         }
         Relationships: []
       }
+      processar_logs: {
+        Row: {
+          consulta_id: string
+          created_at: string
+          id: number
+          level: string
+          message: string
+          user_id: string
+        }
+        Insert: {
+          consulta_id: string
+          created_at?: string
+          id?: number
+          level?: string
+          message: string
+          user_id: string
+        }
+        Update: {
+          consulta_id?: string
+          created_at?: string
+          id?: number
+          level?: string
+          message?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processar_logs_consulta_id_fkey"
+            columns: ["consulta_id"]
+            isOneToOne: false
+            referencedRelation: "consultas_margem"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

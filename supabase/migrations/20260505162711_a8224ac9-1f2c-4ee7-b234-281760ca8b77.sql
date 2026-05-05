@@ -1,0 +1,1 @@
+CREATE POLICY "Users delete own logs" ON public.processar_logs FOR DELETE USING (auth.uid() = user_id);

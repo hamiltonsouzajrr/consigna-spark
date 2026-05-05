@@ -25,7 +25,28 @@ function Page() {
   const [manualCpf, setManualCpf] = useState<string>("");
   const [manualNome, setManualNome] = useState<string>("");
   const [debugRow, setDebugRow] = useState<Consulta | null>(null);
+  const [debugLogs, setDebugLogs] = useState<{ id: number; level: string; message: string; created_at: string }[]>([]);
   const [running, setRunning] = useState(false);
+
+  // Realtime: logs do CPF em debug
+  useEffect(() => {
+    if (!debugRow?.id) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("processar_logs")
+        .select("id, level, message, created_at")
+        .eq("consulta_id", debugRow.id)
+        .order("id", { ascending: true });
+      if (!cancelled && data) setDebugLogs(data as any);
+    })();
+    const ch = supabase
+      .channel(`logs-${debugRow.id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "processar_logs", filter: `consulta_id=eq.${debugRow.id}` },
+        (payload) => setDebugLogs((prev) => [...prev, payload.new as any]))
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
+  }, [debugRow?.id]);
 
   useEffect(() => {
     if (!user) return;
@@ -62,6 +83,8 @@ function Page() {
     const row = consultas.find((c) => c.id === selectedId) ?? null;
     setDebugRow(row);
     try {
+      await supabase.from("processar_logs").delete().eq("consulta_id", selectedId);
+      setDebugLogs([]);
       const { data: sess } = await supabase.auth.getSession();
       const token = sess.session?.access_token;
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/processar-margens`;
@@ -117,6 +140,11 @@ function Page() {
         setDebugRow({ ...(existing as Consulta), status: "pendente", erro: null, margem_disponivel: null });
       }
 
+      // Limpa logs anteriores deste CPF para acompanhar a execução nova
+      await supabase.from("processar_logs").delete().eq("consulta_id", id);
+      setDebugLogs([]);
+
+      let id_str = id as string;
       const { data: sess } = await supabase.auth.getSession();
       const token = sess.session?.access_token;
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/processar-margens`;
@@ -127,7 +155,7 @@ function Page() {
           "Authorization": `Bearer ${token}`,
           "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
-        body: JSON.stringify({ ids: [id] }),
+        body: JSON.stringify({ ids: [id_str] }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
@@ -261,6 +289,32 @@ function Page() {
                 <div className="sm:col-span-2 rounded border border-destructive/30 bg-destructive/10 p-2 text-destructive">
                   <strong>Erro / mensagem:</strong> {debugRow.erro}
                 </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {debugRow && (
+          <div className="mt-4">
+            <div className="mb-2 flex items-center justify-between">
+              <h4 className="text-sm font-semibold">Logs em tempo real</h4>
+              <span className="text-xs text-muted-foreground">{debugLogs.length} entrada(s)</span>
+            </div>
+            <div className="max-h-96 overflow-auto rounded-lg border bg-foreground/95 p-3 font-mono text-xs leading-relaxed text-background">
+              {debugLogs.length === 0 ? (
+                <p className="text-background/60">Aguardando logs… dispare o processamento para ver a execução em tempo real.</p>
+              ) : (
+                debugLogs.map((l) => (
+                  <div key={l.id} className="flex gap-2">
+                    <span className="text-background/50">{new Date(l.created_at).toLocaleTimeString("pt-BR")}</span>
+                    <span className={
+                      l.level === "error" ? "text-destructive" :
+                      l.level === "warn" ? "text-warning" :
+                      "text-background/90"
+                    }>[{l.level}]</span>
+                    <span className="whitespace-pre-wrap break-all">{l.message}</span>
+                  </div>
+                ))
               )}
             </div>
           </div>
