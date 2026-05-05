@@ -328,7 +328,6 @@ function Page() {
           );
         })()}
 
-        {debugRow && (
         {debugRow && (() => {
           const TOTAL_STEPS = 24; // 8 órgãos x 3 serviços
           const isProcessing = debugRow.status === "processando" || debugRow.status === "pendente" || running;
