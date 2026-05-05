@@ -109,7 +109,7 @@ function Page() {
   const exportCsv = (onlyDone: boolean) => {
     const data = onlyDone ? items.filter((i) => i.status === "concluido") : items;
     if (!data.length) return toast.info("Nada para exportar");
-    const header = ["cpf", "nome", "status", "margem_disponivel", "erro", "processed_at"];
+    const header = ["cpf", "nome", "status", "servidor_nome", "matricula", "categoria", "situacao", "orgao", "margem_emprestimo", "margem_cartao_credito", "margem_cartao_beneficio", "margem_disponivel", "erro", "processed_at"];
     const csv = [header.join(",")].concat(
       data.map((r) => header.map((h) => {
         const v = (r as unknown as Record<string, unknown>)[h];
