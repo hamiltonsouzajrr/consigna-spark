@@ -22,8 +22,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Wallet className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-sm font-semibold leading-tight">Margem</p>
-            <p className="text-xs text-muted-foreground">Consulta em lote</p>
+            <p className="text-sm font-semibold leading-tight">Grupo Positive</p>
+            <p className="text-xs text-muted-foreground">Consultas Aracaju</p>
           </div>
         </div>
         <nav className="flex-1 space-y-1 p-3">
@@ -61,7 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="md:hidden flex items-center justify-between border-b bg-card px-4 py-3">
           <div className="flex items-center gap-2">
             <Wallet className="h-5 w-5 text-primary" />
-            <span className="font-semibold">Margem</span>
+            <span className="font-semibold">Grupo Positive</span>
           </div>
           <div className="flex gap-1">
             {nav.map((n) => (
