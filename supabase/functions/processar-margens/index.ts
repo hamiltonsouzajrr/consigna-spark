@@ -341,21 +341,79 @@ async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: str
   }
   // ===== FIM DUMP =====
 
-  if (/n[ãa]o\s+(localizado|encontrado|cadastrado)/i.test(res.body)) {
-    await log("info", `[consulta] servidor não localizado para CPF`);
+  // ===== Categorização do motivo (fallback quando não acha "Margem Disponível") =====
+  const body = res.body;
+  const lower = body.toLowerCase();
+
+  // 1) servidor não localizado / CPF inválido
+  if (/n[ãa]o\s+(localizado|encontrado|cadastrado)|cpf\s+inv[áa]lido|servidor\s+inativo/i.test(body)) {
+    await log("info", `[consulta] motivo: servidor não localizado/CPF inválido`);
+    (consultarMargemNoOrgao as any)._lastMotivo = "servidor_nao_localizado";
     return 0;
   }
 
-  const marker = res.body.match(/Margem\s+Dispon[íi]vel[\s\S]{0,400}/i);
-  if (!marker) {
-    const alt = res.body.match(/(Margem\s+Livre|Valor\s+Dispon[íi]vel)[\s\S]{0,400}/i);
-    if (!alt) {
-      await log("warn", `[consulta] sem 'Margem Disponível' no retorno (len=${res.body.length})`);
-      return null;
-    }
-    return parseBRL(alt[0]);
+  // 2) Margem encontrada
+  const marker = body.match(/Margem\s+Dispon[íi]vel[\s\S]{0,400}/i)
+              || body.match(/(Margem\s+Livre|Valor\s+Dispon[íi]vel)[\s\S]{0,400}/i);
+  if (marker) {
+    (consultarMargemNoOrgao as any)._lastMotivo = "ok";
+    return parseBRL(marker[0]);
   }
-  return parseBRL(marker[0]);
+
+  // 3) Fallback: identificar por que NÃO veio resultado
+  let motivo = "sem_resultado_desconhecido";
+  let detalhe = "";
+
+  // 3a) Sessão expirada / redirect para login
+  if (/Login\.aspx|Sess[ãa]o\s+expirada|fa[çc]a\s+login|n[ãa]o\s+autorizado/i.test(body)) {
+    motivo = "sessao_expirada";
+  }
+  // 3b) Erro do servidor ASP.NET (yellow screen)
+  else if (/Server\s+Error\s+in|Runtime\s+Error|HTTP\s+Error\s+500|Exception\s+Details/i.test(body)) {
+    motivo = "erro_servidor_aspnet";
+    const exMatch = body.match(/Exception\s+Details:\s*([^<\n]+)/i);
+    if (exMatch) detalhe = exMatch[1].trim().slice(0, 200);
+  }
+  // 3c) Mensagem de validação ASP.NET visível
+  else if (/<span[^>]*ValidationSummary[^>]*>[\s\S]*?<li>([^<]+)<\/li>/i.test(body)) {
+    motivo = "erro_validacao";
+    const m = body.match(/<span[^>]*ValidationSummary[^>]*>[\s\S]*?<li>([^<]+)<\/li>/i);
+    if (m) detalhe = m[1].trim().slice(0, 200);
+  }
+  // 3d) Popup de alerta JS
+  else if (/mostraPopUpAlert\s*\(/i.test(body)) {
+    motivo = "popup_alerta";
+    const m = body.match(/mostraPopUpAlert\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/);
+    if (m) detalhe = `${m[1]} - ${m[2]}`.slice(0, 200);
+  }
+  // 3e) lblMsg/lblErro/lblMensagem com texto
+  else {
+    const lbl = body.match(/<span[^>]*id="[^"]*(lbl(?:Msg|Erro|Mensagem|Aviso))[^"]*"[^>]*>([\s\S]{0,400}?)<\/span>/i);
+    if (lbl) {
+      const txt = lbl[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+      if (txt) { motivo = "mensagem_servidor"; detalhe = txt.slice(0, 200); }
+    }
+  }
+
+  // 3f) Página recarregada (mesmo formulário, sem área de resultado renderizada)
+  if (motivo === "sem_resultado_desconhecido") {
+    const temFormCpf = /name="[^"]*[Cc][Pp][Ff][^"]*"/.test(body) && /__VIEWSTATE/.test(body);
+    const temAreaResultado = /grdResult|gvResult|grvResult|tblResult|divResult|dgResult|MainContent_(?:gv|grd|div|tbl)/i.test(body);
+    if (temFormCpf && !temAreaResultado) {
+      motivo = "pagina_recarregada_sem_resultado";
+      detalhe = `len=${body.length}`;
+    }
+  }
+
+  // 3g) Resposta vazia / curta demais
+  if (body.length < 500) {
+    motivo = "resposta_vazia";
+    detalhe = `len=${body.length}`;
+  }
+
+  await log("warn", `[consulta] motivo='${motivo}'${detalhe ? ` detalhe='${detalhe}'` : ""} (len=${body.length})`);
+  (consultarMargemNoOrgao as any)._lastMotivo = detalhe ? `${motivo}: ${detalhe}` : motivo;
+  return null;
 }
 
 async function descobrirMenu(s: Session) {
