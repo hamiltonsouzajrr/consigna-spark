@@ -24,7 +24,8 @@ function Page() {
       const s: Stats = { total: data.length, pendente: 0, processando: 0, concluido: 0, erro: 0, avg: null };
       const durations: number[] = [];
       data.forEach((r) => {
-        s[r.status as keyof Stats]++ as unknown;
+        const k = r.status as "pendente" | "processando" | "concluido" | "erro";
+        s[k] = (s[k] as number) + 1;
         if (r.processed_at && r.created_at) durations.push((+new Date(r.processed_at) - +new Date(r.created_at)) / 1000);
       });
       s.avg = durations.length ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
