@@ -295,9 +295,40 @@ async function consultarCpfTodosOrgaos(cpf: string): Promise<{ margem: number | 
   const okLogin = await login(s, user, pass);
   if (!okLogin) return { margem: null, erro: "Falha de login no ConsigUp", detalhes: {} };
 
-  // MODO DESCOBERTA — apenas mapeia o menu, não consulta ainda
-  await descobrirMenu(s);
-  return { margem: null, erro: "MODO_DESCOBERTA: ver logs", detalhes: {} };
+  // 1) Lista órgãos a partir do header da home
+  const home = await s.request(HOME_URL);
+  const orgaos = listarOrgaosDoHtml(home.body);
+  console.log(`[orgaos] descobertos: ${orgaos.length}`);
+  orgaos.forEach(o => console.log(`[orgao] ${o.codigo} - ${o.nome} (target=${o.eventTarget})`));
+
+  if (orgaos.length === 0) return { margem: null, erro: "Nenhum órgão encontrado no header", detalhes: {} };
+
+  // 2) Para cada órgão: troca via __doPostBack e dumpa sidebar pra achar "Consulta Margem"
+  const detalhes: Record<string, number | null> = {};
+  for (const o of orgaos) {
+    console.log(`\n[=== órgão ${o.codigo} ${o.nome} ===]`);
+    const sw = await selecionarOrgao(s, o.eventTarget);
+    if (!sw.ok) { console.warn(`[orgao ${o.codigo}] falha troca`); detalhes[o.codigo] = null; continue; }
+
+    // Dumpa o sidebar do órgão atual
+    const links = listarLinksSidebar(sw.html);
+    console.log(`[orgao ${o.codigo}] sidebar links: ${links.length}`);
+    links.slice(0, 60).forEach((l, i) => console.log(`[orgao ${o.codigo}] L#${i} [${l.text}] -> ${l.href}`));
+
+    // Heurística: link de margem
+    const margemLink = links.find(l => /margem|consulta.*margem/i.test(l.text));
+    if (margemLink) {
+      console.log(`[orgao ${o.codigo}] >>> candidato margem: ${margemLink.text} -> ${margemLink.href}`);
+    } else {
+      console.log(`[orgao ${o.codigo}] sem link óbvio de margem; procurando 'Consigna' / 'Servidor'`);
+      links.filter(l => /consigna|servidor|cpf|matr[íi]cula/i.test(l.text)).slice(0,15)
+        .forEach(l => console.log(`[orgao ${o.codigo}]   ? ${l.text} -> ${l.href}`));
+    }
+
+    detalhes[o.codigo] = null;
+  }
+
+  return { margem: null, erro: "MODO_DESCOBERTA_ORGAOS: ver logs", detalhes };
 }
 
 // ---------- Handler ----------
