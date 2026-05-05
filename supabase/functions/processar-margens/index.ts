@@ -52,7 +52,10 @@ class Session {
 
   async request(url: string, init: RequestInit = {}): Promise<{ status: number; body: string; finalUrl: string }> {
     const headers = new Headers(init.headers);
-    headers.set("User-Agent", "Mozilla/5.0 (compatible; LovableMarginBot/1.0)");
+    headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
+    headers.set("Accept-Language", "pt-BR,pt;q=0.9,en;q=0.8");
+    headers.set("Origin", CONSIGUP_BASE);
+    headers.set("Referer", LOGIN_URL);
     if (this.cookies.size) headers.set("Cookie", this.cookieHeader());
     if (!headers.has("Accept")) headers.set("Accept", "text/html,application/xhtml+xml");
 
