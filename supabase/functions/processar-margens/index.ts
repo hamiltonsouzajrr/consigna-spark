@@ -221,24 +221,21 @@ async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: str
   const linkBtn = page.body.match(/<a[^>]+href="javascript:__doPostBack\(&#39;([^&]+(?:btnConsultar|btnPesquisar|btnBuscar|lnkConsultar)[^&]*)&#39;,&#39;[^&]*&#39;\)"[^>]*>\s*([^<]*(?:Consultar|Pesquisar|Buscar)[^<]*)/i);
   if (linkBtn) linkBtnTarget = linkBtn[1];
 
-  if (linkBtnTarget) {
-    form.set("__EVENTTARGET", linkBtnTarget);
-    form.set("__EVENTARGUMENT", "");
-    await log("info", `[consulta] LinkButton via __EVENTTARGET=${linkBtnTarget} cpfField=${cpfField}`);
-  } else if (btnName) {
-    form.set(btnName, btnValue);
-    // Também envia __EVENTTARGET para garantir disparo do server-side handler
-    if (!form.has("__EVENTTARGET") || !form.get("__EVENTTARGET")) {
-      form.set("__EVENTTARGET", btnName);
-      form.set("__EVENTARGUMENT", "");
-    }
-    await log("info", `[consulta] botão: ${btnName}=${btnValue} (+ __EVENTTARGET) cpfField=${cpfField}`);
-  } else {
-    form.set("__EVENTTARGET", "ctl00$MainContent$btnConsultar");
-    form.set("__EVENTARGUMENT", "");
+  // SEMPRE envia __EVENTTARGET + __EVENTARGUMENT para garantir o postback do WebForms.
+  // Default conhecido: ctl00$MainContent$btnConsultar (confirmado nos logs anteriores).
+  const eventTarget = linkBtnTarget || btnName || "ctl00$MainContent$btnConsultar";
+  form.set("__EVENTTARGET", eventTarget);
+  form.set("__EVENTARGUMENT", "");
+  // Também envia o name=value do submit (alguns handlers checam Request.Form[btnName])
+  if (btnName) {
+    form.set(btnName, btnValue || "Consultar");
+  } else if (!linkBtnTarget) {
     form.set("ctl00$MainContent$btnConsultar", "Consultar");
-    await log("warn", `[consulta] botão não detectado, usando default __EVENTTARGET`);
   }
+  // Campos auxiliares que ASP.NET às vezes exige
+  if (!form.has("__LASTFOCUS")) form.set("__LASTFOCUS", "");
+  await log("info", `[consulta] POST __EVENTTARGET=${eventTarget} btnName=${btnName || "(none)"} cpfField=${cpfField}`);
+
 
   const res = await s.request(CONSULTA_URL, {
     method: "POST",
