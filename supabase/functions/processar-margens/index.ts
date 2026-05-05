@@ -341,21 +341,78 @@ async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: str
   }
   // ===== FIM DUMP =====
 
-  if (/n[ãa]o\s+(localizado|encontrado|cadastrado)/i.test(res.body)) {
-    await log("info", `[consulta] servidor não localizado para CPF`);
+  // ===== Categorização do motivo (fallback quando não acha "Margem Disponível") =====
+  const body = res.body;
+
+  // 1) servidor não localizado / CPF inválido
+  if (/n[ãa]o\s+(localizado|encontrado|cadastrado)|cpf\s+inv[áa]lido|servidor\s+inativo/i.test(body)) {
+    await log("info", `[consulta] motivo: servidor não localizado/CPF inválido`);
+    (consultarMargemNoOrgao as any)._lastMotivo = "servidor_nao_localizado";
     return 0;
   }
 
-  const marker = res.body.match(/Margem\s+Dispon[íi]vel[\s\S]{0,400}/i);
-  if (!marker) {
-    const alt = res.body.match(/(Margem\s+Livre|Valor\s+Dispon[íi]vel)[\s\S]{0,400}/i);
-    if (!alt) {
-      await log("warn", `[consulta] sem 'Margem Disponível' no retorno (len=${res.body.length})`);
-      return null;
-    }
-    return parseBRL(alt[0]);
+  // 2) Margem encontrada
+  const marker = body.match(/Margem\s+Dispon[íi]vel[\s\S]{0,400}/i)
+              || body.match(/(Margem\s+Livre|Valor\s+Dispon[íi]vel)[\s\S]{0,400}/i);
+  if (marker) {
+    (consultarMargemNoOrgao as any)._lastMotivo = "ok";
+    return parseBRL(marker[0]);
   }
-  return parseBRL(marker[0]);
+
+  // 3) Fallback: identificar por que NÃO veio resultado
+  let motivo = "sem_resultado_desconhecido";
+  let detalhe = "";
+
+  // 3a) Sessão expirada / redirect para login
+  if (/Login\.aspx|Sess[ãa]o\s+expirada|fa[çc]a\s+login|n[ãa]o\s+autorizado/i.test(body)) {
+    motivo = "sessao_expirada";
+  }
+  // 3b) Erro do servidor ASP.NET (yellow screen)
+  else if (/Server\s+Error\s+in|Runtime\s+Error|HTTP\s+Error\s+500|Exception\s+Details/i.test(body)) {
+    motivo = "erro_servidor_aspnet";
+    const exMatch = body.match(/Exception\s+Details:\s*([^<\n]+)/i);
+    if (exMatch) detalhe = exMatch[1].trim().slice(0, 200);
+  }
+  // 3c) Mensagem de validação ASP.NET visível
+  else if (/<span[^>]*ValidationSummary[^>]*>[\s\S]*?<li>([^<]+)<\/li>/i.test(body)) {
+    motivo = "erro_validacao";
+    const m = body.match(/<span[^>]*ValidationSummary[^>]*>[\s\S]*?<li>([^<]+)<\/li>/i);
+    if (m) detalhe = m[1].trim().slice(0, 200);
+  }
+  // 3d) Popup de alerta JS
+  else if (/mostraPopUpAlert\s*\(/i.test(body)) {
+    motivo = "popup_alerta";
+    const m = body.match(/mostraPopUpAlert\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/);
+    if (m) detalhe = `${m[1]} - ${m[2]}`.slice(0, 200);
+  }
+  // 3e) lblMsg/lblErro/lblMensagem com texto
+  else {
+    const lbl = body.match(/<span[^>]*id="[^"]*(lbl(?:Msg|Erro|Mensagem|Aviso))[^"]*"[^>]*>([\s\S]{0,400}?)<\/span>/i);
+    if (lbl) {
+      const txt = lbl[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+      if (txt) { motivo = "mensagem_servidor"; detalhe = txt.slice(0, 200); }
+    }
+  }
+
+  // 3f) Página recarregada (mesmo formulário, sem área de resultado renderizada)
+  if (motivo === "sem_resultado_desconhecido") {
+    const temFormCpf = /name="[^"]*[Cc][Pp][Ff][^"]*"/.test(body) && /__VIEWSTATE/.test(body);
+    const temAreaResultado = /grdResult|gvResult|grvResult|tblResult|divResult|dgResult|MainContent_(?:gv|grd|div|tbl)/i.test(body);
+    if (temFormCpf && !temAreaResultado) {
+      motivo = "pagina_recarregada_sem_resultado";
+      detalhe = `len=${body.length}`;
+    }
+  }
+
+  // 3g) Resposta vazia / curta demais
+  if (body.length < 500) {
+    motivo = "resposta_vazia";
+    detalhe = `len=${body.length}`;
+  }
+
+  await log("warn", `[consulta] motivo='${motivo}'${detalhe ? ` detalhe='${detalhe}'` : ""} (len=${body.length})`);
+  (consultarMargemNoOrgao as any)._lastMotivo = detalhe ? `${motivo}: ${detalhe}` : motivo;
+  return null;
 }
 
 async function descobrirMenu(s: Session) {
@@ -446,11 +503,12 @@ async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<{ marge
   if (orgaos.length === 0) { await log("error", "Nenhum órgão encontrado no header"); return { margem: null, erro: "Nenhum órgão encontrado no header", detalhes: {} }; }
 
   const detalhes: Record<string, number | null> = {};
+  const motivos: Record<string, string> = {};
   let melhor: number | null = null;
   for (const o of orgaos) {
     await log("info", `=== Órgão ${o.codigo} ${o.nome} ===`);
     const sw = await selecionarOrgao(s, o.eventTarget);
-    if (!sw.ok) { await log("warn", `[${o.codigo}] Falha ao trocar de órgão`); detalhes[o.codigo] = null; continue; }
+    if (!sw.ok) { await log("warn", `[${o.codigo}] Falha ao trocar de órgão`); detalhes[o.codigo] = null; motivos[o.codigo] = "falha_trocar_orgao"; continue; }
 
     const links = listarLinksSidebar(sw.html);
     await log("info", `[${o.codigo}] Sidebar: ${links.length} links`);
@@ -462,22 +520,38 @@ async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<{ marge
     if (!margemLink) {
       await log("warn", `[${o.codigo}] sem link de margem`);
       detalhes[o.codigo] = null;
+      motivos[o.codigo] = "sem_link_margem";
       continue;
     }
     await log("info", `[${o.codigo}] usando link: ${margemLink.text} -> ${margemLink.href}`);
     try {
+      (consultarMargemNoOrgao as any)._lastMotivo = "";
       const m = await consultarMargemNoOrgao(s, cpf, margemLink.href, log);
       detalhes[o.codigo] = m;
-      await log("info", `[${o.codigo}] margem = ${m}`);
-      if (m !== null && (melhor === null || m > melhor)) melhor = m;
+      const motivo = (consultarMargemNoOrgao as any)._lastMotivo as string;
+      if (m === null) motivos[o.codigo] = motivo || "sem_resultado";
+      else if (m === 0 && motivo === "servidor_nao_localizado") motivos[o.codigo] = "servidor_nao_localizado";
+      await log("info", `[${o.codigo}] margem = ${m}${motivo ? ` (motivo=${motivo})` : ""}`);
+      if (m !== null && m > 0 && (melhor === null || m > melhor)) melhor = m;
     } catch (e) {
       await log("error", `[${o.codigo}] erro consulta: ${String(e).slice(0,300)}`);
       detalhes[o.codigo] = null;
+      motivos[o.codigo] = `excecao: ${String(e).slice(0,150)}`;
     }
   }
 
   if (melhor === null) {
-    return { margem: null, erro: "Margem não localizada em nenhum órgão", detalhes };
+    // Categoriza o erro consolidado: motivo mais frequente entre os órgãos
+    const counts = new Map<string, number>();
+    for (const m of Object.values(motivos)) counts.set(m, (counts.get(m) || 0) + 1);
+    const ordenado = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    const top = ordenado[0]?.[0] || "sem_resultado";
+    const todosNaoLocalizado = Object.values(motivos).every((m) => m === "servidor_nao_localizado");
+    const erroFinal = todosNaoLocalizado
+      ? "CPF não cadastrado em nenhum órgão"
+      : `Margem não localizada — motivo principal: ${top} (${ordenado[0]?.[1]}/${orgaos.length} órgãos). Detalhes por órgão: ${Object.entries(motivos).map(([k,v])=>`${k}=${v}`).join(" | ")}`;
+    await log("warn", `[resumo] motivos: ${[...counts.entries()].map(([k,v])=>`${k}×${v}`).join(", ")}`);
+    return { margem: null, erro: erroFinal.slice(0, 1000), detalhes };
   }
   return { margem: melhor, erro: null, detalhes };
 }
