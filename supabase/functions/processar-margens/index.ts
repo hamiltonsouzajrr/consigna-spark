@@ -364,7 +364,17 @@ Deno.serve(async (req) => {
 
     const task = (async () => {
       for (const row of rows) {
-        const { margem, erro } = await consultarCpfTodosOrgaos(row.cpf);
+        const log: LogFn = async (level, message) => {
+          console.log(`[${level}] ${message}`);
+          try {
+            await supabase.from("processar_logs").insert({
+              consulta_id: row.id, user_id: userId, level, message: message.slice(0, 4000),
+            });
+          } catch (e) { console.error("log insert err", e); }
+        };
+        await log("info", `Iniciando processamento do CPF ${row.cpf}`);
+        const { margem, erro } = await consultarCpfTodosOrgaos(row.cpf, log);
+        await log(erro ? "error" : "info", erro ? `Finalizado com erro: ${erro}` : `Finalizado. Margem: ${margem}`);
         await supabase.from("consultas_margem").update({
           margem_disponivel: margem,
           erro,
