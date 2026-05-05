@@ -205,19 +205,39 @@ async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: str
     : cpf;
   form.set(cpfField, cpfFmt);
 
-  // Detecta botão (input submit cujo name contenha Consultar/Pesquisar)
-  const btnMatch = page.body.match(/<input[^>]+type="submit"[^>]+name="([^"]+)"[^>]+value="([^"]*(?:Consultar|Pesquisar|Buscar)[^"]*)"/i)
-                || page.body.match(/<input[^>]+type="submit"[^>]+value="([^"]*(?:Consultar|Pesquisar|Buscar)[^"]*)"[^>]+name="([^"]+)"/i);
-  if (btnMatch) {
-    // primeira regex: name=1 value=2; segunda: value=1 name=2
-    const isFirst = /name=/.test(btnMatch[0].split("value=")[0]);
-    const name = isFirst ? btnMatch[1] : btnMatch[2];
-    const value = isFirst ? btnMatch[2] : btnMatch[1];
-    form.set(name, value);
-    await log("info", `[consulta] botão: ${name}=${value} cpfField=${cpfField}`);
+  // Detecta botões: input submit, button, ou LinkButton (anchor com __doPostBack)
+  // 1) input submit/button
+  let btnName = "";
+  let btnValue = "";
+  const inputBtn = page.body.match(/<input[^>]+type="(?:submit|button)"[^>]*name="([^"]+)"[^>]*value="([^"]*(?:Consultar|Pesquisar|Buscar)[^"]*)"/i)
+                || page.body.match(/<input[^>]+type="(?:submit|button)"[^>]*value="([^"]*(?:Consultar|Pesquisar|Buscar)[^"]*)"[^>]*name="([^"]+)"/i);
+  if (inputBtn) {
+    const isFirst = inputBtn[0].indexOf("name=") < inputBtn[0].indexOf("value=");
+    btnName = isFirst ? inputBtn[1] : inputBtn[2];
+    btnValue = isFirst ? inputBtn[2] : inputBtn[1];
+  }
+  // 2) LinkButton: <a id="..." href="javascript:__doPostBack('ctl00$...$btnConsultar','')">Consultar</a>
+  let linkBtnTarget = "";
+  const linkBtn = page.body.match(/<a[^>]+href="javascript:__doPostBack\(&#39;([^&]+(?:btnConsultar|btnPesquisar|btnBuscar|lnkConsultar)[^&]*)&#39;,&#39;[^&]*&#39;\)"[^>]*>\s*([^<]*(?:Consultar|Pesquisar|Buscar)[^<]*)/i);
+  if (linkBtn) linkBtnTarget = linkBtn[1];
+
+  if (linkBtnTarget) {
+    form.set("__EVENTTARGET", linkBtnTarget);
+    form.set("__EVENTARGUMENT", "");
+    await log("info", `[consulta] LinkButton via __EVENTTARGET=${linkBtnTarget} cpfField=${cpfField}`);
+  } else if (btnName) {
+    form.set(btnName, btnValue);
+    // Também envia __EVENTTARGET para garantir disparo do server-side handler
+    if (!form.has("__EVENTTARGET") || !form.get("__EVENTTARGET")) {
+      form.set("__EVENTTARGET", btnName);
+      form.set("__EVENTARGUMENT", "");
+    }
+    await log("info", `[consulta] botão: ${btnName}=${btnValue} (+ __EVENTTARGET) cpfField=${cpfField}`);
   } else {
-    form.set("ctl00$ContentPlaceHolder1$btnConsultar", "Consultar");
-    await log("warn", `[consulta] botão não detectado, usando default`);
+    form.set("__EVENTTARGET", "ctl00$MainContent$btnConsultar");
+    form.set("__EVENTARGUMENT", "");
+    form.set("ctl00$MainContent$btnConsultar", "Consultar");
+    await log("warn", `[consulta] botão não detectado, usando default __EVENTTARGET`);
   }
 
   const res = await s.request(CONSULTA_URL, {
@@ -239,6 +259,16 @@ async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: str
     const alt = res.body.match(/(Margem\s+Livre|Valor\s+Dispon[íi]vel)[\s\S]{0,400}/i);
     if (!alt) {
       await log("warn", `[consulta] sem 'Margem Disponível' no retorno (len=${res.body.length})`);
+      // Dump diagnóstico: trecho do <form> + procura por mensagens de validação/erro
+      const formSnip = res.body.match(/<form[\s\S]{0,2000}/i);
+      if (formSnip) await log("info", `[consulta] form-head: ${formSnip[0].replace(/\s+/g, " ").slice(0, 1500)}`);
+      const lblErr = res.body.match(/<span[^>]*id="[^"]*(lbl(?:Msg|Erro|Mensagem|Aviso|Validation)|ValidationSummary)[^"]*"[^>]*>([\s\S]{0,400}?)<\/span>/i);
+      if (lblErr) await log("warn", `[consulta] lbl: ${lblErr[0].replace(/\s+/g," ").slice(0,500)}`);
+      const popup = res.body.match(/mostraPopUpAlert\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/);
+      if (popup) await log("warn", `[consulta] popup: ${popup[1]} - ${popup[2]}`);
+      // Procura tabela / div que normalmente carrega resultado
+      const main = res.body.match(/MainContent[\s\S]{0,1500}/i);
+      if (main) await log("info", `[consulta] main-snip: ${main[0].replace(/\s+/g," ").slice(0,1500)}`);
       return null;
     }
     return parseBRL(alt[0]);
