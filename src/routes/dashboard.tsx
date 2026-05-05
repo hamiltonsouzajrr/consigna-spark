@@ -314,16 +314,53 @@ function Page() {
                 </div>
               </div>
 
-              {concluido && (
-                <div className="space-y-1 rounded border bg-background/60 p-4 leading-relaxed">
+              {concluido && (() => {
+                const COEF_EMP = 0.01862;
+                const COEF_CARTAO = 17.15;
+                const empValor = debugRow.margem_emprestimo != null ? Number(debugRow.margem_emprestimo) / COEF_EMP : null;
+                const calcCartao = (m: number | null) => {
+                  if (m == null) return null;
+                  const total = Number(m) * COEF_CARTAO;
+                  return { total, saque: total * 0.7, limite: total * 0.3 };
+                };
+                const cc = calcCartao(debugRow.margem_cartao_credito);
+                const cb = calcCartao(debugRow.margem_cartao_beneficio);
+                return (
+                <div className="space-y-2 rounded border bg-background/60 p-4 leading-relaxed">
                   <div><span className="text-muted-foreground">Servidor</span> <strong>{debugRow.servidor_nome ?? "—"}</strong> <span className="text-muted-foreground ml-2">Matrícula</span><strong>{debugRow.matricula ?? "—"}</strong></div>
                   <div><span className="text-muted-foreground">Órgão</span><strong>{debugRow.orgao ?? "—"}</strong></div>
                   <div><span className="text-muted-foreground">Situação</span> <strong>{debugRow.situacao ?? "—"}</strong></div>
-                  <div><span className="text-muted-foreground">Margem Empréstimo</span> <strong>{brl(debugRow.margem_emprestimo)}</strong></div>
-                  <div><span className="text-muted-foreground">Margem Cartão Crédito</span> <strong>{brl(debugRow.margem_cartao_credito)}</strong></div>
-                  <div><span className="text-muted-foreground">Margem Cartão Benefício</span> <strong>{brl(debugRow.margem_cartao_beneficio)}</strong></div>
+
+                  <div className="pt-2">
+                    <div><span className="text-muted-foreground">Margem Empréstimo</span> <strong>{brl(debugRow.margem_emprestimo)}</strong>
+                      {empValor != null && <span className="ml-2 text-primary">→ Valor liberado <strong>{brl(empValor)}</strong> <span className="text-xs text-muted-foreground">(margem ÷ {COEF_EMP.toString().replace(".", ",")})</span></span>}
+                    </div>
+                  </div>
+
+                  <div className="pt-1">
+                    <div><span className="text-muted-foreground">Margem Cartão Crédito</span> <strong>{brl(debugRow.margem_cartao_credito)}</strong>
+                      {cc && <span className="ml-2 text-primary">× {COEF_CARTAO.toString().replace(".", ",")} = <strong>{brl(cc.total)}</strong></span>}
+                    </div>
+                    {cc && (
+                      <div className="ml-4 text-xs text-muted-foreground">
+                        Saque do cartão: <strong className="text-foreground">{brl(cc.saque)}</strong> · Limite do cartão: <strong className="text-foreground">{brl(cc.limite)}</strong>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-1">
+                    <div><span className="text-muted-foreground">Margem Cartão Benefício</span> <strong>{brl(debugRow.margem_cartao_beneficio)}</strong>
+                      {cb && <span className="ml-2 text-primary">× {COEF_CARTAO.toString().replace(".", ",")} = <strong>{brl(cb.total)}</strong></span>}
+                    </div>
+                    {cb && (
+                      <div className="ml-4 text-xs text-muted-foreground">
+                        Saque do cartão: <strong className="text-foreground">{brl(cb.saque)}</strong> · Limite do cartão: <strong className="text-foreground">{brl(cb.limite)}</strong>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
+                );
+              })()}
 
               <div className="mt-3 text-xs text-muted-foreground">
                 Última atualização: {new Date(debugRow.updated_at).toLocaleString("pt-BR")}
