@@ -293,6 +293,32 @@ function Page() {
             </div>
           </div>
         )}
+
+        {debugRow && (
+          <div className="mt-4">
+            <div className="mb-2 flex items-center justify-between">
+              <h4 className="text-sm font-semibold">Logs em tempo real</h4>
+              <span className="text-xs text-muted-foreground">{debugLogs.length} entrada(s)</span>
+            </div>
+            <div className="max-h-96 overflow-auto rounded-lg border bg-foreground/95 p-3 font-mono text-xs leading-relaxed text-background">
+              {debugLogs.length === 0 ? (
+                <p className="text-background/60">Aguardando logs… dispare o processamento para ver a execução em tempo real.</p>
+              ) : (
+                debugLogs.map((l) => (
+                  <div key={l.id} className="flex gap-2">
+                    <span className="text-background/50">{new Date(l.created_at).toLocaleTimeString("pt-BR")}</span>
+                    <span className={
+                      l.level === "error" ? "text-destructive" :
+                      l.level === "warn" ? "text-warning" :
+                      "text-background/90"
+                    }>[{l.level}]</span>
+                    <span className="whitespace-pre-wrap break-all">{l.message}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </Card>
     </AppShell>
   );
