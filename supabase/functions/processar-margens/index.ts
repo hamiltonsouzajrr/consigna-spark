@@ -286,45 +286,44 @@ async function descobrirMenu(s: Session) {
   if (header) console.log("[home] header-snippet:", header[0].replace(/\s+/g, " ").slice(0, 2000));
 }
 
-async function consultarCpfTodosOrgaos(cpf: string): Promise<{ margem: number | null; erro: string | null; detalhes: Record<string, number | null> }> {
+type LogFn = (level: "info" | "warn" | "error", msg: string) => Promise<void> | void;
+
+async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<{ margem: number | null; erro: string | null; detalhes: Record<string, number | null> }> {
   const user = Deno.env.get("CONSIGUP_USER");
   const pass = Deno.env.get("CONSIGUP_PASS");
-  if (!user || !pass) return { margem: null, erro: "Credenciais ConsigUp ausentes", detalhes: {} };
+  if (!user || !pass) { await log("error", "Credenciais ConsigUp ausentes"); return { margem: null, erro: "Credenciais ConsigUp ausentes", detalhes: {} }; }
 
   const s = new Session();
+  await log("info", `Iniciando login no ConsigUp como ${user}`);
   const okLogin = await login(s, user, pass);
-  if (!okLogin) return { margem: null, erro: "Falha de login no ConsigUp", detalhes: {} };
+  if (!okLogin) { await log("error", "Falha de login no ConsigUp"); return { margem: null, erro: "Falha de login no ConsigUp", detalhes: {} }; }
+  await log("info", "Login OK, carregando home");
 
-  // 1) Lista órgãos a partir do header da home
   const home = await s.request(HOME_URL);
   const orgaos = listarOrgaosDoHtml(home.body);
-  console.log(`[orgaos] descobertos: ${orgaos.length}`);
-  orgaos.forEach(o => console.log(`[orgao] ${o.codigo} - ${o.nome} (target=${o.eventTarget})`));
+  await log("info", `Órgãos descobertos: ${orgaos.length}`);
+  for (const o of orgaos) await log("info", `Órgão ${o.codigo} - ${o.nome} (target=${o.eventTarget})`);
 
-  if (orgaos.length === 0) return { margem: null, erro: "Nenhum órgão encontrado no header", detalhes: {} };
+  if (orgaos.length === 0) { await log("error", "Nenhum órgão encontrado no header"); return { margem: null, erro: "Nenhum órgão encontrado no header", detalhes: {} }; }
 
-  // 2) Para cada órgão: troca via __doPostBack e dumpa sidebar pra achar "Consulta Margem"
   const detalhes: Record<string, number | null> = {};
   for (const o of orgaos) {
-    console.log(`\n[=== órgão ${o.codigo} ${o.nome} ===]`);
+    await log("info", `=== Órgão ${o.codigo} ${o.nome} ===`);
     const sw = await selecionarOrgao(s, o.eventTarget);
-    if (!sw.ok) { console.warn(`[orgao ${o.codigo}] falha troca`); detalhes[o.codigo] = null; continue; }
+    if (!sw.ok) { await log("warn", `[${o.codigo}] Falha ao trocar de órgão`); detalhes[o.codigo] = null; continue; }
 
-    // Dumpa o sidebar do órgão atual
     const links = listarLinksSidebar(sw.html);
-    console.log(`[orgao ${o.codigo}] sidebar links: ${links.length}`);
-    links.slice(0, 60).forEach((l, i) => console.log(`[orgao ${o.codigo}] L#${i} [${l.text}] -> ${l.href}`));
+    await log("info", `[${o.codigo}] Sidebar: ${links.length} links`);
+    const sample = links.slice(0, 30).map(l => `[${l.text}] -> ${l.href}`).join(" | ");
+    if (sample) await log("info", `[${o.codigo}] amostra: ${sample}`);
 
-    // Heurística: link de margem
     const margemLink = links.find(l => /margem|consulta.*margem/i.test(l.text));
     if (margemLink) {
-      console.log(`[orgao ${o.codigo}] >>> candidato margem: ${margemLink.text} -> ${margemLink.href}`);
+      await log("info", `[${o.codigo}] >>> candidato margem: ${margemLink.text} -> ${margemLink.href}`);
     } else {
-      console.log(`[orgao ${o.codigo}] sem link óbvio de margem; procurando 'Consigna' / 'Servidor'`);
-      links.filter(l => /consigna|servidor|cpf|matr[íi]cula/i.test(l.text)).slice(0,15)
-        .forEach(l => console.log(`[orgao ${o.codigo}]   ? ${l.text} -> ${l.href}`));
+      const candidatos = links.filter(l => /consigna|servidor|cpf|matr[íi]cula/i.test(l.text)).slice(0, 10);
+      await log("warn", `[${o.codigo}] sem link óbvio de margem; candidatos: ${candidatos.map(c=>c.text).join(", ") || "nenhum"}`);
     }
-
     detalhes[o.codigo] = null;
   }
 
