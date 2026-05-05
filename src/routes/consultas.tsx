@@ -101,7 +101,7 @@ function Page() {
     const header = ["cpf", "nome", "status", "margem_disponivel", "erro", "processed_at"];
     const csv = [header.join(",")].concat(
       data.map((r) => header.map((h) => {
-        const v = (r as Record<string, unknown>)[h];
+        const v = (r as unknown as Record<string, unknown>)[h];
         const s = v == null ? "" : String(v).replace(/"/g, '""');
         return `"${s}"`;
       }).join(","))
