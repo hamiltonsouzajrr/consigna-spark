@@ -185,36 +185,63 @@ function listarLinksSidebar(html: string): { href: string; text: string }[] {
   return out;
 }
 
-async function consultarMargemNoOrgao(s: Session, cpf: string): Promise<number | null> {
-  // TODO calibrar: caminho real da tela de consulta de margem dentro do menu
-  // "Consignações". Usamos um endpoint provável; ajustar após primeiro run.
-  const CONSULTA_URL = `${CONSIGUP_BASE}/Consignacoes/ConsultaMargem.aspx`;
+async function consultarMargemNoOrgao(s: Session, cpf: string, consultaPath: string, log: LogFn): Promise<number | null> {
+  const CONSULTA_URL = consultaPath.startsWith("http") ? consultaPath : `${CONSIGUP_BASE}${consultaPath.startsWith("/") ? "" : "/"}${consultaPath}`;
+  await log("info", `GET ${CONSULTA_URL}`);
   const page = await s.request(CONSULTA_URL);
   if (page.status !== 200) {
-    console.warn("[consulta] GET", CONSULTA_URL, "status", page.status);
+    await log("warn", `[consulta] GET status ${page.status}`);
     return null;
   }
   const hidden = extractAllHidden(page.body);
   const form = new URLSearchParams();
   for (const [k, v] of Object.entries(hidden)) form.set(k, v);
 
-  // Heurística: nome do campo de CPF
-  const cpfMatch = page.body.match(/<input[^>]+name="([^"]*[Cc][Pp][Ff][^"]*)"/);
+  // Heurística: nome do campo de CPF (input text com 'cpf' no name/id)
+  const cpfMatch = page.body.match(/<input[^>]+name="([^"]*[Cc][Pp][Ff][^"]*)"[^>]*>/);
   const cpfField = cpfMatch ? cpfMatch[1] : "ctl00$ContentPlaceHolder1$txtCPF";
-  form.set(cpfField, cpf);
-  form.set("ctl00$ContentPlaceHolder1$btnConsultar", "Consultar");
+  const cpfFmt = /^\d{11}$/.test(cpf)
+    ? `${cpf.slice(0,3)}.${cpf.slice(3,6)}.${cpf.slice(6,9)}-${cpf.slice(9)}`
+    : cpf;
+  form.set(cpfField, cpfFmt);
+
+  // Detecta botão (input submit cujo name contenha Consultar/Pesquisar)
+  const btnMatch = page.body.match(/<input[^>]+type="submit"[^>]+name="([^"]+)"[^>]+value="([^"]*(?:Consultar|Pesquisar|Buscar)[^"]*)"/i)
+                || page.body.match(/<input[^>]+type="submit"[^>]+value="([^"]*(?:Consultar|Pesquisar|Buscar)[^"]*)"[^>]+name="([^"]+)"/i);
+  if (btnMatch) {
+    // primeira regex: name=1 value=2; segunda: value=1 name=2
+    const isFirst = /name=/.test(btnMatch[0].split("value=")[0]);
+    const name = isFirst ? btnMatch[1] : btnMatch[2];
+    const value = isFirst ? btnMatch[2] : btnMatch[1];
+    form.set(name, value);
+    await log("info", `[consulta] botão: ${name}=${value} cpfField=${cpfField}`);
+  } else {
+    form.set("ctl00$ContentPlaceHolder1$btnConsultar", "Consultar");
+    await log("warn", `[consulta] botão não detectado, usando default`);
+  }
 
   const res = await s.request(CONSULTA_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: { "Content-Type": "application/x-www-form-urlencoded", Referer: CONSULTA_URL },
     body: form.toString(),
   });
 
-  // Procura "Margem Disponível" no resultado
-  const marker = res.body.match(/Margem\s+Dispon[íi]vel[\s\S]{0,200}/i);
+  // Erros comuns: "não localizado", "não encontrado", "sem margem"
+  if (/n[ãa]o\s+(localizado|encontrado|cadastrado)/i.test(res.body)) {
+    await log("info", `[consulta] servidor não localizado para CPF`);
+    return 0;
+  }
+
+  // Procura "Margem Disponível"
+  const marker = res.body.match(/Margem\s+Dispon[íi]vel[\s\S]{0,400}/i);
   if (!marker) {
-    console.warn("[consulta] sem 'Margem Disponível' no retorno");
-    return null;
+    // tenta variantes
+    const alt = res.body.match(/(Margem\s+Livre|Valor\s+Dispon[íi]vel)[\s\S]{0,400}/i);
+    if (!alt) {
+      await log("warn", `[consulta] sem 'Margem Disponível' no retorno (len=${res.body.length})`);
+      return null;
+    }
+    return parseBRL(alt[0]);
   }
   return parseBRL(marker[0]);
 }
@@ -307,6 +334,7 @@ async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<{ marge
   if (orgaos.length === 0) { await log("error", "Nenhum órgão encontrado no header"); return { margem: null, erro: "Nenhum órgão encontrado no header", detalhes: {} }; }
 
   const detalhes: Record<string, number | null> = {};
+  let melhor: number | null = null;
   for (const o of orgaos) {
     await log("info", `=== Órgão ${o.codigo} ${o.nome} ===`);
     const sw = await selecionarOrgao(s, o.eventTarget);
@@ -314,20 +342,32 @@ async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<{ marge
 
     const links = listarLinksSidebar(sw.html);
     await log("info", `[${o.codigo}] Sidebar: ${links.length} links`);
-    const sample = links.slice(0, 30).map(l => `[${l.text}] -> ${l.href}`).join(" | ");
-    if (sample) await log("info", `[${o.codigo}] amostra: ${sample}`);
 
-    const margemLink = links.find(l => /margem|consulta.*margem/i.test(l.text));
-    if (margemLink) {
-      await log("info", `[${o.codigo}] >>> candidato margem: ${margemLink.text} -> ${margemLink.href}`);
-    } else {
-      const candidatos = links.filter(l => /consigna|servidor|cpf|matr[íi]cula/i.test(l.text)).slice(0, 10);
-      await log("warn", `[${o.codigo}] sem link óbvio de margem; candidatos: ${candidatos.map(c=>c.text).join(", ") || "nenhum"}`);
+    const margemLink = links.find(l =>
+      /margem|consulta.*margem|pr[ée]\s*-?\s*reservar|consultar/i.test(l.text)
+      || /Margem|ConsultaMargem/i.test(l.href)
+    );
+    if (!margemLink) {
+      await log("warn", `[${o.codigo}] sem link de margem`);
+      detalhes[o.codigo] = null;
+      continue;
     }
-    detalhes[o.codigo] = null;
+    await log("info", `[${o.codigo}] usando link: ${margemLink.text} -> ${margemLink.href}`);
+    try {
+      const m = await consultarMargemNoOrgao(s, cpf, margemLink.href, log);
+      detalhes[o.codigo] = m;
+      await log("info", `[${o.codigo}] margem = ${m}`);
+      if (m !== null && (melhor === null || m > melhor)) melhor = m;
+    } catch (e) {
+      await log("error", `[${o.codigo}] erro consulta: ${String(e).slice(0,300)}`);
+      detalhes[o.codigo] = null;
+    }
   }
 
-  return { margem: null, erro: "MODO_DESCOBERTA_ORGAOS: ver logs", detalhes };
+  if (melhor === null) {
+    return { margem: null, erro: "Margem não localizada em nenhum órgão", detalhes };
+  }
+  return { margem: melhor, erro: null, detalhes };
 }
 
 // ---------- Handler ----------
