@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
-import { Sparkles, TrendingUp, CreditCard, Wallet } from "lucide-react";
+import { Sparkles, TrendingUp, CreditCard, Wallet, Building2 } from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 export const Route = createFileRoute("/alagoas")({
   head: () => ({
@@ -32,7 +33,8 @@ const PRODUTOS: Produto[] = [
   { nome: "Banco Digio", tipo: "principal", prazo: "120x", coeficiente: 0.02166, highlight: true },
   { nome: "Banese", tipo: "principal", prazo: "120x", coeficiente: 0.02672 },
   { nome: "Banese", tipo: "principal", prazo: "90x", coeficiente: 0.02812 },
-  { nome: "Caixa Econômica", tipo: "principal", obs: "Aguardando planilha" },
+  { nome: "Caixa Econômica — Estado", tipo: "principal", prazo: "96x", coeficiente: 0.022746 },
+  { nome: "Caixa Econômica — Prefeitura Maceió", tipo: "principal", prazo: "96x", coeficiente: 0.023015 },
   { nome: "KardBank", tipo: "cartao_credito", prazo: "96x", multiplicador: 22, highlight: true },
   { nome: "Nossa Gente", tipo: "cartao_credito", prazo: "96x", multiplicador: 21.5 },
   { nome: "Amigoz", tipo: "cartao_beneficio", prazo: "84x", multiplicador: 21, highlight: true },
@@ -155,6 +157,94 @@ function ProdutoCard({ p }: { p: Produto }) {
   );
 }
 
+// Tabela de coeficientes Caixa por convenente e prazo
+// Calculados via simulação price (taxa 1,75% a.m.) + IOF + seguro prestamista,
+// usando prazo de extrato de cada convenente (Estado 47d, Maceió 38d).
+const CAIXA_TABELA: Record<string, { label: string; coefs: Record<number, number> }> = {
+  estado: {
+    label: "Governo de Alagoas (Estado)",
+    coefs: { 24: 0.053892, 36: 0.039603, 48: 0.032587, 60: 0.028488, 72: 0.025848, 84: 0.024039, 96: 0.022746 },
+  },
+  maceio: {
+    label: "Prefeitura de Maceió",
+    coefs: { 24: 0.054556, 36: 0.040081, 48: 0.032976, 60: 0.028827, 72: 0.026154, 84: 0.024323, 96: 0.023015 },
+  },
+};
+
+function CaixaPrazos() {
+  const [conv, setConv] = useState<keyof typeof CAIXA_TABELA>("estado");
+  const [prazo, setPrazo] = useState<number>(96);
+  const [margem, setMargem] = useState<string>("");
+  const m = parseFloat(margem.replace(",", ".")) || 0;
+  const coef = CAIXA_TABELA[conv].coefs[prazo];
+  const valor = m && coef ? m / coef : 0;
+  const parcela = valor * coef;
+
+  return (
+    <div className="mx-auto max-w-3xl card-premium p-8">
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/20 text-primary-glow">
+          <Building2 className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Caixa Econômica Federal</p>
+          <p className="text-lg font-semibold">Simulador por prazo</p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <Label className="text-xs">Convenente</Label>
+          <Select value={conv} onValueChange={(v) => setConv(v as keyof typeof CAIXA_TABELA)}>
+            <SelectTrigger className="h-10 bg-background/40 backdrop-blur"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.entries(CAIXA_TABELA).map(([k, v]) => (
+                <SelectItem key={k} value={k}>{v.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">Prazo</Label>
+          <Select value={String(prazo)} onValueChange={(v) => setPrazo(Number(v))}>
+            <SelectTrigger className="h-10 bg-background/40 backdrop-blur"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.keys(CAIXA_TABELA[conv].coefs).map((p) => (
+                <SelectItem key={p} value={p}>{p}x</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <Label className="text-xs">Margem disponível</Label>
+        <Input
+          type="text"
+          inputMode="decimal"
+          placeholder="R$ 0,00"
+          value={margem}
+          onChange={(e) => setMargem(e.target.value)}
+          className="h-10 bg-background/40 backdrop-blur"
+        />
+      </div>
+
+      <div className="mt-6 text-center">
+        <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
+          Valor liberado aproximadamente
+        </p>
+        <p className="mt-1 text-5xl font-bold leading-none tracking-tight text-gradient">{brl(valor)}</p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Parcela ≈ <span className="font-medium text-foreground">{brl(parcela)}</span> · Coeficiente {coef.toFixed(6).replace(".", ",")}
+        </p>
+        <p className="mt-2 text-[10px] uppercase tracking-widest text-warning">
+          Confirmar com o setor de Digitação
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function AlagoasPage() {
   const principais = PRODUTOS.filter((p) => p.tipo === "principal");
   const credito = PRODUTOS.filter((p) => p.tipo === "cartao_credito");
@@ -179,6 +269,7 @@ function AlagoasPage() {
           <div className="flex justify-center">
             <TabsList className="h-11 rounded-full bg-muted/60 p-1 backdrop-blur">
               <TabsTrigger value="principal" className="rounded-full px-5">Margem Principal</TabsTrigger>
+              <TabsTrigger value="caixa" className="rounded-full px-5">Caixa — Prazos</TabsTrigger>
               <TabsTrigger value="credito" className="rounded-full px-5">Cartão Crédito</TabsTrigger>
               <TabsTrigger value="beneficio" className="rounded-full px-5">Cartão Benefício</TabsTrigger>
             </TabsList>
@@ -188,6 +279,9 @@ function AlagoasPage() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {principais.map((p, i) => <ProdutoCard key={i} p={p} />)}
             </div>
+          </TabsContent>
+          <TabsContent value="caixa" className="mt-8">
+            <CaixaPrazos />
           </TabsContent>
           <TabsContent value="credito" className="mt-8">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
