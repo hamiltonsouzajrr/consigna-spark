@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
-import { Sparkles, TrendingUp, CreditCard, Wallet } from "lucide-react";
+import { Sparkles, TrendingUp, CreditCard, Wallet, Building2 } from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 export const Route = createFileRoute("/alagoas")({
   head: () => ({
@@ -32,7 +33,8 @@ const PRODUTOS: Produto[] = [
   { nome: "Banco Digio", tipo: "principal", prazo: "120x", coeficiente: 0.02166, highlight: true },
   { nome: "Banese", tipo: "principal", prazo: "120x", coeficiente: 0.02672 },
   { nome: "Banese", tipo: "principal", prazo: "90x", coeficiente: 0.02812 },
-  { nome: "Caixa Econômica", tipo: "principal", obs: "Aguardando planilha" },
+  { nome: "Caixa Econômica — Estado", tipo: "principal", prazo: "96x", coeficiente: 0.022746 },
+  { nome: "Caixa Econômica — Prefeitura Maceió", tipo: "principal", prazo: "96x", coeficiente: 0.023015 },
   { nome: "KardBank", tipo: "cartao_credito", prazo: "96x", multiplicador: 22, highlight: true },
   { nome: "Nossa Gente", tipo: "cartao_credito", prazo: "96x", multiplicador: 21.5 },
   { nome: "Amigoz", tipo: "cartao_beneficio", prazo: "84x", multiplicador: 21, highlight: true },
