@@ -163,7 +163,7 @@ function ProdutoCard({ p }: { p: Produto }) {
 const CAIXA_TABELA: Record<string, { label: string; coefs: Record<number, number> }> = {
   estado: {
     label: "Governo de Alagoas (Estado)",
-    coefs: { 24: 0.053892, 36: 0.039603, 48: 0.032587, 60: 0.028488, 72: 0.025848, 84: 0.024039, 96: 0.022746 },
+    coefs: { 24: 0.054160, 36: 0.039709, 48: 0.032637, 60: 0.028514, 72: 0.025861, 84: 0.024044, 96: 0.022746, 108: 0.021791, 120: 0.021072, 132: 0.020523, 144: 0.020097 },
   },
   maceio: {
     label: "Prefeitura de Maceió",
@@ -175,8 +175,10 @@ function CaixaPrazos() {
   const [conv, setConv] = useState<keyof typeof CAIXA_TABELA>("estado");
   const [prazo, setPrazo] = useState<number>(96);
   const [margem, setMargem] = useState<string>("");
+  const prazos = Object.keys(CAIXA_TABELA[conv].coefs).map(Number);
+  const prazoEfetivo = prazos.includes(prazo) ? prazo : prazos[prazos.length - 1];
   const m = parseFloat(margem.replace(",", ".")) || 0;
-  const coef = CAIXA_TABELA[conv].coefs[prazo];
+  const coef = CAIXA_TABELA[conv].coefs[prazoEfetivo];
   const valor = m && coef ? m / coef : 0;
   const parcela = valor * coef;
 
@@ -206,7 +208,7 @@ function CaixaPrazos() {
         </div>
         <div>
           <Label className="text-xs">Prazo</Label>
-          <Select value={String(prazo)} onValueChange={(v) => setPrazo(Number(v))}>
+          <Select value={String(prazoEfetivo)} onValueChange={(v) => setPrazo(Number(v))}>
             <SelectTrigger className="h-10 bg-background/40 backdrop-blur"><SelectValue /></SelectTrigger>
             <SelectContent>
               {Object.keys(CAIXA_TABELA[conv].coefs).map((p) => (
