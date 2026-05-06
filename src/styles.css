@@ -121,5 +121,35 @@ html, body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
 
 @layer base {
   * { border-color: var(--color-border); }
-  body { background-color: var(--color-background); color: var(--color-foreground); }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 20% -10%, color-mix(in oklab, var(--primary) 22%, transparent), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 100% 10%, color-mix(in oklab, var(--primary-glow) 18%, transparent), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 50% 110%, color-mix(in oklab, var(--primary) 14%, transparent), transparent 60%);
+    background-attachment: fixed;
+    font-feature-settings: "ss01", "cv11";
+  }
+}
+
+@utility card-premium {
+  background: var(--gradient-premium);
+  border: 1px solid color-mix(in oklab, var(--primary) 35%, transparent);
+  box-shadow: var(--shadow-glow);
+  border-radius: var(--radius-xl);
+}
+
+@utility card-elegant {
+  background: var(--gradient-subtle);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-elegant);
+  border-radius: var(--radius-lg);
+}
+
+@utility text-gradient {
+  background: linear-gradient(135deg, var(--primary-glow), var(--primary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
