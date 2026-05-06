@@ -1,17 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
+import { Sparkles, TrendingUp, CreditCard, Wallet } from "lucide-react";
 
 export const Route = createFileRoute("/alagoas")({
   head: () => ({
     meta: [
       { title: "Governo de Alagoas — Simulação" },
-      { name: "description", content: "Simulação de produtos consignados — Governo de Alagoas." },
+      { name: "description", content: "Simulação premium de produtos consignados para Governo de Alagoas." },
     ],
   }),
   component: AlagoasPage,
@@ -21,22 +21,21 @@ type Produto = {
   nome: string;
   tipo: "principal" | "cartao_credito" | "cartao_beneficio";
   prazo?: string;
-  // Para empréstimo: valor = margem / coef
-  // Para cartão: valor = margem * multiplicador
   coeficiente?: number;
   multiplicador?: number;
   obs?: string;
+  highlight?: boolean;
 };
 
 const PRODUTOS: Produto[] = [
-  { nome: "Banco PAN — Tabela Flex 4", tipo: "principal", prazo: "144x", coeficiente: 0.02226 },
-  { nome: "Banco Digio — Tabela Flex 4", tipo: "principal", prazo: "120x", coeficiente: 0.02166 },
+  { nome: "Banco PAN", tipo: "principal", prazo: "144x", coeficiente: 0.02226 },
+  { nome: "Banco Digio", tipo: "principal", prazo: "120x", coeficiente: 0.02166, highlight: true },
   { nome: "Banese", tipo: "principal", prazo: "120x", coeficiente: 0.02672 },
   { nome: "Banese", tipo: "principal", prazo: "90x", coeficiente: 0.02812 },
-  { nome: "Caixa Econômica", tipo: "principal", obs: "Aguardando planilha de cálculo" },
-  { nome: "KardBank", tipo: "cartao_credito", multiplicador: 22 },
+  { nome: "Caixa Econômica", tipo: "principal", obs: "Aguardando planilha" },
+  { nome: "KardBank", tipo: "cartao_credito", multiplicador: 22, highlight: true },
   { nome: "Nossa Gente", tipo: "cartao_credito", multiplicador: 21.5 },
-  { nome: "Amigoz", tipo: "cartao_beneficio", multiplicador: 21 },
+  { nome: "Amigoz", tipo: "cartao_beneficio", multiplicador: 21, highlight: true },
   { nome: "Aki Capital", tipo: "cartao_beneficio", multiplicador: 21 },
 ];
 
@@ -45,7 +44,9 @@ const brl = (n: number) =>
 
 function ProdutoCard({ p }: { p: Produto }) {
   const [margem, setMargem] = useState<string>("");
-  const m = parseFloat(margem.replace(",", ".")) || 0;
+  const [sliderVal, setSliderVal] = useState<number>(0);
+  const m = parseFloat(margem.replace(",", ".")) || sliderVal || 0;
+  const disabled = !p.coeficiente && !p.multiplicador;
 
   const valor = useMemo(() => {
     if (!m) return 0;
@@ -56,44 +57,94 @@ function ProdutoCard({ p }: { p: Produto }) {
 
   const parcela = p.coeficiente && valor ? valor * p.coeficiente : null;
 
+  const subtitleIcon = p.tipo === "principal"
+    ? TrendingUp
+    : p.tipo === "cartao_credito"
+    ? CreditCard
+    : Wallet;
+  const Icon = subtitleIcon;
+
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base">{p.nome}</CardTitle>
-          {p.prazo && <Badge variant="secondary">{p.prazo}</Badge>}
+    <div
+      className={`relative flex flex-col rounded-2xl p-6 transition-all ${
+        p.highlight ? "card-premium" : "card-elegant"
+      }`}
+    >
+      {p.highlight && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border border-primary/40 bg-background px-3 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-primary shadow">
+          <Sparkles className="mr-1 inline h-3 w-3" /> Destaque
         </div>
-        <CardDescription className="text-xs">
-          {p.coeficiente
-            ? `Coeficiente: ${p.coeficiente}`
-            : p.multiplicador
-            ? `Multiplicador: ${p.multiplicador}x`
-            : p.obs ?? ""}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="space-y-1.5">
-          <Label className="text-xs">Margem disponível (R$)</Label>
+      )}
+
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${p.highlight ? "bg-primary/20 text-primary-glow" : "bg-muted text-muted-foreground"}`}>
+            <Icon className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+              {p.tipo === "principal" ? "Margem Principal" : p.tipo === "cartao_credito" ? "Cartão Crédito" : "Cartão Benefício"}
+            </p>
+            <p className="text-base font-semibold">{p.nome}</p>
+          </div>
+        </div>
+        {p.prazo && (
+          <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+            {p.prazo}
+          </span>
+        )}
+      </div>
+
+      <div className="mb-5 text-center">
+        <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">Valor liberado</p>
+        <p className={`mt-1 font-bold leading-none tracking-tight ${p.highlight ? "text-gradient text-5xl" : "text-4xl"}`}>
+          {brl(valor)}
+        </p>
+        {parcela !== null && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Parcela ≈ <span className="font-medium text-foreground">{brl(parcela)}</span>
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <div className="mb-1.5 flex items-center justify-between">
+            <Label className="text-xs font-medium">Margem disponível</Label>
+            {!disabled && (
+              <span className="text-xs text-primary font-semibold">{brl(m)}</span>
+            )}
+          </div>
           <Input
-            type="number"
+            type="text"
             inputMode="decimal"
-            placeholder="0,00"
+            placeholder={disabled ? "Indisponível" : "R$ 0,00"}
             value={margem}
-            onChange={(e) => setMargem(e.target.value)}
-            disabled={!p.coeficiente && !p.multiplicador}
+            onChange={(e) => { setMargem(e.target.value); setSliderVal(0); }}
+            disabled={disabled}
+            className="h-10 bg-background/40 backdrop-blur"
           />
         </div>
-        <div className="rounded-md border bg-muted/40 p-3">
-          <p className="text-xs text-muted-foreground">Valor liberado</p>
-          <p className="text-xl font-semibold">{brl(valor)}</p>
-          {parcela !== null && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Parcela estimada: {brl(parcela)}
-            </p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+
+        {!disabled && (
+          <Slider
+            value={[m]}
+            min={0}
+            max={5000}
+            step={10}
+            onValueChange={(v) => { setSliderVal(v[0]); setMargem(String(v[0])); }}
+          />
+        )}
+      </div>
+
+      <div className="mt-5 border-t border-border/60 pt-3 text-[11px] text-muted-foreground">
+        {p.coeficiente
+          ? <>Coeficiente <span className="font-mono text-foreground">{p.coeficiente.toString().replace(".", ",")}</span></>
+          : p.multiplicador
+          ? <>Multiplicador <span className="font-mono text-foreground">{p.multiplicador}×</span></>
+          : p.obs}
+      </div>
+    </div>
   );
 }
 
@@ -104,35 +155,40 @@ function AlagoasPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Governo de Alagoas — Simulação</h1>
-          <p className="text-sm text-muted-foreground">
-            Calculadora de produtos consignados por margem.
+      <div className="space-y-8">
+        <div className="text-center">
+          <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-primary">
+            <Sparkles className="h-3 w-3" /> Governo de Alagoas
+          </p>
+          <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
+            Simulação <span className="text-gradient">Consignada</span>
+          </h1>
+          <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
+            Calcule em tempo real o valor liberado por produto. Ajuste a margem disponível e veja a melhor opção.
           </p>
         </div>
 
-        <Tabs defaultValue="principal">
-          <TabsList>
-            <TabsTrigger value="principal">Margem Principal</TabsTrigger>
-            <TabsTrigger value="credito">Cartão de Crédito</TabsTrigger>
-            <TabsTrigger value="beneficio">Cartão Benefício</TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="principal" className="mx-auto">
+          <div className="flex justify-center">
+            <TabsList className="h-11 rounded-full bg-muted/60 p-1 backdrop-blur">
+              <TabsTrigger value="principal" className="rounded-full px-5">Margem Principal</TabsTrigger>
+              <TabsTrigger value="credito" className="rounded-full px-5">Cartão Crédito</TabsTrigger>
+              <TabsTrigger value="beneficio" className="rounded-full px-5">Cartão Benefício</TabsTrigger>
+            </TabsList>
+          </div>
 
-          <TabsContent value="principal" className="mt-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <TabsContent value="principal" className="mt-8">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {principais.map((p, i) => <ProdutoCard key={i} p={p} />)}
             </div>
           </TabsContent>
-
-          <TabsContent value="credito" className="mt-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <TabsContent value="credito" className="mt-8">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {credito.map((p, i) => <ProdutoCard key={i} p={p} />)}
             </div>
           </TabsContent>
-
-          <TabsContent value="beneficio" className="mt-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <TabsContent value="beneficio" className="mt-8">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {beneficio.map((p, i) => <ProdutoCard key={i} p={p} />)}
             </div>
           </TabsContent>
