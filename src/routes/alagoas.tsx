@@ -175,8 +175,10 @@ function CaixaPrazos() {
   const [conv, setConv] = useState<keyof typeof CAIXA_TABELA>("estado");
   const [prazo, setPrazo] = useState<number>(96);
   const [margem, setMargem] = useState<string>("");
+  const prazos = Object.keys(CAIXA_TABELA[conv].coefs).map(Number);
+  const prazoEfetivo = prazos.includes(prazo) ? prazo : prazos[prazos.length - 1];
   const m = parseFloat(margem.replace(",", ".")) || 0;
-  const coef = CAIXA_TABELA[conv].coefs[prazo];
+  const coef = CAIXA_TABELA[conv].coefs[prazoEfetivo];
   const valor = m && coef ? m / coef : 0;
   const parcela = valor * coef;
 
