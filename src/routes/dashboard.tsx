@@ -216,11 +216,16 @@ function Page() {
         <p className="text-sm text-muted-foreground">Consulta de margem</p>
       </div>
 
-      {/* Modo debug — em destaque no topo */}
-      <Card className="mb-8 border-primary/40 bg-primary/5 p-6 shadow-lg ring-1 ring-primary/20">
-        <div className="mb-4 flex items-center gap-2">
-          <Check className="h-6 w-6 text-primary" />
-          <h2 className="text-lg font-semibold uppercase tracking-wider">CONSULTA DE MARGEM ARACAJU</h2>
+      {/* Consulta Aracaju — destaque premium */}
+      <div className="card-premium mb-8 p-6 md:p-8">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20 text-primary-glow ring-1 ring-primary/40">
+            <Check className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-primary">Grupo Positive</p>
+            <h2 className="text-xl font-bold tracking-tight md:text-2xl">Consulta de Margem <span className="text-gradient">Aracaju</span></h2>
+          </div>
         </div>
         <div className="mt-6 border-t pt-4">
           <Label className="mb-2 block text-sm font-medium">Ou digite um CPF manualmente</Label>
@@ -385,7 +390,7 @@ function Page() {
             </div>
           );
         })()}
-      </Card>
+      </div>
 
       <div className="mb-3 mt-2">
         <h3 className="text-sm font-semibold text-muted-foreground">Visão geral</h3>
