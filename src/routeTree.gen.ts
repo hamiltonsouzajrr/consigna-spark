@@ -13,6 +13,7 @@ import { Route as UploadRouteImport } from './routes/upload'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ConsultasRouteImport } from './routes/consultas'
+import { Route as AlagoasRouteImport } from './routes/alagoas'
 import { Route as IndexRouteImport } from './routes/index'
 
 const UploadRoute = UploadRouteImport.update({
@@ -35,6 +36,11 @@ const ConsultasRoute = ConsultasRouteImport.update({
   path: '/consultas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AlagoasRoute = AlagoasRouteImport.update({
+  id: '/alagoas',
+  path: '/alagoas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -43,6 +49,7 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/alagoas': typeof AlagoasRoute
   '/consultas': typeof ConsultasRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/alagoas': typeof AlagoasRoute
   '/consultas': typeof ConsultasRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/alagoas': typeof AlagoasRoute
   '/consultas': typeof ConsultasRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
@@ -65,14 +74,28 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/consultas' | '/dashboard' | '/login' | '/upload'
+  fullPaths:
+    | '/'
+    | '/alagoas'
+    | '/consultas'
+    | '/dashboard'
+    | '/login'
+    | '/upload'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/consultas' | '/dashboard' | '/login' | '/upload'
-  id: '__root__' | '/' | '/consultas' | '/dashboard' | '/login' | '/upload'
+  to: '/' | '/alagoas' | '/consultas' | '/dashboard' | '/login' | '/upload'
+  id:
+    | '__root__'
+    | '/'
+    | '/alagoas'
+    | '/consultas'
+    | '/dashboard'
+    | '/login'
+    | '/upload'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AlagoasRoute: typeof AlagoasRoute
   ConsultasRoute: typeof ConsultasRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
@@ -109,6 +132,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsultasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/alagoas': {
+      id: '/alagoas'
+      path: '/alagoas'
+      fullPath: '/alagoas'
+      preLoaderRoute: typeof AlagoasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -121,6 +151,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AlagoasRoute: AlagoasRoute,
   ConsultasRoute: ConsultasRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
