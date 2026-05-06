@@ -208,7 +208,7 @@ function CaixaPrazos() {
         </div>
         <div>
           <Label className="text-xs">Prazo</Label>
-          <Select value={String(prazo)} onValueChange={(v) => setPrazo(Number(v))}>
+          <Select value={String(prazoEfetivo)} onValueChange={(v) => setPrazo(Number(v))}>
             <SelectTrigger className="h-10 bg-background/40 backdrop-blur"><SelectValue /></SelectTrigger>
             <SelectContent>
               {Object.keys(CAIXA_TABELA[conv].coefs).map((p) => (
