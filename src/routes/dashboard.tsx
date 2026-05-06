@@ -390,7 +390,7 @@ function Page() {
             </div>
           );
         })()}
-      </Card>
+      </div>
 
       <div className="mb-3 mt-2">
         <h3 className="text-sm font-semibold text-muted-foreground">Visão geral</h3>
