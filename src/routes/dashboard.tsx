@@ -291,7 +291,7 @@ function Page() {
 
                   <div className="pt-2">
                     <div><span className="text-muted-foreground">Margem Empréstimo</span> <strong>{brl(debugRow.margem_emprestimo)}</strong>
-                      {empValor != null && <span className="ml-2 text-primary">→ Valor liberado <strong>{brl(empValor)}</strong> <span className="text-xs text-muted-foreground">(margem ÷ {COEF_EMP.toString().replace(".", ",")})</span></span>}
+                      {empValor != null && <span className="ml-2 text-primary">→ Valor liberado aproximadamente <strong>{brl(empValor)}</strong> <span className="text-xs text-muted-foreground">(margem ÷ {COEF_EMP.toString().replace(".", ",")} · confirmar com o setor de Digitação)</span></span>}
                     </div>
                     <SimuladorMargem margemDisponivel={debugRow.margem_emprestimo} defaultCoef={COEF_EMP} />
                   </div>
@@ -453,7 +453,7 @@ function SimuladorMargem({ margemDisponivel, defaultCoef }: { margemDisponivel: 
           <Select value={modo} onValueChange={(val) => setModo(val as "valor" | "parcela")}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="valor">Calcular valor liberado</SelectItem>
+              <SelectItem value="valor">Calcular valor liberado aproximadamente</SelectItem>
               <SelectItem value="parcela">Calcular parcela</SelectItem>
             </SelectContent>
           </Select>
@@ -465,15 +465,15 @@ function SimuladorMargem({ margemDisponivel, defaultCoef }: { margemDisponivel: 
           </div>
         ) : (
           <div>
-            <Label className="text-xs">Valor liberado (R$)</Label>
+            <Label className="text-xs">Valor liberado aproximadamente (R$)</Label>
             <Input value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0,00" />
           </div>
         )}
       </div>
       <div className="mt-3 text-sm">
         {modo === "valor" ? (
-          <>Valor liberado estimado: <strong className="text-primary">{brl(valorCalc)}</strong>
-            <span className="ml-2 text-xs text-muted-foreground">(parcela ÷ coeficiente)</span></>
+          <>Valor liberado aproximadamente: <strong className="text-primary">{brl(valorCalc)}</strong>
+            <span className="ml-2 text-xs text-muted-foreground">(parcela ÷ coeficiente · confirmar com o setor de Digitação)</span></>
         ) : (
           <>Parcela estimada: <strong className="text-primary">{brl(parcelaCalc)}</strong>
             <span className="ml-2 text-xs text-muted-foreground">(valor × coeficiente)</span></>
