@@ -96,13 +96,20 @@ function ProdutoCard({ p }: { p: Produto }) {
       </div>
 
       <div className="mb-5 text-center">
-        <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">Valor liberado</p>
+        <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
+          {p.tipo === "principal" && valor > 0 ? "Valor liberado aproximadamente" : "Valor liberado"}
+        </p>
         <p className={`mt-1 font-bold leading-none tracking-tight ${p.highlight ? "text-gradient text-5xl" : "text-4xl"}`}>
           {brl(valor)}
         </p>
         {parcela !== null && (
           <p className="mt-2 text-xs text-muted-foreground">
             Parcela ≈ <span className="font-medium text-foreground">{brl(parcela)}</span>
+          </p>
+        )}
+        {p.tipo === "principal" && valor > 0 && (
+          <p className="mt-2 text-[10px] uppercase tracking-widest text-warning">
+            Confirmar com o setor de Digitação
           </p>
         )}
       </div>
