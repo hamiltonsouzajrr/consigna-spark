@@ -24,7 +24,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div>
             <p className="text-sm font-semibold leading-tight">Grupo Positive</p>
-            <p className="text-xs text-muted-foreground">Consultas Aracaju</p>
+            <p className="text-xs text-muted-foreground">Consultas e simulação</p>
           </div>
         </div>
         <nav className="flex-1 space-y-1 p-3">
