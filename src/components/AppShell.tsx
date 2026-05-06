@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import type { ReactNode } from "react";
 
 const nav = [
+  { to: "/alagoas", label: "Alagoas — Simulação", icon: Calculator },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/upload", label: "Importar", icon: Upload },
   { to: "/consultas", label: "Consultas", icon: List },
-  { to: "/alagoas", label: "Alagoas — Simulação", icon: Calculator },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
