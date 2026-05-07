@@ -175,7 +175,7 @@ function Page() {
   const exportXlsx = (onlyDone: boolean) => {
     const data = onlyDone ? items.filter((i) => i.status === "concluido") : items;
     if (!data.length) return toast.info("Nada para exportar");
-    const rows = data.map((r) => ({
+    const rows: Record<string, string | number>[] = data.map((r) => ({
       "CPF": formatCpf(r.cpf),
       "Nome (planilha)": r.nome,
       "Servidor": r.servidor_nome ?? "",
