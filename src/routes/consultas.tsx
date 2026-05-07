@@ -11,11 +11,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Play, Download, RefreshCw, Loader2, FileSpreadsheet } from "lucide-react";
+import { Play, Download, RefreshCw, Loader2, FileSpreadsheet, Pause, Square } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import * as XLSX from "xlsx";
 import { formatCpf } from "@/lib/cpf";
 
 export const Route = createFileRoute("/consultas")({ component: Page });
+
+interface Run {
+  id: string; status: string; total: number; processed: number;
+  created_at: string; updated_at: string;
+}
 
 type Status = "pendente" | "processando" | "concluido" | "erro";
 interface Consulta {
@@ -56,6 +62,34 @@ function Page() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [processing, setProcessing] = useState(false);
+  const [run, setRun] = useState<Run | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const loadRun = async () => {
+      const { data } = await supabase
+        .from("processar_runs")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setRun((data as Run | null) ?? null);
+    };
+    loadRun();
+    const ch = supabase
+      .channel("runs-list")
+      .on("postgres_changes", { event: "*", schema: "public", table: "processar_runs" }, loadRun)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user]);
+
+  const updateRunStatus = async (status: "running" | "paused" | "stopped") => {
+    if (!run) return;
+    const { error } = await supabase.from("processar_runs").update({ status }).eq("id", run.id);
+    if (error) toast.error(error.message);
+    else toast.success(status === "paused" ? "Pausado" : status === "stopped" ? "Parado" : "Retomado");
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -195,6 +229,39 @@ function Page() {
           <Button variant="outline" onClick={() => exportCsv(false)}><Download className="mr-2 h-4 w-4" /> CSV todos</Button>
         </div>
       </div>
+
+      {run && (run.status === "running" || run.status === "paused") && (
+        <Card className="mb-6 p-4">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold">
+                Processamento em andamento {run.status === "paused" && <span className="ml-2 text-warning">(pausado)</span>}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {run.processed} de {run.total} CPFs processados
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {run.status === "running" ? (
+                <Button size="sm" variant="outline" onClick={() => updateRunStatus("paused")}>
+                  <Pause className="mr-2 h-4 w-4" /> Pausar
+                </Button>
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => updateRunStatus("running")}>
+                  <Play className="mr-2 h-4 w-4" /> Continuar
+                </Button>
+              )}
+              <Button size="sm" variant="destructive" onClick={() => updateRunStatus("stopped")}>
+                <Square className="mr-2 h-4 w-4" /> Parar
+              </Button>
+            </div>
+          </div>
+          <Progress value={run.total > 0 ? (run.processed / run.total) * 100 : 0} />
+          <p className="mt-2 text-right text-xs text-muted-foreground tabular-nums">
+            {run.total > 0 ? Math.round((run.processed / run.total) * 100) : 0}%
+          </p>
+        </Card>
+      )}
 
       {(() => {
         const recentes = items
