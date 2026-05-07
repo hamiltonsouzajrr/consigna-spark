@@ -25,19 +25,21 @@ function Page() {
   const [valid, setValid] = useState<ValidRow[]>([]);
   const [invalid, setInvalid] = useState<InvalidRow[]>([]);
   const [duplicates, setDuplicates] = useState(0);
+  const [alreadyImported, setAlreadyImported] = useState(0);
   const [fileName, setFileName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
 
-  const reset = () => { setValid([]); setInvalid([]); setDuplicates(0); };
+  const reset = () => { setValid([]); setInvalid([]); setDuplicates(0); setAlreadyImported(0); };
 
   const parseFile = async (file: File) => {
     reset();
     setFileName(file.name);
     const ext = file.name.split(".").pop()?.toLowerCase();
-    const onParsed = (records: Record<string, unknown>[]) => {
+    const onParsed = async (records: Record<string, unknown>[]) => {
       const ok: ValidRow[] = [];
       const bad: InvalidRow[] = [];
       const seen = new Set<string>();
@@ -65,24 +67,56 @@ function Page() {
         seen.add(cpf);
         ok.push({ cpf, nome });
       });
-      setValid(ok);
+
+      // Filtra CPFs já existentes na base (independente do status) — evita reconsultar até serem limpos
+      let already = 0;
+      let filtered = ok;
+      if (ok.length) {
+        setChecking(true);
+        const existing = new Set<string>();
+        const cpfs = ok.map((r) => r.cpf);
+        const chunkSize = 500;
+        for (let i = 0; i < cpfs.length; i += chunkSize) {
+          const chunk = cpfs.slice(i, i + chunkSize);
+          const { data, error } = await supabase
+            .from("consultas_margem")
+            .select("cpf")
+            .in("cpf", chunk);
+          if (error) { toast.error(`Erro ao verificar CPFs existentes: ${error.message}`); break; }
+          data?.forEach((row) => existing.add(row.cpf));
+        }
+        setChecking(false);
+        if (existing.size) {
+          filtered = ok.filter((r) => !existing.has(r.cpf));
+          already = ok.length - filtered.length;
+        }
+      }
+
+      setValid(filtered);
       setInvalid(bad);
       setDuplicates(dup);
-      if (!ok.length && !bad.length) toast.error("Planilha vazia ou sem colunas CPF/NOME.");
-      else if (!ok.length) toast.error("Nenhum CPF válido encontrado.");
-      else toast.success(`${ok.length} CPF(s) válidos${bad.length ? `, ${bad.length} inválidos` : ""}${dup ? `, ${dup} duplicados` : ""}.`);
+      setAlreadyImported(already);
+      if (!filtered.length && !bad.length && !already) toast.error("Planilha vazia ou sem colunas CPF/NOME.");
+      else if (!filtered.length && already) toast.warning(`Todos os ${already} CPF(s) válidos já estão na base.`);
+      else if (!filtered.length) toast.error("Nenhum CPF válido encontrado.");
+      else toast.success(
+        `${filtered.length} novo(s)` +
+        (already ? `, ${already} já importado(s)` : "") +
+        (bad.length ? `, ${bad.length} inválido(s)` : "") +
+        (dup ? `, ${dup} duplicado(s)` : "")
+      );
     };
     if (ext === "csv") {
       Papa.parse<Record<string, unknown>>(file, {
         header: true, skipEmptyLines: true,
-        complete: (res) => onParsed(res.data),
+        complete: (res) => { void onParsed(res.data); },
       });
     } else if (ext === "xlsx" || ext === "xls") {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf);
       const ws = wb.Sheets[wb.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
-      onParsed(json);
+      await onParsed(json);
     } else toast.error("Formato não suportado. Use CSV ou XLSX.");
   };
 
@@ -114,13 +148,16 @@ function Page() {
             type="file" accept=".csv,.xlsx,.xls" className="hidden"
             onChange={(e) => e.target.files?.[0] && parseFile(e.target.files[0])}
           />
-          {fileName && <p className="text-xs text-primary">{fileName}</p>}
+          {fileName && <p className="text-xs text-primary">{fileName}{checking ? " — verificando CPFs já importados…" : ""}</p>}
         </label>
       </Card>
 
-      {(valid.length > 0 || invalid.length > 0) && (
+      {(valid.length > 0 || invalid.length > 0 || alreadyImported > 0) && (
         <div className="mt-4 flex flex-wrap gap-2">
-          <Badge variant="outline" className="bg-success/15 text-success border-success/30">{valid.length} válidos</Badge>
+          <Badge variant="outline" className="bg-success/15 text-success border-success/30">{valid.length} novos</Badge>
+          {alreadyImported > 0 && (
+            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">{alreadyImported} já importados (ignorados)</Badge>
+          )}
           {invalid.length > 0 && (
             <Badge variant="outline" className="bg-destructive/15 text-destructive border-destructive/30">{invalid.length} inválidos</Badge>
           )}
