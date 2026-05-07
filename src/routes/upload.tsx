@@ -52,12 +52,14 @@ function Page() {
           return;
         }
         const rawCpf = String(r[cpfKey] ?? "").trim();
-        const cpf = normalizeCpf(rawCpf);
+        let cpf = normalizeCpf(rawCpf);
         const nome = String(r[nomeKey] ?? "").trim();
         if (!cpf && !nome) return; // empty row
         if (!nome) { bad.push({ cpf: rawCpf, nome: "", line, reason: "Nome vazio" }); return; }
         if (!cpf) { bad.push({ cpf: rawCpf, nome, line, reason: "CPF vazio" }); return; }
-        if (cpf.length !== 11) { bad.push({ cpf: rawCpf, nome, line, reason: `CPF deve ter 11 dígitos (tem ${cpf.length})` }); return; }
+        // Pad com zeros à esquerda quando o CPF tem menos de 11 dígitos (planilhas costumam perder zeros à esquerda)
+        if (cpf.length > 0 && cpf.length < 11) cpf = cpf.padStart(11, "0");
+        if (cpf.length !== 11) { bad.push({ cpf: rawCpf, nome, line, reason: `CPF deve ter no máximo 11 dígitos (tem ${cpf.length})` }); return; }
         if (!isValidCpf(cpf)) { bad.push({ cpf: rawCpf, nome, line, reason: "CPF inválido (dígito verificador)" }); return; }
         if (seen.has(cpf)) { dup++; return; }
         seen.add(cpf);
