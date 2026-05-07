@@ -662,6 +662,22 @@ Deno.serve(async (req) => {
     const task = (async () => {
       let processed = 0;
       let errors = 0;
+
+      // Logger amplo (sem consulta_id) para ciclo de vida da sessão
+      const sysLog: LogFn = async (level, message) => {
+        console.log(`[${level}] ${message}`);
+      };
+
+      // Cria sessão ConsigUp uma única vez e reusa entre CPFs
+      let ctx: ConsigUpCtx | null = null;
+      const ensureSession = async (): Promise<{ ok: true; ctx: ConsigUpCtx } | { ok: false; erro: string }> => {
+        if (ctx) return { ok: true, ctx };
+        const r = await novaSessaoConsigUp(sysLog);
+        if ("erro" in r) return { ok: false, erro: r.erro };
+        ctx = r;
+        return { ok: true, ctx };
+      };
+
       for (const row of rows) {
         let runStatus = "running";
         for (;;) {
@@ -681,7 +697,25 @@ Deno.serve(async (req) => {
           } catch (e) { console.error("log insert err", e); }
         };
         await log("info", `Iniciando processamento do CPF ${row.cpf}`);
-        const r = await consultarCpfTodosOrgaos(row.cpf, log);
+
+        const sess = await ensureSession();
+        let r: ConsultaResultado & { sessaoExpirada?: boolean };
+        if (!sess.ok) {
+          r = {
+            margem: null, margem_emprestimo: null, margem_cartao_credito: null, margem_cartao_beneficio: null,
+            servidor_nome: null, matricula: null, categoria: null, situacao: null, orgao: null, erro: sess.erro,
+          };
+        } else {
+          r = await consultarCpfTodosOrgaos(row.cpf, log, sess.ctx);
+          // Se sessão expirou no meio, descarta e tenta uma vez com nova sessão
+          if (r.sessaoExpirada) {
+            await log("warn", "Sessão ConsigUp expirou — refazendo login");
+            ctx = null;
+            const sess2 = await ensureSession();
+            if (sess2.ok) r = await consultarCpfTodosOrgaos(row.cpf, log, sess2.ctx);
+          }
+        }
+
         await log(r.erro ? "error" : "info", r.erro ? `Finalizado com erro: ${r.erro}` : `Finalizado. Margem total: ${r.margem} (órgão ${r.orgao})`);
         await supabase.from("consultas_margem").update({
           margem_disponivel: r.margem,
