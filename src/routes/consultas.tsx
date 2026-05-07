@@ -191,6 +191,19 @@ function Page() {
       "Erro": r.erro ?? "",
       "Processado em": r.processed_at ? new Date(r.processed_at).toLocaleString("pt-BR") : "",
     }));
+    const totalEmp = data.reduce((a, r) => a + (Number(r.margem_emprestimo) || 0), 0);
+    const totalCC = data.reduce((a, r) => a + (Number(r.margem_cartao_credito) || 0), 0);
+    const totalCB = data.reduce((a, r) => a + (Number(r.margem_cartao_beneficio) || 0), 0);
+    const totalDisp = data.reduce((a, r) => a + (Number(r.margem_disponivel) || 0), 0);
+    rows.push({
+      "CPF": "", "Nome (planilha)": "TOTAIS", "Servidor": "", "Matrícula": "",
+      "Órgão": "", "Categoria": "", "Situação": "", "Status": "",
+      "Margem Empréstimo": totalEmp,
+      "Margem Cartão Crédito": totalCC,
+      "Margem Cartão Benefício": totalCB,
+      "Margem Total Disponível": totalDisp,
+      "Erro": "", "Processado em": "",
+    });
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = [
       { wch: 14 }, { wch: 28 }, { wch: 28 }, { wch: 14 }, { wch: 28 },
