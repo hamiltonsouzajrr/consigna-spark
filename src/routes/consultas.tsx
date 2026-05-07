@@ -19,9 +19,20 @@ import { formatCpf } from "@/lib/cpf";
 export const Route = createFileRoute("/consultas")({ component: Page });
 
 interface Run {
-  id: string; status: string; total: number; processed: number;
+  id: string; status: string; total: number; processed: number; errors: number;
+  started_at: string; finished_at: string | null;
   created_at: string; updated_at: string;
 }
+
+const formatDuration = (ms: number) => {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}h ${m}m ${sec}s`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+};
 
 type Status = "pendente" | "processando" | "concluido" | "erro";
 interface Consulta {
