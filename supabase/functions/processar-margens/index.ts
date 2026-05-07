@@ -534,33 +534,42 @@ interface ConsultaResultado {
   erro: string | null;
 }
 
-async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<ConsultaResultado> {
+interface ConsigUpCtx {
+  s: Session;
+  orgaos: OrgaoLink[];
+}
+
+async function novaSessaoConsigUp(log: LogFn): Promise<ConsigUpCtx | { erro: string }> {
+  const user = Deno.env.get("CONSIGUP_USER");
+  const pass = Deno.env.get("CONSIGUP_PASS");
+  if (!user || !pass) return { erro: "Credenciais ConsigUp ausentes" };
+  const s = new Session();
+  await log("info", `Login ConsigUp como ${user}`);
+  const okLogin = await login(s, user, pass);
+  if (!okLogin) return { erro: "Falha de login no ConsigUp" };
+  const home = await s.request(HOME_URL);
+  const orgaos = listarOrgaosDoHtml(home.body);
+  if (orgaos.length === 0) return { erro: "Nenhum órgão encontrado no header" };
+  await log("info", `Sessão pronta — ${orgaos.length} órgãos descobertos`);
+  return { s, orgaos };
+}
+
+async function consultarCpfTodosOrgaos(
+  cpf: string, log: LogFn, ctx: ConsigUpCtx,
+): Promise<ConsultaResultado & { sessaoExpirada?: boolean }> {
   const empty: ConsultaResultado = {
     margem: null, margem_emprestimo: null, margem_cartao_credito: null, margem_cartao_beneficio: null,
     servidor_nome: null, matricula: null, categoria: null, situacao: null, orgao: null, erro: null,
   };
-  const user = Deno.env.get("CONSIGUP_USER");
-  const pass = Deno.env.get("CONSIGUP_PASS");
-  if (!user || !pass) { await log("error", "Credenciais ConsigUp ausentes"); return { ...empty, erro: "Credenciais ConsigUp ausentes" }; }
-
-  const s = new Session();
-  await log("info", `Iniciando login no ConsigUp como ${user}`);
-  const okLogin = await login(s, user, pass);
-  if (!okLogin) { await log("error", "Falha de login no ConsigUp"); return { ...empty, erro: "Falha de login no ConsigUp" }; }
-  await log("info", "Login OK, carregando home");
-
-  const home = await s.request(HOME_URL);
-  const orgaos = listarOrgaosDoHtml(home.body);
-  await log("info", `Órgãos descobertos: ${orgaos.length}`);
-  if (orgaos.length === 0) return { ...empty, erro: "Nenhum órgão encontrado no header" };
 
   const motivosOrgaos: Record<string, string> = {};
   let melhor: ConsultaResultado | null = null;
   let melhorTotal = -1;
+  let sessaoExpirada = false;
 
-  for (const o of orgaos) {
+  for (const o of ctx.orgaos) {
     await log("info", `=== Órgão ${o.codigo} ${o.nome} ===`);
-    const sw = await selecionarOrgao(s, o.eventTarget);
+    const sw = await selecionarOrgao(ctx.s, o.eventTarget);
     if (!sw.ok) { motivosOrgaos[o.codigo] = "falha_trocar_orgao"; continue; }
 
     const links = listarLinksSidebar(sw.html);
@@ -571,12 +580,15 @@ async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<Consult
     if (!margemLink) { motivosOrgaos[o.codigo] = "sem_link_margem"; continue; }
 
     try {
-      const r = await consultarMargensNoOrgao(s, cpf, margemLink.href, log);
+      const r = await consultarMargensNoOrgao(ctx.s, cpf, margemLink.href, log);
       const total = (r.margem_emprestimo ?? 0) + (r.margem_cartao_credito ?? 0) + (r.margem_cartao_beneficio ?? 0);
       const algumaMargem = r.margem_emprestimo !== null || r.margem_cartao_credito !== null || r.margem_cartao_beneficio !== null;
       const motivosStr = Object.entries(r.motivos).map(([k, v]) => `s${k}=${v}`).join("|");
       motivosOrgaos[o.codigo] = algumaMargem ? `ok(${total.toFixed(2)})` : motivosStr;
       await log("info", `[${o.codigo}] empréstimo=${r.margem_emprestimo} cartãoCred=${r.margem_cartao_credito} cartãoBenef=${r.margem_cartao_beneficio} total=${total.toFixed(2)}`);
+
+      // Detecta sessão expirada para o handler re-logar
+      if (Object.values(r.motivos).some((v) => /sessao_expirada/.test(v))) sessaoExpirada = true;
 
       if (algumaMargem && total > melhorTotal) {
         melhorTotal = total;
@@ -599,11 +611,11 @@ async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<Consult
     }
   }
 
-  if (melhor) return melhor;
+  if (melhor) return { ...melhor, sessaoExpirada };
 
   const erroFinal = `Margem não localizada em nenhum órgão. ${Object.entries(motivosOrgaos).map(([k, v]) => `${k}=${v}`).join(" | ")}`;
   await log("warn", `[resumo] ${erroFinal}`);
-  return { ...empty, erro: erroFinal.slice(0, 1000) };
+  return { ...empty, erro: erroFinal.slice(0, 1000), sessaoExpirada };
 }
 
 // ---------- Handler ----------
