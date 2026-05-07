@@ -11,7 +11,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Play, Download, RefreshCw, Loader2 } from "lucide-react";
+import { Play, Download, RefreshCw, Loader2, FileSpreadsheet } from "lucide-react";
+import * as XLSX from "xlsx";
+import { formatCpf } from "@/lib/cpf";
 
 export const Route = createFileRoute("/consultas")({ component: Page });
 
@@ -125,6 +127,46 @@ function Page() {
     URL.revokeObjectURL(url);
   };
 
+  const exportXlsx = (onlyDone: boolean) => {
+    const data = onlyDone ? items.filter((i) => i.status === "concluido") : items;
+    if (!data.length) return toast.info("Nada para exportar");
+    const rows = data.map((r) => ({
+      "CPF": formatCpf(r.cpf),
+      "Nome (planilha)": r.nome,
+      "Servidor": r.servidor_nome ?? "",
+      "Matrícula": r.matricula ?? "",
+      "Órgão": r.orgao ?? "",
+      "Categoria": r.categoria ?? "",
+      "Situação": r.situacao ?? "",
+      "Status": r.status,
+      "Margem Empréstimo": r.margem_emprestimo ?? "",
+      "Margem Cartão Crédito": r.margem_cartao_credito ?? "",
+      "Margem Cartão Benefício": r.margem_cartao_beneficio ?? "",
+      "Margem Total Disponível": r.margem_disponivel ?? "",
+      "Erro": r.erro ?? "",
+      "Processado em": r.processed_at ? new Date(r.processed_at).toLocaleString("pt-BR") : "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [
+      { wch: 14 }, { wch: 28 }, { wch: 28 }, { wch: 14 }, { wch: 28 },
+      { wch: 14 }, { wch: 14 }, { wch: 12 },
+      { wch: 18 }, { wch: 20 }, { wch: 22 }, { wch: 22 },
+      { wch: 30 }, { wch: 20 },
+    ];
+    // Formato moeda BRL para colunas de margem (I a L)
+    const range = XLSX.utils.decode_range(ws["!ref"] as string);
+    for (let R = 1; R <= range.e.r; R++) {
+      for (const C of [8, 9, 10, 11]) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: C });
+        const cell = ws[addr];
+        if (cell && typeof cell.v === "number") cell.z = '"R$" #,##0.00';
+      }
+    }
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Consultas");
+    XLSX.writeFile(wb, `consultas-${Date.now()}.xlsx`);
+  };
+
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
 
@@ -147,8 +189,10 @@ function Page() {
               <RefreshCw className="mr-2 h-4 w-4" /> Reprocessar selecionados ({selectedErrIds.length})
             </Button>
           )}
-          <Button variant="outline" onClick={() => exportCsv(true)}><Download className="mr-2 h-4 w-4" /> Concluídos</Button>
-          <Button variant="outline" onClick={() => exportCsv(false)}><Download className="mr-2 h-4 w-4" /> Todos</Button>
+          <Button variant="outline" onClick={() => exportXlsx(true)}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (concluídos)</Button>
+          <Button variant="outline" onClick={() => exportXlsx(false)}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (todos)</Button>
+          <Button variant="outline" onClick={() => exportCsv(true)}><Download className="mr-2 h-4 w-4" /> CSV concluídos</Button>
+          <Button variant="outline" onClick={() => exportCsv(false)}><Download className="mr-2 h-4 w-4" /> CSV todos</Button>
         </div>
       </div>
 
