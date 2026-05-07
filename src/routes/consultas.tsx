@@ -288,7 +288,11 @@ function Page() {
                   <TableCell className="text-right tabular-nums">{brl(r.margem_cartao_credito)}</TableCell>
                   <TableCell className="text-right tabular-nums">{brl(r.margem_cartao_beneficio)}</TableCell>
                   <TableCell className="text-right tabular-nums font-semibold">{brl(r.margem_disponivel)}</TableCell>
-                  <TableCell className="max-w-[200px] truncate text-xs text-destructive">{r.erro ?? ""}</TableCell>
+                  <TableCell className="max-w-[280px] text-xs text-destructive">
+                    <span title={r.erro ?? ""} className="block whitespace-normal break-words">
+                      {r.status === "erro" ? (r.erro ?? "Erro não informado") : (r.erro ?? "")}
+                    </span>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
