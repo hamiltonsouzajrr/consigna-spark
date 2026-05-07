@@ -11,7 +11,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Play, Download, RefreshCw, Loader2 } from "lucide-react";
+import { Play, Download, RefreshCw, Loader2, FileSpreadsheet } from "lucide-react";
+import * as XLSX from "xlsx";
+import { formatCpf } from "@/lib/cpf";
 
 export const Route = createFileRoute("/consultas")({ component: Page });
 
