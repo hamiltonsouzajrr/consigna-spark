@@ -11,11 +11,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Play, Download, RefreshCw, Loader2, FileSpreadsheet } from "lucide-react";
+import { Play, Download, RefreshCw, Loader2, FileSpreadsheet, Pause, Square } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import * as XLSX from "xlsx";
 import { formatCpf } from "@/lib/cpf";
 
 export const Route = createFileRoute("/consultas")({ component: Page });
+
+interface Run {
+  id: string; status: string; total: number; processed: number;
+  created_at: string; updated_at: string;
+}
 
 type Status = "pendente" | "processando" | "concluido" | "erro";
 interface Consulta {
