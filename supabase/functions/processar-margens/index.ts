@@ -292,7 +292,7 @@ async function consultarServico(
   for (const [k, v] of Object.entries(hidden)) form.set(k, v);
 
   // Heurística: nome do campo de CPF (input text com 'cpf' no name/id)
-  const cpfMatch = page.body.match(/<input[^>]+name="([^"]*[Cc][Pp][Ff][^"]*)"[^>]*>/);
+  const cpfMatch = pageBody.match(/<input[^>]+name="([^"]*[Cc][Pp][Ff][^"]*)"[^>]*>/);
   const cpfField = cpfMatch ? cpfMatch[1] : "ctl00$ContentPlaceHolder1$txtCPF";
   const cpfFmt = /^\d{11}$/.test(cpf)
     ? `${cpf.slice(0,3)}.${cpf.slice(3,6)}.${cpf.slice(6,9)}-${cpf.slice(9)}`
@@ -300,22 +300,22 @@ async function consultarServico(
   form.set(cpfField, cpfFmt);
 
   // Detecta o nome do dropdown de Serviço e seleciona conforme servicoId
-  const dropMatch = page.body.match(/<select[^>]+name="([^"]*[Ss]ervico[^"]*)"/);
+  const dropMatch = pageBody.match(/<select[^>]+name="([^"]*[Ss]ervico[^"]*)"/);
   const dropName = dropMatch ? dropMatch[1] : "ctl00$MainContent$dropServico";
   form.set(dropName, servicoId);
 
   // Detecta botão Consultar
   let btnName = "";
   let btnValue = "";
-  const inputBtn = page.body.match(/<input[^>]+type="(?:submit|button)"[^>]*name="([^"]+)"[^>]*value="([^"]*Consultar[^"]*)"/i)
-                || page.body.match(/<input[^>]+type="(?:submit|button)"[^>]*value="([^"]*Consultar[^"]*)"[^>]*name="([^"]+)"/i);
+  const inputBtn = pageBody.match(/<input[^>]+type="(?:submit|button)"[^>]*name="([^"]+)"[^>]*value="([^"]*Consultar[^"]*)"/i)
+                || pageBody.match(/<input[^>]+type="(?:submit|button)"[^>]*value="([^"]*Consultar[^"]*)"[^>]*name="([^"]+)"/i);
   if (inputBtn) {
     const isFirst = inputBtn[0].indexOf("name=") < inputBtn[0].indexOf("value=");
     btnName = isFirst ? inputBtn[1] : inputBtn[2];
     btnValue = isFirst ? inputBtn[2] : inputBtn[1];
   }
   let linkBtnTarget = "";
-  const linkBtn = page.body.match(/<a[^>]+href="javascript:__doPostBack\(&#39;([^&]+btnConsultar[^&]*)&#39;,&#39;[^&]*&#39;\)"/i);
+  const linkBtn = pageBody.match(/<a[^>]+href="javascript:__doPostBack\(&#39;([^&]+btnConsultar[^&]*)&#39;,&#39;[^&]*&#39;\)"/i);
   if (linkBtn) linkBtnTarget = linkBtn[1];
 
   const eventTarget = linkBtnTarget || btnName || "ctl00$MainContent$btnConsultar";
@@ -326,9 +326,9 @@ async function consultarServico(
   if (!form.has("__LASTFOCUS")) form.set("__LASTFOCUS", "");
 
   // Detecção AJAX/UpdatePanel
-  const hasScriptManager = /ScriptResource\.axd|MicrosoftAjax|WebForms\.js|Sys\.WebForms\.PageRequestManager/i.test(page.body);
-  const hasAsyncPost = /name="__ASYNCPOST"/i.test(page.body) || hasScriptManager;
-  const updatePanelMatch = page.body.match(/<div[^>]+id="([^"]*UpdatePanel[^"]*)"/i);
+  const hasScriptManager = /ScriptResource\.axd|MicrosoftAjax|WebForms\.js|Sys\.WebForms\.PageRequestManager/i.test(pageBody);
+  const hasAsyncPost = /name="__ASYNCPOST"/i.test(pageBody) || hasScriptManager;
+  const updatePanelMatch = pageBody.match(/<div[^>]+id="([^"]*UpdatePanel[^"]*)"/i);
   const updatePanelId = updatePanelMatch ? updatePanelMatch[1] : "";
 
   const headers: Record<string, string> = {
