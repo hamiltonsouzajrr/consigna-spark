@@ -50,7 +50,7 @@ class Session {
     }
   }
 
-  async request(url: string, init: RequestInit = {}): Promise<{ status: number; body: string; finalUrl: string }> {
+  async request(url: string, init: RequestInit = {}, timeoutMs = 30_000): Promise<{ status: number; body: string; finalUrl: string }> {
     const headers = new Headers(init.headers);
     headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
     headers.set("Accept-Language", "pt-BR,pt;q=0.9,en;q=0.8");
@@ -59,7 +59,14 @@ class Session {
     if (this.cookies.size) headers.set("Cookie", this.cookieHeader());
     if (!headers.has("Accept")) headers.set("Accept", "text/html,application/xhtml+xml");
 
-    const res = await fetch(url, { ...init, headers, redirect: "manual" });
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), timeoutMs);
+    let res: Response;
+    try {
+      res = await fetch(url, { ...init, headers, redirect: "manual", signal: ctrl.signal });
+    } finally {
+      clearTimeout(tid);
+    }
     this.absorbSetCookie(res.headers);
 
     // Segue redirects manualmente para preservar cookies
@@ -67,7 +74,7 @@ class Session {
       const loc = res.headers.get("location");
       if (loc) {
         const next = new URL(loc, url).toString();
-        return this.request(next, { method: "GET" });
+        return this.request(next, { method: "GET" }, timeoutMs);
       }
     }
     const body = await res.text();
@@ -265,20 +272,27 @@ interface ConsultaServicoResult {
 // Consulta UM serviço (1=Empréstimo, 2=Cartão Crédito, 3=Cartão Benefício)
 async function consultarServico(
   s: Session, cpf: string, consultaPath: string, servicoId: string, log: LogFn,
+  preloaded?: { url: string; body: string },
 ): Promise<ConsultaServicoResult> {
   const CONSULTA_URL = consultaPath.startsWith("http") ? consultaPath : `${CONSIGUP_BASE}${consultaPath.startsWith("/") ? "" : "/"}${consultaPath}`;
-  await log("info", `[svc=${servicoId}] GET ${CONSULTA_URL}`);
-  const page = await s.request(CONSULTA_URL);
-  if (page.status !== 200) {
-    await log("warn", `[consulta svc=${servicoId}] GET status ${page.status}`);
-    return { margem: null, motivo: `get_status_${page.status}` };
+  let pageBody: string;
+  if (preloaded && preloaded.url === CONSULTA_URL) {
+    pageBody = preloaded.body;
+  } else {
+    await log("info", `[svc=${servicoId}] GET ${CONSULTA_URL}`);
+    const page = await s.request(CONSULTA_URL);
+    if (page.status !== 200) {
+      await log("warn", `[consulta svc=${servicoId}] GET status ${page.status}`);
+      return { margem: null, motivo: `get_status_${page.status}` };
+    }
+    pageBody = page.body;
   }
-  const hidden = extractAllHidden(page.body);
+  const hidden = extractAllHidden(pageBody);
   const form = new URLSearchParams();
   for (const [k, v] of Object.entries(hidden)) form.set(k, v);
 
   // Heurística: nome do campo de CPF (input text com 'cpf' no name/id)
-  const cpfMatch = page.body.match(/<input[^>]+name="([^"]*[Cc][Pp][Ff][^"]*)"[^>]*>/);
+  const cpfMatch = pageBody.match(/<input[^>]+name="([^"]*[Cc][Pp][Ff][^"]*)"[^>]*>/);
   const cpfField = cpfMatch ? cpfMatch[1] : "ctl00$ContentPlaceHolder1$txtCPF";
   const cpfFmt = /^\d{11}$/.test(cpf)
     ? `${cpf.slice(0,3)}.${cpf.slice(3,6)}.${cpf.slice(6,9)}-${cpf.slice(9)}`
@@ -286,22 +300,22 @@ async function consultarServico(
   form.set(cpfField, cpfFmt);
 
   // Detecta o nome do dropdown de Serviço e seleciona conforme servicoId
-  const dropMatch = page.body.match(/<select[^>]+name="([^"]*[Ss]ervico[^"]*)"/);
+  const dropMatch = pageBody.match(/<select[^>]+name="([^"]*[Ss]ervico[^"]*)"/);
   const dropName = dropMatch ? dropMatch[1] : "ctl00$MainContent$dropServico";
   form.set(dropName, servicoId);
 
   // Detecta botão Consultar
   let btnName = "";
   let btnValue = "";
-  const inputBtn = page.body.match(/<input[^>]+type="(?:submit|button)"[^>]*name="([^"]+)"[^>]*value="([^"]*Consultar[^"]*)"/i)
-                || page.body.match(/<input[^>]+type="(?:submit|button)"[^>]*value="([^"]*Consultar[^"]*)"[^>]*name="([^"]+)"/i);
+  const inputBtn = pageBody.match(/<input[^>]+type="(?:submit|button)"[^>]*name="([^"]+)"[^>]*value="([^"]*Consultar[^"]*)"/i)
+                || pageBody.match(/<input[^>]+type="(?:submit|button)"[^>]*value="([^"]*Consultar[^"]*)"[^>]*name="([^"]+)"/i);
   if (inputBtn) {
     const isFirst = inputBtn[0].indexOf("name=") < inputBtn[0].indexOf("value=");
     btnName = isFirst ? inputBtn[1] : inputBtn[2];
     btnValue = isFirst ? inputBtn[2] : inputBtn[1];
   }
   let linkBtnTarget = "";
-  const linkBtn = page.body.match(/<a[^>]+href="javascript:__doPostBack\(&#39;([^&]+btnConsultar[^&]*)&#39;,&#39;[^&]*&#39;\)"/i);
+  const linkBtn = pageBody.match(/<a[^>]+href="javascript:__doPostBack\(&#39;([^&]+btnConsultar[^&]*)&#39;,&#39;[^&]*&#39;\)"/i);
   if (linkBtn) linkBtnTarget = linkBtn[1];
 
   const eventTarget = linkBtnTarget || btnName || "ctl00$MainContent$btnConsultar";
@@ -312,9 +326,9 @@ async function consultarServico(
   if (!form.has("__LASTFOCUS")) form.set("__LASTFOCUS", "");
 
   // Detecção AJAX/UpdatePanel
-  const hasScriptManager = /ScriptResource\.axd|MicrosoftAjax|WebForms\.js|Sys\.WebForms\.PageRequestManager/i.test(page.body);
-  const hasAsyncPost = /name="__ASYNCPOST"/i.test(page.body) || hasScriptManager;
-  const updatePanelMatch = page.body.match(/<div[^>]+id="([^"]*UpdatePanel[^"]*)"/i);
+  const hasScriptManager = /ScriptResource\.axd|MicrosoftAjax|WebForms\.js|Sys\.WebForms\.PageRequestManager/i.test(pageBody);
+  const hasAsyncPost = /name="__ASYNCPOST"/i.test(pageBody) || hasScriptManager;
+  const updatePanelMatch = pageBody.match(/<div[^>]+id="([^"]*UpdatePanel[^"]*)"/i);
   const updatePanelId = updatePanelMatch ? updatePanelMatch[1] : "";
 
   const headers: Record<string, string> = {
@@ -401,16 +415,35 @@ async function consultarMargensNoOrgao(
     { id: "2", nome: "Cartão de Crédito", key: "margem_cartao_credito" },
     { id: "3", nome: "Cartão Benefício", key: "margem_cartao_beneficio" },
   ];
+  // Faz UM GET da página de consulta e reusa o HTML para os 3 serviços
+  const CONSULTA_URL = consultaPath.startsWith("http") ? consultaPath : `${CONSIGUP_BASE}${consultaPath.startsWith("/") ? "" : "/"}${consultaPath}`;
+  let preloaded: { url: string; body: string } | undefined;
+  try {
+    const page = await s.request(CONSULTA_URL);
+    if (page.status === 200) preloaded = { url: CONSULTA_URL, body: page.body };
+    else await log("warn", `[orgao] GET página consulta status ${page.status}`);
+  } catch (e) {
+    await log("warn", `[orgao] GET página consulta erro: ${String(e).slice(0, 200)}`);
+  }
+
   for (const svc of servicos) {
     try {
-      const r = await consultarServico(s, cpf, consultaPath, svc.id, log);
+      const r = await consultarServico(s, cpf, consultaPath, svc.id, log, preloaded);
       out[svc.key] = r.margem;
       out.motivos[svc.id] = r.motivo;
-      // Guarda dados do servidor a partir do primeiro serviço que retornar
       if (r.servidor && !out.servidor) out.servidor = r.servidor;
       if (r.matricula && !out.matricula) out.matricula = r.matricula;
       if (r.categoria && !out.categoria) out.categoria = r.categoria;
       if (r.situacao && !out.situacao) out.situacao = r.situacao;
+
+      // Curto-circuito: se servidor não localizado neste órgão no 1º serviço,
+      // não adianta consultar os outros 2 — pula órgão inteiro.
+      if (svc.id === "1" && r.motivo.startsWith("servidor_nao_localizado")) {
+        await log("info", `[orgao] servidor não localizado neste órgão — pulando serviços restantes`);
+        out.motivos["2"] = "skipped_servidor_nao_localizado";
+        out.motivos["3"] = "skipped_servidor_nao_localizado";
+        break;
+      }
     } catch (e) {
       out.motivos[svc.id] = `excecao: ${String(e).slice(0, 150)}`;
       await log("error", `[svc=${svc.id} ${svc.nome}] erro: ${String(e).slice(0, 300)}`);
@@ -501,33 +534,42 @@ interface ConsultaResultado {
   erro: string | null;
 }
 
-async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<ConsultaResultado> {
+interface ConsigUpCtx {
+  s: Session;
+  orgaos: OrgaoLink[];
+}
+
+async function novaSessaoConsigUp(log: LogFn): Promise<ConsigUpCtx | { erro: string }> {
+  const user = Deno.env.get("CONSIGUP_USER");
+  const pass = Deno.env.get("CONSIGUP_PASS");
+  if (!user || !pass) return { erro: "Credenciais ConsigUp ausentes" };
+  const s = new Session();
+  await log("info", `Login ConsigUp como ${user}`);
+  const okLogin = await login(s, user, pass);
+  if (!okLogin) return { erro: "Falha de login no ConsigUp" };
+  const home = await s.request(HOME_URL);
+  const orgaos = listarOrgaosDoHtml(home.body);
+  if (orgaos.length === 0) return { erro: "Nenhum órgão encontrado no header" };
+  await log("info", `Sessão pronta — ${orgaos.length} órgãos descobertos`);
+  return { s, orgaos };
+}
+
+async function consultarCpfTodosOrgaos(
+  cpf: string, log: LogFn, ctx: ConsigUpCtx,
+): Promise<ConsultaResultado & { sessaoExpirada?: boolean }> {
   const empty: ConsultaResultado = {
     margem: null, margem_emprestimo: null, margem_cartao_credito: null, margem_cartao_beneficio: null,
     servidor_nome: null, matricula: null, categoria: null, situacao: null, orgao: null, erro: null,
   };
-  const user = Deno.env.get("CONSIGUP_USER");
-  const pass = Deno.env.get("CONSIGUP_PASS");
-  if (!user || !pass) { await log("error", "Credenciais ConsigUp ausentes"); return { ...empty, erro: "Credenciais ConsigUp ausentes" }; }
-
-  const s = new Session();
-  await log("info", `Iniciando login no ConsigUp como ${user}`);
-  const okLogin = await login(s, user, pass);
-  if (!okLogin) { await log("error", "Falha de login no ConsigUp"); return { ...empty, erro: "Falha de login no ConsigUp" }; }
-  await log("info", "Login OK, carregando home");
-
-  const home = await s.request(HOME_URL);
-  const orgaos = listarOrgaosDoHtml(home.body);
-  await log("info", `Órgãos descobertos: ${orgaos.length}`);
-  if (orgaos.length === 0) return { ...empty, erro: "Nenhum órgão encontrado no header" };
 
   const motivosOrgaos: Record<string, string> = {};
   let melhor: ConsultaResultado | null = null;
   let melhorTotal = -1;
+  let sessaoExpirada = false;
 
-  for (const o of orgaos) {
+  for (const o of ctx.orgaos) {
     await log("info", `=== Órgão ${o.codigo} ${o.nome} ===`);
-    const sw = await selecionarOrgao(s, o.eventTarget);
+    const sw = await selecionarOrgao(ctx.s, o.eventTarget);
     if (!sw.ok) { motivosOrgaos[o.codigo] = "falha_trocar_orgao"; continue; }
 
     const links = listarLinksSidebar(sw.html);
@@ -538,12 +580,15 @@ async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<Consult
     if (!margemLink) { motivosOrgaos[o.codigo] = "sem_link_margem"; continue; }
 
     try {
-      const r = await consultarMargensNoOrgao(s, cpf, margemLink.href, log);
+      const r = await consultarMargensNoOrgao(ctx.s, cpf, margemLink.href, log);
       const total = (r.margem_emprestimo ?? 0) + (r.margem_cartao_credito ?? 0) + (r.margem_cartao_beneficio ?? 0);
       const algumaMargem = r.margem_emprestimo !== null || r.margem_cartao_credito !== null || r.margem_cartao_beneficio !== null;
       const motivosStr = Object.entries(r.motivos).map(([k, v]) => `s${k}=${v}`).join("|");
       motivosOrgaos[o.codigo] = algumaMargem ? `ok(${total.toFixed(2)})` : motivosStr;
       await log("info", `[${o.codigo}] empréstimo=${r.margem_emprestimo} cartãoCred=${r.margem_cartao_credito} cartãoBenef=${r.margem_cartao_beneficio} total=${total.toFixed(2)}`);
+
+      // Detecta sessão expirada para o handler re-logar
+      if (Object.values(r.motivos).some((v) => /sessao_expirada/.test(v))) sessaoExpirada = true;
 
       if (algumaMargem && total > melhorTotal) {
         melhorTotal = total;
@@ -566,11 +611,11 @@ async function consultarCpfTodosOrgaos(cpf: string, log: LogFn): Promise<Consult
     }
   }
 
-  if (melhor) return melhor;
+  if (melhor) return { ...melhor, sessaoExpirada };
 
   const erroFinal = `Margem não localizada em nenhum órgão. ${Object.entries(motivosOrgaos).map(([k, v]) => `${k}=${v}`).join(" | ")}`;
   await log("warn", `[resumo] ${erroFinal}`);
-  return { ...empty, erro: erroFinal.slice(0, 1000) };
+  return { ...empty, erro: erroFinal.slice(0, 1000), sessaoExpirada };
 }
 
 // ---------- Handler ----------
@@ -617,6 +662,22 @@ Deno.serve(async (req) => {
     const task = (async () => {
       let processed = 0;
       let errors = 0;
+
+      // Logger amplo (sem consulta_id) para ciclo de vida da sessão
+      const sysLog: LogFn = async (level, message) => {
+        console.log(`[${level}] ${message}`);
+      };
+
+      // Cria sessão ConsigUp uma única vez e reusa entre CPFs
+      let ctx: ConsigUpCtx | null = null;
+      const ensureSession = async (): Promise<{ ok: true; ctx: ConsigUpCtx } | { ok: false; erro: string }> => {
+        if (ctx) return { ok: true, ctx };
+        const r = await novaSessaoConsigUp(sysLog);
+        if ("erro" in r) return { ok: false, erro: r.erro };
+        ctx = r;
+        return { ok: true, ctx };
+      };
+
       for (const row of rows) {
         let runStatus = "running";
         for (;;) {
@@ -636,7 +697,25 @@ Deno.serve(async (req) => {
           } catch (e) { console.error("log insert err", e); }
         };
         await log("info", `Iniciando processamento do CPF ${row.cpf}`);
-        const r = await consultarCpfTodosOrgaos(row.cpf, log);
+
+        const sess = await ensureSession();
+        let r: ConsultaResultado & { sessaoExpirada?: boolean };
+        if (!sess.ok) {
+          r = {
+            margem: null, margem_emprestimo: null, margem_cartao_credito: null, margem_cartao_beneficio: null,
+            servidor_nome: null, matricula: null, categoria: null, situacao: null, orgao: null, erro: sess.erro,
+          };
+        } else {
+          r = await consultarCpfTodosOrgaos(row.cpf, log, sess.ctx);
+          // Se sessão expirou no meio, descarta e tenta uma vez com nova sessão
+          if (r.sessaoExpirada) {
+            await log("warn", "Sessão ConsigUp expirou — refazendo login");
+            ctx = null;
+            const sess2 = await ensureSession();
+            if (sess2.ok) r = await consultarCpfTodosOrgaos(row.cpf, log, sess2.ctx);
+          }
+        }
+
         await log(r.erro ? "error" : "info", r.erro ? `Finalizado com erro: ${r.erro}` : `Finalizado. Margem total: ${r.margem} (órgão ${r.orgao})`);
         await supabase.from("consultas_margem").update({
           margem_disponivel: r.margem,
