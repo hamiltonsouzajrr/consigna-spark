@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 const nav = [
   { to: "/alagoas", label: "Alagoas — Simulação", icon: Calculator },
+  { to: "/calculadora-al", label: "Calculadora de Margem — AL", icon: Calculator },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/upload", label: "Importar", icon: Upload },
   { to: "/consultas", label: "Consultas", icon: List },
