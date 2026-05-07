@@ -189,8 +189,10 @@ function Page() {
               <RefreshCw className="mr-2 h-4 w-4" /> Reprocessar selecionados ({selectedErrIds.length})
             </Button>
           )}
-          <Button variant="outline" onClick={() => exportCsv(true)}><Download className="mr-2 h-4 w-4" /> Concluídos</Button>
-          <Button variant="outline" onClick={() => exportCsv(false)}><Download className="mr-2 h-4 w-4" /> Todos</Button>
+          <Button variant="outline" onClick={() => exportXlsx(true)}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (concluídos)</Button>
+          <Button variant="outline" onClick={() => exportXlsx(false)}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (todos)</Button>
+          <Button variant="outline" onClick={() => exportCsv(true)}><Download className="mr-2 h-4 w-4" /> CSV concluídos</Button>
+          <Button variant="outline" onClick={() => exportCsv(false)}><Download className="mr-2 h-4 w-4" /> CSV todos</Button>
         </div>
       </div>
 
