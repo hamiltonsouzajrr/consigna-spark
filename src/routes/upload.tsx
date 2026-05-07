@@ -25,13 +25,15 @@ function Page() {
   const [valid, setValid] = useState<ValidRow[]>([]);
   const [invalid, setInvalid] = useState<InvalidRow[]>([]);
   const [duplicates, setDuplicates] = useState(0);
+  const [alreadyImported, setAlreadyImported] = useState(0);
   const [fileName, setFileName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
 
-  const reset = () => { setValid([]); setInvalid([]); setDuplicates(0); };
+  const reset = () => { setValid([]); setInvalid([]); setDuplicates(0); setAlreadyImported(0); };
 
   const parseFile = async (file: File) => {
     reset();
