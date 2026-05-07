@@ -216,6 +216,7 @@ function Page() {
   if (!user) return <Navigate to="/login" />;
 
   const selectedErrIds = items.filter((i) => selected.has(i.id) && i.status === "erro").map((i) => i.id);
+  const isRunActive = !!run && (run.status === "running" || run.status === "paused");
 
   return (
     <AppShell>
