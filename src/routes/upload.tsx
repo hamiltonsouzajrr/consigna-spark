@@ -39,7 +39,7 @@ function Page() {
     reset();
     setFileName(file.name);
     const ext = file.name.split(".").pop()?.toLowerCase();
-    const onParsed = (records: Record<string, unknown>[]) => {
+    const onParsed = async (records: Record<string, unknown>[]) => {
       const ok: ValidRow[] = [];
       const bad: InvalidRow[] = [];
       const seen = new Set<string>();
@@ -67,24 +67,56 @@ function Page() {
         seen.add(cpf);
         ok.push({ cpf, nome });
       });
-      setValid(ok);
+
+      // Filtra CPFs já existentes na base (independente do status) — evita reconsultar até serem limpos
+      let already = 0;
+      let filtered = ok;
+      if (ok.length) {
+        setChecking(true);
+        const existing = new Set<string>();
+        const cpfs = ok.map((r) => r.cpf);
+        const chunkSize = 500;
+        for (let i = 0; i < cpfs.length; i += chunkSize) {
+          const chunk = cpfs.slice(i, i + chunkSize);
+          const { data, error } = await supabase
+            .from("consultas_margem")
+            .select("cpf")
+            .in("cpf", chunk);
+          if (error) { toast.error(`Erro ao verificar CPFs existentes: ${error.message}`); break; }
+          data?.forEach((row) => existing.add(row.cpf));
+        }
+        setChecking(false);
+        if (existing.size) {
+          filtered = ok.filter((r) => !existing.has(r.cpf));
+          already = ok.length - filtered.length;
+        }
+      }
+
+      setValid(filtered);
       setInvalid(bad);
       setDuplicates(dup);
-      if (!ok.length && !bad.length) toast.error("Planilha vazia ou sem colunas CPF/NOME.");
-      else if (!ok.length) toast.error("Nenhum CPF válido encontrado.");
-      else toast.success(`${ok.length} CPF(s) válidos${bad.length ? `, ${bad.length} inválidos` : ""}${dup ? `, ${dup} duplicados` : ""}.`);
+      setAlreadyImported(already);
+      if (!filtered.length && !bad.length && !already) toast.error("Planilha vazia ou sem colunas CPF/NOME.");
+      else if (!filtered.length && already) toast.warning(`Todos os ${already} CPF(s) válidos já estão na base.`);
+      else if (!filtered.length) toast.error("Nenhum CPF válido encontrado.");
+      else toast.success(
+        `${filtered.length} novo(s)` +
+        (already ? `, ${already} já importado(s)` : "") +
+        (bad.length ? `, ${bad.length} inválido(s)` : "") +
+        (dup ? `, ${dup} duplicado(s)` : "")
+      );
     };
     if (ext === "csv") {
       Papa.parse<Record<string, unknown>>(file, {
         header: true, skipEmptyLines: true,
-        complete: (res) => onParsed(res.data),
+        complete: (res) => { void onParsed(res.data); },
       });
     } else if (ext === "xlsx" || ext === "xls") {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf);
       const ws = wb.Sheets[wb.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
-      onParsed(json);
+      await onParsed(json);
     } else toast.error("Formato não suportado. Use CSV ou XLSX.");
   };
 
