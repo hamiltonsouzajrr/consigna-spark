@@ -230,6 +230,39 @@ function Page() {
         </div>
       </div>
 
+      {run && (run.status === "running" || run.status === "paused") && (
+        <Card className="mb-6 p-4">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold">
+                Processamento em andamento {run.status === "paused" && <span className="ml-2 text-warning">(pausado)</span>}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {run.processed} de {run.total} CPFs processados
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {run.status === "running" ? (
+                <Button size="sm" variant="outline" onClick={() => updateRunStatus("paused")}>
+                  <Pause className="mr-2 h-4 w-4" /> Pausar
+                </Button>
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => updateRunStatus("running")}>
+                  <Play className="mr-2 h-4 w-4" /> Continuar
+                </Button>
+              )}
+              <Button size="sm" variant="destructive" onClick={() => updateRunStatus("stopped")}>
+                <Square className="mr-2 h-4 w-4" /> Parar
+              </Button>
+            </div>
+          </div>
+          <Progress value={run.total > 0 ? (run.processed / run.total) * 100 : 0} />
+          <p className="mt-2 text-right text-xs text-muted-foreground tabular-nums">
+            {run.total > 0 ? Math.round((run.processed / run.total) * 100) : 0}%
+          </p>
+        </Card>
+      )}
+
       {(() => {
         const recentes = items
           .filter((i) => i.processed_at)
