@@ -415,16 +415,35 @@ async function consultarMargensNoOrgao(
     { id: "2", nome: "Cartão de Crédito", key: "margem_cartao_credito" },
     { id: "3", nome: "Cartão Benefício", key: "margem_cartao_beneficio" },
   ];
+  // Faz UM GET da página de consulta e reusa o HTML para os 3 serviços
+  const CONSULTA_URL = consultaPath.startsWith("http") ? consultaPath : `${CONSIGUP_BASE}${consultaPath.startsWith("/") ? "" : "/"}${consultaPath}`;
+  let preloaded: { url: string; body: string } | undefined;
+  try {
+    const page = await s.request(CONSULTA_URL);
+    if (page.status === 200) preloaded = { url: CONSULTA_URL, body: page.body };
+    else await log("warn", `[orgao] GET página consulta status ${page.status}`);
+  } catch (e) {
+    await log("warn", `[orgao] GET página consulta erro: ${String(e).slice(0, 200)}`);
+  }
+
   for (const svc of servicos) {
     try {
-      const r = await consultarServico(s, cpf, consultaPath, svc.id, log);
+      const r = await consultarServico(s, cpf, consultaPath, svc.id, log, preloaded);
       out[svc.key] = r.margem;
       out.motivos[svc.id] = r.motivo;
-      // Guarda dados do servidor a partir do primeiro serviço que retornar
       if (r.servidor && !out.servidor) out.servidor = r.servidor;
       if (r.matricula && !out.matricula) out.matricula = r.matricula;
       if (r.categoria && !out.categoria) out.categoria = r.categoria;
       if (r.situacao && !out.situacao) out.situacao = r.situacao;
+
+      // Curto-circuito: se servidor não localizado neste órgão no 1º serviço,
+      // não adianta consultar os outros 2 — pula órgão inteiro.
+      if (svc.id === "1" && r.motivo.startsWith("servidor_nao_localizado")) {
+        await log("info", `[orgao] servidor não localizado neste órgão — pulando serviços restantes`);
+        out.motivos["2"] = "skipped_servidor_nao_localizado";
+        out.motivos["3"] = "skipped_servidor_nao_localizado";
+        break;
+      }
     } catch (e) {
       out.motivos[svc.id] = `excecao: ${String(e).slice(0, 150)}`;
       await log("error", `[svc=${svc.id} ${svc.nome}] erro: ${String(e).slice(0, 300)}`);
