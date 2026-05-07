@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LimpezaRouteImport } from './routes/limpeza'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ConsultasRouteImport } from './routes/consultas'
+import { Route as CalculadoraAlRouteImport } from './routes/calculadora-al'
 import { Route as AlagoasRouteImport } from './routes/alagoas'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -42,6 +43,11 @@ const ConsultasRoute = ConsultasRouteImport.update({
   path: '/consultas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CalculadoraAlRoute = CalculadoraAlRouteImport.update({
+  id: '/calculadora-al',
+  path: '/calculadora-al',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AlagoasRoute = AlagoasRouteImport.update({
   id: '/alagoas',
   path: '/alagoas',
@@ -56,6 +62,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/alagoas': typeof AlagoasRoute
+  '/calculadora-al': typeof CalculadoraAlRoute
   '/consultas': typeof ConsultasRoute
   '/dashboard': typeof DashboardRoute
   '/limpeza': typeof LimpezaRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/alagoas': typeof AlagoasRoute
+  '/calculadora-al': typeof CalculadoraAlRoute
   '/consultas': typeof ConsultasRoute
   '/dashboard': typeof DashboardRoute
   '/limpeza': typeof LimpezaRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/alagoas': typeof AlagoasRoute
+  '/calculadora-al': typeof CalculadoraAlRoute
   '/consultas': typeof ConsultasRoute
   '/dashboard': typeof DashboardRoute
   '/limpeza': typeof LimpezaRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/alagoas'
+    | '/calculadora-al'
     | '/consultas'
     | '/dashboard'
     | '/limpeza'
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/alagoas'
+    | '/calculadora-al'
     | '/consultas'
     | '/dashboard'
     | '/limpeza'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/alagoas'
+    | '/calculadora-al'
     | '/consultas'
     | '/dashboard'
     | '/limpeza'
@@ -114,6 +126,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlagoasRoute: typeof AlagoasRoute
+  CalculadoraAlRoute: typeof CalculadoraAlRoute
   ConsultasRoute: typeof ConsultasRoute
   DashboardRoute: typeof DashboardRoute
   LimpezaRoute: typeof LimpezaRoute
@@ -158,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsultasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/calculadora-al': {
+      id: '/calculadora-al'
+      path: '/calculadora-al'
+      fullPath: '/calculadora-al'
+      preLoaderRoute: typeof CalculadoraAlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/alagoas': {
       id: '/alagoas'
       path: '/alagoas'
@@ -178,6 +198,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlagoasRoute: AlagoasRoute,
+  CalculadoraAlRoute: CalculadoraAlRoute,
   ConsultasRoute: ConsultasRoute,
   DashboardRoute: DashboardRoute,
   LimpezaRoute: LimpezaRoute,
@@ -187,3 +208,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
