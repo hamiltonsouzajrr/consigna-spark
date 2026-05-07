@@ -148,13 +148,16 @@ function Page() {
             type="file" accept=".csv,.xlsx,.xls" className="hidden"
             onChange={(e) => e.target.files?.[0] && parseFile(e.target.files[0])}
           />
-          {fileName && <p className="text-xs text-primary">{fileName}</p>}
+          {fileName && <p className="text-xs text-primary">{fileName}{checking ? " — verificando CPFs já importados…" : ""}</p>}
         </label>
       </Card>
 
-      {(valid.length > 0 || invalid.length > 0) && (
+      {(valid.length > 0 || invalid.length > 0 || alreadyImported > 0) && (
         <div className="mt-4 flex flex-wrap gap-2">
-          <Badge variant="outline" className="bg-success/15 text-success border-success/30">{valid.length} válidos</Badge>
+          <Badge variant="outline" className="bg-success/15 text-success border-success/30">{valid.length} novos</Badge>
+          {alreadyImported > 0 && (
+            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">{alreadyImported} já importados (ignorados)</Badge>
+          )}
           {invalid.length > 0 && (
             <Badge variant="outline" className="bg-destructive/15 text-destructive border-destructive/30">{invalid.length} inválidos</Badge>
           )}
