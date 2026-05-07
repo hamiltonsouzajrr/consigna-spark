@@ -19,9 +19,20 @@ import { formatCpf } from "@/lib/cpf";
 export const Route = createFileRoute("/consultas")({ component: Page });
 
 interface Run {
-  id: string; status: string; total: number; processed: number;
+  id: string; status: string; total: number; processed: number; errors: number;
+  started_at: string; finished_at: string | null;
   created_at: string; updated_at: string;
 }
+
+const formatDuration = (ms: number) => {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}h ${m}m ${sec}s`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+};
 
 type Status = "pendente" | "processando" | "concluido" | "erro";
 interface Consulta {
@@ -205,6 +216,7 @@ function Page() {
   if (!user) return <Navigate to="/login" />;
 
   const selectedErrIds = items.filter((i) => selected.has(i.id) && i.status === "erro").map((i) => i.id);
+  const isRunActive = !!run && (run.status === "running" || run.status === "paused");
 
   return (
     <AppShell>
@@ -214,12 +226,12 @@ function Page() {
           <p className="text-sm text-muted-foreground">{filtered.length} registros</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => callProcessar()} disabled={processing}>
-            {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
-            Iniciar processamento
+          <Button onClick={() => callProcessar()} disabled={processing || isRunActive}>
+            {processing || isRunActive ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+            {isRunActive ? "Em execução…" : "Iniciar processamento"}
           </Button>
           {selectedErrIds.length > 0 && (
-            <Button variant="secondary" onClick={() => callProcessar(selectedErrIds)}>
+            <Button variant="secondary" onClick={() => callProcessar(selectedErrIds)} disabled={processing || isRunActive}>
               <RefreshCw className="mr-2 h-4 w-4" /> Reprocessar selecionados ({selectedErrIds.length})
             </Button>
           )}
@@ -230,7 +242,7 @@ function Page() {
         </div>
       </div>
 
-      {run && (run.status === "running" || run.status === "paused") && (
+      {run && isRunActive && (
         <Card className="mb-6 p-4">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -238,7 +250,7 @@ function Page() {
                 Processamento em andamento {run.status === "paused" && <span className="ml-2 text-warning">(pausado)</span>}
               </h2>
               <p className="text-xs text-muted-foreground">
-                {run.processed} de {run.total} CPFs processados
+                {run.processed} de {run.total} CPFs processados • {run.errors} erro(s)
               </p>
             </div>
             <div className="flex gap-2">
@@ -260,6 +272,44 @@ function Page() {
           <p className="mt-2 text-right text-xs text-muted-foreground tabular-nums">
             {run.total > 0 ? Math.round((run.processed / run.total) * 100) : 0}%
           </p>
+        </Card>
+      )}
+
+      {run && !isRunActive && run.finished_at && (
+        <Card className="mb-6 p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold">
+                Resumo do último processamento
+                {run.status === "stopped" && <Badge variant="outline" className="ml-2 bg-warning/15 text-warning-foreground border-warning/30">Parado</Badge>}
+                {run.status === "completed" && <Badge variant="outline" className="ml-2 bg-success/15 text-success border-success/30">Concluído</Badge>}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {new Date(run.started_at).toLocaleString("pt-BR")} → {new Date(run.finished_at).toLocaleString("pt-BR")}
+              </p>
+            </div>
+            <Button size="sm" variant="ghost" onClick={() => setRun(null)}>Ocultar</Button>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">Tempo total</p>
+              <p className="text-lg font-semibold tabular-nums">
+                {formatDuration(+new Date(run.finished_at) - +new Date(run.started_at))}
+              </p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">Processados</p>
+              <p className="text-lg font-semibold tabular-nums">{run.processed} / {run.total}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">Sucessos</p>
+              <p className="text-lg font-semibold tabular-nums text-success">{run.processed - run.errors}</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">Erros</p>
+              <p className="text-lg font-semibold tabular-nums text-destructive">{run.errors}</p>
+            </div>
+          </div>
         </Card>
       )}
 

@@ -616,8 +616,8 @@ Deno.serve(async (req) => {
 
     const task = (async () => {
       let processed = 0;
+      let errors = 0;
       for (const row of rows) {
-        // Verifica controle do run (pause/stop)
         let runStatus = "running";
         for (;;) {
           const { data: rs } = await supabase.from("processar_runs").select("status").eq("id", runId).maybeSingle();
@@ -654,9 +654,9 @@ Deno.serve(async (req) => {
         }).eq("id", row.id);
 
         processed++;
-        await supabase.from("processar_runs").update({ processed, updated_at: new Date().toISOString() }).eq("id", runId);
+        if (r.erro) errors++;
+        await supabase.from("processar_runs").update({ processed, errors, updated_at: new Date().toISOString() }).eq("id", runId);
       }
-      // Se ainda há pendentes (pulados pelo stop), volta status pra pendente
       const { data: rs } = await supabase.from("processar_runs").select("status").eq("id", runId).maybeSingle();
       const finalStatus = rs?.status === "stopped" ? "stopped" : "completed";
       if (finalStatus === "stopped") {
@@ -665,7 +665,11 @@ Deno.serve(async (req) => {
           .eq("user_id", userId)
           .eq("status", "processando");
       }
-      await supabase.from("processar_runs").update({ status: finalStatus, updated_at: new Date().toISOString() }).eq("id", runId);
+      await supabase.from("processar_runs").update({
+        status: finalStatus,
+        finished_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }).eq("id", runId);
     })();
 
     // @ts-ignore EdgeRuntime

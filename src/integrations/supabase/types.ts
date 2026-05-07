@@ -115,8 +115,11 @@ export type Database = {
       processar_runs: {
         Row: {
           created_at: string
+          errors: number
+          finished_at: string | null
           id: string
           processed: number
+          started_at: string
           status: string
           total: number
           updated_at: string
@@ -124,8 +127,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          errors?: number
+          finished_at?: string | null
           id?: string
           processed?: number
+          started_at?: string
           status?: string
           total?: number
           updated_at?: string
@@ -133,8 +139,11 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          errors?: number
+          finished_at?: string | null
           id?: string
           processed?: number
+          started_at?: string
           status?: string
           total?: number
           updated_at?: string
