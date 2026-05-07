@@ -62,6 +62,34 @@ function Page() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [processing, setProcessing] = useState(false);
+  const [run, setRun] = useState<Run | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const loadRun = async () => {
+      const { data } = await supabase
+        .from("processar_runs")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setRun((data as Run | null) ?? null);
+    };
+    loadRun();
+    const ch = supabase
+      .channel("runs-list")
+      .on("postgres_changes", { event: "*", schema: "public", table: "processar_runs" }, loadRun)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user]);
+
+  const updateRunStatus = async (status: "running" | "paused" | "stopped") => {
+    if (!run) return;
+    const { error } = await supabase.from("processar_runs").update({ status }).eq("id", run.id);
+    if (error) toast.error(error.message);
+    else toast.success(status === "paused" ? "Pausado" : status === "stopped" ? "Parado" : "Retomado");
+  };
 
   useEffect(() => {
     if (!user) return;
