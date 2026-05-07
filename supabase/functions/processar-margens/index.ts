@@ -272,15 +272,22 @@ interface ConsultaServicoResult {
 // Consulta UM serviço (1=Empréstimo, 2=Cartão Crédito, 3=Cartão Benefício)
 async function consultarServico(
   s: Session, cpf: string, consultaPath: string, servicoId: string, log: LogFn,
+  preloaded?: { url: string; body: string },
 ): Promise<ConsultaServicoResult> {
   const CONSULTA_URL = consultaPath.startsWith("http") ? consultaPath : `${CONSIGUP_BASE}${consultaPath.startsWith("/") ? "" : "/"}${consultaPath}`;
-  await log("info", `[svc=${servicoId}] GET ${CONSULTA_URL}`);
-  const page = await s.request(CONSULTA_URL);
-  if (page.status !== 200) {
-    await log("warn", `[consulta svc=${servicoId}] GET status ${page.status}`);
-    return { margem: null, motivo: `get_status_${page.status}` };
+  let pageBody: string;
+  if (preloaded && preloaded.url === CONSULTA_URL) {
+    pageBody = preloaded.body;
+  } else {
+    await log("info", `[svc=${servicoId}] GET ${CONSULTA_URL}`);
+    const page = await s.request(CONSULTA_URL);
+    if (page.status !== 200) {
+      await log("warn", `[consulta svc=${servicoId}] GET status ${page.status}`);
+      return { margem: null, motivo: `get_status_${page.status}` };
+    }
+    pageBody = page.body;
   }
-  const hidden = extractAllHidden(page.body);
+  const hidden = extractAllHidden(pageBody);
   const form = new URLSearchParams();
   for (const [k, v] of Object.entries(hidden)) form.set(k, v);
 
