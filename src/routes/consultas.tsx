@@ -310,6 +310,37 @@ function Page() {
               <p className="text-lg font-semibold tabular-nums text-destructive">{run.errors}</p>
             </div>
           </div>
+          {(() => {
+            const sinceStart = items.filter(
+              (i) => i.processed_at && new Date(i.processed_at) >= new Date(run.started_at) && i.status === "concluido",
+            );
+            const sum = (k: keyof Consulta) =>
+              sinceStart.reduce((acc, i) => acc + (Number(i[k]) || 0), 0);
+            const tEmp = sum("margem_emprestimo");
+            const tCC = sum("margem_cartao_credito");
+            const tCB = sum("margem_cartao_beneficio");
+            const tTot = tEmp + tCC + tCB;
+            return (
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-md border p-3">
+                  <p className="text-xs text-muted-foreground">Margem Empréstimo</p>
+                  <p className="text-lg font-semibold tabular-nums">{brl(tEmp)}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-xs text-muted-foreground">Margem Cartão Crédito</p>
+                  <p className="text-lg font-semibold tabular-nums">{brl(tCC)}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-xs text-muted-foreground">Margem Cartão Benefício</p>
+                  <p className="text-lg font-semibold tabular-nums">{brl(tCB)}</p>
+                </div>
+                <div className="rounded-md border p-3 bg-success/5">
+                  <p className="text-xs text-muted-foreground">Total Disponível</p>
+                  <p className="text-lg font-semibold tabular-nums text-success">{brl(tTot)}</p>
+                </div>
+              </div>
+            );
+          })()}
         </Card>
       )}
 
