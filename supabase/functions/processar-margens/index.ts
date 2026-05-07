@@ -605,8 +605,28 @@ Deno.serve(async (req) => {
 
     await supabase.from("consultas_margem").update({ status: "processando", erro: null }).in("id", rows.map((r) => r.id));
 
+    // Cria run para acompanhar progresso e permitir pausar/parar
+    const { data: runData, error: runErr } = await supabase
+      .from("processar_runs")
+      .insert({ user_id: userId, status: "running", total: rows.length, processed: 0 })
+      .select("id")
+      .single();
+    if (runErr) throw runErr;
+    const runId = runData!.id as string;
+
     const task = (async () => {
+      let processed = 0;
       for (const row of rows) {
+        // Verifica controle do run (pause/stop)
+        let runStatus = "running";
+        for (;;) {
+          const { data: rs } = await supabase.from("processar_runs").select("status").eq("id", runId).maybeSingle();
+          runStatus = (rs?.status as string) ?? "running";
+          if (runStatus === "paused") { await new Promise((r) => setTimeout(r, 2000)); continue; }
+          break;
+        }
+        if (runStatus === "stopped") break;
+
         const log: LogFn = async (level, message) => {
           console.log(`[${level}] ${message}`);
           try {
@@ -632,14 +652,27 @@ Deno.serve(async (req) => {
           status: r.erro ? "erro" : "concluido",
           processed_at: new Date().toISOString(),
         }).eq("id", row.id);
+
+        processed++;
+        await supabase.from("processar_runs").update({ processed, updated_at: new Date().toISOString() }).eq("id", runId);
       }
+      // Se ainda há pendentes (pulados pelo stop), volta status pra pendente
+      const { data: rs } = await supabase.from("processar_runs").select("status").eq("id", runId).maybeSingle();
+      const finalStatus = rs?.status === "stopped" ? "stopped" : "completed";
+      if (finalStatus === "stopped") {
+        await supabase.from("consultas_margem")
+          .update({ status: "pendente" })
+          .eq("user_id", userId)
+          .eq("status", "processando");
+      }
+      await supabase.from("processar_runs").update({ status: finalStatus, updated_at: new Date().toISOString() }).eq("id", runId);
     })();
 
     // @ts-ignore EdgeRuntime
     if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(task);
     else await task;
 
-    return new Response(JSON.stringify({ enqueued: rows.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ enqueued: rows.length, runId }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("processar-margens error", e);
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
