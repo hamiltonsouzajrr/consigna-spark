@@ -50,7 +50,7 @@ class Session {
     }
   }
 
-  async request(url: string, init: RequestInit = {}): Promise<{ status: number; body: string; finalUrl: string }> {
+  async request(url: string, init: RequestInit = {}, timeoutMs = 30_000): Promise<{ status: number; body: string; finalUrl: string }> {
     const headers = new Headers(init.headers);
     headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
     headers.set("Accept-Language", "pt-BR,pt;q=0.9,en;q=0.8");
@@ -59,7 +59,14 @@ class Session {
     if (this.cookies.size) headers.set("Cookie", this.cookieHeader());
     if (!headers.has("Accept")) headers.set("Accept", "text/html,application/xhtml+xml");
 
-    const res = await fetch(url, { ...init, headers, redirect: "manual" });
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), timeoutMs);
+    let res: Response;
+    try {
+      res = await fetch(url, { ...init, headers, redirect: "manual", signal: ctrl.signal });
+    } finally {
+      clearTimeout(tid);
+    }
     this.absorbSetCookie(res.headers);
 
     // Segue redirects manualmente para preservar cookies
@@ -67,7 +74,7 @@ class Session {
       const loc = res.headers.get("location");
       if (loc) {
         const next = new URL(loc, url).toString();
-        return this.request(next, { method: "GET" });
+        return this.request(next, { method: "GET" }, timeoutMs);
       }
     }
     const body = await res.text();
