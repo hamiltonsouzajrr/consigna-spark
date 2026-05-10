@@ -640,7 +640,8 @@ Deno.serve(async (req) => {
     if (userErr || !userData.user) return new Response(JSON.stringify({ error: "Usuário inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const userId = userData.user.id;
 
-    const { ids }: Payload = await req.json().catch(() => ({}));
+    const { ids, parallel }: Payload = await req.json().catch(() => ({}));
+    const useParallel = !!parallel && !!Deno.env.get("CONSIGUP_USER_2") && !!Deno.env.get("CONSIGUP_PASS_2");
 
     let q = supabase.from("consultas_margem").select("id, cpf").eq("user_id", userId).in("status", ["pendente", "erro"]);
     if (ids && ids.length) q = q.in("id", ids);
