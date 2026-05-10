@@ -1,0 +1,2 @@
+UPDATE processar_runs SET status='stopped', finished_at=now(), updated_at=now() WHERE status IN ('running','paused') AND finished_at IS NULL;
+UPDATE consultas_margem SET status='pendente' WHERE status='processando';
