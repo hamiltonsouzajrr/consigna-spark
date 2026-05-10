@@ -683,17 +683,15 @@ Deno.serve(async (req) => {
 
     await supabase.from("consultas_margem").update({ status: "processando", erro: null }).in("id", rows.map((r) => r.id));
 
-    // Contadores compartilhados entre workers
-    let processed = 0;
-    let errors = 0;
+    // Contadores compartilhados — lê do DB para somar entre invocações
     const counterLock = { busy: false };
     const bumpCounter = async (isError: boolean) => {
-      processed++;
-      if (isError) errors++;
-      // serializa updates para evitar corrida
       while (counterLock.busy) await new Promise((r) => setTimeout(r, 10));
       counterLock.busy = true;
       try {
+        const { data: cur } = await supabase.from("processar_runs").select("processed, errors").eq("id", runId).maybeSingle();
+        const processed = (cur?.processed ?? 0) + 1;
+        const errors = (cur?.errors ?? 0) + (isError ? 1 : 0);
         await supabase.from("processar_runs").update({ processed, errors, updated_at: new Date().toISOString() }).eq("id", runId);
       } finally { counterLock.busy = false; }
     };
@@ -701,6 +699,7 @@ Deno.serve(async (req) => {
     // Fila compartilhada entre os workers
     const queue = [...rows];
     let stopRequested = false;
+    let deadlineHit = false;
 
     const sysLog: LogFn = async (level, message) => {
       console.log(`[${level}] ${message}`);
@@ -718,6 +717,7 @@ Deno.serve(async (req) => {
 
       while (true) {
         if (stopRequested) break;
+        if (Date.now() - startedAt > MAX_WALL_MS) { deadlineHit = true; break; }
         // controle pausar/parar
         const { data: rs } = await supabase.from("processar_runs").select("status").eq("id", runId).maybeSingle();
         const runStatus = (rs?.status as string) ?? "running";
