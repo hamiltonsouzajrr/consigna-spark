@@ -778,26 +778,50 @@ Deno.serve(async (req) => {
       const workers = useParallel ? [worker(1), worker(2)] : [worker(1)];
       await Promise.all(workers);
 
+      // Devolve qualquer linha ainda em "processando" para "pendente"
+      await supabase.from("consultas_margem")
+        .update({ status: "pendente" })
+        .eq("user_id", userId)
+        .eq("status", "processando");
+
       const { data: rs } = await supabase.from("processar_runs").select("status").eq("id", runId).maybeSingle();
-      const finalStatus = rs?.status === "stopped" ? "stopped" : "completed";
-      if (finalStatus === "stopped") {
-        await supabase.from("consultas_margem")
-          .update({ status: "pendente" })
-          .eq("user_id", userId)
-          .eq("status", "processando");
+      if (rs?.status === "stopped") {
+        await supabase.from("processar_runs").update({
+          status: "stopped", finished_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+        }).eq("id", runId);
+        return;
       }
-      await supabase.from("processar_runs").update({
-        status: finalStatus,
-        finished_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }).eq("id", runId);
+
+      // Se ainda há pendentes, re-invoca a função para continuar
+      let qLeft = supabase.from("consultas_margem").select("id", { count: "exact", head: true })
+        .eq("user_id", userId).in("status", ["pendente", "erro"]);
+      if (ids && ids.length) qLeft = qLeft.in("id", ids);
+      const { count: pendingLeft } = await qLeft;
+
+      if ((pendingLeft ?? 0) > 0 && (deadlineHit || queue.length === 0)) {
+        // Re-invoca a si mesmo (fire-and-forget) para continuar o run
+        const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/processar-margens`;
+        try {
+          await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: authHeader },
+            body: JSON.stringify({ ids, parallel, runId, continueRun: true }),
+          });
+        } catch (e) {
+          console.error("re-invoke failed", e);
+        }
+      } else {
+        await supabase.from("processar_runs").update({
+          status: "completed", finished_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+        }).eq("id", runId);
+      }
     })();
 
     // @ts-ignore EdgeRuntime
     if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(task);
     else await task;
 
-    return new Response(JSON.stringify({ enqueued: rows.length, runId, parallel: useParallel }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ enqueued: rows.length, runId, parallel: useParallel, continued: !!continueRun }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("processar-margens error", e);
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
