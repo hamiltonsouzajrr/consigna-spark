@@ -539,12 +539,12 @@ interface ConsigUpCtx {
   orgaos: OrgaoLink[];
 }
 
-async function novaSessaoConsigUp(log: LogFn): Promise<ConsigUpCtx | { erro: string }> {
-  const user = Deno.env.get("CONSIGUP_USER");
-  const pass = Deno.env.get("CONSIGUP_PASS");
-  if (!user || !pass) return { erro: "Credenciais ConsigUp ausentes" };
+async function novaSessaoConsigUp(log: LogFn, accountSlot: 1 | 2 = 1): Promise<ConsigUpCtx | { erro: string }> {
+  const user = accountSlot === 2 ? Deno.env.get("CONSIGUP_USER_2") : Deno.env.get("CONSIGUP_USER");
+  const pass = accountSlot === 2 ? Deno.env.get("CONSIGUP_PASS_2") : Deno.env.get("CONSIGUP_PASS");
+  if (!user || !pass) return { erro: `Credenciais ConsigUp ausentes (slot ${accountSlot})` };
   const s = new Session();
-  await log("info", `Login ConsigUp como ${user}`);
+  await log("info", `Login ConsigUp [slot ${accountSlot}] como ${user}`);
   const okLogin = await login(s, user, pass);
   if (!okLogin) return { erro: "Falha de login no ConsigUp" };
   const home = await s.request(HOME_URL);
@@ -620,7 +620,7 @@ async function consultarCpfTodosOrgaos(
 
 // ---------- Handler ----------
 
-interface Payload { ids?: string[] }
+interface Payload { ids?: string[]; parallel?: boolean }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -640,7 +640,8 @@ Deno.serve(async (req) => {
     if (userErr || !userData.user) return new Response(JSON.stringify({ error: "Usuário inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const userId = userData.user.id;
 
-    const { ids }: Payload = await req.json().catch(() => ({}));
+    const { ids, parallel }: Payload = await req.json().catch(() => ({}));
+    const useParallel = !!parallel && !!Deno.env.get("CONSIGUP_USER_2") && !!Deno.env.get("CONSIGUP_PASS_2");
 
     let q = supabase.from("consultas_margem").select("id, cpf").eq("user_id", userId).in("status", ["pendente", "erro"]);
     if (ids && ids.length) q = q.in("id", ids);
@@ -659,40 +660,55 @@ Deno.serve(async (req) => {
     if (runErr) throw runErr;
     const runId = runData!.id as string;
 
-    const task = (async () => {
-      let processed = 0;
-      let errors = 0;
+    // Contadores compartilhados entre workers
+    let processed = 0;
+    let errors = 0;
+    const counterLock = { busy: false };
+    const bumpCounter = async (isError: boolean) => {
+      processed++;
+      if (isError) errors++;
+      // serializa updates para evitar corrida
+      while (counterLock.busy) await new Promise((r) => setTimeout(r, 10));
+      counterLock.busy = true;
+      try {
+        await supabase.from("processar_runs").update({ processed, errors, updated_at: new Date().toISOString() }).eq("id", runId);
+      } finally { counterLock.busy = false; }
+    };
 
-      // Logger amplo (sem consulta_id) para ciclo de vida da sessão
-      const sysLog: LogFn = async (level, message) => {
-        console.log(`[${level}] ${message}`);
-      };
+    // Fila compartilhada entre os workers
+    const queue = [...rows];
+    let stopRequested = false;
 
-      // Cria sessão ConsigUp uma única vez e reusa entre CPFs
+    const sysLog: LogFn = async (level, message) => {
+      console.log(`[${level}] ${message}`);
+    };
+
+    const worker = async (slot: 1 | 2) => {
       let ctx: ConsigUpCtx | null = null;
       const ensureSession = async (): Promise<{ ok: true; ctx: ConsigUpCtx } | { ok: false; erro: string }> => {
         if (ctx) return { ok: true, ctx };
-        const r = await novaSessaoConsigUp(sysLog);
+        const r = await novaSessaoConsigUp(sysLog, slot);
         if ("erro" in r) return { ok: false, erro: r.erro };
         ctx = r;
         return { ok: true, ctx };
       };
 
-      for (const row of rows) {
-        let runStatus = "running";
-        for (;;) {
-          const { data: rs } = await supabase.from("processar_runs").select("status").eq("id", runId).maybeSingle();
-          runStatus = (rs?.status as string) ?? "running";
-          if (runStatus === "paused") { await new Promise((r) => setTimeout(r, 2000)); continue; }
-          break;
-        }
-        if (runStatus === "stopped") break;
+      while (true) {
+        if (stopRequested) break;
+        // controle pausar/parar
+        const { data: rs } = await supabase.from("processar_runs").select("status").eq("id", runId).maybeSingle();
+        const runStatus = (rs?.status as string) ?? "running";
+        if (runStatus === "stopped") { stopRequested = true; break; }
+        if (runStatus === "paused") { await new Promise((r) => setTimeout(r, 2000)); continue; }
+
+        const row = queue.shift();
+        if (!row) break;
 
         const log: LogFn = async (level, message) => {
-          console.log(`[${level}] ${message}`);
+          console.log(`[slot ${slot}][${level}] ${message}`);
           try {
             await supabase.from("processar_logs").insert({
-              consulta_id: row.id, user_id: userId, level, message: message.slice(0, 4000),
+              consulta_id: row.id, user_id: userId, level, message: `[slot ${slot}] ${message}`.slice(0, 4000),
             });
           } catch (e) { console.error("log insert err", e); }
         };
@@ -707,7 +723,6 @@ Deno.serve(async (req) => {
           };
         } else {
           r = await consultarCpfTodosOrgaos(row.cpf, log, sess.ctx);
-          // Se sessão expirou no meio, descarta e tenta uma vez com nova sessão
           if (r.sessaoExpirada) {
             await log("warn", "Sessão ConsigUp expirou — refazendo login");
             ctx = null;
@@ -732,10 +747,14 @@ Deno.serve(async (req) => {
           processed_at: new Date().toISOString(),
         }).eq("id", row.id);
 
-        processed++;
-        if (r.erro) errors++;
-        await supabase.from("processar_runs").update({ processed, errors, updated_at: new Date().toISOString() }).eq("id", runId);
+        await bumpCounter(!!r.erro);
       }
+    };
+
+    const task = (async () => {
+      const workers = useParallel ? [worker(1), worker(2)] : [worker(1)];
+      await Promise.all(workers);
+
       const { data: rs } = await supabase.from("processar_runs").select("status").eq("id", runId).maybeSingle();
       const finalStatus = rs?.status === "stopped" ? "stopped" : "completed";
       if (finalStatus === "stopped") {
@@ -755,7 +774,7 @@ Deno.serve(async (req) => {
     if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(task);
     else await task;
 
-    return new Response(JSON.stringify({ enqueued: rows.length, runId }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ enqueued: rows.length, runId, parallel: useParallel }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("processar-margens error", e);
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });

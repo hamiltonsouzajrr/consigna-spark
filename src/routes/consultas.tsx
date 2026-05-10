@@ -73,6 +73,7 @@ function Page() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [processing, setProcessing] = useState(false);
+  const [parallel, setParallel] = useState(true);
   const [run, setRun] = useState<Run | null>(null);
 
   useEffect(() => {
@@ -148,10 +149,10 @@ function Page() {
 
   const callProcessar = async (ids?: string[]) => {
     setProcessing(true);
-    const { error } = await supabase.functions.invoke("processar-margens", { body: { ids } });
+    const { error } = await supabase.functions.invoke("processar-margens", { body: { ids, parallel } });
     setProcessing(false);
     if (error) toast.error(error.message);
-    else toast.success("Processamento iniciado");
+    else toast.success(parallel ? "Processamento iniciado (2 contas em paralelo)" : "Processamento iniciado");
   };
 
   const exportCsv = (onlyDone: boolean) => {
@@ -238,7 +239,11 @@ function Page() {
           <h1 className="text-2xl font-bold">Consultas</h1>
           <p className="text-sm text-muted-foreground">{filtered.length} registros</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer hover:bg-accent">
+            <Checkbox checked={parallel} onCheckedChange={(v) => setParallel(!!v)} />
+            <span>Usar 2 contas (paralelo)</span>
+          </label>
           <Button onClick={() => callProcessar()} disabled={processing || isRunActive}>
             {processing || isRunActive ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
             {isRunActive ? "Em execução…" : "Iniciar processamento"}
