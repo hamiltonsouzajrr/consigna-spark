@@ -248,7 +248,6 @@ function Page() {
             {processing || isRunActive ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
             {isRunActive ? "Em execução…" : "Iniciar processamento"}
           </Button>
-          </Button>
           {selectedErrIds.length > 0 && (
             <Button variant="secondary" onClick={() => callProcessar(selectedErrIds)} disabled={processing || isRunActive}>
               <RefreshCw className="mr-2 h-4 w-4" /> Reprocessar selecionados ({selectedErrIds.length})
