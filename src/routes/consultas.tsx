@@ -73,6 +73,7 @@ function Page() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [processing, setProcessing] = useState(false);
+  const [parallel, setParallel] = useState(true);
   const [run, setRun] = useState<Run | null>(null);
 
   useEffect(() => {
