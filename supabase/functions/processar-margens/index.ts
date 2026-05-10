@@ -620,10 +620,15 @@ async function consultarCpfTodosOrgaos(
 
 // ---------- Handler ----------
 
-interface Payload { ids?: string[]; parallel?: boolean }
+interface Payload { ids?: string[]; parallel?: boolean; runId?: string; continueRun?: boolean }
+
+// Limites para evitar bater no CPU/wall-time da edge function
+const MAX_WALL_MS = 60_000; // re-invoca após ~60s
+const MAX_PER_INVOCATION = 25; // máximo de CPFs por invocação
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const startedAt = Date.now();
 
   try {
     const authHeader = req.headers.get("Authorization");
@@ -640,25 +645,43 @@ Deno.serve(async (req) => {
     if (userErr || !userData.user) return new Response(JSON.stringify({ error: "Usuário inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const userId = userData.user.id;
 
-    const { ids, parallel }: Payload = await req.json().catch(() => ({}));
+    const { ids, parallel, runId: continueRunId, continueRun }: Payload = await req.json().catch(() => ({}));
     const useParallel = !!parallel && !!Deno.env.get("CONSIGUP_USER_2") && !!Deno.env.get("CONSIGUP_PASS_2");
+
+    // Antes de selecionar, limpa rows que ficaram em "processando" de invocações anteriores
+    await supabase.from("consultas_margem").update({ status: "pendente" }).eq("user_id", userId).eq("status", "processando");
 
     let q = supabase.from("consultas_margem").select("id, cpf").eq("user_id", userId).in("status", ["pendente", "erro"]);
     if (ids && ids.length) q = q.in("id", ids);
+    q = q.limit(MAX_PER_INVOCATION);
     const { data: rows, error: selErr } = await q;
     if (selErr) throw selErr;
-    if (!rows || rows.length === 0) return new Response(JSON.stringify({ processed: 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    let runId: string;
+    if (continueRun && continueRunId) {
+      runId = continueRunId;
+    } else {
+      // Conta total real para o run
+      let qCount = supabase.from("consultas_margem").select("id", { count: "exact", head: true }).eq("user_id", userId).in("status", ["pendente", "erro"]);
+      if (ids && ids.length) qCount = qCount.in("id", ids);
+      const { count } = await qCount;
+      const { data: runData, error: runErr } = await supabase
+        .from("processar_runs")
+        .insert({ user_id: userId, status: "running", total: count ?? rows?.length ?? 0, processed: 0 })
+        .select("id")
+        .single();
+      if (runErr) throw runErr;
+      runId = runData!.id as string;
+    }
+
+    if (!rows || rows.length === 0) {
+      await supabase.from("processar_runs").update({
+        status: "completed", finished_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      }).eq("id", runId);
+      return new Response(JSON.stringify({ processed: 0, runId, done: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     await supabase.from("consultas_margem").update({ status: "processando", erro: null }).in("id", rows.map((r) => r.id));
-
-    // Cria run para acompanhar progresso e permitir pausar/parar
-    const { data: runData, error: runErr } = await supabase
-      .from("processar_runs")
-      .insert({ user_id: userId, status: "running", total: rows.length, processed: 0 })
-      .select("id")
-      .single();
-    if (runErr) throw runErr;
-    const runId = runData!.id as string;
 
     // Contadores compartilhados entre workers
     let processed = 0;
