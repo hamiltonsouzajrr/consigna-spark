@@ -539,12 +539,12 @@ interface ConsigUpCtx {
   orgaos: OrgaoLink[];
 }
 
-async function novaSessaoConsigUp(log: LogFn): Promise<ConsigUpCtx | { erro: string }> {
-  const user = Deno.env.get("CONSIGUP_USER");
-  const pass = Deno.env.get("CONSIGUP_PASS");
-  if (!user || !pass) return { erro: "Credenciais ConsigUp ausentes" };
+async function novaSessaoConsigUp(log: LogFn, accountSlot: 1 | 2 = 1): Promise<ConsigUpCtx | { erro: string }> {
+  const user = accountSlot === 2 ? Deno.env.get("CONSIGUP_USER_2") : Deno.env.get("CONSIGUP_USER");
+  const pass = accountSlot === 2 ? Deno.env.get("CONSIGUP_PASS_2") : Deno.env.get("CONSIGUP_PASS");
+  if (!user || !pass) return { erro: `Credenciais ConsigUp ausentes (slot ${accountSlot})` };
   const s = new Session();
-  await log("info", `Login ConsigUp como ${user}`);
+  await log("info", `Login ConsigUp [slot ${accountSlot}] como ${user}`);
   const okLogin = await login(s, user, pass);
   if (!okLogin) return { erro: "Falha de login no ConsigUp" };
   const home = await s.request(HOME_URL);
