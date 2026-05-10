@@ -774,7 +774,7 @@ Deno.serve(async (req) => {
     if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(task);
     else await task;
 
-    return new Response(JSON.stringify({ enqueued: rows.length, runId }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ enqueued: rows.length, runId, parallel: useParallel }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("processar-margens error", e);
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
