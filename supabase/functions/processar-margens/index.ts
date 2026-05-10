@@ -620,10 +620,15 @@ async function consultarCpfTodosOrgaos(
 
 // ---------- Handler ----------
 
-interface Payload { ids?: string[]; parallel?: boolean }
+interface Payload { ids?: string[]; parallel?: boolean; runId?: string; continueRun?: boolean }
+
+// Limites para evitar bater no CPU/wall-time da edge function
+const MAX_WALL_MS = 60_000; // re-invoca após ~60s
+const MAX_PER_INVOCATION = 25; // máximo de CPFs por invocação
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const startedAt = Date.now();
 
   try {
     const authHeader = req.headers.get("Authorization");
@@ -640,37 +645,53 @@ Deno.serve(async (req) => {
     if (userErr || !userData.user) return new Response(JSON.stringify({ error: "Usuário inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const userId = userData.user.id;
 
-    const { ids, parallel }: Payload = await req.json().catch(() => ({}));
+    const { ids, parallel, runId: continueRunId, continueRun }: Payload = await req.json().catch(() => ({}));
     const useParallel = !!parallel && !!Deno.env.get("CONSIGUP_USER_2") && !!Deno.env.get("CONSIGUP_PASS_2");
+
+    // Antes de selecionar, limpa rows que ficaram em "processando" de invocações anteriores
+    await supabase.from("consultas_margem").update({ status: "pendente" }).eq("user_id", userId).eq("status", "processando");
 
     let q = supabase.from("consultas_margem").select("id, cpf").eq("user_id", userId).in("status", ["pendente", "erro"]);
     if (ids && ids.length) q = q.in("id", ids);
+    q = q.limit(MAX_PER_INVOCATION);
     const { data: rows, error: selErr } = await q;
     if (selErr) throw selErr;
-    if (!rows || rows.length === 0) return new Response(JSON.stringify({ processed: 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    let runId: string;
+    if (continueRun && continueRunId) {
+      runId = continueRunId;
+    } else {
+      // Conta total real para o run
+      let qCount = supabase.from("consultas_margem").select("id", { count: "exact", head: true }).eq("user_id", userId).in("status", ["pendente", "erro"]);
+      if (ids && ids.length) qCount = qCount.in("id", ids);
+      const { count } = await qCount;
+      const { data: runData, error: runErr } = await supabase
+        .from("processar_runs")
+        .insert({ user_id: userId, status: "running", total: count ?? rows?.length ?? 0, processed: 0 })
+        .select("id")
+        .single();
+      if (runErr) throw runErr;
+      runId = runData!.id as string;
+    }
+
+    if (!rows || rows.length === 0) {
+      await supabase.from("processar_runs").update({
+        status: "completed", finished_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      }).eq("id", runId);
+      return new Response(JSON.stringify({ processed: 0, runId, done: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     await supabase.from("consultas_margem").update({ status: "processando", erro: null }).in("id", rows.map((r) => r.id));
 
-    // Cria run para acompanhar progresso e permitir pausar/parar
-    const { data: runData, error: runErr } = await supabase
-      .from("processar_runs")
-      .insert({ user_id: userId, status: "running", total: rows.length, processed: 0 })
-      .select("id")
-      .single();
-    if (runErr) throw runErr;
-    const runId = runData!.id as string;
-
-    // Contadores compartilhados entre workers
-    let processed = 0;
-    let errors = 0;
+    // Contadores compartilhados — lê do DB para somar entre invocações
     const counterLock = { busy: false };
     const bumpCounter = async (isError: boolean) => {
-      processed++;
-      if (isError) errors++;
-      // serializa updates para evitar corrida
       while (counterLock.busy) await new Promise((r) => setTimeout(r, 10));
       counterLock.busy = true;
       try {
+        const { data: cur } = await supabase.from("processar_runs").select("processed, errors").eq("id", runId).maybeSingle();
+        const processed = (cur?.processed ?? 0) + 1;
+        const errors = (cur?.errors ?? 0) + (isError ? 1 : 0);
         await supabase.from("processar_runs").update({ processed, errors, updated_at: new Date().toISOString() }).eq("id", runId);
       } finally { counterLock.busy = false; }
     };
@@ -678,6 +699,7 @@ Deno.serve(async (req) => {
     // Fila compartilhada entre os workers
     const queue = [...rows];
     let stopRequested = false;
+    let deadlineHit = false;
 
     const sysLog: LogFn = async (level, message) => {
       console.log(`[${level}] ${message}`);
@@ -695,6 +717,7 @@ Deno.serve(async (req) => {
 
       while (true) {
         if (stopRequested) break;
+        if (Date.now() - startedAt > MAX_WALL_MS) { deadlineHit = true; break; }
         // controle pausar/parar
         const { data: rs } = await supabase.from("processar_runs").select("status").eq("id", runId).maybeSingle();
         const runStatus = (rs?.status as string) ?? "running";
@@ -755,26 +778,50 @@ Deno.serve(async (req) => {
       const workers = useParallel ? [worker(1), worker(2)] : [worker(1)];
       await Promise.all(workers);
 
+      // Devolve qualquer linha ainda em "processando" para "pendente"
+      await supabase.from("consultas_margem")
+        .update({ status: "pendente" })
+        .eq("user_id", userId)
+        .eq("status", "processando");
+
       const { data: rs } = await supabase.from("processar_runs").select("status").eq("id", runId).maybeSingle();
-      const finalStatus = rs?.status === "stopped" ? "stopped" : "completed";
-      if (finalStatus === "stopped") {
-        await supabase.from("consultas_margem")
-          .update({ status: "pendente" })
-          .eq("user_id", userId)
-          .eq("status", "processando");
+      if (rs?.status === "stopped") {
+        await supabase.from("processar_runs").update({
+          status: "stopped", finished_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+        }).eq("id", runId);
+        return;
       }
-      await supabase.from("processar_runs").update({
-        status: finalStatus,
-        finished_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }).eq("id", runId);
+
+      // Se ainda há pendentes, re-invoca a função para continuar
+      let qLeft = supabase.from("consultas_margem").select("id", { count: "exact", head: true })
+        .eq("user_id", userId).in("status", ["pendente", "erro"]);
+      if (ids && ids.length) qLeft = qLeft.in("id", ids);
+      const { count: pendingLeft } = await qLeft;
+
+      if ((pendingLeft ?? 0) > 0 && (deadlineHit || queue.length === 0)) {
+        // Re-invoca a si mesmo (fire-and-forget) para continuar o run
+        const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/processar-margens`;
+        try {
+          await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: authHeader },
+            body: JSON.stringify({ ids, parallel, runId, continueRun: true }),
+          });
+        } catch (e) {
+          console.error("re-invoke failed", e);
+        }
+      } else {
+        await supabase.from("processar_runs").update({
+          status: "completed", finished_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+        }).eq("id", runId);
+      }
     })();
 
     // @ts-ignore EdgeRuntime
     if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(task);
     else await task;
 
-    return new Response(JSON.stringify({ enqueued: rows.length, runId, parallel: useParallel }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ enqueued: rows.length, runId, parallel: useParallel, continued: !!continueRun }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("processar-margens error", e);
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
