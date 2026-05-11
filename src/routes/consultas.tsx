@@ -502,6 +502,18 @@ function Page() {
                   <TableCell className="text-right tabular-nums">{brl(r.margem_cartao_credito)}</TableCell>
                   <TableCell className="text-right tabular-nums">{brl(r.margem_cartao_beneficio)}</TableCell>
                   <TableCell className="text-right tabular-nums font-semibold">{brl(r.margem_disponivel)}</TableCell>
+                  <TableCell className="text-xs">
+                    {r.status === "erro" ? (
+                      <Badge
+                        variant="outline"
+                        className="cursor-pointer bg-destructive/10 text-destructive border-destructive/30"
+                        onClick={() => setErroTipoFilter(r.erro_tipo ?? "outro")}
+                        title="Filtrar por este tipo"
+                      >
+                        {erroTipoLabel(r.erro_tipo ?? "outro")}
+                      </Badge>
+                    ) : "—"}
+                  </TableCell>
                   <TableCell className="max-w-[280px] text-xs text-destructive">
                     <span title={r.erro ?? ""} className="block whitespace-normal break-words">
                       {r.status === "erro" ? (r.erro ?? "Erro não informado") : (r.erro ?? "")}
