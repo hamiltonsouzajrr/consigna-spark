@@ -138,6 +138,37 @@ function Page() {
     else toast.success(status === "paused" ? "Pausado" : status === "stopped" ? "Parado" : "Retomado");
   };
 
+  // Tick para reavaliar se o run está travado (sem updates há > 90s)
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 10_000);
+    return () => clearInterval(t);
+  }, []);
+
+  const resumeRun = async () => {
+    if (!run) return;
+    setProcessing(true);
+    try {
+      // Reativa o run e libera linhas que ficaram em "processando"
+      await supabase.from("processar_runs")
+        .update({ status: "running", finished_at: null, updated_at: new Date().toISOString() })
+        .eq("id", run.id);
+      await supabase.from("consultas_margem")
+        .update({ status: "pendente" })
+        .eq("user_id", user!.id)
+        .eq("status", "processando");
+
+      const { data, error } = await supabase.functions.invoke("processar-margens", {
+        body: { runId: run.id, continueRun: true, parallel, maxAttempts },
+      });
+      if (error) toast.error(error.message);
+      else if (data?.alreadyRunning) toast.info("Já existe um processamento em andamento");
+      else toast.success("Processamento retomado a partir do checkpoint");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
     const load = async () => {
