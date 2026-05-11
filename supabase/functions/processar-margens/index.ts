@@ -796,7 +796,7 @@ Deno.serve(async (req) => {
         if (runStatus === "stopped") { stopRequested = true; break; }
         if (runStatus === "paused") { await new Promise((r) => setTimeout(r, 2000)); continue; }
 
-        const row = queue.shift();
+        const row = queue.shift() as { id: string; cpf: string; tentativas?: number } | undefined;
         if (!row) break;
 
         const log: LogFn = async (level, message) => {
@@ -807,7 +807,15 @@ Deno.serve(async (req) => {
             });
           } catch (e) { console.error("log insert err", e); }
         };
-        await log("info", `Iniciando processamento do CPF ${row.cpf}`);
+
+        // Backoff exponencial entre tentativas (apenas a partir da 2ª tentativa)
+        const prevAttempts = row.tentativas ?? 0;
+        if (prevAttempts > 0) {
+          const wait = Math.min(BACKOFF_MAX_MS, BACKOFF_BASE_MS * Math.pow(2, prevAttempts - 1));
+          await log("info", `Backoff de ${wait}ms antes da tentativa #${prevAttempts + 1} (CPF ${row.cpf})`);
+          await new Promise((r) => setTimeout(r, wait));
+        }
+        await log("info", `Iniciando processamento do CPF ${row.cpf} (tentativa #${prevAttempts + 1}/${maxAttempts})`);
 
         const sess = await ensureSession();
         let r: ConsultaResultado & { sessaoExpirada?: boolean };
