@@ -790,7 +790,9 @@ Deno.serve(async (req) => {
     const hasErroTipo = !!erroTipo && erroTipo !== "all";
     const maxAttempts = Math.max(1, Math.min(10, maxAttemptsRaw ?? DEFAULT_MAX_ATTEMPTS));
 
-    if (!continueRun) {
+    // Só bloqueia se for um processamento em lote (sem ids explícitos).
+    // Consultas individuais (ids fornecidos) devem rodar mesmo com outro run pausado/rodando.
+    if (!continueRun && !hasExplicitIds) {
       const { data: activeRun } = await supabase
         .from("processar_runs")
         .select("id, status")
