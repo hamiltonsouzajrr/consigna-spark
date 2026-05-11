@@ -724,6 +724,7 @@ async function consultarCpfTodosOrgaos(
 // ---------- Classificador de erros ----------
 function classificarErro(erro: string | null): string | null {
   if (!erro) return null;
+  if (/Sess[ãa]o em uso por outro acesso/i.test(erro)) return "sessao_concorrente";
   if (/Credenciais.*ausentes/i.test(erro)) return "credenciais_ausentes";
   if (/Falha de login/i.test(erro)) return "login_falhou";
   if (/Nenhum órgão/i.test(erro)) return "sem_orgaos";
