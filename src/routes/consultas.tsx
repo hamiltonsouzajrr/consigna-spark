@@ -61,6 +61,7 @@ const ERRO_TIPO_LABELS: Record<string, string> = {
   falha_trocar_orgao: "Falha ao trocar órgão",
   excecao_consulta: "Exceção na consulta",
   sessao_expirada: "Sessão expirada",
+  sessao_concorrente: "Conta em uso em outro acesso",
   login_falhou: "Falha de login",
   credenciais_ausentes: "Credenciais ausentes",
   sem_orgaos: "Nenhum órgão",
