@@ -647,11 +647,25 @@ Deno.serve(async (req) => {
 
     const { ids, parallel, runId: continueRunId, continueRun }: Payload = await req.json().catch(() => ({}));
     const useParallel = !!parallel && !!Deno.env.get("CONSIGUP_USER_2") && !!Deno.env.get("CONSIGUP_PASS_2");
+    const hasExplicitIds = !!ids && ids.length > 0;
+
+    if (!continueRun) {
+      const { data: activeRun } = await supabase
+        .from("processar_runs")
+        .select("id, status")
+        .eq("user_id", userId)
+        .in("status", ["running", "paused"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (activeRun) {
+        return new Response(JSON.stringify({ runId: activeRun.id, alreadyRunning: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
 
     // Antes de selecionar, limpa rows que ficaram em "processando" de invocações anteriores
     await supabase.from("consultas_margem").update({ status: "pendente" }).eq("user_id", userId).eq("status", "processando");
 
-    const hasExplicitIds = !!ids && ids.length > 0;
     let q = supabase.from("consultas_margem").select("id, cpf").eq("user_id", userId);
     if (hasExplicitIds) q = q.in("id", ids);
     else q = q.eq("status", "pendente");
