@@ -11,7 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Play, Download, RefreshCw, Loader2, FileSpreadsheet, Pause, Square } from "lucide-react";
+import { Play, Download, RefreshCw, Loader2, FileSpreadsheet, Pause, Square, FileSearch } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Progress } from "@/components/ui/progress";
 import * as XLSX from "xlsx";
 import { formatCpf } from "@/lib/cpf";
@@ -94,6 +95,7 @@ function Page() {
   const [parallel, setParallel] = useState(true);
   const [maxAttempts, setMaxAttempts] = useState(3);
   const [run, setRun] = useState<Run | null>(null);
+  const [detalheConsulta, setDetalheConsulta] = useState<Consulta | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -517,11 +519,12 @@ function Page() {
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead>Tipo de erro</TableHead>
                 <TableHead>Erro</TableHead>
+                <TableHead className="w-20 text-center">Detalhes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pageItems.length === 0 ? (
-                <TableRow><TableCell colSpan={13} className="py-12 text-center text-muted-foreground">Nenhum registro.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={14} className="py-12 text-center text-muted-foreground">Nenhum registro.</TableCell></TableRow>
               ) : pageItems.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell><Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggle(r.id)} /></TableCell>
@@ -562,6 +565,16 @@ function Page() {
                       {r.status === "erro" ? (r.erro ?? "Erro não informado") : (r.erro ?? "")}
                     </span>
                   </TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setDetalheConsulta(r)}
+                      title="Ver passos da última tentativa"
+                    >
+                      <FileSearch className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -576,6 +589,238 @@ function Page() {
           </div>
         </div>
       </Card>
+
+      <DetalhesSheet
+        consulta={detalheConsulta}
+        onOpenChange={(open) => { if (!open) setDetalheConsulta(null); }}
+      />
     </AppShell>
+  );
+}
+
+// ---------- Detalhes da tentativa ----------
+
+interface LogRow {
+  id: number;
+  consulta_id: string;
+  level: string;
+  message: string;
+  created_at: string;
+}
+
+interface PassoTentativa {
+  ts: string;
+  level: string;
+  slot: string | null;
+  etapa: string;
+  orgao: string | null;
+  servico: string | null;
+  url: string | null;
+  detalhe: string;
+  raw: string;
+}
+
+const CONSIGUP_BASE = "https://www.consigup.com.br";
+
+function parseLog(row: LogRow): PassoTentativa {
+  const msg = row.message ?? "";
+  const slotMatch = msg.match(/^\[slot\s+(\d+)\]\s*/);
+  const slot = slotMatch ? slotMatch[1] : null;
+  const body = slotMatch ? msg.slice(slotMatch[0].length) : msg;
+
+  let etapa = "Outro";
+  let orgao: string | null = null;
+  let servico: string | null = null;
+  let url: string | null = null;
+  let detalhe = body;
+
+  const orgaoMatch = body.match(/===\s*Órgão\s+(\S+)\s+(.+?)\s*===/);
+  if (orgaoMatch) {
+    etapa = "Trocar órgão";
+    orgao = `${orgaoMatch[1]} — ${orgaoMatch[2]}`;
+    detalhe = `Selecionando órgão ${orgao}`;
+  } else if (/^Login ConsigUp/i.test(body)) {
+    etapa = "Login";
+    url = `${CONSIGUP_BASE}/Login.aspx`;
+  } else if (/Sessão pronta/i.test(body)) {
+    etapa = "Sessão pronta";
+  } else if (/Sessão ConsigUp expirou/i.test(body)) {
+    etapa = "Sessão expirada";
+  } else if (/^Iniciando processamento/i.test(body)) {
+    etapa = "Início CPF";
+  } else if (/^Backoff/i.test(body)) {
+    etapa = "Backoff";
+  } else if (/^Finalizado/i.test(body)) {
+    etapa = /com erro/i.test(body) ? "Finalizado (erro)" : "Finalizado (ok)";
+  } else {
+    const svcMatch = body.match(/\[consulta\s+svc=(\d+)\]\s*(.*)$/);
+    if (svcMatch) {
+      servico = svcMatch[1];
+      const rest = svcMatch[2];
+      if (/^POST/i.test(rest)) {
+        etapa = "POST consulta";
+        url = `${CONSIGUP_BASE}/ConsultaMargem.aspx`;
+        detalhe = rest;
+      } else if (/^response/i.test(rest)) {
+        etapa = "Resposta";
+        detalhe = rest;
+      } else if (/^OK/i.test(rest)) {
+        etapa = "Margem encontrada";
+        detalhe = rest;
+      } else if (/sem margem/i.test(rest)) {
+        etapa = "Sem margem";
+        detalhe = rest;
+      } else {
+        etapa = "Consulta serviço";
+        detalhe = rest;
+      }
+    } else {
+      const orgaoNum = body.match(/^\[(\d+)\]\s*(.+)$/);
+      if (orgaoNum) {
+        orgao = orgaoNum[1];
+        etapa = "Resumo órgão";
+        detalhe = orgaoNum[2];
+      } else if (/ajax-delta/i.test(body)) {
+        etapa = "Parse AJAX";
+      } else if (/\[orgao\]/i.test(body)) {
+        etapa = "Carregar órgão";
+      } else if (/\[resumo\]/i.test(body)) {
+        etapa = "Resumo final";
+      }
+    }
+  }
+
+  return {
+    ts: row.created_at,
+    level: row.level,
+    slot,
+    etapa,
+    orgao,
+    servico,
+    url,
+    detalhe: detalhe.slice(0, 400),
+    raw: msg,
+  };
+}
+
+function DetalhesSheet({
+  consulta,
+  onOpenChange,
+}: { consulta: Consulta | null; onOpenChange: (open: boolean) => void }) {
+  const [logs, setLogs] = useState<LogRow[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  useEffect(() => {
+    if (!consulta) { setLogs([]); return; }
+    let cancel = false;
+    setLoadingLogs(true);
+    (async () => {
+      const { data, error } = await supabase
+        .from("processar_logs")
+        .select("id, consulta_id, level, message, created_at")
+        .eq("consulta_id", consulta.id)
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .limit(2000);
+      if (cancel) return;
+      if (error) toast.error(error.message);
+      setLogs((data ?? []) as LogRow[]);
+      setLoadingLogs(false);
+    })();
+    return () => { cancel = true; };
+  }, [consulta]);
+
+  const passos = useMemo(() => logs.map(parseLog), [logs]);
+
+  // Apenas a última tentativa: corta no último log "Iniciando processamento"
+  const passosUltima = useMemo(() => {
+    const idx = (() => {
+      for (let i = passos.length - 1; i >= 0; i--) {
+        if (passos[i].etapa === "Início CPF") return i;
+      }
+      return 0;
+    })();
+    return passos.slice(idx);
+  }, [passos]);
+
+  const open = !!consulta;
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle className="text-base">
+            Detalhes da tentativa — CPF {consulta?.cpf}
+          </SheetTitle>
+          <SheetDescription className="text-xs">
+            {consulta?.servidor_nome ?? consulta?.nome}
+            {" · "}Tentativas: {consulta?.tentativas ?? 0}
+            {consulta?.erro_tipo ? ` · Tipo: ${erroTipoLabel(consulta.erro_tipo)}` : ""}
+          </SheetDescription>
+        </SheetHeader>
+
+        {consulta?.erro && (
+          <div className="my-4 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+            <p className="font-semibold">Erro reportado</p>
+            <p className="mt-1 whitespace-pre-wrap break-words">{consulta.erro}</p>
+          </div>
+        )}
+
+        <div className="mt-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-sm font-semibold">Passos do fluxo (última tentativa)</h3>
+            <span className="text-xs text-muted-foreground">{passosUltima.length} eventos</span>
+          </div>
+
+          {loadingLogs ? (
+            <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
+            </div>
+          ) : passosUltima.length === 0 ? (
+            <div className="rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">
+              Sem registros. Reprocesse para gerar passos detalhados.
+            </div>
+          ) : (
+            <ol className="relative border-l border-border pl-4">
+              {passosUltima.map((p, i) => (
+                <li key={i} className="mb-3 last:mb-0">
+                  <span className={`absolute -left-[5px] mt-1.5 h-2.5 w-2.5 rounded-full ${
+                    p.level === "error" ? "bg-destructive"
+                      : p.level === "warn" ? "bg-warning"
+                      : "bg-primary/60"
+                  }`} />
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                    <span className="text-xs font-semibold">{p.etapa}</span>
+                    {p.orgao && <Badge variant="outline" className="text-[10px]">Órgão {p.orgao}</Badge>}
+                    {p.servico && <Badge variant="outline" className="text-[10px]">svc {p.servico}</Badge>}
+                    {p.slot && <span className="text-[10px] text-muted-foreground">slot {p.slot}</span>}
+                    <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+                      {new Date(p.ts).toLocaleTimeString("pt-BR")}
+                    </span>
+                  </div>
+                  {p.url && (
+                    <p className="mt-0.5 break-all font-mono text-[10px] text-muted-foreground">
+                      {p.url}
+                    </p>
+                  )}
+                  <p className="mt-0.5 whitespace-pre-wrap break-words text-xs text-muted-foreground">
+                    {p.detalhe}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+
+        <details className="mt-4">
+          <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
+            Ver log bruto completo ({passos.length} linhas)
+          </summary>
+          <pre className="mt-2 max-h-[300px] overflow-auto rounded-md border bg-muted/40 p-2 text-[10px] leading-relaxed">
+            {logs.map((l) => `[${new Date(l.created_at).toLocaleTimeString("pt-BR")}] [${l.level}] ${l.message}`).join("\n")}
+          </pre>
+        </details>
+      </SheetContent>
+    </Sheet>
   );
 }
