@@ -139,16 +139,20 @@ function parseAjaxDelta(body: string, log: LogFn): string {
 
 // ---------- Fluxo ConsigUp ----------
 
-async function login(s: Session, user: string, pass: string): Promise<boolean> {
+// Detecta mensagens indicando que o usuário já está logado em outro acesso/computador
+const RE_SESSAO_CONCORRENTE = /(j[áa]\s+(est[áa]\s+)?(logad|conectad|autenticad|acessad))|(usu[áa]rio\s+(j[áa]\s+)?(em\s+uso|conectado|logado))|(outro\s+(local|computador|dispositivo|navegador|usu[áa]rio|terminal|acesso))|(sess[ãa]o\s+(ativa|em\s+uso|j[áa]\s+iniciada|simult[âa]nea|duplicada))|(simult[âa]nea?s?\s+sess|m[áa]ximo\s+de\s+sess|limite\s+de\s+sess)/i;
+
+interface LoginResult { ok: boolean; concurrent?: boolean; detail?: string }
+
+async function login(s: Session, user: string, pass: string): Promise<LoginResult> {
   const page = await s.request(LOGIN_URL);
   if (page.status !== 200) {
     console.error("[login] GET status", page.status);
-    return false;
+    return { ok: false };
   }
   const hidden = extractAllHidden(page.body);
   const form = new URLSearchParams();
   for (const [k, v] of Object.entries(hidden)) form.set(k, v);
-  // ConsigUp aceita CPF com máscara no login. Formata se vier só dígitos.
   const userFmt = /^\d{11}$/.test(user)
     ? `${user.slice(0,3)}.${user.slice(3,6)}.${user.slice(6,9)}-${user.slice(9)}`
     : user;
@@ -164,13 +168,21 @@ async function login(s: Session, user: string, pass: string): Promise<boolean> {
 
   const ok = /Inicio\.aspx/i.test(res.finalUrl) || /P[áa]gina Inicial/i.test(res.body) || /Consigna[çc][õo]es/i.test(res.body);
   console.log("[login] finalUrl:", res.finalUrl, "status:", res.status, "ok:", ok, "userFmt:", userFmt);
-  console.log("[login] cookies:", [...s.cookies.keys()].join(","));
-  // Procura mostraPopUpAlert('Titulo','Mensagem',...)
+
+  // Coleta mensagens visíveis (popup + labels) para inspeção
+  let detail = "";
   const popup = res.body.match(/mostraPopUpAlert\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/);
-  if (popup) console.error("[login] popup:", popup[1], "-", popup[2]);
-  const errMatch = res.body.match(/<span[^>]*id="[^"]*(lblMsg|lblErro|lblMensagem)[^"]*"[^>]*>([\s\S]*?)<\/span>/i);
-  if (errMatch) console.error("[login] lbl:", errMatch[0].slice(0, 300));
-  return ok;
+  if (popup) { console.error("[login] popup:", popup[1], "-", popup[2]); detail += `${popup[1]}: ${popup[2]} `; }
+  const errMatch = res.body.match(/<span[^>]*id="[^"]*(lblMsg|lblErro|lblMensagem|lblAviso)[^"]*"[^>]*>([\s\S]*?)<\/span>/i);
+  if (errMatch) {
+    const txt = errMatch[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    if (txt) { console.error("[login] lbl:", txt.slice(0, 300)); detail += txt + " "; }
+  }
+  const hiddenResp = res.body.match(/id="MainContent_hiddenResposta"\s+value="([^"]+)"/);
+  if (hiddenResp && hiddenResp[1]) detail += hiddenResp[1] + " ";
+
+  const concurrent = !ok && RE_SESSAO_CONCORRENTE.test(detail);
+  return { ok, concurrent, detail: detail.trim().slice(0, 300) || undefined };
 }
 
 interface OrgaoLink { id: string; eventTarget: string; codigo: string; nome: string; }
