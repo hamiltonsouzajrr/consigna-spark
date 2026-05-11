@@ -776,7 +776,11 @@ function DetalhesSheet({
         {consulta?.erro && (
           <div className="my-4 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
             <p className="font-semibold">Erro reportado</p>
-            <p className="mt-1 whitespace-pre-wrap break-words">{consulta.erro}</p>
+            <p className="mt-1 whitespace-pre-wrap break-words">{formatErroMsg(consulta.erro)}</p>
+            <details className="mt-2">
+              <summary className="cursor-pointer text-[11px] opacity-70">Ver mensagem técnica completa</summary>
+              <p className="mt-1 whitespace-pre-wrap break-words text-[11px] opacity-80">{consulta.erro}</p>
+            </details>
           </div>
         )}
 
