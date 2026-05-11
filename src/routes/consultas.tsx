@@ -139,15 +139,28 @@ function Page() {
     return () => { supabase.removeChannel(ch); };
   }, [user]);
 
+  const erroTipoCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const i of items) {
+      if (i.status !== "erro") continue;
+      const k = i.erro_tipo ?? "outro";
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+  }, [items]);
+
   const filtered = useMemo(() => {
     let f = items;
     if (statusFilter !== "all") f = f.filter((i) => i.status === statusFilter);
+    if (erroTipoFilter !== "all") {
+      f = f.filter((i) => i.status === "erro" && (i.erro_tipo ?? "outro") === erroTipoFilter);
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       f = f.filter((i) => i.cpf.includes(q.replace(/\D/g, "")) || i.nome.toLowerCase().includes(q));
     }
     return f;
-  }, [items, statusFilter, search]);
+  }, [items, statusFilter, erroTipoFilter, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
