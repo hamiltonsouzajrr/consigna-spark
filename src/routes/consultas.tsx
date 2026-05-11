@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Play, Download, RefreshCw, Loader2, FileSpreadsheet, Pause, Square, FileSearch } from "lucide-react";
+import { Play, Download, RefreshCw, Loader2, FileSpreadsheet, Pause, Square, FileSearch, PlayCircle, AlertTriangle } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Progress } from "@/components/ui/progress";
 import * as XLSX from "xlsx";
@@ -136,6 +136,37 @@ function Page() {
     const { error } = await supabase.from("processar_runs").update({ status }).eq("id", run.id);
     if (error) toast.error(error.message);
     else toast.success(status === "paused" ? "Pausado" : status === "stopped" ? "Parado" : "Retomado");
+  };
+
+  // Tick para reavaliar se o run está travado (sem updates há > 90s)
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 10_000);
+    return () => clearInterval(t);
+  }, []);
+
+  const resumeRun = async () => {
+    if (!run) return;
+    setProcessing(true);
+    try {
+      // Reativa o run e libera linhas que ficaram em "processando"
+      await supabase.from("processar_runs")
+        .update({ status: "running", finished_at: null, updated_at: new Date().toISOString() })
+        .eq("id", run.id);
+      await supabase.from("consultas_margem")
+        .update({ status: "pendente" })
+        .eq("user_id", user!.id)
+        .eq("status", "processando");
+
+      const { data, error } = await supabase.functions.invoke("processar-margens", {
+        body: { runId: run.id, continueRun: true, parallel, maxAttempts },
+      });
+      if (error) toast.error(error.message);
+      else if (data?.alreadyRunning) toast.info("Já existe um processamento em andamento");
+      else toast.success("Processamento retomado a partir do checkpoint");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   useEffect(() => {
@@ -283,6 +314,14 @@ function Page() {
 
   const selectedErrIds = items.filter((i) => selected.has(i.id) && i.status === "erro").map((i) => i.id);
   const isRunActive = !!run && (run.status === "running" || run.status === "paused");
+  const pendentesCount = items.filter((i) => i.status === "pendente" || i.status === "processando").length;
+  // Run "travado": estava rodando/pausado mas sem updates há mais de 90s
+  const runStaleMs = run && isRunActive ? now - new Date(run.updated_at).getTime() : 0;
+  const isRunStuck = isRunActive && runStaleMs > 90_000;
+  // Run interrompido (parado/travado) com pendentes para retomar
+  const canResume = !!run && pendentesCount > 0 && (
+    isRunStuck || (run.status === "stopped") || (!!run.finished_at && run.processed < run.total)
+  );
 
   return (
     <AppShell>
@@ -349,9 +388,17 @@ function Page() {
               </h2>
               <p className="text-xs text-muted-foreground">
                 {run.processed} de {run.total} CPFs processados • {run.errors} erro(s)
+                {isRunActive && (
+                  <span className="ml-2 opacity-70">• último update há {Math.round(runStaleMs / 1000)}s</span>
+                )}
               </p>
             </div>
             <div className="flex gap-2">
+              {isRunStuck && (
+                <Button size="sm" variant="default" onClick={resumeRun} disabled={processing}>
+                  <PlayCircle className="mr-2 h-4 w-4" /> Retomar do checkpoint
+                </Button>
+              )}
               {run.status === "running" ? (
                 <Button size="sm" variant="outline" onClick={() => updateRunStatus("paused")}>
                   <Pause className="mr-2 h-4 w-4" /> Pausar
@@ -366,6 +413,14 @@ function Page() {
               </Button>
             </div>
           </div>
+          {isRunStuck && (
+            <div className="mb-2 flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2 text-xs text-warning-foreground">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-none text-warning" />
+              <span>
+                Sem atualizações há {Math.round(runStaleMs / 1000)}s. O processamento pode ter sido interrompido — clique em <strong>Retomar do checkpoint</strong> para continuar de onde parou ({run.processed}/{run.total}).
+              </span>
+            </div>
+          )}
           <Progress value={run.total > 0 ? (run.processed / run.total) * 100 : 0} />
           <p className="mt-2 text-right text-xs text-muted-foreground tabular-nums">
             {run.total > 0 ? Math.round((run.processed / run.total) * 100) : 0}%
@@ -386,7 +441,14 @@ function Page() {
                 {new Date(run.started_at).toLocaleString("pt-BR")} → {new Date(run.finished_at).toLocaleString("pt-BR")}
               </p>
             </div>
-            <Button size="sm" variant="ghost" onClick={() => setRun(null)}>Ocultar</Button>
+            <div className="flex gap-2">
+              {canResume && (
+                <Button size="sm" variant="default" onClick={resumeRun} disabled={processing}>
+                  <PlayCircle className="mr-2 h-4 w-4" /> Retomar ({pendentesCount} pendentes)
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={() => setRun(null)}>Ocultar</Button>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-md border p-3">
