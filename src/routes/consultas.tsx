@@ -68,6 +68,20 @@ const ERRO_TIPO_LABELS: Record<string, string> = {
 };
 const erroTipoLabel = (t: string | null) => (t ? (ERRO_TIPO_LABELS[t] ?? t) : "—");
 
+// Limpa mensagens de erro técnicas (ex.: "Margem não localizada em nenhum órgão. 10=s1=popup_alerta|...")
+// removendo o detalhamento por órgão/slot e mantendo só o resumo legível.
+const formatErroMsg = (raw: string | null | undefined): string => {
+  if (!raw) return "";
+  let msg = String(raw).trim();
+  // Remove blocos do tipo " 10=s1=popup_alerta|s2=...|s3=... | 05=..."
+  msg = msg.replace(/\s*\d{2}\s*=\s*s\d+\s*=[^|]+(\s*\|\s*s\d+\s*=[^|]+)*(\s*\|\s*\d{2}\s*=[^|]+(\s*\|\s*s\d+\s*=[^|]+)*)*/gi, "");
+  // Remove sufixos residuais "s1=...|s2=..."
+  msg = msg.replace(/\s*s\d+\s*=[^|]+(\s*\|\s*s\d+\s*=[^|]+)*/gi, "");
+  msg = msg.replace(/\s*\|\s*/g, " ").replace(/\s{2,}/g, " ").trim();
+  msg = msg.replace(/[.\s]+$/g, "").trim();
+  return msg || String(raw).trim();
+};
+
 const brl = (n: number | null | undefined) =>
   n == null ? "—" : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -562,7 +576,7 @@ function Page() {
                   </TableCell>
                   <TableCell className="max-w-[280px] text-xs text-destructive">
                     <span title={r.erro ?? ""} className="block whitespace-normal break-words">
-                      {r.status === "erro" ? (r.erro ?? "Erro não informado") : (r.erro ?? "")}
+                      {r.status === "erro" ? (formatErroMsg(r.erro) || "Erro não informado") : formatErroMsg(r.erro)}
                     </span>
                   </TableCell>
                   <TableCell className="text-center">
@@ -762,7 +776,11 @@ function DetalhesSheet({
         {consulta?.erro && (
           <div className="my-4 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
             <p className="font-semibold">Erro reportado</p>
-            <p className="mt-1 whitespace-pre-wrap break-words">{consulta.erro}</p>
+            <p className="mt-1 whitespace-pre-wrap break-words">{formatErroMsg(consulta.erro)}</p>
+            <details className="mt-2">
+              <summary className="cursor-pointer text-[11px] opacity-70">Ver mensagem técnica completa</summary>
+              <p className="mt-1 whitespace-pre-wrap break-words text-[11px] opacity-80">{consulta.erro}</p>
+            </details>
           </div>
         )}
 
