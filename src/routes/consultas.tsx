@@ -314,6 +314,14 @@ function Page() {
 
   const selectedErrIds = items.filter((i) => selected.has(i.id) && i.status === "erro").map((i) => i.id);
   const isRunActive = !!run && (run.status === "running" || run.status === "paused");
+  const pendentesCount = items.filter((i) => i.status === "pendente" || i.status === "processando").length;
+  // Run "travado": estava rodando/pausado mas sem updates há mais de 90s
+  const runStaleMs = run && isRunActive ? now - new Date(run.updated_at).getTime() : 0;
+  const isRunStuck = isRunActive && runStaleMs > 90_000;
+  // Run interrompido (parado/travado) com pendentes para retomar
+  const canResume = !!run && pendentesCount > 0 && (
+    isRunStuck || (run.status === "stopped") || (!!run.finished_at && run.processed < run.total)
+  );
 
   return (
     <AppShell>
