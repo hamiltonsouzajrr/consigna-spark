@@ -847,6 +847,7 @@ Deno.serve(async (req) => {
           orgao: r.orgao,
           erro: r.erro,
           erro_tipo: classificarErro(r.erro),
+          tentativas: (row.tentativas ?? 0) + 1,
           status: r.erro ? "erro" : "concluido",
           processed_at: new Date().toISOString(),
         }).eq("id", row.id);
