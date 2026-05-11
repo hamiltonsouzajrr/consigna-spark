@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      consigup_sessions: {
+        Row: {
+          cookies: Json
+          created_at: string
+          last_used_at: string
+          orgaos: Json
+          slot: number
+          user_id: string
+        }
+        Insert: {
+          cookies?: Json
+          created_at?: string
+          last_used_at?: string
+          orgaos?: Json
+          slot: number
+          user_id: string
+        }
+        Update: {
+          cookies?: Json
+          created_at?: string
+          last_used_at?: string
+          orgaos?: Json
+          slot?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       consultas_margem: {
         Row: {
           categoria: string | null
