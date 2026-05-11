@@ -651,8 +651,10 @@ Deno.serve(async (req) => {
     // Antes de selecionar, limpa rows que ficaram em "processando" de invocações anteriores
     await supabase.from("consultas_margem").update({ status: "pendente" }).eq("user_id", userId).eq("status", "processando");
 
-    let q = supabase.from("consultas_margem").select("id, cpf").eq("user_id", userId).in("status", ["pendente", "erro"]);
-    if (ids && ids.length) q = q.in("id", ids);
+    const hasExplicitIds = !!ids && ids.length > 0;
+    let q = supabase.from("consultas_margem").select("id, cpf").eq("user_id", userId);
+    if (hasExplicitIds) q = q.in("id", ids);
+    else q = q.eq("status", "pendente");
     q = q.limit(MAX_PER_INVOCATION);
     const { data: rows, error: selErr } = await q;
     if (selErr) throw selErr;
@@ -662,8 +664,9 @@ Deno.serve(async (req) => {
       runId = continueRunId;
     } else {
       // Conta total real para o run
-      let qCount = supabase.from("consultas_margem").select("id", { count: "exact", head: true }).eq("user_id", userId).in("status", ["pendente", "erro"]);
-      if (ids && ids.length) qCount = qCount.in("id", ids);
+      let qCount = supabase.from("consultas_margem").select("id", { count: "exact", head: true }).eq("user_id", userId);
+      if (hasExplicitIds) qCount = qCount.in("id", ids);
+      else qCount = qCount.eq("status", "pendente");
       const { count } = await qCount;
       const { data: runData, error: runErr } = await supabase
         .from("processar_runs")
@@ -794,8 +797,9 @@ Deno.serve(async (req) => {
 
       // Se ainda há pendentes, re-invoca a função para continuar
       let qLeft = supabase.from("consultas_margem").select("id", { count: "exact", head: true })
-        .eq("user_id", userId).in("status", ["pendente", "erro"]);
-      if (ids && ids.length) qLeft = qLeft.in("id", ids);
+        .eq("user_id", userId)
+        .eq("status", "pendente");
+      if (hasExplicitIds) qLeft = qLeft.in("id", ids);
       const { count: pendingLeft } = await qLeft;
 
       if ((pendingLeft ?? 0) > 0 && (deadlineHit || queue.length === 0)) {
