@@ -537,15 +537,25 @@ function Page() {
                   <TableCell className="text-right tabular-nums font-semibold">{brl(r.margem_disponivel)}</TableCell>
                   <TableCell className="text-xs">
                     {r.status === "erro" ? (
-                      <Badge
-                        variant="outline"
-                        className="cursor-pointer bg-destructive/10 text-destructive border-destructive/30"
-                        onClick={() => setErroTipoFilter(r.erro_tipo ?? "outro")}
-                        title="Filtrar por este tipo"
-                      >
-                        {erroTipoLabel(r.erro_tipo ?? "outro")}
-                      </Badge>
-                    ) : "—"}
+                      <div className="flex flex-col items-start gap-1">
+                        <Badge
+                          variant="outline"
+                          className="cursor-pointer bg-destructive/10 text-destructive border-destructive/30"
+                          onClick={() => setErroTipoFilter(r.erro_tipo ?? "outro")}
+                          title="Filtrar por este tipo"
+                        >
+                          {erroTipoLabel(r.erro_tipo ?? "outro")}
+                        </Badge>
+                        <span
+                          className={`text-[10px] tabular-nums ${(r.tentativas ?? 0) >= maxAttempts ? "text-destructive font-semibold" : "text-muted-foreground"}`}
+                          title={(r.tentativas ?? 0) >= maxAttempts ? "Limite de tentativas atingido" : ""}
+                        >
+                          {r.tentativas ?? 0}/{maxAttempts} tentativa(s)
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="max-w-[280px] text-xs text-destructive">
                     <span title={r.erro ?? ""} className="block whitespace-normal break-words">
