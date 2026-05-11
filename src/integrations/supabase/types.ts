@@ -20,6 +20,7 @@ export type Database = {
           cpf: string
           created_at: string
           erro: string | null
+          erro_tipo: string | null
           id: string
           margem_cartao_beneficio: number | null
           margem_cartao_credito: number | null
@@ -40,6 +41,7 @@ export type Database = {
           cpf: string
           created_at?: string
           erro?: string | null
+          erro_tipo?: string | null
           id?: string
           margem_cartao_beneficio?: number | null
           margem_cartao_credito?: number | null
@@ -60,6 +62,7 @@ export type Database = {
           cpf?: string
           created_at?: string
           erro?: string | null
+          erro_tipo?: string | null
           id?: string
           margem_cartao_beneficio?: number | null
           margem_cartao_credito?: number | null
