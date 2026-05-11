@@ -444,6 +444,22 @@ function Page() {
               <SelectItem value="erro">Erro</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={erroTipoFilter} onValueChange={setErroTipoFilter}>
+            <SelectTrigger className="w-[240px]">
+              <SelectValue placeholder="Tipo de erro" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os tipos de erro</SelectItem>
+              {erroTipoCounts.map(([k, n]) => (
+                <SelectItem key={k} value={k}>
+                  {erroTipoLabel(k)} ({n})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {erroTipoFilter !== "all" && (
+            <Button variant="ghost" size="sm" onClick={() => setErroTipoFilter("all")}>Limpar tipo</Button>
+          )}
         </div>
 
         <div className="overflow-x-auto">
