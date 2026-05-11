@@ -948,6 +948,9 @@ Deno.serve(async (req) => {
 
         await bumpCounter(!!r.erro);
       }
+
+      // Persiste sessão final do slot para a próxima invocação reaproveitar
+      if (ctx) await salvarSessao(supabase, userId, slot, ctx.s, ctx.orgaos);
     };
 
     const task = (async () => {
