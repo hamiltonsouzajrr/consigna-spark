@@ -879,7 +879,7 @@ Deno.serve(async (req) => {
           await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: authHeader },
-            body: JSON.stringify({ ids, parallel, runId, continueRun: true }),
+            body: JSON.stringify({ ids, parallel, runId, continueRun: true, erroTipo, maxAttempts }),
           });
         } catch (e) {
           console.error("re-invoke failed", e);
