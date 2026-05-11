@@ -863,9 +863,10 @@ Deno.serve(async (req) => {
 
     const worker = async (slot: 1 | 2) => {
       let ctx: ConsigUpCtx | null = null;
+      let cpfsDesdeUltimoSave = 0;
       const ensureSession = async (): Promise<{ ok: true; ctx: ConsigUpCtx } | { ok: false; erro: string }> => {
         if (ctx) return { ok: true, ctx };
-        const r = await novaSessaoConsigUp(sysLog, slot);
+        const r = await novaSessaoConsigUp(sysLog, slot, supabase, userId);
         if ("erro" in r) return { ok: false, erro: r.erro };
         ctx = r;
         return { ok: true, ctx };
@@ -911,12 +912,21 @@ Deno.serve(async (req) => {
         } else {
           r = await consultarCpfTodosOrgaos(row.cpf, log, sess.ctx);
           if (r.sessaoExpirada) {
-            await log("warn", "Sessão ConsigUp expirou — refazendo login");
+            await log("warn", "Sessão ConsigUp expirou — invalidando cache e refazendo login");
+            await limparSessao(supabase, userId, slot);
             ctx = null;
             const sess2 = await ensureSession();
             if (sess2.ok) r = await consultarCpfTodosOrgaos(row.cpf, log, sess2.ctx);
           }
         }
+
+        // Atualiza cookies persistidos a cada 5 CPFs (mantém last_used_at fresco e cookies rotacionados)
+        cpfsDesdeUltimoSave++;
+        if (ctx && cpfsDesdeUltimoSave >= 5) {
+          await salvarSessao(supabase, userId, slot, ctx.s, ctx.orgaos);
+          cpfsDesdeUltimoSave = 0;
+        }
+
 
         await log(r.erro ? "error" : "info", r.erro ? `Finalizado com erro: ${r.erro}` : `Finalizado. Margem total: ${r.margem} (órgão ${r.orgao})`);
         await supabase.from("consultas_margem").update({
