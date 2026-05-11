@@ -38,6 +38,7 @@ type Status = "pendente" | "processando" | "concluido" | "erro";
 interface Consulta {
   id: string; cpf: string; nome: string; status: Status;
   margem_disponivel: number | null; erro: string | null;
+  erro_tipo: string | null;
   created_at: string; processed_at: string | null;
   updated_at: string;
   margem_emprestimo: number | null;
@@ -49,6 +50,21 @@ interface Consulta {
   situacao: string | null;
   orgao: string | null;
 }
+
+const ERRO_TIPO_LABELS: Record<string, string> = {
+  sem_link_margem: "Sem link de margem",
+  popup_alerta: "Popup de alerta",
+  sem_resultado: "Sem resultado",
+  margem_nao_localizada: "Margem não localizada",
+  falha_trocar_orgao: "Falha ao trocar órgão",
+  excecao_consulta: "Exceção na consulta",
+  sessao_expirada: "Sessão expirada",
+  login_falhou: "Falha de login",
+  credenciais_ausentes: "Credenciais ausentes",
+  sem_orgaos: "Nenhum órgão",
+  outro: "Outro",
+};
+const erroTipoLabel = (t: string | null) => (t ? (ERRO_TIPO_LABELS[t] ?? t) : "—");
 
 const brl = (n: number | null | undefined) =>
   n == null ? "—" : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -69,6 +85,7 @@ function Page() {
   const { user, loading } = useAuth();
   const [items, setItems] = useState<Consulta[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
+  const [erroTipoFilter, setErroTipoFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -122,15 +139,28 @@ function Page() {
     return () => { supabase.removeChannel(ch); };
   }, [user]);
 
+  const erroTipoCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const i of items) {
+      if (i.status !== "erro") continue;
+      const k = i.erro_tipo ?? "outro";
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+  }, [items]);
+
   const filtered = useMemo(() => {
     let f = items;
     if (statusFilter !== "all") f = f.filter((i) => i.status === statusFilter);
+    if (erroTipoFilter !== "all") {
+      f = f.filter((i) => i.status === "erro" && (i.erro_tipo ?? "outro") === erroTipoFilter);
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       f = f.filter((i) => i.cpf.includes(q.replace(/\D/g, "")) || i.nome.toLowerCase().includes(q));
     }
     return f;
-  }, [items, statusFilter, search]);
+  }, [items, statusFilter, erroTipoFilter, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -414,6 +444,22 @@ function Page() {
               <SelectItem value="erro">Erro</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={erroTipoFilter} onValueChange={setErroTipoFilter}>
+            <SelectTrigger className="w-[240px]">
+              <SelectValue placeholder="Tipo de erro" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os tipos de erro</SelectItem>
+              {erroTipoCounts.map(([k, n]) => (
+                <SelectItem key={k} value={k}>
+                  {erroTipoLabel(k)} ({n})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {erroTipoFilter !== "all" && (
+            <Button variant="ghost" size="sm" onClick={() => setErroTipoFilter("all")}>Limpar tipo</Button>
+          )}
         </div>
 
         <div className="overflow-x-auto">
@@ -436,12 +482,13 @@ function Page() {
                 <TableHead className="text-right">Cartão Crédito</TableHead>
                 <TableHead className="text-right">Cartão Benefício</TableHead>
                 <TableHead className="text-right">Total</TableHead>
+                <TableHead>Tipo de erro</TableHead>
                 <TableHead>Erro</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pageItems.length === 0 ? (
-                <TableRow><TableCell colSpan={12} className="py-12 text-center text-muted-foreground">Nenhum registro.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={13} className="py-12 text-center text-muted-foreground">Nenhum registro.</TableCell></TableRow>
               ) : pageItems.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell><Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggle(r.id)} /></TableCell>
@@ -455,6 +502,18 @@ function Page() {
                   <TableCell className="text-right tabular-nums">{brl(r.margem_cartao_credito)}</TableCell>
                   <TableCell className="text-right tabular-nums">{brl(r.margem_cartao_beneficio)}</TableCell>
                   <TableCell className="text-right tabular-nums font-semibold">{brl(r.margem_disponivel)}</TableCell>
+                  <TableCell className="text-xs">
+                    {r.status === "erro" ? (
+                      <Badge
+                        variant="outline"
+                        className="cursor-pointer bg-destructive/10 text-destructive border-destructive/30"
+                        onClick={() => setErroTipoFilter(r.erro_tipo ?? "outro")}
+                        title="Filtrar por este tipo"
+                      >
+                        {erroTipoLabel(r.erro_tipo ?? "outro")}
+                      </Badge>
+                    ) : "—"}
+                  </TableCell>
                   <TableCell className="max-w-[280px] text-xs text-destructive">
                     <span title={r.erro ?? ""} className="block whitespace-normal break-words">
                       {r.status === "erro" ? (r.erro ?? "Erro não informado") : (r.erro ?? "")}

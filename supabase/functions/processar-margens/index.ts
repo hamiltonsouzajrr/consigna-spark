@@ -618,6 +618,31 @@ async function consultarCpfTodosOrgaos(
   return { ...empty, erro: erroFinal.slice(0, 1000), sessaoExpirada };
 }
 
+// ---------- Classificador de erros ----------
+function classificarErro(erro: string | null): string | null {
+  if (!erro) return null;
+  if (/Credenciais.*ausentes/i.test(erro)) return "credenciais_ausentes";
+  if (/Falha de login/i.test(erro)) return "login_falhou";
+  if (/Nenhum órgão/i.test(erro)) return "sem_orgaos";
+  if (/sessao_expirada|sess[ãa]o expirou/i.test(erro)) return "sessao_expirada";
+  if (/Margem não localizada/i.test(erro)) {
+    // Extrai motivos por órgão: "01=sem_link_margem | 02=popup_alerta | ..."
+    const partes = erro.split("|").map((p) => p.trim());
+    const motivos = partes
+      .map((p) => p.split("=")[1]?.trim())
+      .filter((v): v is string => !!v && !/^ok\(/.test(v));
+    if (motivos.length === 0) return "margem_nao_localizada";
+    const allSemLink = motivos.every((m) => m === "sem_link_margem");
+    if (allSemLink) return "sem_link_margem";
+    if (motivos.some((m) => /popup_alerta/.test(m))) return "popup_alerta";
+    if (motivos.some((m) => /sem_resultado/.test(m))) return "sem_resultado";
+    if (motivos.some((m) => /falha_trocar_orgao/.test(m))) return "falha_trocar_orgao";
+    if (motivos.some((m) => /excecao/.test(m))) return "excecao_consulta";
+    return "margem_nao_localizada";
+  }
+  return "outro";
+}
+
 // ---------- Handler ----------
 
 interface Payload { ids?: string[]; parallel?: boolean; runId?: string; continueRun?: boolean }
@@ -667,7 +692,7 @@ Deno.serve(async (req) => {
     await supabase.from("consultas_margem").update({ status: "pendente" }).eq("user_id", userId).eq("status", "processando");
     if (hasExplicitIds && !continueRun) {
       await supabase.from("consultas_margem")
-        .update({ status: "pendente", erro: null })
+        .update({ status: "pendente", erro: null, erro_tipo: null })
         .eq("user_id", userId)
         .in("id", ids)
         .eq("status", "erro");
@@ -705,7 +730,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ processed: 0, runId, done: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    await supabase.from("consultas_margem").update({ status: "processando", erro: null }).in("id", rows.map((r) => r.id));
+    await supabase.from("consultas_margem").update({ status: "processando", erro: null, erro_tipo: null }).in("id", rows.map((r) => r.id));
 
     // Contadores compartilhados — lê do DB para somar entre invocações
     const counterLock = { busy: false };
@@ -790,6 +815,7 @@ Deno.serve(async (req) => {
           situacao: r.situacao,
           orgao: r.orgao,
           erro: r.erro,
+          erro_tipo: classificarErro(r.erro),
           status: r.erro ? "erro" : "concluido",
           processed_at: new Date().toISOString(),
         }).eq("id", row.id);
