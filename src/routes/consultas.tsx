@@ -565,6 +565,16 @@ function Page() {
                       {r.status === "erro" ? (r.erro ?? "Erro não informado") : (r.erro ?? "")}
                     </span>
                   </TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setDetalheConsulta(r)}
+                      title="Ver passos da última tentativa"
+                    >
+                      <FileSearch className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
