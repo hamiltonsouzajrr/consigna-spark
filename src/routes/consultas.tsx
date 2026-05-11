@@ -179,9 +179,12 @@ function Page() {
     }
   };
 
-  const callProcessar = async (ids?: string[]) => {
+  const callProcessar = async (opts?: { ids?: string[]; erroTipo?: string }) => {
     setProcessing(true);
-    const { data, error } = await supabase.functions.invoke("processar-margens", { body: { ids, parallel } });
+    const body: Record<string, unknown> = { parallel, maxAttempts };
+    if (opts?.ids) body.ids = opts.ids;
+    if (opts?.erroTipo) body.erroTipo = opts.erroTipo;
+    const { data, error } = await supabase.functions.invoke("processar-margens", { body });
     setProcessing(false);
     if (error) toast.error(error.message);
     else if (data?.alreadyRunning) toast.info("Já existe um processamento em andamento");
