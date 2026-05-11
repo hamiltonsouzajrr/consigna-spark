@@ -482,6 +482,7 @@ function Page() {
                 <TableHead className="text-right">Cartão Crédito</TableHead>
                 <TableHead className="text-right">Cartão Benefício</TableHead>
                 <TableHead className="text-right">Total</TableHead>
+                <TableHead>Tipo de erro</TableHead>
                 <TableHead>Erro</TableHead>
               </TableRow>
             </TableHeader>
