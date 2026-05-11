@@ -95,6 +95,7 @@ function Page() {
   const [parallel, setParallel] = useState(true);
   const [maxAttempts, setMaxAttempts] = useState(3);
   const [run, setRun] = useState<Run | null>(null);
+  const [detalheConsulta, setDetalheConsulta] = useState<Consulta | null>(null);
 
   useEffect(() => {
     if (!user) return;
