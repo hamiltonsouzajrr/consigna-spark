@@ -285,7 +285,7 @@ function Page() {
             {isRunActive ? "Em execução…" : "Iniciar processamento"}
           </Button>
           {selectedErrIds.length > 0 && (
-            <Button variant="secondary" onClick={() => callProcessar(selectedErrIds)} disabled={processing || isRunActive}>
+            <Button variant="secondary" onClick={() => callProcessar({ ids: selectedErrIds })} disabled={processing || isRunActive}>
               <RefreshCw className="mr-2 h-4 w-4" /> Reprocessar selecionados ({selectedErrIds.length})
             </Button>
           )}
