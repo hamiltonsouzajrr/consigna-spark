@@ -519,6 +519,7 @@ function Page() {
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead>Tipo de erro</TableHead>
                 <TableHead>Erro</TableHead>
+                <TableHead className="w-20 text-center">Detalhes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
