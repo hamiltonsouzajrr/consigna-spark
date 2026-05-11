@@ -665,10 +665,17 @@ Deno.serve(async (req) => {
 
     // Antes de selecionar, limpa rows que ficaram em "processando" de invocações anteriores
     await supabase.from("consultas_margem").update({ status: "pendente" }).eq("user_id", userId).eq("status", "processando");
+    if (hasExplicitIds && !continueRun) {
+      await supabase.from("consultas_margem")
+        .update({ status: "pendente", erro: null })
+        .eq("user_id", userId)
+        .in("id", ids)
+        .eq("status", "erro");
+    }
 
     let q = supabase.from("consultas_margem").select("id, cpf").eq("user_id", userId);
     if (hasExplicitIds) q = q.in("id", ids);
-    else q = q.eq("status", "pendente");
+    q = q.eq("status", "pendente");
     q = q.limit(MAX_PER_INVOCATION);
     const { data: rows, error: selErr } = await q;
     if (selErr) throw selErr;
