@@ -680,9 +680,11 @@ Deno.serve(async (req) => {
     if (userErr || !userData.user) return new Response(JSON.stringify({ error: "Usuário inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const userId = userData.user.id;
 
-    const { ids, parallel, runId: continueRunId, continueRun }: Payload = await req.json().catch(() => ({}));
+    const { ids, parallel, runId: continueRunId, continueRun, erroTipo, maxAttempts: maxAttemptsRaw }: Payload = await req.json().catch(() => ({}));
     const useParallel = !!parallel && !!Deno.env.get("CONSIGUP_USER_2") && !!Deno.env.get("CONSIGUP_PASS_2");
     const hasExplicitIds = !!ids && ids.length > 0;
+    const hasErroTipo = !!erroTipo && erroTipo !== "all";
+    const maxAttempts = Math.max(1, Math.min(10, maxAttemptsRaw ?? DEFAULT_MAX_ATTEMPTS));
 
     if (!continueRun) {
       const { data: activeRun } = await supabase
@@ -705,12 +707,23 @@ Deno.serve(async (req) => {
         .update({ status: "pendente", erro: null, erro_tipo: null })
         .eq("user_id", userId)
         .in("id", ids)
-        .eq("status", "erro");
+        .eq("status", "erro")
+        .lt("tentativas", maxAttempts);
+    }
+    if (hasErroTipo && !continueRun && !hasExplicitIds) {
+      // Reseta erros desse tipo (que ainda têm tentativas disponíveis) para pendente
+      await supabase.from("consultas_margem")
+        .update({ status: "pendente", erro: null, erro_tipo: null })
+        .eq("user_id", userId)
+        .eq("status", "erro")
+        .eq("erro_tipo", erroTipo!)
+        .lt("tentativas", maxAttempts);
     }
 
-    let q = supabase.from("consultas_margem").select("id, cpf").eq("user_id", userId);
+    let q = supabase.from("consultas_margem").select("id, cpf, tentativas").eq("user_id", userId);
     if (hasExplicitIds) q = q.in("id", ids);
-    q = q.eq("status", "pendente");
+    q = q.eq("status", "pendente").lt("tentativas", maxAttempts);
+    q = q.order("tentativas", { ascending: true }); // processa primeiro quem tentou menos
     q = q.limit(MAX_PER_INVOCATION);
     const { data: rows, error: selErr } = await q;
     if (selErr) throw selErr;
