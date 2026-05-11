@@ -85,6 +85,7 @@ function Page() {
   const { user, loading } = useAuth();
   const [items, setItems] = useState<Consulta[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
+  const [erroTipoFilter, setErroTipoFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
