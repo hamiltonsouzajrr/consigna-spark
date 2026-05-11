@@ -647,12 +647,35 @@ Deno.serve(async (req) => {
 
     const { ids, parallel, runId: continueRunId, continueRun }: Payload = await req.json().catch(() => ({}));
     const useParallel = !!parallel && !!Deno.env.get("CONSIGUP_USER_2") && !!Deno.env.get("CONSIGUP_PASS_2");
+    const hasExplicitIds = !!ids && ids.length > 0;
+
+    if (!continueRun) {
+      const { data: activeRun } = await supabase
+        .from("processar_runs")
+        .select("id, status")
+        .eq("user_id", userId)
+        .in("status", ["running", "paused"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (activeRun) {
+        return new Response(JSON.stringify({ runId: activeRun.id, alreadyRunning: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
 
     // Antes de selecionar, limpa rows que ficaram em "processando" de invocações anteriores
     await supabase.from("consultas_margem").update({ status: "pendente" }).eq("user_id", userId).eq("status", "processando");
+    if (hasExplicitIds && !continueRun) {
+      await supabase.from("consultas_margem")
+        .update({ status: "pendente", erro: null })
+        .eq("user_id", userId)
+        .in("id", ids)
+        .eq("status", "erro");
+    }
 
-    let q = supabase.from("consultas_margem").select("id, cpf").eq("user_id", userId).in("status", ["pendente", "erro"]);
-    if (ids && ids.length) q = q.in("id", ids);
+    let q = supabase.from("consultas_margem").select("id, cpf").eq("user_id", userId);
+    if (hasExplicitIds) q = q.in("id", ids);
+    q = q.eq("status", "pendente");
     q = q.limit(MAX_PER_INVOCATION);
     const { data: rows, error: selErr } = await q;
     if (selErr) throw selErr;
@@ -662,8 +685,9 @@ Deno.serve(async (req) => {
       runId = continueRunId;
     } else {
       // Conta total real para o run
-      let qCount = supabase.from("consultas_margem").select("id", { count: "exact", head: true }).eq("user_id", userId).in("status", ["pendente", "erro"]);
-      if (ids && ids.length) qCount = qCount.in("id", ids);
+      let qCount = supabase.from("consultas_margem").select("id", { count: "exact", head: true }).eq("user_id", userId);
+      if (hasExplicitIds) qCount = qCount.in("id", ids);
+      else qCount = qCount.eq("status", "pendente");
       const { count } = await qCount;
       const { data: runData, error: runErr } = await supabase
         .from("processar_runs")
@@ -794,8 +818,9 @@ Deno.serve(async (req) => {
 
       // Se ainda há pendentes, re-invoca a função para continuar
       let qLeft = supabase.from("consultas_margem").select("id", { count: "exact", head: true })
-        .eq("user_id", userId).in("status", ["pendente", "erro"]);
-      if (ids && ids.length) qLeft = qLeft.in("id", ids);
+        .eq("user_id", userId)
+        .eq("status", "pendente");
+      if (hasExplicitIds) qLeft = qLeft.in("id", ids);
       const { count: pendingLeft } = await qLeft;
 
       if ((pendingLeft ?? 0) > 0 && (deadlineHit || queue.length === 0)) {
