@@ -149,9 +149,10 @@ function Page() {
 
   const callProcessar = async (ids?: string[]) => {
     setProcessing(true);
-    const { error } = await supabase.functions.invoke("processar-margens", { body: { ids, parallel } });
+    const { data, error } = await supabase.functions.invoke("processar-margens", { body: { ids, parallel } });
     setProcessing(false);
     if (error) toast.error(error.message);
+    else if (data?.alreadyRunning) toast.info("Já existe um processamento em andamento");
     else toast.success(parallel ? "Processamento iniciado (2 contas em paralelo)" : "Processamento iniciado");
   };
 
