@@ -92,6 +92,7 @@ function Page() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [processing, setProcessing] = useState(false);
   const [parallel, setParallel] = useState(true);
+  const [maxAttempts, setMaxAttempts] = useState(3);
   const [run, setRun] = useState<Run | null>(null);
 
   useEffect(() => {
