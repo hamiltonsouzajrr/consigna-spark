@@ -640,8 +640,15 @@ async function novaSessaoConsigUp(
 
   const s = new Session();
   await log("info", `Login ConsigUp [slot ${accountSlot}] como ${user}`);
-  const okLogin = await login(s, user, pass);
-  if (!okLogin) return { erro: "Falha de login no ConsigUp" };
+  const lr = await login(s, user, pass);
+  if (!lr.ok) {
+    if (lr.concurrent) {
+      const msg = `Sessão em uso por outro acesso (slot ${accountSlot}). Alguém entrou com a mesma credencial em outro computador/navegador. Saia do outro acesso e tente novamente.${lr.detail ? ` [${lr.detail}]` : ""}`;
+      await log("error", msg);
+      return { erro: msg };
+    }
+    return { erro: `Falha de login no ConsigUp${lr.detail ? `: ${lr.detail}` : ""}` };
+  }
   const home = await s.request(HOME_URL);
   const orgaos = listarOrgaosDoHtml(home.body);
   if (orgaos.length === 0) return { erro: "Nenhum órgão encontrado no header" };
