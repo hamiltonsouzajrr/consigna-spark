@@ -388,9 +388,17 @@ function Page() {
               </h2>
               <p className="text-xs text-muted-foreground">
                 {run.processed} de {run.total} CPFs processados • {run.errors} erro(s)
+                {isRunActive && (
+                  <span className="ml-2 opacity-70">• último update há {Math.round(runStaleMs / 1000)}s</span>
+                )}
               </p>
             </div>
             <div className="flex gap-2">
+              {isRunStuck && (
+                <Button size="sm" variant="default" onClick={resumeRun} disabled={processing}>
+                  <PlayCircle className="mr-2 h-4 w-4" /> Retomar do checkpoint
+                </Button>
+              )}
               {run.status === "running" ? (
                 <Button size="sm" variant="outline" onClick={() => updateRunStatus("paused")}>
                   <Pause className="mr-2 h-4 w-4" /> Pausar
@@ -405,6 +413,14 @@ function Page() {
               </Button>
             </div>
           </div>
+          {isRunStuck && (
+            <div className="mb-2 flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2 text-xs text-warning-foreground">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-none text-warning" />
+              <span>
+                Sem atualizações há {Math.round(runStaleMs / 1000)}s. O processamento pode ter sido interrompido — clique em <strong>Retomar do checkpoint</strong> para continuar de onde parou ({run.processed}/{run.total}).
+              </span>
+            </div>
+          )}
           <Progress value={run.total > 0 ? (run.processed / run.total) * 100 : 0} />
           <p className="mt-2 text-right text-xs text-muted-foreground tabular-nums">
             {run.total > 0 ? Math.round((run.processed / run.total) * 100) : 0}%
@@ -425,7 +441,14 @@ function Page() {
                 {new Date(run.started_at).toLocaleString("pt-BR")} → {new Date(run.finished_at).toLocaleString("pt-BR")}
               </p>
             </div>
-            <Button size="sm" variant="ghost" onClick={() => setRun(null)}>Ocultar</Button>
+            <div className="flex gap-2">
+              {canResume && (
+                <Button size="sm" variant="default" onClick={resumeRun} disabled={processing}>
+                  <PlayCircle className="mr-2 h-4 w-4" /> Retomar ({pendentesCount} pendentes)
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={() => setRun(null)}>Ocultar</Button>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-md border p-3">
