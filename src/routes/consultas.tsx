@@ -38,6 +38,7 @@ type Status = "pendente" | "processando" | "concluido" | "erro";
 interface Consulta {
   id: string; cpf: string; nome: string; status: Status;
   margem_disponivel: number | null; erro: string | null;
+  erro_tipo: string | null;
   created_at: string; processed_at: string | null;
   updated_at: string;
   margem_emprestimo: number | null;
@@ -49,6 +50,21 @@ interface Consulta {
   situacao: string | null;
   orgao: string | null;
 }
+
+const ERRO_TIPO_LABELS: Record<string, string> = {
+  sem_link_margem: "Sem link de margem",
+  popup_alerta: "Popup de alerta",
+  sem_resultado: "Sem resultado",
+  margem_nao_localizada: "Margem não localizada",
+  falha_trocar_orgao: "Falha ao trocar órgão",
+  excecao_consulta: "Exceção na consulta",
+  sessao_expirada: "Sessão expirada",
+  login_falhou: "Falha de login",
+  credenciais_ausentes: "Credenciais ausentes",
+  sem_orgaos: "Nenhum órgão",
+  outro: "Outro",
+};
+const erroTipoLabel = (t: string | null) => (t ? (ERRO_TIPO_LABELS[t] ?? t) : "—");
 
 const brl = (n: number | null | undefined) =>
   n == null ? "—" : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
