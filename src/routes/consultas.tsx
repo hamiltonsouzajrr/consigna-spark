@@ -576,7 +576,7 @@ function Page() {
                   </TableCell>
                   <TableCell className="max-w-[280px] text-xs text-destructive">
                     <span title={r.erro ?? ""} className="block whitespace-normal break-words">
-                      {r.status === "erro" ? (r.erro ?? "Erro não informado") : (r.erro ?? "")}
+                      {r.status === "erro" ? (formatErroMsg(r.erro) || "Erro não informado") : formatErroMsg(r.erro)}
                     </span>
                   </TableCell>
                   <TableCell className="text-center">
