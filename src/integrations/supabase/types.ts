@@ -33,6 +33,7 @@ export type Database = {
           servidor_nome: string | null
           situacao: string | null
           status: Database["public"]["Enums"]["consulta_status"]
+          tentativas: number
           updated_at: string
           user_id: string
         }
@@ -54,6 +55,7 @@ export type Database = {
           servidor_nome?: string | null
           situacao?: string | null
           status?: Database["public"]["Enums"]["consulta_status"]
+          tentativas?: number
           updated_at?: string
           user_id: string
         }
@@ -75,6 +77,7 @@ export type Database = {
           servidor_nome?: string | null
           situacao?: string | null
           status?: Database["public"]["Enums"]["consulta_status"]
+          tentativas?: number
           updated_at?: string
           user_id?: string
         }

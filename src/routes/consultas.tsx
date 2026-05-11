@@ -39,6 +39,7 @@ interface Consulta {
   id: string; cpf: string; nome: string; status: Status;
   margem_disponivel: number | null; erro: string | null;
   erro_tipo: string | null;
+  tentativas: number;
   created_at: string; processed_at: string | null;
   updated_at: string;
   margem_emprestimo: number | null;
@@ -91,6 +92,7 @@ function Page() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [processing, setProcessing] = useState(false);
   const [parallel, setParallel] = useState(true);
+  const [maxAttempts, setMaxAttempts] = useState(3);
   const [run, setRun] = useState<Run | null>(null);
 
   useEffect(() => {
@@ -177,9 +179,12 @@ function Page() {
     }
   };
 
-  const callProcessar = async (ids?: string[]) => {
+  const callProcessar = async (opts?: { ids?: string[]; erroTipo?: string }) => {
     setProcessing(true);
-    const { data, error } = await supabase.functions.invoke("processar-margens", { body: { ids, parallel } });
+    const body: Record<string, unknown> = { parallel, maxAttempts };
+    if (opts?.ids) body.ids = opts.ids;
+    if (opts?.erroTipo) body.erroTipo = opts.erroTipo;
+    const { data, error } = await supabase.functions.invoke("processar-margens", { body });
     setProcessing(false);
     if (error) toast.error(error.message);
     else if (data?.alreadyRunning) toast.info("Já existe um processamento em andamento");
@@ -280,10 +285,38 @@ function Page() {
             {isRunActive ? "Em execução…" : "Iniciar processamento"}
           </Button>
           {selectedErrIds.length > 0 && (
-            <Button variant="secondary" onClick={() => callProcessar(selectedErrIds)} disabled={processing || isRunActive}>
+            <Button variant="secondary" onClick={() => callProcessar({ ids: selectedErrIds })} disabled={processing || isRunActive}>
               <RefreshCw className="mr-2 h-4 w-4" /> Reprocessar selecionados ({selectedErrIds.length})
             </Button>
           )}
+          {erroTipoFilter !== "all" && (() => {
+            const eligibles = items.filter(
+              (i) => i.status === "erro"
+                && (i.erro_tipo ?? "outro") === erroTipoFilter
+                && (i.tentativas ?? 0) < maxAttempts,
+            );
+            if (eligibles.length === 0) return null;
+            return (
+              <Button
+                variant="secondary"
+                onClick={() => callProcessar({ erroTipo: erroTipoFilter })}
+                disabled={processing || isRunActive}
+                title={`Reprocessar ${eligibles.length} registro(s) do tipo "${erroTipoLabel(erroTipoFilter)}" com até ${maxAttempts} tentativas e backoff exponencial`}
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Reprocessar tipo: {erroTipoLabel(erroTipoFilter)} ({eligibles.length})
+              </Button>
+            );
+          })()}
+          <label className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+            <span className="text-muted-foreground">Tentativas máx:</span>
+            <Input
+              type="number" min={1} max={10}
+              value={maxAttempts}
+              onChange={(e) => setMaxAttempts(Math.max(1, Math.min(10, Number(e.target.value) || 1)))}
+              className="h-7 w-16"
+            />
+          </label>
           <Button variant="outline" onClick={() => exportXlsx(true)}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (concluídos)</Button>
           <Button variant="outline" onClick={() => exportXlsx(false)}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (todos)</Button>
           <Button variant="outline" onClick={() => exportCsv(true)}><Download className="mr-2 h-4 w-4" /> CSV concluídos</Button>
@@ -504,15 +537,25 @@ function Page() {
                   <TableCell className="text-right tabular-nums font-semibold">{brl(r.margem_disponivel)}</TableCell>
                   <TableCell className="text-xs">
                     {r.status === "erro" ? (
-                      <Badge
-                        variant="outline"
-                        className="cursor-pointer bg-destructive/10 text-destructive border-destructive/30"
-                        onClick={() => setErroTipoFilter(r.erro_tipo ?? "outro")}
-                        title="Filtrar por este tipo"
-                      >
-                        {erroTipoLabel(r.erro_tipo ?? "outro")}
-                      </Badge>
-                    ) : "—"}
+                      <div className="flex flex-col items-start gap-1">
+                        <Badge
+                          variant="outline"
+                          className="cursor-pointer bg-destructive/10 text-destructive border-destructive/30"
+                          onClick={() => setErroTipoFilter(r.erro_tipo ?? "outro")}
+                          title="Filtrar por este tipo"
+                        >
+                          {erroTipoLabel(r.erro_tipo ?? "outro")}
+                        </Badge>
+                        <span
+                          className={`text-[10px] tabular-nums ${(r.tentativas ?? 0) >= maxAttempts ? "text-destructive font-semibold" : "text-muted-foreground"}`}
+                          title={(r.tentativas ?? 0) >= maxAttempts ? "Limite de tentativas atingido" : ""}
+                        >
+                          {r.tentativas ?? 0}/{maxAttempts} tentativa(s)
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="max-w-[280px] text-xs text-destructive">
                     <span title={r.erro ?? ""} className="block whitespace-normal break-words">

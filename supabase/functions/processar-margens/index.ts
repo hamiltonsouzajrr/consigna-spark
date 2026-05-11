@@ -645,11 +645,21 @@ function classificarErro(erro: string | null): string | null {
 
 // ---------- Handler ----------
 
-interface Payload { ids?: string[]; parallel?: boolean; runId?: string; continueRun?: boolean }
+interface Payload {
+  ids?: string[];
+  parallel?: boolean;
+  runId?: string;
+  continueRun?: boolean;
+  erroTipo?: string;
+  maxAttempts?: number;
+}
 
 // Limites para evitar bater no CPU/wall-time da edge function
 const MAX_WALL_MS = 60_000; // re-invoca após ~60s
 const MAX_PER_INVOCATION = 25; // máximo de CPFs por invocação
+const DEFAULT_MAX_ATTEMPTS = 3;
+const BACKOFF_BASE_MS = 800; // backoff = base * 2^(tentativas-1), capado em 8s
+const BACKOFF_MAX_MS = 8000;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -670,9 +680,11 @@ Deno.serve(async (req) => {
     if (userErr || !userData.user) return new Response(JSON.stringify({ error: "Usuário inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const userId = userData.user.id;
 
-    const { ids, parallel, runId: continueRunId, continueRun }: Payload = await req.json().catch(() => ({}));
+    const { ids, parallel, runId: continueRunId, continueRun, erroTipo, maxAttempts: maxAttemptsRaw }: Payload = await req.json().catch(() => ({}));
     const useParallel = !!parallel && !!Deno.env.get("CONSIGUP_USER_2") && !!Deno.env.get("CONSIGUP_PASS_2");
     const hasExplicitIds = !!ids && ids.length > 0;
+    const hasErroTipo = !!erroTipo && erroTipo !== "all";
+    const maxAttempts = Math.max(1, Math.min(10, maxAttemptsRaw ?? DEFAULT_MAX_ATTEMPTS));
 
     if (!continueRun) {
       const { data: activeRun } = await supabase
@@ -695,12 +707,23 @@ Deno.serve(async (req) => {
         .update({ status: "pendente", erro: null, erro_tipo: null })
         .eq("user_id", userId)
         .in("id", ids)
-        .eq("status", "erro");
+        .eq("status", "erro")
+        .lt("tentativas", maxAttempts);
+    }
+    if (hasErroTipo && !continueRun && !hasExplicitIds) {
+      // Reseta erros desse tipo (que ainda têm tentativas disponíveis) para pendente
+      await supabase.from("consultas_margem")
+        .update({ status: "pendente", erro: null, erro_tipo: null })
+        .eq("user_id", userId)
+        .eq("status", "erro")
+        .eq("erro_tipo", erroTipo!)
+        .lt("tentativas", maxAttempts);
     }
 
-    let q = supabase.from("consultas_margem").select("id, cpf").eq("user_id", userId);
+    let q = supabase.from("consultas_margem").select("id, cpf, tentativas").eq("user_id", userId);
     if (hasExplicitIds) q = q.in("id", ids);
-    q = q.eq("status", "pendente");
+    q = q.eq("status", "pendente").lt("tentativas", maxAttempts);
+    q = q.order("tentativas", { ascending: true }); // processa primeiro quem tentou menos
     q = q.limit(MAX_PER_INVOCATION);
     const { data: rows, error: selErr } = await q;
     if (selErr) throw selErr;
@@ -773,7 +796,7 @@ Deno.serve(async (req) => {
         if (runStatus === "stopped") { stopRequested = true; break; }
         if (runStatus === "paused") { await new Promise((r) => setTimeout(r, 2000)); continue; }
 
-        const row = queue.shift();
+        const row = queue.shift() as { id: string; cpf: string; tentativas?: number } | undefined;
         if (!row) break;
 
         const log: LogFn = async (level, message) => {
@@ -784,7 +807,15 @@ Deno.serve(async (req) => {
             });
           } catch (e) { console.error("log insert err", e); }
         };
-        await log("info", `Iniciando processamento do CPF ${row.cpf}`);
+
+        // Backoff exponencial entre tentativas (apenas a partir da 2ª tentativa)
+        const prevAttempts = row.tentativas ?? 0;
+        if (prevAttempts > 0) {
+          const wait = Math.min(BACKOFF_MAX_MS, BACKOFF_BASE_MS * Math.pow(2, prevAttempts - 1));
+          await log("info", `Backoff de ${wait}ms antes da tentativa #${prevAttempts + 1} (CPF ${row.cpf})`);
+          await new Promise((r) => setTimeout(r, wait));
+        }
+        await log("info", `Iniciando processamento do CPF ${row.cpf} (tentativa #${prevAttempts + 1}/${maxAttempts})`);
 
         const sess = await ensureSession();
         let r: ConsultaResultado & { sessaoExpirada?: boolean };
@@ -816,6 +847,7 @@ Deno.serve(async (req) => {
           orgao: r.orgao,
           erro: r.erro,
           erro_tipo: classificarErro(r.erro),
+          tentativas: (row.tentativas ?? 0) + 1,
           status: r.erro ? "erro" : "concluido",
           processed_at: new Date().toISOString(),
         }).eq("id", row.id);
@@ -856,7 +888,7 @@ Deno.serve(async (req) => {
           await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: authHeader },
-            body: JSON.stringify({ ids, parallel, runId, continueRun: true }),
+            body: JSON.stringify({ ids, parallel, runId, continueRun: true, erroTipo, maxAttempts }),
           });
         } catch (e) {
           console.error("re-invoke failed", e);

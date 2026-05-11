@@ -1,0 +1,2 @@
+ALTER TABLE public.consultas_margem ADD COLUMN IF NOT EXISTS tentativas INTEGER NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS idx_consultas_margem_tentativas ON public.consultas_margem(user_id, tentativas);
