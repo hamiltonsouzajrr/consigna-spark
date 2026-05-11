@@ -645,11 +645,21 @@ function classificarErro(erro: string | null): string | null {
 
 // ---------- Handler ----------
 
-interface Payload { ids?: string[]; parallel?: boolean; runId?: string; continueRun?: boolean }
+interface Payload {
+  ids?: string[];
+  parallel?: boolean;
+  runId?: string;
+  continueRun?: boolean;
+  erroTipo?: string;
+  maxAttempts?: number;
+}
 
 // Limites para evitar bater no CPU/wall-time da edge function
 const MAX_WALL_MS = 60_000; // re-invoca após ~60s
 const MAX_PER_INVOCATION = 25; // máximo de CPFs por invocação
+const DEFAULT_MAX_ATTEMPTS = 3;
+const BACKOFF_BASE_MS = 800; // backoff = base * 2^(tentativas-1), capado em 8s
+const BACKOFF_MAX_MS = 8000;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
