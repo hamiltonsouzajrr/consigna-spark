@@ -3,6 +3,7 @@ import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Tra
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
+import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
 import type { ReactNode } from "react";
 
 const nav = [
@@ -21,6 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
       <HorariosOuroDialog />
+      <HorariosOuroReminder />
       <aside className="hidden w-64 shrink-0 border-r bg-sidebar md:flex md:flex-col">
         <div className="flex items-center gap-2 px-6 py-5 border-b">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
