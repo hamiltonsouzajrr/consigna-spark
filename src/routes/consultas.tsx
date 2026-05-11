@@ -39,6 +39,7 @@ interface Consulta {
   id: string; cpf: string; nome: string; status: Status;
   margem_disponivel: number | null; erro: string | null;
   erro_tipo: string | null;
+  tentativas: number;
   created_at: string; processed_at: string | null;
   updated_at: string;
   margem_emprestimo: number | null;
