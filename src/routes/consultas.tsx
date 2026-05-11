@@ -524,7 +524,7 @@ function Page() {
             </TableHeader>
             <TableBody>
               {pageItems.length === 0 ? (
-                <TableRow><TableCell colSpan={13} className="py-12 text-center text-muted-foreground">Nenhum registro.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={14} className="py-12 text-center text-muted-foreground">Nenhum registro.</TableCell></TableRow>
               ) : pageItems.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell><Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggle(r.id)} /></TableCell>
