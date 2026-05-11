@@ -289,6 +289,34 @@ function Page() {
               <RefreshCw className="mr-2 h-4 w-4" /> Reprocessar selecionados ({selectedErrIds.length})
             </Button>
           )}
+          {erroTipoFilter !== "all" && (() => {
+            const eligibles = items.filter(
+              (i) => i.status === "erro"
+                && (i.erro_tipo ?? "outro") === erroTipoFilter
+                && (i.tentativas ?? 0) < maxAttempts,
+            );
+            if (eligibles.length === 0) return null;
+            return (
+              <Button
+                variant="secondary"
+                onClick={() => callProcessar({ erroTipo: erroTipoFilter })}
+                disabled={processing || isRunActive}
+                title={`Reprocessar ${eligibles.length} registro(s) do tipo "${erroTipoLabel(erroTipoFilter)}" com até ${maxAttempts} tentativas e backoff exponencial`}
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Reprocessar tipo: {erroTipoLabel(erroTipoFilter)} ({eligibles.length})
+              </Button>
+            );
+          })()}
+          <label className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+            <span className="text-muted-foreground">Tentativas máx:</span>
+            <Input
+              type="number" min={1} max={10}
+              value={maxAttempts}
+              onChange={(e) => setMaxAttempts(Math.max(1, Math.min(10, Number(e.target.value) || 1)))}
+              className="h-7 w-16"
+            />
+          </label>
           <Button variant="outline" onClick={() => exportXlsx(true)}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (concluídos)</Button>
           <Button variant="outline" onClick={() => exportXlsx(false)}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (todos)</Button>
           <Button variant="outline" onClick={() => exportCsv(true)}><Download className="mr-2 h-4 w-4" /> CSV concluídos</Button>
