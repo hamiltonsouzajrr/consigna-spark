@@ -692,7 +692,7 @@ Deno.serve(async (req) => {
     await supabase.from("consultas_margem").update({ status: "pendente" }).eq("user_id", userId).eq("status", "processando");
     if (hasExplicitIds && !continueRun) {
       await supabase.from("consultas_margem")
-        .update({ status: "pendente", erro: null })
+        .update({ status: "pendente", erro: null, erro_tipo: null })
         .eq("user_id", userId)
         .in("id", ids)
         .eq("status", "erro");
@@ -730,7 +730,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ processed: 0, runId, done: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    await supabase.from("consultas_margem").update({ status: "processando", erro: null }).in("id", rows.map((r) => r.id));
+    await supabase.from("consultas_margem").update({ status: "processando", erro: null, erro_tipo: null }).in("id", rows.map((r) => r.id));
 
     // Contadores compartilhados — lê do DB para somar entre invocações
     const counterLock = { busy: false };
