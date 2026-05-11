@@ -806,6 +806,29 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Para consultas individuais: pausa automaticamente qualquer run em andamento
+    // para evitar concorrência por sessões do ConsigUp (apenas 2 slots disponíveis).
+    if (hasExplicitIds && !continueRun) {
+      const { data: runningRuns } = await supabase
+        .from("processar_runs")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("status", "running");
+      if (runningRuns && runningRuns.length > 0) {
+        const ids = runningRuns.map((r: any) => r.id);
+        await supabase
+          .from("processar_runs")
+          .update({ status: "paused", updated_at: new Date().toISOString() })
+          .in("id", ids);
+        // Libera linhas presas em "processando" do lote pausado
+        await supabase
+          .from("consultas_margem")
+          .update({ status: "pendente" })
+          .eq("user_id", userId)
+          .eq("status", "processando");
+      }
+    }
+
     // Antes de selecionar, limpa rows que ficaram em "processando" de invocações anteriores
     await supabase.from("consultas_margem").update({ status: "pendente" }).eq("user_id", userId).eq("status", "processando");
     if (hasExplicitIds && !continueRun) {
