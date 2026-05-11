@@ -539,10 +539,93 @@ interface ConsigUpCtx {
   orgaos: OrgaoLink[];
 }
 
-async function novaSessaoConsigUp(log: LogFn, accountSlot: 1 | 2 = 1): Promise<ConsigUpCtx | { erro: string }> {
+// ---------- Cache de sessão (cookies persistidos no DB) ----------
+
+// deno-lint-ignore no-explicit-any
+type SupaClient = any;
+
+async function carregarSessaoSalva(
+  supabase: SupaClient, userId: string, slot: 1 | 2,
+): Promise<{ s: Session; orgaos: OrgaoLink[]; ageMs: number } | null> {
+  try {
+    const { data } = await supabase
+      .from("consigup_sessions")
+      .select("cookies, orgaos, last_used_at")
+      .eq("user_id", userId).eq("slot", slot).maybeSingle();
+    if (!data) return null;
+    const cookies = (data.cookies ?? {}) as Record<string, string>;
+    const orgaos = (data.orgaos ?? []) as OrgaoLink[];
+    if (!Object.keys(cookies).length || orgaos.length === 0) return null;
+    const ageMs = Date.now() - new Date(data.last_used_at).getTime();
+    const s = new Session();
+    for (const [k, v] of Object.entries(cookies)) s.cookies.set(k, String(v));
+    return { s, orgaos, ageMs };
+  } catch (e) { console.error("carregarSessaoSalva err", e); return null; }
+}
+
+async function salvarSessao(
+  supabase: SupaClient, userId: string, slot: 1 | 2, s: Session, orgaos: OrgaoLink[],
+) {
+  try {
+    const cookies: Record<string, string> = {};
+    for (const [k, v] of s.cookies.entries()) cookies[k] = v;
+    await supabase.from("consigup_sessions").upsert({
+      user_id: userId, slot, cookies, orgaos, last_used_at: new Date().toISOString(),
+    }, { onConflict: "user_id,slot" });
+  } catch (e) { console.error("salvarSessao err", e); }
+}
+
+async function limparSessao(supabase: SupaClient, userId: string, slot: 1 | 2) {
+  try {
+    await supabase.from("consigup_sessions").delete()
+      .eq("user_id", userId).eq("slot", slot);
+  } catch (e) { console.error("limparSessao err", e); }
+}
+
+// Faz um GET leve em HOME e verifica se ainda estamos logados
+async function validarSessao(s: Session): Promise<{ ok: boolean; orgaos?: OrgaoLink[] }> {
+  try {
+    const home = await s.request(HOME_URL, {}, 15_000);
+    if (home.status !== 200) return { ok: false };
+    if (/Login\.aspx/i.test(home.finalUrl)) return { ok: false };
+    if (/name="txtLogin"|name="txtSenha"|id="txtLogin"/i.test(home.body)) return { ok: false };
+    const orgaos = listarOrgaosDoHtml(home.body);
+    if (orgaos.length === 0) return { ok: false };
+    return { ok: true, orgaos };
+  } catch { return { ok: false }; }
+}
+
+// Idade máxima da sessão salva antes de descartar (sessões ASP.NET típicas duram 20-30min)
+const SESSION_MAX_AGE_MS = 15 * 60 * 1000;
+
+async function novaSessaoConsigUp(
+  log: LogFn, accountSlot: 1 | 2 = 1,
+  supabase?: SupaClient, userId?: string,
+): Promise<ConsigUpCtx | { erro: string }> {
   const user = accountSlot === 2 ? Deno.env.get("CONSIGUP_USER_2") : Deno.env.get("CONSIGUP_USER");
   const pass = accountSlot === 2 ? Deno.env.get("CONSIGUP_PASS_2") : Deno.env.get("CONSIGUP_PASS");
   if (!user || !pass) return { erro: `Credenciais ConsigUp ausentes (slot ${accountSlot})` };
+
+  // Tenta reaproveitar sessão salva no DB
+  if (supabase && userId) {
+    const cached = await carregarSessaoSalva(supabase, userId, accountSlot);
+    if (cached && cached.ageMs < SESSION_MAX_AGE_MS) {
+      await log("info", `[slot ${accountSlot}] Tentando reusar sessão salva (idade ${Math.round(cached.ageMs / 1000)}s)`);
+      const v = await validarSessao(cached.s);
+      if (v.ok) {
+        await log("info", `[slot ${accountSlot}] ✓ Sessão reaproveitada — login pulado`);
+        // atualiza last_used_at e órgãos (caso tenham mudado)
+        await salvarSessao(supabase, userId, accountSlot, cached.s, v.orgaos ?? cached.orgaos);
+        return { s: cached.s, orgaos: v.orgaos ?? cached.orgaos };
+      }
+      await log("info", `[slot ${accountSlot}] sessão salva expirou — fará novo login`);
+      await limparSessao(supabase, userId, accountSlot);
+    } else if (cached) {
+      await log("info", `[slot ${accountSlot}] sessão salva muito antiga (${Math.round(cached.ageMs / 1000)}s) — fará novo login`);
+      await limparSessao(supabase, userId, accountSlot);
+    }
+  }
+
   const s = new Session();
   await log("info", `Login ConsigUp [slot ${accountSlot}] como ${user}`);
   const okLogin = await login(s, user, pass);
@@ -551,6 +634,7 @@ async function novaSessaoConsigUp(log: LogFn, accountSlot: 1 | 2 = 1): Promise<C
   const orgaos = listarOrgaosDoHtml(home.body);
   if (orgaos.length === 0) return { erro: "Nenhum órgão encontrado no header" };
   await log("info", `Sessão pronta — ${orgaos.length} órgãos descobertos`);
+  if (supabase && userId) await salvarSessao(supabase, userId, accountSlot, s, orgaos);
   return { s, orgaos };
 }
 
