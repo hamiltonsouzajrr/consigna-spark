@@ -264,8 +264,8 @@ function Page() {
     else toast.success(parallel ? "Processamento iniciado (2 contas em paralelo)" : "Processamento iniciado");
   };
 
-  const exportCsv = (onlyDone: boolean) => {
-    const data = onlyDone ? items.filter((i) => i.status === "concluido") : items;
+  const exportCsvFrom = (source: Consulta[], onlyDone: boolean) => {
+    const data = onlyDone ? source.filter((i) => i.status === "concluido") : source;
     if (!data.length) return toast.info("Nada para exportar");
     const header = ["cpf", "nome", "status", "servidor_nome", "matricula", "categoria", "situacao", "orgao", "margem_emprestimo", "margem_cartao_credito", "margem_cartao_beneficio", "margem_disponivel", "erro", "processed_at"];
     const csv = [header.join(",")].concat(
@@ -281,9 +281,10 @@ function Page() {
     a.href = url; a.download = `consultas-${Date.now()}.csv`; a.click();
     URL.revokeObjectURL(url);
   };
+  const exportCsv = (onlyDone: boolean) => exportCsvFrom(items, onlyDone);
 
-  const exportXlsx = (onlyDone: boolean) => {
-    const data = onlyDone ? items.filter((i) => i.status === "concluido") : items;
+  const exportXlsxFrom = (source: Consulta[], onlyDone: boolean) => {
+    const data = onlyDone ? source.filter((i) => i.status === "concluido") : source;
     if (!data.length) return toast.info("Nada para exportar");
     const rows: Record<string, string | number>[] = data.map((r) => ({
       "CPF": formatCpf(r.cpf),
@@ -321,7 +322,6 @@ function Page() {
       { wch: 18 }, { wch: 20 }, { wch: 22 }, { wch: 22 },
       { wch: 30 }, { wch: 20 },
     ];
-    // Formato moeda BRL para colunas de margem (I a L)
     const range = XLSX.utils.decode_range(ws["!ref"] as string);
     for (let R = 1; R <= range.e.r; R++) {
       for (const C of [8, 9, 10, 11]) {
@@ -334,6 +334,7 @@ function Page() {
     XLSX.utils.book_append_sheet(wb, ws, "Consultas");
     XLSX.writeFile(wb, `consultas-${Date.now()}.xlsx`);
   };
+  const exportXlsx = (onlyDone: boolean) => exportXlsxFrom(items, onlyDone);
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
