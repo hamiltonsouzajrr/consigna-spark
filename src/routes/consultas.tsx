@@ -170,24 +170,49 @@ function Page() {
     }
   };
 
+  const reloadItems = async (): Promise<Consulta[]> => {
+    const { data, error } = await supabase
+      .from("consultas_margem")
+      .select("*")
+      .order("updated_at", { ascending: false })
+      .limit(1000);
+    if (error) {
+      toast.error(error.message);
+      return [];
+    }
+    const list = (data ?? []) as Consulta[];
+    setItems(list);
+    return list;
+  };
+
   useEffect(() => {
     if (!user) return;
-    const load = async () => {
-      const { data, error } = await supabase
-        .from("consultas_margem")
-        .select("*")
-        .order("updated_at", { ascending: false })
-        .limit(1000);
-      if (error) toast.error(error.message);
-      else setItems((data ?? []) as Consulta[]);
-    };
-    load();
+    reloadItems();
     const ch = supabase
       .channel("consultas-list")
-      .on("postgres_changes", { event: "*", schema: "public", table: "consultas_margem" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "consultas_margem" }, () => { reloadItems(); })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const [refreshingExport, setRefreshingExport] = useState(false);
+  const exportWithRefresh = async (kind: "xlsx-done" | "xlsx-all" | "csv-done" | "csv-all") => {
+    setRefreshingExport(true);
+    try {
+      const fresh = await reloadItems();
+      if (!fresh.length) {
+        toast.info("Nada para exportar");
+        return;
+      }
+      const onlyDone = kind === "xlsx-done" || kind === "csv-done";
+      if (kind.startsWith("xlsx")) exportXlsxFrom(fresh, onlyDone);
+      else exportCsvFrom(fresh, onlyDone);
+      toast.success("Lista atualizada e exportação gerada");
+    } finally {
+      setRefreshingExport(false);
+    }
+  };
 
   const erroTipoCounts = useMemo(() => {
     const m = new Map<string, number>();
