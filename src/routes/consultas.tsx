@@ -399,6 +399,17 @@ function Page() {
               className="h-7 w-16"
             />
           </label>
+          <Button
+            variant="default"
+            onClick={() => exportWithRefresh("xlsx-done")}
+            disabled={refreshingExport}
+            title="Recarrega a lista do servidor antes de gerar o Excel"
+          >
+            {refreshingExport
+              ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              : <RefreshCw className="mr-2 h-4 w-4" />}
+            Atualizar e exportar (Excel)
+          </Button>
           <Button variant="outline" onClick={() => exportXlsx(true)}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (concluídos)</Button>
           <Button variant="outline" onClick={() => exportXlsx(false)}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (todos)</Button>
           <Button variant="outline" onClick={() => exportCsv(true)}><Download className="mr-2 h-4 w-4" /> CSV concluídos</Button>
