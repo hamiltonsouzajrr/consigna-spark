@@ -170,24 +170,49 @@ function Page() {
     }
   };
 
+  const reloadItems = async (): Promise<Consulta[]> => {
+    const { data, error } = await supabase
+      .from("consultas_margem")
+      .select("*")
+      .order("updated_at", { ascending: false })
+      .limit(1000);
+    if (error) {
+      toast.error(error.message);
+      return [];
+    }
+    const list = (data ?? []) as Consulta[];
+    setItems(list);
+    return list;
+  };
+
   useEffect(() => {
     if (!user) return;
-    const load = async () => {
-      const { data, error } = await supabase
-        .from("consultas_margem")
-        .select("*")
-        .order("updated_at", { ascending: false })
-        .limit(1000);
-      if (error) toast.error(error.message);
-      else setItems((data ?? []) as Consulta[]);
-    };
-    load();
+    reloadItems();
     const ch = supabase
       .channel("consultas-list")
-      .on("postgres_changes", { event: "*", schema: "public", table: "consultas_margem" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "consultas_margem" }, () => { reloadItems(); })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const [refreshingExport, setRefreshingExport] = useState(false);
+  const exportWithRefresh = async (kind: "xlsx-done" | "xlsx-all" | "csv-done" | "csv-all") => {
+    setRefreshingExport(true);
+    try {
+      const fresh = await reloadItems();
+      if (!fresh.length) {
+        toast.info("Nada para exportar");
+        return;
+      }
+      const onlyDone = kind === "xlsx-done" || kind === "csv-done";
+      if (kind.startsWith("xlsx")) exportXlsxFrom(fresh, onlyDone);
+      else exportCsvFrom(fresh, onlyDone);
+      toast.success("Lista atualizada e exportação gerada");
+    } finally {
+      setRefreshingExport(false);
+    }
+  };
 
   const erroTipoCounts = useMemo(() => {
     const m = new Map<string, number>();
@@ -239,8 +264,8 @@ function Page() {
     else toast.success(parallel ? "Processamento iniciado (2 contas em paralelo)" : "Processamento iniciado");
   };
 
-  const exportCsv = (onlyDone: boolean) => {
-    const data = onlyDone ? items.filter((i) => i.status === "concluido") : items;
+  const exportCsvFrom = (source: Consulta[], onlyDone: boolean) => {
+    const data = onlyDone ? source.filter((i) => i.status === "concluido") : source;
     if (!data.length) return toast.info("Nada para exportar");
     const header = ["cpf", "nome", "status", "servidor_nome", "matricula", "categoria", "situacao", "orgao", "margem_emprestimo", "margem_cartao_credito", "margem_cartao_beneficio", "margem_disponivel", "erro", "processed_at"];
     const csv = [header.join(",")].concat(
@@ -256,9 +281,10 @@ function Page() {
     a.href = url; a.download = `consultas-${Date.now()}.csv`; a.click();
     URL.revokeObjectURL(url);
   };
+  const exportCsv = (onlyDone: boolean) => exportCsvFrom(items, onlyDone);
 
-  const exportXlsx = (onlyDone: boolean) => {
-    const data = onlyDone ? items.filter((i) => i.status === "concluido") : items;
+  const exportXlsxFrom = (source: Consulta[], onlyDone: boolean) => {
+    const data = onlyDone ? source.filter((i) => i.status === "concluido") : source;
     if (!data.length) return toast.info("Nada para exportar");
     const rows: Record<string, string | number>[] = data.map((r) => ({
       "CPF": formatCpf(r.cpf),
@@ -296,7 +322,6 @@ function Page() {
       { wch: 18 }, { wch: 20 }, { wch: 22 }, { wch: 22 },
       { wch: 30 }, { wch: 20 },
     ];
-    // Formato moeda BRL para colunas de margem (I a L)
     const range = XLSX.utils.decode_range(ws["!ref"] as string);
     for (let R = 1; R <= range.e.r; R++) {
       for (const C of [8, 9, 10, 11]) {
@@ -309,6 +334,7 @@ function Page() {
     XLSX.utils.book_append_sheet(wb, ws, "Consultas");
     XLSX.writeFile(wb, `consultas-${Date.now()}.xlsx`);
   };
+  const exportXlsx = (onlyDone: boolean) => exportXlsxFrom(items, onlyDone);
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
@@ -373,6 +399,17 @@ function Page() {
               className="h-7 w-16"
             />
           </label>
+          <Button
+            variant="default"
+            onClick={() => exportWithRefresh("xlsx-done")}
+            disabled={refreshingExport}
+            title="Recarrega a lista do servidor antes de gerar o Excel"
+          >
+            {refreshingExport
+              ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              : <RefreshCw className="mr-2 h-4 w-4" />}
+            Atualizar e exportar (Excel)
+          </Button>
           <Button variant="outline" onClick={() => exportXlsx(true)}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (concluídos)</Button>
           <Button variant="outline" onClick={() => exportXlsx(false)}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (todos)</Button>
           <Button variant="outline" onClick={() => exportCsv(true)}><Download className="mr-2 h-4 w-4" /> CSV concluídos</Button>
