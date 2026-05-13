@@ -106,6 +106,6 @@ function LoginPage() {
           ))}
         </Tabs>
       </Card>
-    </div>
+    </main>
   );
 }
