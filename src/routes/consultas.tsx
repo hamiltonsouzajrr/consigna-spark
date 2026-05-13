@@ -374,7 +374,13 @@ function Page() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Consultas</h1>
-          <p className="text-sm text-muted-foreground">{filtered.length} registros</p>
+          <p className="text-sm text-muted-foreground">
+            {filtered.length} exibidos · <strong>{items.length}</strong> carregados
+            {totalDb != null && <> · <strong>{totalDb}</strong> no total</>}
+            {totalDb != null && items.length < totalDb && (
+              <span className="ml-1 text-warning">(carregando…)</span>
+            )}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer hover:bg-accent">
