@@ -170,14 +170,21 @@ function Page() {
     }
   };
 
+  const [totalDb, setTotalDb] = useState<number | null>(null);
+
   const reloadItems = async (): Promise<Consulta[]> => {
+    // Conta total real no banco (independente de paginação)
+    const { count } = await supabase
+      .from("consultas_margem")
+      .select("id", { count: "exact", head: true });
+    if (typeof count === "number") setTotalDb(count);
+
     // Pagina em blocos de 1000 para trazer TODOS os registros do usuário,
     // independente do dia da consulta. Sem isso, o Supabase corta em 1000
     // e exportações/listagem perdem os mais antigos.
     const PAGE = 1000;
     const all: Consulta[] = [];
     let from = 0;
-    // hard cap defensivo para evitar loop infinito (até 200k linhas)
     for (let i = 0; i < 200; i++) {
       const { data, error } = await supabase
         .from("consultas_margem")
@@ -367,7 +374,13 @@ function Page() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Consultas</h1>
-          <p className="text-sm text-muted-foreground">{filtered.length} registros</p>
+          <p className="text-sm text-muted-foreground">
+            {filtered.length} exibidos · <strong>{items.length}</strong> carregados
+            {totalDb != null && <> · <strong>{totalDb}</strong> no total</>}
+            {totalDb != null && items.length < totalDb && (
+              <span className="ml-1 text-warning">(carregando…)</span>
+            )}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer hover:bg-accent">
