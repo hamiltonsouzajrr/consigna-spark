@@ -17,7 +17,20 @@ import { Progress } from "@/components/ui/progress";
 import * as XLSX from "xlsx";
 import { formatCpf } from "@/lib/cpf";
 
-export const Route = createFileRoute("/consultas")({ component: Page });
+export const Route = createFileRoute("/consultas")({
+  head: () => ({
+    meta: [
+      { title: "Consultas — Margem Consignável" },
+      { name: "description", content: "Lista, filtros, processamento em lote e exportação de consultas de margem consignável." },
+      { property: "og:title", content: "Consultas — Margem Consignável" },
+      { property: "og:description", content: "Lista, filtros, processamento em lote e exportação de consultas de margem consignável." },
+      { property: "og:url", content: "https://consigna-spark.lovable.app/consultas" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+    links: [{ rel: "canonical", href: "https://consigna-spark.lovable.app/consultas" }],
+  }),
+  component: Page,
+});
 
 interface Run {
   id: string; status: string; total: number; processed: number; errors: number;
