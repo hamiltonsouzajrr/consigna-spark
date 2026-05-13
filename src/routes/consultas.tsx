@@ -171,18 +171,30 @@ function Page() {
   };
 
   const reloadItems = async (): Promise<Consulta[]> => {
-    const { data, error } = await supabase
-      .from("consultas_margem")
-      .select("*")
-      .order("updated_at", { ascending: false })
-      .limit(1000);
-    if (error) {
-      toast.error(error.message);
-      return [];
+    // Pagina em blocos de 1000 para trazer TODOS os registros do usuário,
+    // independente do dia da consulta. Sem isso, o Supabase corta em 1000
+    // e exportações/listagem perdem os mais antigos.
+    const PAGE = 1000;
+    const all: Consulta[] = [];
+    let from = 0;
+    // hard cap defensivo para evitar loop infinito (até 200k linhas)
+    for (let i = 0; i < 200; i++) {
+      const { data, error } = await supabase
+        .from("consultas_margem")
+        .select("*")
+        .order("updated_at", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (error) {
+        toast.error(error.message);
+        return all;
+      }
+      const chunk = (data ?? []) as Consulta[];
+      all.push(...chunk);
+      if (chunk.length < PAGE) break;
+      from += PAGE;
     }
-    const list = (data ?? []) as Consulta[];
-    setItems(list);
-    return list;
+    setItems(all);
+    return all;
   };
 
   useEffect(() => {
