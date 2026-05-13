@@ -233,7 +233,14 @@ function Page() {
     <AppShell>
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Consulta de margem</p>
+        <p className="text-sm text-muted-foreground">
+          Consulta de margem ·{" "}
+          <strong>{consultas.length}</strong> carregados
+          {totalDb != null && <> de <strong>{totalDb}</strong> consultados no total</>}
+          {totalDb != null && consultas.length < totalDb && (
+            <span className="ml-1 text-warning">(carregando…)</span>
+          )}
+        </p>
       </div>
 
       {/* Consulta Aracaju — destaque premium */}
