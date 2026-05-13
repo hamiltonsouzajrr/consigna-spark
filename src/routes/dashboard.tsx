@@ -79,15 +79,35 @@ function Page() {
     return () => { cancelled = true; window.clearInterval(poll); supabase.removeChannel(ch); };
   }, [debugRow?.id, loadDebugPanel]);
 
+  const [totalDb, setTotalDb] = useState<number | null>(null);
+
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data } = await supabase
+      // Total real no banco (independente de paginação)
+      const { count } = await supabase
         .from("consultas_margem")
-        .select(SELECT_COLS + ", created_at")
-        .order("updated_at", { ascending: false });
-      if (!data) return setStats({ total: 0, pendente: 0, processando: 0, concluido: 0, erro: 0, avg: null });
-      const s: Stats = { total: data.length, pendente: 0, processando: 0, concluido: 0, erro: 0, avg: null };
+        .select("id", { count: "exact", head: true });
+      if (typeof count === "number") setTotalDb(count);
+
+      // Pagina em blocos de 1000 para trazer TODOS os registros
+      const PAGE = 1000;
+      const all: any[] = [];
+      let from = 0;
+      for (let i = 0; i < 200; i++) {
+        const { data, error } = await supabase
+          .from("consultas_margem")
+          .select(SELECT_COLS + ", created_at")
+          .order("updated_at", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error || !data) break;
+        all.push(...data);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      const data = all;
+      if (!data.length && count == null) return setStats({ total: 0, pendente: 0, processando: 0, concluido: 0, erro: 0, avg: null });
+      const s: Stats = { total: typeof count === "number" ? count : data.length, pendente: 0, processando: 0, concluido: 0, erro: 0, avg: null };
       const durations: number[] = [];
       data.forEach((r: any) => {
         const k = r.status as "pendente" | "processando" | "concluido" | "erro";
