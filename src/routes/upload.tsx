@@ -14,7 +14,20 @@ import { toast } from "sonner";
 import { UploadCloud, AlertTriangle } from "lucide-react";
 import { isValidCpf, normalizeCpf, formatCpf } from "@/lib/cpf";
 
-export const Route = createFileRoute("/upload")({ component: Page });
+export const Route = createFileRoute("/upload")({
+  head: () => ({
+    meta: [
+      { title: "Upload de CPFs — Consulta de Margem" },
+      { name: "description", content: "Importe planilhas CSV ou XLSX com CPFs e nomes para enfileirar consultas de margem consignável." },
+      { property: "og:title", content: "Upload de CPFs — Consulta de Margem" },
+      { property: "og:description", content: "Importe planilhas CSV ou XLSX com CPFs e nomes para enfileirar consultas de margem consignável." },
+      { property: "og:url", content: "https://consigna-spark.lovable.app/upload" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+    links: [{ rel: "canonical", href: "https://consigna-spark.lovable.app/upload" }],
+  }),
+  component: Page,
+});
 
 interface ValidRow { cpf: string; nome: string; }
 interface InvalidRow { cpf: string; nome: string; reason: string; line: number; }
