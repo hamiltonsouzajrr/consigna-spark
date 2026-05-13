@@ -11,8 +11,26 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 export const Route = createFileRoute("/alagoas")({
   head: () => ({
     meta: [
-      { title: "Governo de Alagoas — Simulação" },
-      { name: "description", content: "Simulação premium de produtos consignados para Governo de Alagoas." },
+      { title: "Governo de Alagoas — Simulação de Consignado" },
+      { name: "description", content: "Simulação premium de produtos consignados (empréstimo, cartão de crédito e benefício) para servidores do Governo de Alagoas." },
+      { property: "og:title", content: "Governo de Alagoas — Simulação de Consignado" },
+      { property: "og:description", content: "Simulação premium de produtos consignados (empréstimo, cartão de crédito e benefício) para servidores do Governo de Alagoas." },
+      { property: "og:url", content: "https://consigna-spark.lovable.app/alagoas" },
+    ],
+    links: [{ rel: "canonical", href: "https://consigna-spark.lovable.app/alagoas" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          name: "Simulador de Consignado — Governo de Alagoas",
+          url: "https://consigna-spark.lovable.app/alagoas",
+          applicationCategory: "FinanceApplication",
+          description: "Simulação de produtos consignados para servidores do Governo de Alagoas: empréstimo, cartão de crédito e cartão benefício.",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "BRL" },
+        }),
+      },
     ],
   }),
   component: AlagoasPage,
