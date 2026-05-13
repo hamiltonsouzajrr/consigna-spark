@@ -170,14 +170,21 @@ function Page() {
     }
   };
 
+  const [totalDb, setTotalDb] = useState<number | null>(null);
+
   const reloadItems = async (): Promise<Consulta[]> => {
+    // Conta total real no banco (independente de paginação)
+    const { count } = await supabase
+      .from("consultas_margem")
+      .select("id", { count: "exact", head: true });
+    if (typeof count === "number") setTotalDb(count);
+
     // Pagina em blocos de 1000 para trazer TODOS os registros do usuário,
     // independente do dia da consulta. Sem isso, o Supabase corta em 1000
     // e exportações/listagem perdem os mais antigos.
     const PAGE = 1000;
     const all: Consulta[] = [];
     let from = 0;
-    // hard cap defensivo para evitar loop infinito (até 200k linhas)
     for (let i = 0; i < 200; i++) {
       const { data, error } = await supabase
         .from("consultas_margem")
