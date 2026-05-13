@@ -13,7 +13,20 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-export const Route = createFileRoute("/limpeza")({ component: Page });
+export const Route = createFileRoute("/limpeza")({
+  head: () => ({
+    meta: [
+      { title: "Limpeza de Registros — Consulta de Margem" },
+      { name: "description", content: "Remova registros de consultas por status (pendentes, processando, concluídos ou com erro)." },
+      { property: "og:title", content: "Limpeza de Registros — Consulta de Margem" },
+      { property: "og:description", content: "Remova registros de consultas por status (pendentes, processando, concluídos ou com erro)." },
+      { property: "og:url", content: "https://consigna-spark.lovable.app/limpeza" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+    links: [{ rel: "canonical", href: "https://consigna-spark.lovable.app/limpeza" }],
+  }),
+  component: Page,
+});
 
 type Status = "pendente" | "processando" | "concluido" | "erro";
 const STATUSES: { id: Status; label: string; cls: string }[] = [

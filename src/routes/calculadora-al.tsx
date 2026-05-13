@@ -12,8 +12,26 @@ import { Calculator, RefreshCw, AlertTriangle } from "lucide-react";
 export const Route = createFileRoute("/calculadora-al")({
   head: () => ({
     meta: [
-      { title: "Calculadora de Margem — AL" },
-      { name: "description", content: "Calculadora manual de margem consignável para servidores de Alagoas." },
+      { title: "Calculadora de Margem Consignável — Alagoas" },
+      { name: "description", content: "Calculadora manual de margem consignável para servidores de Alagoas, considerando descontos obrigatórios e judiciais." },
+      { property: "og:title", content: "Calculadora de Margem Consignável — Alagoas" },
+      { property: "og:description", content: "Calculadora manual de margem consignável para servidores de Alagoas, considerando descontos obrigatórios e judiciais." },
+      { property: "og:url", content: "https://consigna-spark.lovable.app/calculadora-al" },
+    ],
+    links: [{ rel: "canonical", href: "https://consigna-spark.lovable.app/calculadora-al" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          name: "Calculadora de Margem Consignável — Alagoas",
+          url: "https://consigna-spark.lovable.app/calculadora-al",
+          applicationCategory: "FinanceApplication",
+          description: "Cálculo manual de margem consignável para servidores do Governo de Alagoas.",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "BRL" },
+        }),
+      },
     ],
   }),
   component: CalculadoraALPage,

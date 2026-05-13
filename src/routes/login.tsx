@@ -9,7 +9,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Wallet } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/login")({ component: LoginPage });
+export const Route = createFileRoute("/login")({
+  head: () => ({
+    meta: [
+      { title: "Entrar — Grupo Positive" },
+      { name: "description", content: "Acesso de operadores à plataforma de consulta de margem consignável do Grupo Positive." },
+      { property: "og:title", content: "Entrar — Grupo Positive" },
+      { property: "og:description", content: "Acesso de operadores à plataforma de consulta de margem consignável do Grupo Positive." },
+      { property: "og:url", content: "https://consigna-spark.lovable.app/login" },
+    ],
+    links: [{ rel: "canonical", href: "https://consigna-spark.lovable.app/login" }],
+  }),
+  component: LoginPage,
+});
 
 function LoginPage() {
   const { user, signIn, signUp } = useAuth();
@@ -60,7 +72,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-accent p-4">
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-accent p-4">
       <Card className="w-full max-w-md p-8">
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
@@ -94,6 +106,6 @@ function LoginPage() {
           ))}
         </Tabs>
       </Card>
-    </div>
+    </main>
   );
 }

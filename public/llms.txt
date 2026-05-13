@@ -1,0 +1,14 @@
+# Grupo Positive — Consulta de Margem Consignável
+
+> Plataforma administrativa do Grupo Positive para consulta automatizada de margem consignável de servidores públicos, com simuladores e calculadoras específicas por convênio.
+
+## Pages
+
+- [Início](/): Acesso ao sistema (login/dashboard).
+- [Login](/login): Autenticação de operadores.
+- [Dashboard](/dashboard): Painel com estatísticas e consulta individual de CPF.
+- [Consultas](/consultas): Lista, filtros, processamento em lote e exportação.
+- [Upload](/upload): Importação de planilhas (CSV/XLSX) com CPFs.
+- [Limpeza](/limpeza): Limpeza de registros por status.
+- [Governo de Alagoas — Simulação](/alagoas): Simulador premium de produtos consignados para servidores de Alagoas.
+- [Calculadora de Margem AL](/calculadora-al): Cálculo manual de margem consignável para Alagoas.

@@ -13,7 +13,20 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
 
-export const Route = createFileRoute("/dashboard")({ component: Page });
+export const Route = createFileRoute("/dashboard")({
+  head: () => ({
+    meta: [
+      { title: "Dashboard — Consulta de Margem" },
+      { name: "description", content: "Painel com estatísticas, status das consultas e ferramenta de consulta individual de CPF." },
+      { property: "og:title", content: "Dashboard — Consulta de Margem" },
+      { property: "og:description", content: "Painel com estatísticas, status das consultas e ferramenta de consulta individual de CPF." },
+      { property: "og:url", content: "https://consigna-spark.lovable.app/dashboard" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+    links: [{ rel: "canonical", href: "https://consigna-spark.lovable.app/dashboard" }],
+  }),
+  component: Page,
+});
 
 interface Stats { total: number; pendente: number; processando: number; concluido: number; erro: number; avg: number | null; }
 interface Consulta {
