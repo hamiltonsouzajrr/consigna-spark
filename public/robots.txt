@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://consigna-spark.lovable.app/sitemap.xml
