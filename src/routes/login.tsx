@@ -72,7 +72,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-accent p-4">
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-accent p-4">
       <Card className="w-full max-w-md p-8">
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
