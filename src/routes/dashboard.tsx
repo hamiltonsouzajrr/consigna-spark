@@ -327,7 +327,28 @@ function Page() {
                 <div className="space-y-2 rounded border bg-background/60 p-4 leading-relaxed">
                   <div><span className="text-muted-foreground">Servidor</span> <strong>{debugRow.servidor_nome ?? "—"}</strong> <span className="text-muted-foreground ml-2">Matrícula</span><strong>{debugRow.matricula ?? "—"}</strong></div>
                   <div><span className="text-muted-foreground">Órgão</span><strong>{debugRow.orgao ?? "—"}</strong></div>
-                  <div><span className="text-muted-foreground">Situação</span> <strong>{debugRow.situacao ?? "—"}</strong></div>
+                  {(() => {
+                    const cat = (debugRow.categoria ?? "").toString();
+                    const sit = (debugRow.situacao ?? "").toString();
+                    const blob = `${cat} ${sit}`.toLowerCase();
+                    let vinculo: { label: string; cls: string } | null = null;
+                    if (/comission|cargo\s*em\s*comiss|cc\b|c\.c\./.test(blob)) vinculo = { label: "Comissionado", cls: "bg-warning/15 text-warning border-warning/30" };
+                    else if (/concurs|efetiv|estatut/.test(blob)) vinculo = { label: "Concursado", cls: "bg-success/15 text-success border-success/30" };
+                    return (
+                      <>
+                        <div>
+                          <span className="text-muted-foreground">Vínculo</span>{" "}
+                          {vinculo ? (
+                            <span className={`inline-block rounded border px-2 py-0.5 text-xs font-semibold ${vinculo.cls}`}>{vinculo.label}</span>
+                          ) : (
+                            <strong>—</strong>
+                          )}
+                          {cat && <span className="ml-2 text-xs text-muted-foreground">(categoria: {cat})</span>}
+                        </div>
+                        <div><span className="text-muted-foreground">Situação</span> <strong>{sit || "—"}</strong></div>
+                      </>
+                    );
+                  })()}
 
                   <div className="pt-2">
                     <div><span className="text-muted-foreground">Margem Empréstimo</span> <strong>{brl(debugRow.margem_emprestimo)}</strong>
