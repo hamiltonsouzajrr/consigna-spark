@@ -296,16 +296,50 @@ function Page() {
     else toast.success(parallel ? "Processamento iniciado (2 contas em paralelo)" : "Processamento iniciado");
   };
 
+  // Coeficientes de simulação (mesmos do /dashboard). Confirmar com o setor de Digitação.
+  const COEF_EMP = 0.01862;
+  const COEF_CARTAO = 17.15;
+  const calcEmp = (m: number | null | undefined) =>
+    m == null ? null : Number(m) / COEF_EMP;
+  const calcCartao = (m: number | null | undefined) => {
+    if (m == null) return null;
+    const total = Number(m) * COEF_CARTAO;
+    return { total, saque: total * 0.7, limite: total * 0.3 };
+  };
+
   const exportCsvFrom = (source: Consulta[], onlyDone: boolean) => {
     const data = onlyDone ? source.filter((i) => i.status === "concluido") : source;
     if (!data.length) return toast.info("Nada para exportar");
-    const header = ["cpf", "nome", "status", "servidor_nome", "matricula", "categoria", "situacao", "orgao", "margem_emprestimo", "margem_cartao_credito", "margem_cartao_beneficio", "margem_disponivel", "erro", "processed_at"];
+    const header = [
+      "cpf", "nome", "status", "servidor_nome", "matricula", "categoria", "situacao", "orgao",
+      "margem_emprestimo", "valor_liberado_emprestimo",
+      "margem_cartao_credito", "valor_liberado_cc", "saque_cc", "limite_cc",
+      "margem_cartao_beneficio", "valor_liberado_cb", "saque_cb", "limite_cb",
+      "margem_disponivel", "total_liberado_aprox",
+      "erro", "processed_at",
+    ];
     const csv = [header.join(",")].concat(
-      data.map((r) => header.map((h) => {
-        const v = (r as unknown as Record<string, unknown>)[h];
-        const s = v == null ? "" : String(v).replace(/"/g, '""');
-        return `"${s}"`;
-      }).join(","))
+      data.map((r) => {
+        const emp = calcEmp(r.margem_emprestimo);
+        const cc = calcCartao(r.margem_cartao_credito);
+        const cb = calcCartao(r.margem_cartao_beneficio);
+        const totalLib = (emp ?? 0) + (cc?.total ?? 0) + (cb?.total ?? 0);
+        const extras: Record<string, unknown> = {
+          valor_liberado_emprestimo: emp ?? "",
+          valor_liberado_cc: cc?.total ?? "",
+          saque_cc: cc?.saque ?? "",
+          limite_cc: cc?.limite ?? "",
+          valor_liberado_cb: cb?.total ?? "",
+          saque_cb: cb?.saque ?? "",
+          limite_cb: cb?.limite ?? "",
+          total_liberado_aprox: totalLib || "",
+        };
+        return header.map((h) => {
+          const v = h in extras ? extras[h] : (r as unknown as Record<string, unknown>)[h];
+          const s = v == null ? "" : String(v).replace(/"/g, '""');
+          return `"${s}"`;
+        }).join(",");
+      })
     ).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
