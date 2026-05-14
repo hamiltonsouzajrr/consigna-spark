@@ -352,45 +352,75 @@ function Page() {
   const exportXlsxFrom = (source: Consulta[], onlyDone: boolean) => {
     const data = onlyDone ? source.filter((i) => i.status === "concluido") : source;
     if (!data.length) return toast.info("Nada para exportar");
-    const rows: Record<string, string | number>[] = data.map((r) => ({
-      "CPF": formatCpf(r.cpf),
-      "Nome (planilha)": r.nome,
-      "Servidor": r.servidor_nome ?? "",
-      "Matrícula": r.matricula ?? "",
-      "Órgão": r.orgao ?? "",
-      "Categoria": r.categoria ?? "",
-      "Situação": r.situacao ?? "",
-      "Status": r.status,
-      "Margem Empréstimo": r.margem_emprestimo ?? "",
-      "Margem Cartão Crédito": r.margem_cartao_credito ?? "",
-      "Margem Cartão Benefício": r.margem_cartao_beneficio ?? "",
-      "Margem Total Disponível": r.margem_disponivel ?? "",
-      "Erro": r.erro ?? "",
-      "Processado em": r.processed_at ? new Date(r.processed_at).toLocaleString("pt-BR") : "",
-    }));
+    const rows: Record<string, string | number>[] = data.map((r) => {
+      const emp = calcEmp(r.margem_emprestimo);
+      const cc = calcCartao(r.margem_cartao_credito);
+      const cb = calcCartao(r.margem_cartao_beneficio);
+      const totalLib = (emp ?? 0) + (cc?.total ?? 0) + (cb?.total ?? 0);
+      return {
+        "CPF": formatCpf(r.cpf),
+        "Nome (planilha)": r.nome,
+        "Servidor": r.servidor_nome ?? "",
+        "Matrícula": r.matricula ?? "",
+        "Órgão": r.orgao ?? "",
+        "Categoria": r.categoria ?? "",
+        "Situação": r.situacao ?? "",
+        "Status": r.status,
+        "Margem Empréstimo": r.margem_emprestimo ?? "",
+        "Valor Liberado Empréstimo (≈)": emp ?? "",
+        "Margem Cartão Crédito": r.margem_cartao_credito ?? "",
+        "Valor Liberado CC (≈)": cc?.total ?? "",
+        "Saque CC (≈)": cc?.saque ?? "",
+        "Limite CC (≈)": cc?.limite ?? "",
+        "Margem Cartão Benefício": r.margem_cartao_beneficio ?? "",
+        "Valor Liberado CB (≈)": cb?.total ?? "",
+        "Saque CB (≈)": cb?.saque ?? "",
+        "Limite CB (≈)": cb?.limite ?? "",
+        "Margem Total Disponível": r.margem_disponivel ?? "",
+        "Total Liberado (≈)": totalLib || "",
+        "Erro": r.erro ?? "",
+        "Processado em": r.processed_at ? new Date(r.processed_at).toLocaleString("pt-BR") : "",
+      };
+    });
     const totalEmp = data.reduce((a, r) => a + (Number(r.margem_emprestimo) || 0), 0);
     const totalCC = data.reduce((a, r) => a + (Number(r.margem_cartao_credito) || 0), 0);
     const totalCB = data.reduce((a, r) => a + (Number(r.margem_cartao_beneficio) || 0), 0);
     const totalDisp = data.reduce((a, r) => a + (Number(r.margem_disponivel) || 0), 0);
+    const totalLibEmp = totalEmp / COEF_EMP;
+    const totalLibCC = totalCC * COEF_CARTAO;
+    const totalLibCB = totalCB * COEF_CARTAO;
     rows.push({
       "CPF": "", "Nome (planilha)": "TOTAIS", "Servidor": "", "Matrícula": "",
       "Órgão": "", "Categoria": "", "Situação": "", "Status": "",
       "Margem Empréstimo": totalEmp,
+      "Valor Liberado Empréstimo (≈)": totalLibEmp,
       "Margem Cartão Crédito": totalCC,
+      "Valor Liberado CC (≈)": totalLibCC,
+      "Saque CC (≈)": totalLibCC * 0.7,
+      "Limite CC (≈)": totalLibCC * 0.3,
       "Margem Cartão Benefício": totalCB,
+      "Valor Liberado CB (≈)": totalLibCB,
+      "Saque CB (≈)": totalLibCB * 0.7,
+      "Limite CB (≈)": totalLibCB * 0.3,
       "Margem Total Disponível": totalDisp,
+      "Total Liberado (≈)": totalLibEmp + totalLibCC + totalLibCB,
       "Erro": "", "Processado em": "",
     });
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = [
       { wch: 14 }, { wch: 28 }, { wch: 28 }, { wch: 14 }, { wch: 28 },
       { wch: 14 }, { wch: 14 }, { wch: 12 },
-      { wch: 18 }, { wch: 20 }, { wch: 22 }, { wch: 22 },
+      { wch: 18 }, { wch: 24 },
+      { wch: 20 }, { wch: 20 }, { wch: 16 }, { wch: 16 },
+      { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 16 },
+      { wch: 22 }, { wch: 20 },
       { wch: 30 }, { wch: 20 },
     ];
     const range = XLSX.utils.decode_range(ws["!ref"] as string);
+    // Colunas monetárias (índices 0-based correspondentes às colunas acima)
+    const moneyCols = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
     for (let R = 1; R <= range.e.r; R++) {
-      for (const C of [8, 9, 10, 11]) {
+      for (const C of moneyCols) {
         const addr = XLSX.utils.encode_cell({ r: R, c: C });
         const cell = ws[addr];
         if (cell && typeof cell.v === "number") cell.z = '"R$" #,##0.00';
