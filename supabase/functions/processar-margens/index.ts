@@ -785,7 +785,14 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
 
     const { ids, parallel, runId: continueRunId, continueRun, erroTipo, maxAttempts: maxAttemptsRaw }: Payload = await req.json().catch(() => ({}));
-    const useParallel = !!parallel && !!Deno.env.get("CONSIGUP_USER_2") && !!Deno.env.get("CONSIGUP_PASS_2");
+    // Detecta slots de credenciais disponíveis (1..4)
+    const availableSlots: (1 | 2 | 3 | 4)[] = [1];
+    for (const n of [2, 3, 4] as const) {
+      if (Deno.env.get(`CONSIGUP_USER_${n}`) && Deno.env.get(`CONSIGUP_PASS_${n}`)) {
+        availableSlots.push(n);
+      }
+    }
+    const useParallel = !!parallel && availableSlots.length > 1;
     const hasExplicitIds = !!ids && ids.length > 0;
     const hasErroTipo = !!erroTipo && erroTipo !== "all";
     const maxAttempts = Math.max(1, Math.min(10, maxAttemptsRaw ?? DEFAULT_MAX_ATTEMPTS));
