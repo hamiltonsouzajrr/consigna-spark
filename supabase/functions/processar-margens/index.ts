@@ -1037,8 +1037,13 @@ Deno.serve(async (req) => {
     };
 
     const task = (async () => {
-      const workers = useParallel ? [worker(1), worker(2)] : [worker(1)];
+      const slotsToUse = useParallel ? availableSlots : [availableSlots[0]];
+      const workers = slotsToUse.map((s) => worker(s));
       await Promise.all(workers);
+
+      // Flush final do buffer de logs
+      if (logFlushTimer != null) { clearTimeout(logFlushTimer); logFlushTimer = null; }
+      await flushLogs();
 
       // Devolve qualquer linha ainda em "processando" para "pendente"
       await supabase.from("consultas_margem")
