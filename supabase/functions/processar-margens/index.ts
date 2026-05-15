@@ -557,7 +557,7 @@ interface ConsigUpCtx {
 type SupaClient = any;
 
 async function carregarSessaoSalva(
-  supabase: SupaClient, userId: string, slot: 1 | 2,
+  supabase: SupaClient, userId: string, slot: 1 | 2 | 3 | 4,
 ): Promise<{ s: Session; orgaos: OrgaoLink[]; ageMs: number } | null> {
   try {
     const { data } = await supabase
@@ -576,7 +576,7 @@ async function carregarSessaoSalva(
 }
 
 async function salvarSessao(
-  supabase: SupaClient, userId: string, slot: 1 | 2, s: Session, orgaos: OrgaoLink[],
+  supabase: SupaClient, userId: string, slot: 1 | 2 | 3 | 4, s: Session, orgaos: OrgaoLink[],
 ) {
   try {
     const cookies: Record<string, string> = {};
@@ -587,7 +587,7 @@ async function salvarSessao(
   } catch (e) { console.error("salvarSessao err", e); }
 }
 
-async function limparSessao(supabase: SupaClient, userId: string, slot: 1 | 2) {
+async function limparSessao(supabase: SupaClient, userId: string, slot: 1 | 2 | 3 | 4) {
   try {
     await supabase.from("consigup_sessions").delete()
       .eq("user_id", userId).eq("slot", slot);
@@ -611,7 +611,7 @@ async function validarSessao(s: Session): Promise<{ ok: boolean; orgaos?: OrgaoL
 const SESSION_MAX_AGE_MS = 15 * 60 * 1000;
 
 async function novaSessaoConsigUp(
-  log: LogFn, accountSlot: 1 | 2 = 1,
+  log: LogFn, accountSlot: 1 | 2 | 3 | 4 = 1,
   supabase?: SupaClient, userId?: string,
 ): Promise<ConsigUpCtx | { erro: string }> {
   const user = accountSlot === 2 ? Deno.env.get("CONSIGUP_USER_2") : Deno.env.get("CONSIGUP_USER");
@@ -913,7 +913,7 @@ Deno.serve(async (req) => {
       console.log(`[${level}] ${message}`);
     };
 
-    const worker = async (slot: 1 | 2) => {
+    const worker = async (slot: 1 | 2 | 3 | 4) => {
       let ctx: ConsigUpCtx | null = null;
       let cpfsDesdeUltimoSave = 0;
       const ensureSession = async (): Promise<{ ok: true; ctx: ConsigUpCtx } | { ok: false; erro: string }> => {
