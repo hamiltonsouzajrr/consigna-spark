@@ -891,17 +891,50 @@ Deno.serve(async (req) => {
 
     await supabase.from("consultas_margem").update({ status: "processando", erro: null, erro_tipo: null }).in("id", rows.map((r) => r.id));
 
-    // Contadores compartilhados — lê do DB para somar entre invocações
-    const counterLock = { busy: false };
+    // Contador atômico via RPC (sem SELECT+UPDATE, sem lock entre workers)
     const bumpCounter = async (isError: boolean) => {
-      while (counterLock.busy) await new Promise((r) => setTimeout(r, 10));
-      counterLock.busy = true;
       try {
-        const { data: cur } = await supabase.from("processar_runs").select("processed, errors").eq("id", runId).maybeSingle();
-        const processed = (cur?.processed ?? 0) + 1;
-        const errors = (cur?.errors ?? 0) + (isError ? 1 : 0);
-        await supabase.from("processar_runs").update({ processed, errors, updated_at: new Date().toISOString() }).eq("id", runId);
-      } finally { counterLock.busy = false; }
+        await supabase.rpc("bump_run_counters", {
+          _run_id: runId,
+          _processed_inc: 1,
+          _errors_inc: isError ? 1 : 0,
+        });
+      } catch (e) { console.error("bumpCounter rpc err", e); }
+    };
+
+    // Buffer global de logs com flush em lote (a cada 10 logs ou 2s)
+    type LogRow = { consulta_id: string; user_id: string; level: string; message: string };
+    const logBuffer: LogRow[] = [];
+    let logFlushTimer: number | null = null;
+    const flushLogs = async () => {
+      if (logBuffer.length === 0) return;
+      const batch = logBuffer.splice(0, logBuffer.length);
+      try { await supabase.from("processar_logs").insert(batch); }
+      catch (e) { console.error("flushLogs err", e); }
+    };
+    const scheduleFlush = () => {
+      if (logFlushTimer != null) return;
+      logFlushTimer = setTimeout(async () => {
+        logFlushTimer = null;
+        await flushLogs();
+      }, 2000) as unknown as number;
+    };
+    const enqueueLog = (row: LogRow) => {
+      logBuffer.push(row);
+      if (logBuffer.length >= 10) { void flushLogs(); }
+      else scheduleFlush();
+    };
+
+    // Status do run com cache (evita 1 query por CPF — refaz a cada 5s)
+    let cachedStatus: string = "running";
+    let cachedStatusAt = 0;
+    const getRunStatus = async (): Promise<string> => {
+      const now = Date.now();
+      if (now - cachedStatusAt < 5000) return cachedStatus;
+      const { data: rs } = await supabase.from("processar_runs").select("status").eq("id", runId).maybeSingle();
+      cachedStatus = (rs?.status as string) ?? "running";
+      cachedStatusAt = now;
+      return cachedStatus;
     };
 
     // Fila compartilhada entre os workers
@@ -927,9 +960,8 @@ Deno.serve(async (req) => {
       while (true) {
         if (stopRequested) break;
         if (Date.now() - startedAt > MAX_WALL_MS) { deadlineHit = true; break; }
-        // controle pausar/parar
-        const { data: rs } = await supabase.from("processar_runs").select("status").eq("id", runId).maybeSingle();
-        const runStatus = (rs?.status as string) ?? "running";
+        // controle pausar/parar (cacheado a cada 5s)
+        const runStatus = await getRunStatus();
         if (runStatus === "stopped") { stopRequested = true; break; }
         if (runStatus === "paused") { await new Promise((r) => setTimeout(r, 2000)); continue; }
 
@@ -938,11 +970,10 @@ Deno.serve(async (req) => {
 
         const log: LogFn = async (level, message) => {
           console.log(`[slot ${slot}][${level}] ${message}`);
-          try {
-            await supabase.from("processar_logs").insert({
-              consulta_id: row.id, user_id: userId, level, message: `[slot ${slot}] ${message}`.slice(0, 4000),
-            });
-          } catch (e) { console.error("log insert err", e); }
+          enqueueLog({
+            consulta_id: row.id, user_id: userId, level,
+            message: `[slot ${slot}] ${message}`.slice(0, 4000),
+          });
         };
 
         // Backoff exponencial entre tentativas (apenas a partir da 2ª tentativa)
