@@ -189,7 +189,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      bump_run_counters: {
+        Args: { _errors_inc: number; _processed_inc: number; _run_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       consulta_status: "pendente" | "processando" | "concluido" | "erro"
