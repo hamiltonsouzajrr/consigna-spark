@@ -614,8 +614,8 @@ async function novaSessaoConsigUp(
   log: LogFn, accountSlot: 1 | 2 | 3 | 4 = 1,
   supabase?: SupaClient, userId?: string,
 ): Promise<ConsigUpCtx | { erro: string }> {
-  const user = accountSlot === 2 ? Deno.env.get("CONSIGUP_USER_2") : Deno.env.get("CONSIGUP_USER");
-  const pass = accountSlot === 2 ? Deno.env.get("CONSIGUP_PASS_2") : Deno.env.get("CONSIGUP_PASS");
+  const user = accountSlot === 1 ? Deno.env.get("CONSIGUP_USER") : Deno.env.get(`CONSIGUP_USER_${accountSlot}`);
+  const pass = accountSlot === 1 ? Deno.env.get("CONSIGUP_PASS") : Deno.env.get(`CONSIGUP_PASS_${accountSlot}`);
   if (!user || !pass) return { erro: `Credenciais ConsigUp ausentes (slot ${accountSlot})` };
 
   // Tenta reaproveitar sessão salva no DB
