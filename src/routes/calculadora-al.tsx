@@ -13,9 +13,13 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calculator, RefreshCw, AlertTriangle, TrendingUp, Sparkles, Copy, Wallet, CreditCard, Gift, Banknote, Info, ShieldAlert } from "lucide-react";
 import {
-  ORGAOS_AL, simularReajuste, brl, gerarTextoWhatsapp, registrarLog,
+  ORGAOS_AL, brl, registrarLog,
   type OrgaoAL,
 } from "@/lib/al";
+import { calcPrevidenciaProgressiva } from "@/lib/al/previdencia";
+import { calcIRProgressivo, aliquotaIR } from "@/lib/al/imposto";
+import { calcMargens } from "@/lib/al/margem";
+import { estimarCredito } from "@/lib/al/credito";
 
 export const Route = createFileRoute("/calculadora-al")({
   head: () => ({
