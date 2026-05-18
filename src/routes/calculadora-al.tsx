@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calculator, RefreshCw, AlertTriangle } from "lucide-react";
+import { Calculator, RefreshCw, AlertTriangle, TrendingUp, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/calculadora-al")({
   head: () => ({
