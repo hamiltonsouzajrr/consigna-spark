@@ -716,7 +716,7 @@ function CalculadoraALPage() {
           </TabsContent>
 
           <TabsContent value="reajuste">
-            <SimulacaoReajusteAL />
+            <SimulacaoReajusteAL salario={salario} descontos={descontos} />
           </TabsContent>
         </Tabs>
       </div>
