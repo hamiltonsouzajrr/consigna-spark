@@ -520,10 +520,10 @@ function SimulacaoReajusteAL() {
 }
 
 function MargemRow({
-  icon: Icon, label, pct, margem, credito,
+  icon: Icon, label, pct, margem, creditoMin, creditoMax,
 }: {
   icon: React.ComponentType<{ className?: string }>;
-  label: string; pct: string; margem: number; credito: number;
+  label: string; pct: string; margem: number; creditoMin: number; creditoMax: number;
 }) {
   return (
     <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3">
@@ -538,7 +538,9 @@ function MargemRow({
       </div>
       <div className="text-right">
         <p className="font-semibold tabular-nums">{brl(margem)}</p>
-        <p className="text-xs text-muted-foreground tabular-nums">≈ {brl(credito)}</p>
+        <p className="text-xs text-muted-foreground tabular-nums">
+          {brl(creditoMin)} – {brl(creditoMax)}
+        </p>
       </div>
     </div>
   );
