@@ -47,10 +47,9 @@ const DESC_LABELS: { key: keyof Descontos; label: string }[] = [
 ];
 
 const MARGENS = [
-  { label: "Empréstimo Consignado", pct: 0.30 },
+  { label: "Margem Principal", pct: 0.45 },
   { label: "Cartão de Crédito Consignado", pct: 0.10 },
   { label: "Cartão Benefício", pct: 0.10 },
-  { label: "Margem Adicional", pct: 0.15 },
 ];
 
 const emptyDesc: Descontos = {
