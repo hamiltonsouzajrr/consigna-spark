@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,47 +8,32 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calculator, RefreshCw, AlertTriangle, TrendingUp, Sparkles } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calculator, RefreshCw, AlertTriangle, TrendingUp, Sparkles, Copy, Wallet, CreditCard, Gift, Banknote } from "lucide-react";
+import {
+  ORGAOS_AL, simularReajuste, brl, gerarTextoWhatsapp,
+  type OrgaoAL,
+} from "@/lib/reajuste-al";
 
 export const Route = createFileRoute("/calculadora-al")({
   head: () => ({
     meta: [
       { title: "Calculadora de Margem Consignável — Alagoas" },
-      { name: "description", content: "Calculadora manual de margem consignável para servidores de Alagoas, considerando descontos obrigatórios e judiciais." },
+      { name: "description", content: "Calculadora manual de margem consignável e simulação de reajuste para servidores de Alagoas." },
       { property: "og:title", content: "Calculadora de Margem Consignável — Alagoas" },
-      { property: "og:description", content: "Calculadora manual de margem consignável para servidores de Alagoas, considerando descontos obrigatórios e judiciais." },
+      { property: "og:description", content: "Calculadora manual de margem consignável e simulação de reajuste para servidores de Alagoas." },
       { property: "og:url", content: "https://consigna-spark.lovable.app/calculadora-al" },
     ],
     links: [{ rel: "canonical", href: "https://consigna-spark.lovable.app/calculadora-al" }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebApplication",
-          name: "Calculadora de Margem Consignável — Alagoas",
-          url: "https://consigna-spark.lovable.app/calculadora-al",
-          applicationCategory: "FinanceApplication",
-          description: "Cálculo manual de margem consignável para servidores do Governo de Alagoas.",
-          offers: { "@type": "Offer", price: "0", priceCurrency: "BRL" },
-        }),
-      },
-    ],
   }),
   component: CalculadoraALPage,
 });
 
-const brl = (n: number) =>
-  (isFinite(n) ? n : 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
 type Descontos = {
-  pensao: string;
-  fardamento: string;
-  judicial: string;
-  sindicato: string;
-  alprev: string;
-  ir: string;
-  outro: string;
+  pensao: string; fardamento: string; judicial: string;
+  sindicato: string; alprev: string; ir: string; outro: string;
 };
 
 const DESC_LABELS: { key: keyof Descontos; label: string }[] = [
@@ -76,13 +62,15 @@ const num = (v: string) => {
   return isFinite(n) && n > 0 ? n : 0;
 };
 
+// ============================================================================
+// Calculadora Manual (original)
+// ============================================================================
+
 function ManualForm({
   salario, setSalario, descontos, setDescontos, onCalcular,
 }: {
-  salario: string;
-  setSalario: (v: string) => void;
-  descontos: Descontos;
-  setDescontos: (d: Descontos) => void;
+  salario: string; setSalario: (v: string) => void;
+  descontos: Descontos; setDescontos: (d: Descontos) => void;
   onCalcular: () => void;
 }) {
   const salarioNum = num(salario);
@@ -96,22 +84,13 @@ function ManualForm({
         <CardHeader>
           <CardTitle>Salário Base</CardTitle>
           <CardDescription>
-            Salário / Subsídio / Base de Vencimento — valor fixo, sem adicionais, gratificações,
-            horas extras, plantões ou férias.
+            Salário / Subsídio / Base de Vencimento — valor fixo, sem adicionais.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Label htmlFor="salario">Salário Base (R$) *</Label>
-          <Input
-            id="salario"
-            type="number"
-            step="0.01"
-            inputMode="decimal"
-            placeholder="0,00"
-            value={salario}
-            onChange={(e) => setSalario(e.target.value)}
-            className="mt-1"
-          />
+          <Input id="salario" type="number" step="0.01" inputMode="decimal" placeholder="0,00"
+            value={salario} onChange={(e) => setSalario(e.target.value)} className="mt-1" />
         </CardContent>
       </Card>
 
@@ -125,16 +104,10 @@ function ManualForm({
             {DESC_LABELS.map((d) => (
               <div key={d.key}>
                 <Label htmlFor={d.key}>{d.label} (R$)</Label>
-                <Input
-                  id={d.key}
-                  type="number"
-                  step="0.01"
-                  inputMode="decimal"
-                  placeholder="0,00"
+                <Input id={d.key} type="number" step="0.01" inputMode="decimal" placeholder="0,00"
                   value={descontos[d.key]}
                   onChange={(e) => setDescontos({ ...descontos, [d.key]: e.target.value })}
-                  className="mt-1"
-                />
+                  className="mt-1" />
               </div>
             ))}
           </div>
@@ -153,7 +126,7 @@ function ManualForm({
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Descontos excedem o salário</AlertTitle>
           <AlertDescription>
-            Total de descontos ({brl(totalDesc)}) é maior que o Salário Base ({brl(salarioNum)}).
+            Total ({brl(totalDesc)}) maior que Salário Base ({brl(salarioNum)}).
           </AlertDescription>
         </Alert>
       )}
@@ -170,10 +143,8 @@ function ManualForm({
 function ResultsDisplay({
   salario, setSalario, descontos, setDescontos, onNovo,
 }: {
-  salario: string;
-  setSalario: (v: string) => void;
-  descontos: Descontos;
-  setDescontos: (d: Descontos) => void;
+  salario: string; setSalario: (v: string) => void;
+  descontos: Descontos; setDescontos: (d: Descontos) => void;
   onNovo: () => void;
 }) {
   const salarioNum = num(salario);
@@ -189,17 +160,13 @@ function ResultsDisplay({
       <Card className="rounded-3xl">
         <CardHeader>
           <CardTitle>Dados Gerais</CardTitle>
-          <CardDescription>Edite os valores abaixo e clique em "Recalcular Margens".</CardDescription>
+          <CardDescription>Edite e veja o recálculo em tempo real.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
           <div>
             <Label>Salário Base (R$)</Label>
-            <Input
-              type="number" step="0.01" inputMode="decimal"
-              value={salario}
-              onChange={(e) => setSalario(e.target.value)}
-              className="mt-1"
-            />
+            <Input type="number" step="0.01" inputMode="decimal"
+              value={salario} onChange={(e) => setSalario(e.target.value)} className="mt-1" />
             <p className="mt-1 text-xs text-muted-foreground">{brl(salarioNum)}</p>
           </div>
           <div className="rounded-xl bg-muted/40 p-4">
@@ -222,9 +189,7 @@ function ResultsDisplay({
       )}
 
       <Card className="rounded-3xl">
-        <CardHeader>
-          <CardTitle>Descontos Compulsórios</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Descontos Compulsórios</CardTitle></CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
@@ -240,13 +205,10 @@ function ResultsDisplay({
                   <TableCell>{d.label}</TableCell>
                   <TableCell>{brl(num(descontos[d.key]))}</TableCell>
                   <TableCell className="text-right">
-                    <Input
-                      type="number" step="0.01" inputMode="decimal"
+                    <Input type="number" step="0.01" inputMode="decimal"
                       value={descontos[d.key]}
                       onChange={(e) => setDescontos({ ...descontos, [d.key]: e.target.value })}
-                      placeholder="0,00"
-                      className="h-8"
-                    />
+                      placeholder="0,00" className="h-8" />
                   </TableCell>
                 </TableRow>
               ))}
@@ -297,216 +259,245 @@ function ResultsDisplay({
 }
 
 // ============================================================================
-// Simulação de Aumento Salarial + Liberação de Margem
+// Simulação de Reajuste AL — nova aba
 // ============================================================================
 
-function aliquotaAlprev(subsidio: number): number {
-  return subsidio > 25000 ? 0.14 : 0.10;
+function StatCard({
+  icon: Icon, label, value, accent = false, big = false,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string; value: string; accent?: boolean; big?: boolean;
+}) {
+  return (
+    <div
+      className={[
+        "relative overflow-hidden rounded-2xl border p-5 backdrop-blur-md transition-all",
+        "shadow-[0_8px_30px_-12px_rgba(0,0,0,0.15)] hover:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.25)]",
+        accent
+          ? "border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent"
+          : "border-border/60 bg-background/60",
+      ].join(" ")}
+    >
+      <div className="flex items-center gap-2">
+        <div className={[
+          "flex h-9 w-9 items-center justify-center rounded-xl",
+          accent ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
+        ].join(" ")}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      </div>
+      <p className={[
+        "mt-3 font-bold tabular-nums",
+        big ? "text-3xl md:text-4xl" : "text-2xl",
+        accent ? "text-primary" : "text-foreground",
+      ].join(" ")}>
+        {value}
+      </p>
+    </div>
+  );
 }
 
-function aliquotaIR(subsidio: number): number {
-  if (subsidio <= 2259) return 0;
-  if (subsidio <= 2826) return 0.075;
-  if (subsidio <= 3751) return 0.15;
-  if (subsidio <= 4665) return 0.225;
-  return 0.275;
-}
-
-function SimulacaoAumento() {
+function SimulacaoReajusteAL() {
   const [subsidio, setSubsidio] = useState("");
   const [reajuste, setReajuste] = useState("6");
-  const [show, setShow] = useState(false);
+  const [orgao, setOrgao] = useState<OrgaoAL>("estado_al");
 
   const sub = num(subsidio);
   const pct = num(reajuste) / 100;
 
-  const sim = useMemo(() => {
-    if (sub <= 0 || pct <= 0) return null;
-    const bruto = sub * pct;
-    const aAlprev = aliquotaAlprev(sub);
-    const aIR = aliquotaIR(sub);
-    const descAlprev = bruto * aAlprev;
-    const descIR = bruto * aIR;
-    const liquido = bruto - descAlprev - descIR;
-    const novoSubsidio = sub + bruto;
-    const margemPrincipal = liquido * 0.40;
-    const cartaoBeneficio = liquido * 0.15;
-    const cartaoConsignado = liquido * 0.10;
-    return {
-      bruto, aAlprev, aIR, descAlprev, descIR, liquido, novoSubsidio,
-      margemPrincipal, cartaoBeneficio, cartaoConsignado,
-      credMpMin: margemPrincipal * 40,  credMpMax: margemPrincipal * 53,
-      credCbMin: cartaoBeneficio * 27,  credCbMax: cartaoBeneficio * 44,
-      credCcMin: cartaoConsignado * 22, credCcMax: cartaoConsignado * 40,
-    };
-  }, [sub, pct]);
+  const sim = useMemo(() => simularReajuste(sub, pct, orgao), [sub, pct, orgao]);
+
+  const copiar = async () => {
+    if (!sim) return;
+    try {
+      await navigator.clipboard.writeText(gerarTextoWhatsapp(sim));
+      toast.success("Simulação copiada", { description: "Texto pronto para enviar no WhatsApp." });
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  };
+
+  const limpar = () => { setSubsidio(""); setReajuste("6"); setOrgao("estado_al"); };
+
+  const faixaAlta = sub > 25000;
+  const altaMargem = sim && (sim.margens.principal + sim.margens.cartaoBeneficio + sim.margens.cartaoConsignado) > 300;
 
   return (
-    <Card className="rounded-3xl border-primary/20">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-4">
+    <div className="space-y-6">
+      {/* Entrada */}
+      <Card className="rounded-3xl border-border/60 bg-gradient-to-br from-background to-muted/30 shadow-xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Dados do Servidor
+          </CardTitle>
+          <CardDescription>Cálculo em tempo real. Sem reload.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-3">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Simulação de Aumento Salarial
-            </CardTitle>
-            <CardDescription>
-              Estime a nova margem liberada após reajuste, considerando AL Previdência e IR.
-            </CardDescription>
+            <Label htmlFor="r-sub">Subsídio atual (R$) *</Label>
+            <Input id="r-sub" type="number" step="0.01" inputMode="decimal"
+              placeholder="10.000,00" value={subsidio}
+              onChange={(e) => setSubsidio(e.target.value)}
+              className="mt-1 h-11 text-base" />
+            {sub > 0 && <p className="mt-1 text-xs text-muted-foreground">{brl(sub)}</p>}
           </div>
-          {!show && (
-            <Button onClick={() => setShow(true)} variant="outline">
-              <Sparkles className="h-4 w-4" /> Simular aumento salarial
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      {show && (
-        <CardContent className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <Label htmlFor="sim-subsidio">Subsídio atual (R$) *</Label>
-              <Input
-                id="sim-subsidio"
-                type="number" step="0.01" inputMode="decimal"
-                placeholder="0,00"
-                value={subsidio}
-                onChange={(e) => setSubsidio(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="sim-reajuste">Percentual de reajuste (%)</Label>
-              <Input
-                id="sim-reajuste"
-                type="number" step="0.01" inputMode="decimal"
-                placeholder="6"
-                value={reajuste}
-                onChange={(e) => setReajuste(e.target.value)}
-                className="mt-1"
-              />
-              <p className="mt-1 text-xs text-muted-foreground">Padrão sugerido: 6%</p>
-            </div>
+          <div>
+            <Label htmlFor="r-pct">Percentual de reajuste (%)</Label>
+            <Input id="r-pct" type="number" step="0.01" inputMode="decimal"
+              placeholder="6" value={reajuste}
+              onChange={(e) => setReajuste(e.target.value)}
+              className="mt-1 h-11 text-base" />
+            <p className="mt-1 text-xs text-muted-foreground">Padrão: 6%</p>
           </div>
-
-          {sim ? (
-            <>
-              <div className="grid gap-3 md:grid-cols-3">
-                <div className="rounded-xl bg-muted/40 p-4">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Novo subsídio (bruto)</p>
-                  <p className="mt-1 text-xl font-semibold">{brl(sim.novoSubsidio)}</p>
-                </div>
-                <div className="rounded-xl bg-muted/40 p-4">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Aumento bruto</p>
-                  <p className="mt-1 text-xl font-semibold">{brl(sim.bruto)}</p>
-                </div>
-                <div className="rounded-xl bg-primary/10 p-4">
-                  <p className="text-xs uppercase tracking-wide text-primary">Aumento líquido</p>
-                  <p className="mt-1 text-xl font-bold text-primary">{brl(sim.liquido)}</p>
-                </div>
-              </div>
-
-              <Card className="rounded-2xl">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Descontos sobre o aumento</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Desconto</TableHead>
-                        <TableHead className="w-[100px]">Alíquota</TableHead>
-                        <TableHead className="w-[180px] text-right">Valor</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>AL Previdência</TableCell>
-                        <TableCell>{(sim.aAlprev * 100).toFixed(1)}%</TableCell>
-                        <TableCell className="text-right">{brl(sim.descAlprev)}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>Imposto de Renda</TableCell>
-                        <TableCell>{sim.aIR === 0 ? "Isento" : `${(sim.aIR * 100).toFixed(1)}%`}</TableCell>
-                        <TableCell className="text-right">{brl(sim.descIR)}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-2xl">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Nova margem aproximada liberada</CardTitle>
-                  <CardDescription>Sobre o aumento líquido de {brl(sim.liquido)}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Produto</TableHead>
-                        <TableHead className="w-[80px]">%</TableHead>
-                        <TableHead className="w-[160px] text-right">Margem (R$)</TableHead>
-                        <TableHead className="text-right">Crédito médio estimado</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>Margem principal</TableCell>
-                        <TableCell>40%</TableCell>
-                        <TableCell className="text-right font-semibold">{brl(sim.margemPrincipal)}</TableCell>
-                        <TableCell className="text-right text-muted-foreground">
-                          {brl(sim.credMpMin)} – {brl(sim.credMpMax)}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>Cartão benefício</TableCell>
-                        <TableCell>15%</TableCell>
-                        <TableCell className="text-right font-semibold">{brl(sim.cartaoBeneficio)}</TableCell>
-                        <TableCell className="text-right text-muted-foreground">
-                          {brl(sim.credCbMin)} – {brl(sim.credCbMax)}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>Cartão consignado</TableCell>
-                        <TableCell>10%</TableCell>
-                        <TableCell className="text-right font-semibold">{brl(sim.cartaoConsignado)}</TableCell>
-                        <TableCell className="text-right text-muted-foreground">
-                          {brl(sim.credCcMin)} – {brl(sim.credCcMax)}
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-
-              {sim.liquido > 0 && (
-                <Alert>
-                  <Sparkles className="h-4 w-4" />
-                  <AlertTitle>Oportunidade detectada</AlertTitle>
-                  <AlertDescription>
-                    Servidor terá provável liberação de margem após reajuste salarial — estimativa total de até{" "}
-                    <strong>{brl(sim.credMpMax + sim.credCbMax + sim.credCcMax)}</strong> em crédito.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="flex justify-end">
-                <Button variant="ghost" onClick={() => { setSubsidio(""); setReajuste("6"); }}>
-                  <RefreshCw className="h-4 w-4" /> Limpar
-                </Button>
-              </div>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Informe o subsídio atual e o percentual de reajuste para ver a simulação.
-            </p>
-          )}
+          <div>
+            <Label>Tipo de órgão / regime</Label>
+            <Select value={orgao} onValueChange={(v) => setOrgao(v as OrgaoAL)}>
+              <SelectTrigger className="mt-1 h-11"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {ORGAOS_AL.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
+      </Card>
+
+      {!sim ? (
+        <Alert>
+          <Sparkles className="h-4 w-4" />
+          <AlertTitle>Aguardando dados</AlertTitle>
+          <AlertDescription>
+            Informe o subsídio atual e o percentual de reajuste para iniciar a simulação.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <>
+          {/* Badges de alerta */}
+          <div className="flex flex-wrap gap-2">
+            {faixaAlta && (
+              <Badge variant="secondary" className="rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                Faixa alta previdenciária
+              </Badge>
+            )}
+            {altaMargem && (
+              <Badge className="rounded-full bg-primary/15 text-primary border border-primary/30 hover:bg-primary/20">
+                Alta possibilidade de refinanciamento
+              </Badge>
+            )}
+          </div>
+
+          {/* Cards de resumo */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard icon={Wallet} label="Novo subsídio" value={brl(sim.novoSubsidio)} />
+            <StatCard icon={TrendingUp} label="Aumento bruto" value={brl(sim.bruto)} />
+            <StatCard icon={Banknote} label="Aumento líquido" value={brl(sim.liquido)} accent big />
+            <StatCard icon={Sparkles} label="Crédito estimado" value={brl(sim.credito.total)} accent />
+          </div>
+
+          {/* Detalhes — descontos */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="rounded-3xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Descontos sobre o aumento</CardTitle>
+                <CardDescription>Previdência progressiva incremental.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3">
+                    <span className="text-sm">AL Previdência (progressiva)</span>
+                    <span className="font-semibold tabular-nums">{brl(sim.descPrevidencia)}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3">
+                    <span className="text-sm">
+                      Imposto de Renda{" "}
+                      <span className="text-xs text-muted-foreground">
+                        ({sim.aliquotaIRPct === 0 ? "isento" : `${(sim.aliquotaIRPct * 100).toFixed(1)}%`})
+                      </span>
+                    </span>
+                    <span className="font-semibold tabular-nums">{brl(sim.descIR)}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl border border-primary/30 bg-primary/10 p-3">
+                    <span className="text-sm font-medium text-primary">Aumento líquido</span>
+                    <span className="font-bold tabular-nums text-primary">{brl(sim.liquido)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-3xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Nova margem liberada</CardTitle>
+                <CardDescription>Coeficientes AL aplicados ao líquido.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <MargemRow icon={Wallet} label="Margem principal" pct="40%"
+                    margem={sim.margens.principal} credito={sim.credito.principal} />
+                  <MargemRow icon={Gift} label="Cartão benefício" pct="15%"
+                    margem={sim.margens.cartaoBeneficio} credito={sim.credito.cartaoBeneficio} />
+                  <MargemRow icon={CreditCard} label="Cartão consignado" pct="10%"
+                    margem={sim.margens.cartaoConsignado} credito={sim.credito.cartaoConsignado} />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {sim.liquido > 0 && (
+            <Alert className="border-primary/30 bg-primary/5">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <AlertTitle>Oportunidade detectada</AlertTitle>
+              <AlertDescription>
+                Servidor terá provável liberação de margem após reajuste salarial — estimativa total de até{" "}
+                <strong className="text-primary">{brl(sim.credito.total)}</strong> em crédito.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button variant="ghost" onClick={limpar}>
+              <RefreshCw className="h-4 w-4" /> Limpar
+            </Button>
+            <Button onClick={copiar}>
+              <Copy className="h-4 w-4" /> Copiar simulação
+            </Button>
+          </div>
+        </>
       )}
-    </Card>
+    </div>
   );
 }
+
+function MargemRow({
+  icon: Icon, label, pct, margem, credito,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string; pct: string; margem: number; credito: number;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-background text-primary">
+          <Icon className="h-4 w-4" />
+        </div>
+        <div>
+          <p className="text-sm font-medium">{label}</p>
+          <p className="text-xs text-muted-foreground">{pct} sobre líquido</p>
+        </div>
+      </div>
+      <div className="text-right">
+        <p className="font-semibold tabular-nums">{brl(margem)}</p>
+        <p className="text-xs text-muted-foreground tabular-nums">≈ {brl(credito)}</p>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Página principal com Tabs
+// ============================================================================
 
 function CalculadoraALPage() {
   const [salario, setSalario] = useState("");
@@ -515,39 +506,44 @@ function CalculadoraALPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-5xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
             Calculadora de Margem — AL
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Cálculo 100% manual da margem consignável para servidores de Alagoas. Sem upload, sem OCR.
+            Cálculo manual da margem consignável e simulação de reajuste para servidores de Alagoas.
           </p>
         </div>
 
-        {!showResults ? (
-          <ManualForm
-            salario={salario}
-            setSalario={setSalario}
-            descontos={descontos}
-            setDescontos={setDescontos}
-            onCalcular={() => setShowResults(true)}
-          />
-        ) : (
-          <ResultsDisplay
-            salario={salario}
-            setSalario={setSalario}
-            descontos={descontos}
-            setDescontos={setDescontos}
-            onNovo={() => {
-              setSalario("");
-              setDescontos(emptyDesc);
-              setShowResults(false);
-            }}
-          />
-        )}
+        <Tabs defaultValue="manual" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-grid">
+            <TabsTrigger value="manual">Calculadora Manual</TabsTrigger>
+            <TabsTrigger value="reajuste">Simulação Reajuste AL</TabsTrigger>
+          </TabsList>
 
-        <SimulacaoAumento />
+          <TabsContent value="manual" className="space-y-6">
+            {!showResults ? (
+              <ManualForm
+                salario={salario} setSalario={setSalario}
+                descontos={descontos} setDescontos={setDescontos}
+                onCalcular={() => setShowResults(true)}
+              />
+            ) : (
+              <ResultsDisplay
+                salario={salario} setSalario={setSalario}
+                descontos={descontos} setDescontos={setDescontos}
+                onNovo={() => {
+                  setSalario(""); setDescontos(emptyDesc); setShowResults(false);
+                }}
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="reajuste">
+            <SimulacaoReajusteAL />
+          </TabsContent>
+        </Tabs>
       </div>
     </AppShell>
   );
