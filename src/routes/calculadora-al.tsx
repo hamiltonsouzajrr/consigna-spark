@@ -17,7 +17,7 @@ import {
   type OrgaoAL,
 } from "@/lib/al";
 import { calcPrevidenciaProgressiva } from "@/lib/al/previdencia";
-import { calcIRProgressivo, aliquotaIR } from "@/lib/al/imposto";
+import { aliquotaIR } from "@/lib/al/imposto";
 import { calcMargens } from "@/lib/al/margem";
 import { estimarCredito } from "@/lib/al/credito";
 
@@ -309,9 +309,12 @@ type SimResult = {
   descPrevidencia: number;
   descIR: number;
   descPensao: number;
+  totalDescontos: number;
+  pctPrevidencia: number;
+  pctIR: number;
+  pctTotal: number;
   aliquotaIRPct: number;
   liquidoAumento: number;
-  liquidoBaseNovo: number; // novo líquido total (para margens)
   margens: ReturnType<typeof calcMargens>;
   credito: ReturnType<typeof estimarCredito>;
 } | { ok: false; reason: string };
@@ -328,35 +331,44 @@ function calcularSimulacao(
   const bruto = salario * pct;
   const novoSalario = salario + bruto;
 
-  // Previdência: usa valor informado se existir; senão calcula progressivo atual.
+  // Descontos aplicados DIRETAMENTE sobre o aumento bruto, usando as alíquotas
+  // efetivas do servidor (mesma lógica do infográfico: % do desconto atual × bruto).
+
+  // AL Previdência: % efetivo do desconto informado sobre o salário; fallback = alíquota
+  // marginal progressiva no novo subsídio.
   const alprevInformado = num(descontos.alprev);
-  const prevAtual = alprevInformado > 0 ? alprevInformado : (calcPrevidenciaProgressiva(salario) ?? 0);
-  const prevNovo = calcPrevidenciaProgressiva(novoSalario) ?? 0;
-  const descPrevidencia = Math.max(0, prevNovo - prevAtual);
+  const pctPrevidencia = alprevInformado > 0
+    ? alprevInformado / salario
+    : (() => {
+        const prevNovo = calcPrevidenciaProgressiva(novoSalario) ?? 0;
+        const prevAtual = calcPrevidenciaProgressiva(salario) ?? 0;
+        return bruto > 0 ? Math.max(0, prevNovo - prevAtual) / bruto : 0;
+      })();
+  const descPrevidencia = bruto * pctPrevidencia;
 
-  // Pensão: assumida proporcional ao salário (geralmente % do líquido/bruto).
+  // Pensão: % efetivo da pensão informada sobre o salário aplicado ao aumento bruto.
   const pensaoAtual = num(descontos.pensao);
-  const descPensao = pensaoAtual > 0 ? pensaoAtual * pct : 0;
+  const pctPensao = pensaoAtual > 0 ? pensaoAtual / salario : 0;
+  const descPensao = bruto * pctPensao;
 
-  // IR: incremental, considerando base = salário - previdência - pensão.
+  // Imposto de Renda: usa alíquota marginal aplicável à nova base tributável
+  // (subsídio - previdência - pensão), aplicada sobre o aumento bruto.
+  const prevNovoTotal = calcPrevidenciaProgressiva(novoSalario) ?? 0;
+  const baseIRNova = Math.max(0, novoSalario - prevNovoTotal - (pensaoAtual + descPensao));
   const irInformado = num(descontos.ir);
-  const baseIRAtual = Math.max(0, salario - prevAtual - pensaoAtual);
-  const baseIRNova = Math.max(0, novoSalario - prevNovo - (pensaoAtual + descPensao));
-  const irCalcAtual = calcIRProgressivo(baseIRAtual) ?? 0;
-  const irCalcNovo = calcIRProgressivo(baseIRNova) ?? 0;
-  // Se o usuário informou IR, ancora no informado e aplica o delta progressivo.
-  const irAtualBase = irInformado > 0 ? irInformado : irCalcAtual;
-  const irNovoEstim = irAtualBase + Math.max(0, irCalcNovo - irCalcAtual);
-  const descIR = Math.max(0, irNovoEstim - irAtualBase);
+  const aliqMarginalIR = aliquotaIR(baseIRNova);
+  // Se o usuário informou IR, usa a alíquota efetiva real dele (mais fiel à folha);
+  // senão, usa a marginal progressiva.
+  const pctIR = irInformado > 0 ? irInformado / salario : aliqMarginalIR;
+  const descIR = bruto * pctIR;
 
-  const liquidoAumento = Math.max(0, bruto - descPrevidencia - descIR - descPensao);
+  const totalDescontos = descPrevidencia + descIR + descPensao;
+  const liquidoAumento = Math.max(0, bruto - totalDescontos);
+  const pctTotal = bruto > 0 ? totalDescontos / bruto : 0;
 
-  // Novo líquido total = líquido atual (salário - todos descontos informados) + aumento líquido
-  const totalDescAtual = DESC_LABELS.reduce((s, d) => s + num(descontos[d.key]), 0);
-  const liquidoAtual = Math.max(0, salario - totalDescAtual);
-  const liquidoBaseNovo = liquidoAtual + liquidoAumento;
-
-  const margens = calcMargens(liquidoBaseNovo, orgao);
+  // Margens calculadas SOBRE O AUMENTO LÍQUIDO (conforme infográfico),
+  // representando a NOVA margem liberada pelo reajuste.
+  const margens = calcMargens(liquidoAumento, orgao);
   const credito = margens ? estimarCredito(margens) : null;
   if (!margens || !credito) return { ok: false, reason: "Falha ao calcular margens/crédito." };
 
@@ -368,9 +380,12 @@ function calcularSimulacao(
     descPrevidencia,
     descIR,
     descPensao,
-    aliquotaIRPct: aliquotaIR(baseIRNova),
+    totalDescontos,
+    pctPrevidencia,
+    pctIR,
+    pctTotal,
+    aliquotaIRPct: aliqMarginalIR,
     liquidoAumento,
-    liquidoBaseNovo,
     margens,
     credito,
   };
@@ -550,32 +565,47 @@ function SimulacaoReajusteAL({
           <div className="grid gap-4 md:grid-cols-2">
             <Card className="rounded-3xl">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Descontos sobre o aumento</CardTitle>
-                <CardDescription>Incrementais (apenas o que recai sobre o reajuste).</CardDescription>
+                <CardTitle className="text-base">Descontos compulsórios sobre o aumento bruto</CardTitle>
+                <CardDescription>
+                  Aplicados diretamente sobre {brl(resultado.bruto)} (aumento bruto).
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3">
-                    <span className="text-sm">AL Previdência (progressiva)</span>
-                    <span className="font-semibold tabular-nums">{brl(resultado.descPrevidencia)}</span>
+                    <span className="text-sm">
+                      AL Previdência{" "}
+                      <span className="text-xs text-muted-foreground">
+                        ({(resultado.pctPrevidencia * 100).toFixed(1)}%)
+                      </span>
+                    </span>
+                    <span className="font-semibold tabular-nums">− {brl(resultado.descPrevidencia)}</span>
                   </div>
                   {resultado.descPensao > 0 && (
                     <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3">
                       <span className="text-sm">Pensão (proporcional)</span>
-                      <span className="font-semibold tabular-nums">{brl(resultado.descPensao)}</span>
+                      <span className="font-semibold tabular-nums">− {brl(resultado.descPensao)}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3">
                     <span className="text-sm">
                       Imposto de Renda{" "}
                       <span className="text-xs text-muted-foreground">
-                        ({resultado.aliquotaIRPct === 0 ? "isento" : `marginal ${(resultado.aliquotaIRPct * 100).toFixed(1)}%`})
+                        ({resultado.pctIR === 0 ? "isento" : `${(resultado.pctIR * 100).toFixed(1)}%`})
                       </span>
                     </span>
-                    <span className="font-semibold tabular-nums">{brl(resultado.descIR)}</span>
+                    <span className="font-semibold tabular-nums">− {brl(resultado.descIR)}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-destructive/10 p-3">
+                    <span className="text-sm font-medium">
+                      Total de descontos ({(resultado.pctTotal * 100).toFixed(1)}%)
+                    </span>
+                    <span className="font-bold tabular-nums text-destructive">
+                      − {brl(resultado.totalDescontos)}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-primary/30 bg-primary/10 p-3">
-                    <span className="text-sm font-medium text-primary">Aumento líquido</span>
+                    <span className="text-sm font-medium text-primary">Aumento líquido disponível</span>
                     <span className="font-bold tabular-nums text-primary">{brl(resultado.liquidoAumento)}</span>
                   </div>
                 </div>
@@ -586,7 +616,7 @@ function SimulacaoReajusteAL({
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Nova margem liberada</CardTitle>
                 <CardDescription>
-                  Aplicada sobre o novo líquido total ({brl(resultado.liquidoBaseNovo)}).
+                  Calculada sobre o aumento líquido ({brl(resultado.liquidoAumento)}).
                 </CardDescription>
               </CardHeader>
               <CardContent>
