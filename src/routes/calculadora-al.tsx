@@ -301,24 +301,122 @@ function StatCard({
   );
 }
 
-function SimulacaoReajusteAL() {
-  const [subsidio, setSubsidio] = useState("");
+type SimResult = {
+  ok: true;
+  salarioAtual: number;
+  novoSalario: number;
+  bruto: number;
+  descPrevidencia: number;
+  descIR: number;
+  descPensao: number;
+  aliquotaIRPct: number;
+  liquidoAumento: number;
+  liquidoBaseNovo: number; // novo líquido total (para margens)
+  margens: ReturnType<typeof calcMargens>;
+  credito: ReturnType<typeof estimarCredito>;
+} | { ok: false; reason: string };
+
+function calcularSimulacao(
+  salario: number,
+  descontos: Descontos,
+  pct: number,
+  orgao: OrgaoAL,
+): SimResult {
+  if (salario <= 0) return { ok: false, reason: "Informe o Salário Base na Calculadora Manual." };
+  if (pct <= 0) return { ok: false, reason: "Informe um percentual de reajuste maior que zero." };
+
+  const bruto = salario * pct;
+  const novoSalario = salario + bruto;
+
+  // Previdência: usa valor informado se existir; senão calcula progressivo atual.
+  const alprevInformado = num(descontos.alprev);
+  const prevAtual = alprevInformado > 0 ? alprevInformado : (calcPrevidenciaProgressiva(salario) ?? 0);
+  const prevNovo = calcPrevidenciaProgressiva(novoSalario) ?? 0;
+  const descPrevidencia = Math.max(0, prevNovo - prevAtual);
+
+  // Pensão: assumida proporcional ao salário (geralmente % do líquido/bruto).
+  const pensaoAtual = num(descontos.pensao);
+  const descPensao = pensaoAtual > 0 ? pensaoAtual * pct : 0;
+
+  // IR: incremental, considerando base = salário - previdência - pensão.
+  const irInformado = num(descontos.ir);
+  const baseIRAtual = Math.max(0, salario - prevAtual - pensaoAtual);
+  const baseIRNova = Math.max(0, novoSalario - prevNovo - (pensaoAtual + descPensao));
+  const irCalcAtual = calcIRProgressivo(baseIRAtual) ?? 0;
+  const irCalcNovo = calcIRProgressivo(baseIRNova) ?? 0;
+  // Se o usuário informou IR, ancora no informado e aplica o delta progressivo.
+  const irAtualBase = irInformado > 0 ? irInformado : irCalcAtual;
+  const irNovoEstim = irAtualBase + Math.max(0, irCalcNovo - irCalcAtual);
+  const descIR = Math.max(0, irNovoEstim - irAtualBase);
+
+  const liquidoAumento = Math.max(0, bruto - descPrevidencia - descIR - descPensao);
+
+  // Novo líquido total = líquido atual (salário - todos descontos informados) + aumento líquido
+  const totalDescAtual = DESC_LABELS.reduce((s, d) => s + num(descontos[d.key]), 0);
+  const liquidoAtual = Math.max(0, salario - totalDescAtual);
+  const liquidoBaseNovo = liquidoAtual + liquidoAumento;
+
+  const margens = calcMargens(liquidoBaseNovo, orgao);
+  const credito = margens ? estimarCredito(margens) : null;
+  if (!margens || !credito) return { ok: false, reason: "Falha ao calcular margens/crédito." };
+
+  return {
+    ok: true,
+    salarioAtual: salario,
+    novoSalario,
+    bruto,
+    descPrevidencia,
+    descIR,
+    descPensao,
+    aliquotaIRPct: aliquotaIR(baseIRNova),
+    liquidoAumento,
+    liquidoBaseNovo,
+    margens,
+    credito,
+  };
+}
+
+function gerarTextoSimulacao(sim: Extract<SimResult, { ok: true }>, pct: number): string {
+  const pctTxt = (pct * 100).toFixed(pct * 100 % 1 === 0 ? 0 : 1);
+  return (
+`Com o reajuste salarial de ${pctTxt}%, o aumento líquido estimado é de ${brl(sim.liquidoAumento)}.
+
+Nova margem liberada aproximada:
+• ${brl(sim.margens!.principal)} de margem principal
+• ${brl(sim.margens!.cartaoBeneficio)} de cartão benefício
+• ${brl(sim.margens!.cartaoConsignado)} de cartão consignado
+
+Estimativa de crédito disponível:
+${brl(sim.credito!.total.min)} a ${brl(sim.credito!.total.max)} (média ${brl(sim.credito!.total.medio)}).
+
+* Valores simulados com base em estimativas médias do Estado de Alagoas.`
+  );
+}
+
+function SimulacaoReajusteAL({
+  salario, descontos,
+}: {
+  salario: string;
+  descontos: Descontos;
+}) {
   const [reajuste, setReajuste] = useState("6");
   const [orgao, setOrgao] = useState<OrgaoAL>("estado_al");
 
-  const sub = num(subsidio);
+  const sub = num(salario);
   const pct = num(reajuste) / 100;
-  const tocouAlgo = subsidio.trim() !== "" || reajuste.trim() !== "";
+  const preenchido = sub > 0;
 
-  const resultado = useMemo(() => simularReajuste(sub, pct, orgao), [sub, pct, orgao]);
+  const resultado = useMemo(
+    () => calcularSimulacao(sub, descontos, pct, orgao),
+    [sub, descontos, pct, orgao],
+  );
 
-  // Log de auditoria local (somente quando muda de estado válido)
   useMemo(() => {
-    if (!tocouAlgo) return;
+    if (!preenchido) return;
     registrarLog({
       at: new Date().toISOString(),
       subsidio: sub, percentual: pct, orgao,
-      liquido: resultado.ok ? resultado.liquido : undefined,
+      liquido: resultado.ok ? resultado.liquidoAumento : undefined,
       ok: resultado.ok,
     });
   }, [resultado.ok, sub, pct, orgao]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -326,39 +424,71 @@ function SimulacaoReajusteAL() {
   const copiar = async () => {
     if (!resultado.ok) return;
     try {
-      await navigator.clipboard.writeText(gerarTextoWhatsapp(resultado));
+      await navigator.clipboard.writeText(gerarTextoSimulacao(resultado, pct));
       toast.success("Simulação copiada", { description: "Texto pronto para enviar no WhatsApp." });
     } catch {
       toast.error("Não foi possível copiar");
     }
   };
 
-  const limpar = () => { setSubsidio(""); setReajuste("6"); setOrgao("estado_al"); };
-
   const orgaoMeta = ORGAOS_AL.find((o) => o.value === orgao);
   const faixaAlta = sub > 25000;
-  const altaMargem = resultado.ok && resultado.margens.total > 300;
+  const altaMargem = resultado.ok && (resultado.margens?.total ?? 0) > 300;
+
+  if (!preenchido) {
+    return (
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertTitle>Preencha a Calculadora Manual primeiro</AlertTitle>
+        <AlertDescription>
+          A simulação de reajuste usa o <strong>Salário Base</strong> e os <strong>descontos compulsórios</strong>{" "}
+          (AL Previdência, Pensão, IR e demais) informados na aba <strong>Calculadora Manual</strong>.
+          Volte lá, preencha os dados do servidor e retorne para simular o reajuste.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Entrada */}
+      {/* Resumo do que veio da Calculadora Manual */}
+      <Card className="rounded-3xl border-primary/20 bg-primary/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Info className="h-4 w-4 text-primary" /> Base usada da Calculadora Manual
+          </CardTitle>
+          <CardDescription>Edite os valores na aba “Calculadora Manual” para atualizar.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+          <div className="rounded-xl bg-background/60 p-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Salário base</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums">{brl(sub)}</p>
+          </div>
+          <div className="rounded-xl bg-background/60 p-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">AL Previdência</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums">{brl(num(descontos.alprev))}</p>
+          </div>
+          <div className="rounded-xl bg-background/60 p-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Pensão</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums">{brl(num(descontos.pensao))}</p>
+          </div>
+          <div className="rounded-xl bg-background/60 p-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">IR</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums">{brl(num(descontos.ir))}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Entrada — apenas % e órgão */}
       <Card className="rounded-3xl border-border/60 bg-gradient-to-br from-background to-muted/30 shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" />
-            Dados do Servidor
+            Parâmetros do Reajuste
           </CardTitle>
           <CardDescription>Cálculo em tempo real — estimativa, não valor exato.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <div>
-            <Label htmlFor="r-sub">Subsídio atual (R$) *</Label>
-            <Input id="r-sub" type="number" step="0.01" min="0" max="200000" inputMode="decimal"
-              placeholder="10.000,00" value={subsidio}
-              onChange={(e) => setSubsidio(e.target.value)}
-              className="mt-1 h-11 text-base" />
-            {sub > 0 && <p className="mt-1 text-xs text-muted-foreground">{brl(sub)}</p>}
-          </div>
+        <CardContent className="grid gap-4 md:grid-cols-2">
           <div>
             <Label htmlFor="r-pct">Percentual de reajuste (%)</Label>
             <Input id="r-pct" type="number" step="0.01" min="0" max="100" inputMode="decimal"
@@ -386,27 +516,14 @@ function SimulacaoReajusteAL() {
         </CardContent>
       </Card>
 
-      {!tocouAlgo ? (
-        <Alert>
-          <Sparkles className="h-4 w-4" />
-          <AlertTitle>Aguardando dados</AlertTitle>
-          <AlertDescription>
-            Informe o subsídio atual e o percentual de reajuste para iniciar a simulação.
-          </AlertDescription>
-        </Alert>
-      ) : !resultado.ok ? (
+      {!resultado.ok ? (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Não foi possível calcular</AlertTitle>
-          <AlertDescription>
-            <ul className="list-disc pl-4">
-              {resultado.errors.map((e, i) => <li key={i}>{e.message}</li>)}
-            </ul>
-          </AlertDescription>
+          <AlertDescription>{resultado.reason}</AlertDescription>
         </Alert>
       ) : (
         <>
-          {/* Badges de alerta */}
           <div className="flex flex-wrap gap-2">
             {faixaAlta && (
               <Badge variant="secondary" className="rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
@@ -423,20 +540,18 @@ function SimulacaoReajusteAL() {
             </Badge>
           </div>
 
-          {/* Cards de resumo */}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard icon={Wallet} label="Novo subsídio" value={brl(resultado.novoSubsidio)} />
+            <StatCard icon={Wallet} label="Novo salário" value={brl(resultado.novoSalario)} />
             <StatCard icon={TrendingUp} label="Aumento bruto" value={brl(resultado.bruto)} />
-            <StatCard icon={Banknote} label="Aumento líquido" value={brl(resultado.liquido)} accent big />
-            <StatCard icon={Sparkles} label="Crédito estimado (médio)" value={brl(resultado.credito.total.medio)} accent />
+            <StatCard icon={Banknote} label="Aumento líquido" value={brl(resultado.liquidoAumento)} accent big />
+            <StatCard icon={Sparkles} label="Crédito estimado (médio)" value={brl(resultado.credito!.total.medio)} accent />
           </div>
 
-          {/* Detalhes — descontos */}
           <div className="grid gap-4 md:grid-cols-2">
             <Card className="rounded-3xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Descontos sobre o aumento</CardTitle>
-                <CardDescription>Previdência progressiva incremental + IR progressivo.</CardDescription>
+                <CardDescription>Incrementais (apenas o que recai sobre o reajuste).</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -444,6 +559,12 @@ function SimulacaoReajusteAL() {
                     <span className="text-sm">AL Previdência (progressiva)</span>
                     <span className="font-semibold tabular-nums">{brl(resultado.descPrevidencia)}</span>
                   </div>
+                  {resultado.descPensao > 0 && (
+                    <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3">
+                      <span className="text-sm">Pensão (proporcional)</span>
+                      <span className="font-semibold tabular-nums">{brl(resultado.descPensao)}</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3">
                     <span className="text-sm">
                       Imposto de Renda{" "}
@@ -455,7 +576,7 @@ function SimulacaoReajusteAL() {
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-primary/30 bg-primary/10 p-3">
                     <span className="text-sm font-medium text-primary">Aumento líquido</span>
-                    <span className="font-bold tabular-nums text-primary">{brl(resultado.liquido)}</span>
+                    <span className="font-bold tabular-nums text-primary">{brl(resultado.liquidoAumento)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -464,36 +585,38 @@ function SimulacaoReajusteAL() {
             <Card className="rounded-3xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Nova margem liberada</CardTitle>
-                <CardDescription>Coeficientes médios AL aplicados ao líquido.</CardDescription>
+                <CardDescription>
+                  Aplicada sobre o novo líquido total ({brl(resultado.liquidoBaseNovo)}).
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <MargemRow icon={Wallet} label="Margem principal" pct="40%"
-                    margem={resultado.margens.principal}
-                    creditoMin={resultado.credito.principal.min}
-                    creditoMax={resultado.credito.principal.max} />
+                  <MargemRow icon={Wallet} label="Margem principal" pct="45%"
+                    margem={resultado.margens!.principal}
+                    creditoMin={resultado.credito!.principal.min}
+                    creditoMax={resultado.credito!.principal.max} />
                   <MargemRow icon={Gift} label="Cartão benefício" pct="15%"
-                    margem={resultado.margens.cartaoBeneficio}
-                    creditoMin={resultado.credito.cartaoBeneficio.min}
-                    creditoMax={resultado.credito.cartaoBeneficio.max} />
+                    margem={resultado.margens!.cartaoBeneficio}
+                    creditoMin={resultado.credito!.cartaoBeneficio.min}
+                    creditoMax={resultado.credito!.cartaoBeneficio.max} />
                   <MargemRow icon={CreditCard} label="Cartão consignado" pct="10%"
-                    margem={resultado.margens.cartaoConsignado}
-                    creditoMin={resultado.credito.cartaoConsignado.min}
-                    creditoMax={resultado.credito.cartaoConsignado.max} />
+                    margem={resultado.margens!.cartaoConsignado}
+                    creditoMin={resultado.credito!.cartaoConsignado.min}
+                    creditoMax={resultado.credito!.cartaoConsignado.max} />
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {resultado.liquido > 0 && (
+          {resultado.liquidoAumento > 0 && (
             <Alert className="border-primary/30 bg-primary/5">
               <Sparkles className="h-4 w-4 text-primary" />
               <AlertTitle>Oportunidade detectada</AlertTitle>
               <AlertDescription>
                 Servidor terá provável liberação de margem após reajuste — estimativa de{" "}
-                <strong className="text-primary">{brl(resultado.credito.total.min)}</strong> a{" "}
-                <strong className="text-primary">{brl(resultado.credito.total.max)}</strong> em crédito
-                (média {brl(resultado.credito.total.medio)}).
+                <strong className="text-primary">{brl(resultado.credito!.total.min)}</strong> a{" "}
+                <strong className="text-primary">{brl(resultado.credito!.total.max)}</strong> em crédito
+                (média {brl(resultado.credito!.total.medio)}).
               </AlertDescription>
             </Alert>
           )}
@@ -502,16 +625,13 @@ function SimulacaoReajusteAL() {
             <ShieldAlert className="h-4 w-4" />
             <AlertTitle className="text-sm">Aviso</AlertTitle>
             <AlertDescription className="text-xs">
-              Valores simulados com base em estimativas médias do Estado de Alagoas. Cada órgão possui
-              gratificações, verbas indenizatórias e descontos próprios (pensão, sindicato, plano, judicial)
-              que podem alterar a margem real. Os multiplicadores de crédito variam por banco, idade, prazo e taxa.
+              Valores simulados com base em estimativas médias do Estado de Alagoas e nos descontos informados.
+              Verbas indenizatórias, gratificações variáveis e descontos não informados podem alterar a margem real.
+              Os multiplicadores de crédito variam por banco, idade, prazo e taxa.
             </AlertDescription>
           </Alert>
 
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <Button variant="ghost" onClick={limpar}>
-              <RefreshCw className="h-4 w-4" /> Limpar
-            </Button>
             <Button onClick={copiar}>
               <Copy className="h-4 w-4" /> Copiar simulação
             </Button>
@@ -521,6 +641,7 @@ function SimulacaoReajusteAL() {
     </div>
   );
 }
+
 
 function MargemRow({
   icon: Icon, label, pct, margem, creditoMin, creditoMax,
