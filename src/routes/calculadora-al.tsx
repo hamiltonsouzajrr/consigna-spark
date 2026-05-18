@@ -565,32 +565,47 @@ function SimulacaoReajusteAL({
           <div className="grid gap-4 md:grid-cols-2">
             <Card className="rounded-3xl">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Descontos sobre o aumento</CardTitle>
-                <CardDescription>Incrementais (apenas o que recai sobre o reajuste).</CardDescription>
+                <CardTitle className="text-base">Descontos compulsórios sobre o aumento bruto</CardTitle>
+                <CardDescription>
+                  Aplicados diretamente sobre {brl(resultado.bruto)} (aumento bruto).
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3">
-                    <span className="text-sm">AL Previdência (progressiva)</span>
-                    <span className="font-semibold tabular-nums">{brl(resultado.descPrevidencia)}</span>
+                    <span className="text-sm">
+                      AL Previdência{" "}
+                      <span className="text-xs text-muted-foreground">
+                        ({(resultado.pctPrevidencia * 100).toFixed(1)}%)
+                      </span>
+                    </span>
+                    <span className="font-semibold tabular-nums">− {brl(resultado.descPrevidencia)}</span>
                   </div>
                   {resultado.descPensao > 0 && (
                     <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3">
                       <span className="text-sm">Pensão (proporcional)</span>
-                      <span className="font-semibold tabular-nums">{brl(resultado.descPensao)}</span>
+                      <span className="font-semibold tabular-nums">− {brl(resultado.descPensao)}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3">
                     <span className="text-sm">
                       Imposto de Renda{" "}
                       <span className="text-xs text-muted-foreground">
-                        ({resultado.aliquotaIRPct === 0 ? "isento" : `marginal ${(resultado.aliquotaIRPct * 100).toFixed(1)}%`})
+                        ({resultado.pctIR === 0 ? "isento" : `${(resultado.pctIR * 100).toFixed(1)}%`})
                       </span>
                     </span>
-                    <span className="font-semibold tabular-nums">{brl(resultado.descIR)}</span>
+                    <span className="font-semibold tabular-nums">− {brl(resultado.descIR)}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-destructive/10 p-3">
+                    <span className="text-sm font-medium">
+                      Total de descontos ({(resultado.pctTotal * 100).toFixed(1)}%)
+                    </span>
+                    <span className="font-bold tabular-nums text-destructive">
+                      − {brl(resultado.totalDescontos)}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-primary/30 bg-primary/10 p-3">
-                    <span className="text-sm font-medium text-primary">Aumento líquido</span>
+                    <span className="text-sm font-medium text-primary">Aumento líquido disponível</span>
                     <span className="font-bold tabular-nums text-primary">{brl(resultado.liquidoAumento)}</span>
                   </div>
                 </div>
@@ -601,7 +616,7 @@ function SimulacaoReajusteAL({
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Nova margem liberada</CardTitle>
                 <CardDescription>
-                  Aplicada sobre o novo líquido total ({brl(resultado.liquidoBaseNovo)}).
+                  Calculada sobre o aumento líquido ({brl(resultado.liquidoAumento)}).
                 </CardDescription>
               </CardHeader>
               <CardContent>
