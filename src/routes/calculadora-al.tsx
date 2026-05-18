@@ -11,11 +11,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calculator, RefreshCw, AlertTriangle, TrendingUp, Sparkles, Copy, Wallet, CreditCard, Gift, Banknote } from "lucide-react";
+import { Calculator, RefreshCw, AlertTriangle, TrendingUp, Sparkles, Copy, Wallet, CreditCard, Gift, Banknote, Info, ShieldAlert } from "lucide-react";
 import {
-  ORGAOS_AL, simularReajuste, brl, gerarTextoWhatsapp,
+  ORGAOS_AL, simularReajuste, brl, gerarTextoWhatsapp, registrarLog,
   type OrgaoAL,
-} from "@/lib/reajuste-al";
+} from "@/lib/al";
 
 export const Route = createFileRoute("/calculadora-al")({
   head: () => ({
