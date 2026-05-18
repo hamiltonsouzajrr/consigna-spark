@@ -17,7 +17,7 @@ import {
   type OrgaoAL,
 } from "@/lib/al";
 import { calcPrevidenciaProgressiva } from "@/lib/al/previdencia";
-import { calcIRProgressivo, aliquotaIR } from "@/lib/al/imposto";
+import { aliquotaIR } from "@/lib/al/imposto";
 import { calcMargens } from "@/lib/al/margem";
 import { estimarCredito } from "@/lib/al/credito";
 
