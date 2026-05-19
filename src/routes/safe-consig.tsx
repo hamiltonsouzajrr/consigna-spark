@@ -348,34 +348,8 @@ function SafeConsigPage() {
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                 {busy ? "Consultando…" : "Consultar SafeConsig"}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="gap-2"
-                onClick={async () => {
-                  const digits = normalizeCpf(cpf);
-                  if (digits) {
-                    try {
-                      await navigator.clipboard.writeText(digits);
-                      toast.success("CPF copiado", {
-                        description: "Cole no campo da SafeConsig que será aberta.",
-                      });
-                    } catch {
-                      // ignore clipboard errors
-                    }
-                  }
-                  window.open(SAFECONSIG_URL, "_blank", "noopener,noreferrer");
-                }}
-              >
-                <ExternalLink className="h-4 w-4" />
-                Verificar manualmente
-              </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              <Copy className="inline h-3 w-3 mr-1 align-text-bottom" />
-              A opção manual copia o CPF e abre a SafeConsig em nova aba, para você resolver o
-              captcha e concluir a verificação caso a consulta automática falhe.
-            </p>
+
           </form>
         </Card>
 
