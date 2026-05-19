@@ -41,11 +41,11 @@ const STATUS_META: Record<
   }
 > = {
   enviado: {
-    label: "Cadastro ativo com e-mail — apto a consignar",
-    tone: "success",
-    Icon: ShieldCheck,
+    label: "Acesso já criado — recuperar senha via WhatsApp",
+    tone: "warning",
+    Icon: ShieldAlert,
     hint:
-      "A SafeConsig enviou o e-mail de redefinição, confirmando que o servidor POSSUI cadastro ativo no portal COM e-mail válido. Apto a operar consignado — boa probabilidade de margem disponível.",
+      "O servidor já possui acesso criado na SafeConsig (e-mail cadastrado) e o portal disparou o e-mail de recuperação. Para o fluxo de margem, oriente o servidor a recuperar a senha pelo WhatsApp 0800 000 1528 em vez de usar o e-mail.",
   },
   sem_email: {
     label: "Cadastrado sem e-mail — apto, atenção no contato",
