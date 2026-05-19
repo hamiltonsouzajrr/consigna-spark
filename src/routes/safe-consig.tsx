@@ -189,6 +189,120 @@ function SafeConsigPage() {
   const meta = result ? STATUS_META[result.status] : null;
   const Icon = meta?.Icon;
 
+  // ---------- Batch ----------
+  const [batchInput, setBatchInput] = useState("");
+  const [batchRows, setBatchRows] = useState<BatchRow[]>([]);
+  const [batchRunning, setBatchRunning] = useState(false);
+  const [batchIndex, setBatchIndex] = useState(0);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const parsedPreview = useMemo(() => parseCpfList(batchInput), [batchInput]);
+
+  const runBatch = async () => {
+    const list = parseCpfList(batchInput);
+    if (list.length === 0) {
+      toast.error("Cole ao menos um CPF válido");
+      return;
+    }
+    const initial: BatchRow[] = list.map((it, i) => ({
+      n: i + 1,
+      cpf: it.cpf,
+      raw: it.raw,
+      status: "pendente",
+      message: "",
+    }));
+    setBatchRows(initial);
+    setBatchIndex(0);
+    setBatchRunning(true);
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    try {
+      for (let i = 0; i < list.length; i++) {
+        if (ctrl.signal.aborted) break;
+        setBatchIndex(i + 1);
+        setBatchRows((prev) =>
+          prev.map((r, idx) => (idx === i ? { ...r, status: "processando" } : r))
+        );
+        try {
+          const r = await consultar({ data: { cpf: list[i].cpf } });
+          setBatchRows((prev) =>
+            prev.map((row, idx) =>
+              idx === i ? { ...row, status: r.status, message: r.message } : row
+            )
+          );
+        } catch (err) {
+          setBatchRows((prev) =>
+            prev.map((row, idx) =>
+              idx === i
+                ? {
+                    ...row,
+                    status: "erro",
+                    message: err instanceof Error ? err.message : "Erro inesperado.",
+                  }
+                : row
+            )
+          );
+        }
+        if (i < list.length - 1 && !ctrl.signal.aborted) {
+          try {
+            await sleep(BATCH_DELAY_MS, ctrl.signal);
+          } catch {
+            break;
+          }
+        }
+      }
+    } finally {
+      setBatchRunning(false);
+      abortRef.current = null;
+    }
+  };
+
+  const stopBatch = () => {
+    abortRef.current?.abort();
+    setBatchRunning(false);
+    setBatchRows((prev) =>
+      prev.map((r) =>
+        r.status === "pendente" || r.status === "processando"
+          ? { ...r, status: "erro", message: r.message || "Cancelado pelo usuário." }
+          : r
+      )
+    );
+  };
+
+  const summary = useMemo(() => {
+    const s = { aptos: 0, comAcesso: 0, naoCadastrado: 0, erros: 0, outros: 0 };
+    for (const r of batchRows) {
+      if (r.status === "sem_email") s.aptos++;
+      else if (r.status === "enviado") s.comAcesso++;
+      else if (r.status === "nao_cadastrado") s.naoCadastrado++;
+      else if (r.status === "erro") s.erros++;
+      else if (r.status === "desconhecido") s.outros++;
+    }
+    return s;
+  }, [batchRows]);
+
+  const exportCsv = () => {
+    if (batchRows.length === 0) return;
+    const esc = (v: string) => `"${v.replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
+    const header = ["n", "cpf", "status", "mensagem"].join(",");
+    const lines = batchRows.map((r) =>
+      [r.n, esc(formatCpf(r.cpf)), esc(r.status), esc(r.message || "")].join(",")
+    );
+    const csv = [header, ...lines].join("\n");
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `safeconsig-lote-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const batchTotal = batchRows.length;
+  const progressPct = batchTotal > 0 ? Math.round((batchIndex / batchTotal) * 100) : 0;
+
   return (
     <AppShell>
       <div className="mx-auto max-w-4xl space-y-6">
