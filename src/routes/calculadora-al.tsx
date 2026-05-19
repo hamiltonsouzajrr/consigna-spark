@@ -24,10 +24,10 @@ import { estimarCredito } from "@/lib/al/credito";
 export const Route = createFileRoute("/calculadora-al")({
   head: () => ({
     meta: [
-      { title: "Calculadora de Margem Consignável — Alagoas" },
-      { name: "description", content: "Calculadora manual de margem consignável e simulação de reajuste para servidores de Alagoas." },
-      { property: "og:title", content: "Calculadora de Margem Consignável — Alagoas" },
-      { property: "og:description", content: "Calculadora manual de margem consignável e simulação de reajuste para servidores de Alagoas." },
+      { title: "Calculadora de Margem Consignável — ARACAJU" },
+      { name: "description", content: "Calculadora manual de margem consignável e simulação de reajuste para servidores de ARACAJU." },
+      { property: "og:title", content: "Calculadora de Margem Consignável — ARACAJU" },
+      { property: "og:description", content: "Calculadora manual de margem consignável e simulação de reajuste para servidores de ARACAJU." },
       { property: "og:url", content: "https://consigna-spark.lovable.app/calculadora-al" },
     ],
     links: [{ rel: "canonical", href: "https://consigna-spark.lovable.app/calculadora-al" }],
@@ -405,7 +405,7 @@ Nova margem liberada aproximada:
 Estimativa de crédito disponível:
 ${brl(sim.credito!.total.min)} a ${brl(sim.credito!.total.max)} (média ${brl(sim.credito!.total.medio)}).
 
-* Valores simulados com base em estimativas médias do Estado de Alagoas.`
+* Valores simulados com base em estimativas médias do Estado de ARACAJU.`
   );
 }
 

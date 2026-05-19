@@ -63,7 +63,7 @@ export const Route = createFileRoute("/safe-consig")({
       {
         name: "description",
         content:
-          "Consulta o cadastro de um servidor no portal SafeConsig (Alagoas) a partir do CPF.",
+          "Consulta o cadastro de um servidor no portal SafeConsig (ARACAJU) a partir do CPF.",
       },
     ],
   }),
@@ -100,7 +100,7 @@ const STATUS_META: Record<
     tone: "destructive",
     Icon: ShieldAlert,
     hint:
-      "CPF não encontrado na SafeConsig. Sem cadastro no portal, o servidor NÃO pode operar consignado em Alagoas — não há margem disponível por esta via.",
+      "CPF não encontrado na SafeConsig. Sem cadastro no portal, o servidor NÃO pode operar consignado em ARACAJU — não há margem disponível por esta via.",
   },
   desconhecido: {
     label: "Resposta inesperada",

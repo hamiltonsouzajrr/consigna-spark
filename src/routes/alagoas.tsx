@@ -11,10 +11,10 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 export const Route = createFileRoute("/alagoas")({
   head: () => ({
     meta: [
-      { title: "Governo de Alagoas — Simulação de Consignado" },
-      { name: "description", content: "Simulação premium de produtos consignados (empréstimo, cartão de crédito e benefício) para servidores do Governo de Alagoas." },
-      { property: "og:title", content: "Governo de Alagoas — Simulação de Consignado" },
-      { property: "og:description", content: "Simulação premium de produtos consignados (empréstimo, cartão de crédito e benefício) para servidores do Governo de Alagoas." },
+      { title: "Governo de ARACAJU — Simulação de Consignado" },
+      { name: "description", content: "Simulação premium de produtos consignados (empréstimo, cartão de crédito e benefício) para servidores do Governo de ARACAJU." },
+      { property: "og:title", content: "Governo de ARACAJU — Simulação de Consignado" },
+      { property: "og:description", content: "Simulação premium de produtos consignados (empréstimo, cartão de crédito e benefício) para servidores do Governo de ARACAJU." },
       { property: "og:url", content: "https://consigna-spark.lovable.app/alagoas" },
     ],
     links: [{ rel: "canonical", href: "https://consigna-spark.lovable.app/alagoas" }],
@@ -24,10 +24,10 @@ export const Route = createFileRoute("/alagoas")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebApplication",
-          name: "Simulador de Consignado — Governo de Alagoas",
+          name: "Simulador de Consignado — Governo de ARACAJU",
           url: "https://consigna-spark.lovable.app/alagoas",
           applicationCategory: "FinanceApplication",
-          description: "Simulação de produtos consignados para servidores do Governo de Alagoas: empréstimo, cartão de crédito e cartão benefício.",
+          description: "Simulação de produtos consignados para servidores do Governo de ARACAJU: empréstimo, cartão de crédito e cartão benefício.",
           offers: { "@type": "Offer", price: "0", priceCurrency: "BRL" },
         }),
       },
@@ -180,7 +180,7 @@ function ProdutoCard({ p }: { p: Produto }) {
 // usando prazo de extrato de cada convenente (Estado 47d, Maceió 38d).
 const CAIXA_TABELA: Record<string, { label: string; coefs: Record<number, number> }> = {
   estado: {
-    label: "Governo de Alagoas (Estado)",
+    label: "Governo de ARACAJU (Estado)",
     coefs: { 24: 0.054160, 36: 0.039709, 48: 0.032637, 60: 0.028514, 72: 0.025861, 84: 0.024044, 96: 0.022746, 108: 0.021791, 120: 0.021072, 132: 0.020523, 144: 0.020097 },
   },
   maceio: {
@@ -275,7 +275,7 @@ function AlagoasPage() {
       <div className="space-y-8">
         <div className="text-center">
           <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-primary">
-            <Sparkles className="h-3 w-3" /> Governo de Alagoas
+            <Sparkles className="h-3 w-3" /> Governo de ARACAJU
           </p>
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
             Simulação <span className="text-gradient">Consignada</span>
