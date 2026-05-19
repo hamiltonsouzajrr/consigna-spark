@@ -388,9 +388,6 @@ function SafeConsigPage() {
             </AlertTitle>
             <AlertDescription className="space-y-2">
               <p className="text-sm">{meta.hint}</p>
-              <div className={toneClasses.box}>
-                {result.message}
-              </div>
               {result.raw && (
                 <details className="text-xs">
                   <summary className="cursor-pointer text-muted-foreground">
