@@ -9,16 +9,36 @@ import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
 import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
 import type { ReactNode } from "react";
 
-const nav = [
-  { to: "/alagoas", label: "Simulação Alagoas", icon: Calculator },
-  { to: "/calculadora-al", label: "Calculadora AL", icon: Calculator },
-  { to: "/safe-consig", label: "Verificar SafeConsig", icon: ShieldCheck },
-  { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: TrendingUp, badge: true },
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/upload", label: "Importar", icon: Upload },
-  { to: "/consultas", label: "Consultas", icon: List },
-  { to: "/limpeza", label: "Limpeza", icon: Trash2 },
+type NavItem = { to: string; label: string; icon: typeof Calculator; badge?: boolean };
+type NavSection = { section: string; items: NavItem[] };
+
+const navSections: NavSection[] = [
+  {
+    section: "Simulação",
+    items: [
+      { to: "/alagoas", label: "Simulação Alagoas", icon: Calculator },
+      { to: "/calculadora-al", label: "Calculadora AL", icon: Calculator },
+    ],
+  },
+  {
+    section: "Prospecção",
+    items: [
+      { to: "/safe-consig", label: "Verificar SafeConsig", icon: ShieldCheck },
+      { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: TrendingUp, badge: true },
+    ],
+  },
+  {
+    section: "Processamento",
+    items: [
+      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/upload", label: "Importar", icon: Upload },
+      { to: "/consultas", label: "Consultas", icon: List },
+      { to: "/limpeza", label: "Limpeza", icon: Trash2 },
+    ],
+  },
 ];
+
+const nav: NavItem[] = navSections.flatMap((s) => s.items);
 
 function useLeadsCount(enabled: boolean) {
   const [count, setCount] = useState<number | null>(null);
