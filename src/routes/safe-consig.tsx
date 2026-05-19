@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, ShieldAlert, ShieldQuestion, Loader2, Search } from "lucide-react";
+import { ShieldCheck, ShieldAlert, ShieldQuestion, Loader2, Search, ExternalLink, Copy } from "lucide-react";
 import { consultarSafeConsig } from "@/lib/safeconsig.functions";
 import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
 import { toast } from "sonner";
+
+const SAFECONSIG_URL = "https://alagoas.safeconsig.com.br/safe/login";
 
 export const Route = createFileRoute("/safe-consig")({
   head: () => ({
@@ -127,10 +129,39 @@ function SafeConsigPage() {
                 autoFocus
               />
             </div>
-            <Button type="submit" disabled={busy} className="w-full sm:w-auto gap-2">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-              {busy ? "Consultando…" : "Consultar SafeConsig"}
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button type="submit" disabled={busy} className="gap-2">
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                {busy ? "Consultando…" : "Consultar SafeConsig"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="gap-2"
+                onClick={async () => {
+                  const digits = normalizeCpf(cpf);
+                  if (digits) {
+                    try {
+                      await navigator.clipboard.writeText(digits);
+                      toast.success("CPF copiado", {
+                        description: "Cole no campo da SafeConsig que será aberta.",
+                      });
+                    } catch {
+                      // ignore clipboard errors
+                    }
+                  }
+                  window.open(SAFECONSIG_URL, "_blank", "noopener,noreferrer");
+                }}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Verificar manualmente
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              <Copy className="inline h-3 w-3 mr-1 align-text-bottom" />
+              A opção manual copia o CPF e abre a SafeConsig em nova aba, para você resolver o
+              captcha e concluir a verificação caso a consulta automática falhe.
+            </p>
           </form>
         </Card>
 
