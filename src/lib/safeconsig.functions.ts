@@ -286,7 +286,7 @@ async function attemptConsulta(cpf: string, ua: string, userId: string): Promise
       await supabaseAdmin
         .from("safeconsig_leads")
         .upsert(
-          { cpf, status, mensagem: message, consultado_em: new Date().toISOString() },
+          { cpf, status, mensagem: message, consultado_em: new Date().toISOString(), consultado_por: userId },
           { onConflict: "cpf" },
         );
     } catch (e) {
