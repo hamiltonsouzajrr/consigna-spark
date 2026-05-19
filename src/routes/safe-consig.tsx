@@ -432,6 +432,7 @@ function SafeConsigPage() {
           );
         })()}
 
+{isAdmin && (
         <Card className="p-6 space-y-4">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
