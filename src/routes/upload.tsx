@@ -165,6 +165,32 @@ function Page() {
         </label>
       </Card>
 
+      <div className="mt-4 rounded-lg border bg-muted/30 p-4">
+        <p className="text-sm font-medium">Formato esperado</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Colunas obrigatórias: <span className="font-mono">CPF</span> · <span className="font-mono">Nome</span> · <span className="font-mono">Matricula</span> · <span className="font-mono">Orgao</span>
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-3"
+          onClick={() => {
+            const csv = "CPF,Nome,Matricula,Orgao\n12345678901,JOAO SILVA,12345,Prefeitura de Maceio\n";
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "exemplo-importacao.csv";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }}
+        >
+          Baixar CSV de exemplo
+        </Button>
+      </div>
+
       {(valid.length > 0 || invalid.length > 0 || alreadyImported > 0) && (
         <div className="mt-4 flex flex-wrap gap-2">
           <Badge variant="outline" className="bg-success/15 text-success border-success/30">{valid.length} novos</Badge>
