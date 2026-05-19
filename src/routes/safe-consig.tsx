@@ -126,15 +126,15 @@ function SafeConsigPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const digits = normalizeCpf(cpf);
-    if (!isValidCpf(digits)) {
-      toast.error("CPF inválido");
+    const padded = padCpf(cpf);
+    if (padded.length !== 11) {
+      toast.error("Informe até 11 dígitos numéricos");
       return;
     }
     setBusy(true);
     setResult(null);
     try {
-      const r = await consultar({ data: { cpf: digits } });
+      const r = await consultar({ data: { cpf: padded } });
       setResult(r);
     } catch (err) {
       setResult({
