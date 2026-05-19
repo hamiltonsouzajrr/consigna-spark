@@ -8,8 +8,12 @@ const MAX_HOPS = 6;
 const inputSchema = z.object({
   cpf: z
     .string()
-    .transform((v) => v.replace(/\D/g, ""))
-    .pipe(z.string().regex(/^\d{11}$/, "CPF deve conter 11 dígitos")),
+    .transform((v) => {
+      const digits = String(v ?? "").replace(/\D/g, "");
+      if (digits.length === 0 || digits.length > 11) return digits;
+      return digits.padStart(11, "0");
+    })
+    .pipe(z.string().regex(/^\d{11}$/, "CPF deve conter até 11 dígitos numéricos")),
 });
 
 type SafeConsigResult = {
