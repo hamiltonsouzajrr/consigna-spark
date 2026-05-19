@@ -9,7 +9,7 @@ export type CoefMargem = {
 };
 
 export const COEF_MARGEM_AL_PADRAO: CoefMargem = {
-  principal: 0.40,
+  principal: 0.45,
   cartaoBeneficio: 0.15,
   cartaoConsignado: 0.10,
 };
