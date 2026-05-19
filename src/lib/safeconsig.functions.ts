@@ -283,14 +283,18 @@ async function attemptConsulta(cpf: string, ua: string, userId: string): Promise
   // Persistir leads "sem_email" (alta chance de margem) para a aba pública
   if (status === "sem_email") {
     try {
-      await supabaseAdmin
+      console.log("[SafeConsig] upsert lead sem_email", { cpf });
+      const { error: upsertError } = await supabaseAdmin
         .from("safeconsig_leads")
         .upsert(
           { cpf, status, mensagem: message, consultado_em: new Date().toISOString(), consultado_por: userId },
           { onConflict: "cpf" },
         );
+      if (upsertError) {
+        console.error("[SafeConsig] upsert error", { msg: String(upsertError.message ?? upsertError) });
+      }
     } catch (e) {
-      console.error("[safeconsig] upsert lead failed", e);
+      console.error("[SafeConsig] upsert exception", { msg: e instanceof Error ? e.message : String(e) });
     }
   }
 
