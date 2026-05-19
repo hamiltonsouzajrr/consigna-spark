@@ -35,24 +35,24 @@ const STATUS_META: Record<
   Result["status"],
   {
     label: string;
-    tone: "default" | "destructive" | "secondary" | "success";
+    tone: "default" | "destructive" | "secondary" | "success" | "warning";
     Icon: typeof ShieldCheck;
     hint: string;
   }
 > = {
   enviado: {
-    label: "Cadastro ativo — apto a consignar",
+    label: "Cadastro ativo com e-mail — apto a consignar",
     tone: "success",
     Icon: ShieldCheck,
     hint:
-      "A SafeConsig enviou o e-mail de redefinição, confirmando que o servidor POSSUI cadastro ativo no portal e está apto a operar consignado. Boa probabilidade de haver margem disponível.",
+      "A SafeConsig enviou o e-mail de redefinição, confirmando que o servidor POSSUI cadastro ativo no portal COM e-mail válido. Apto a operar consignado — boa probabilidade de margem disponível.",
   },
   sem_email: {
-    label: "Cadastrado sem e-mail — apto a consignar",
-    tone: "success",
-    Icon: ShieldCheck,
+    label: "Cadastrado sem e-mail — apto, atenção no contato",
+    tone: "warning",
+    Icon: ShieldQuestion,
     hint:
-      "O CPF está cadastrado na SafeConsig, porém sem e-mail registrado. O servidor está no sistema e apto a operar consignado — há probabilidade de margem disponível.",
+      "O CPF está cadastrado na SafeConsig, porém SEM e-mail registrado. O servidor está no sistema e apto a operar consignado, mas o contato pelo portal fica limitado — atenção ao validar dados.",
   },
   nao_cadastrado: {
     label: "Não cadastrado — sem margem consignável",
