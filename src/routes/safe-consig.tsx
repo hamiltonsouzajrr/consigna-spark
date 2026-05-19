@@ -33,7 +33,12 @@ type Result = Awaited<ReturnType<typeof consultarSafeConsig>>;
 
 const STATUS_META: Record<
   Result["status"],
-  { label: string; tone: "default" | "destructive" | "secondary"; Icon: typeof ShieldCheck; hint: string }
+  {
+    label: string;
+    tone: "default" | "destructive" | "secondary" | "success";
+    Icon: typeof ShieldCheck;
+    hint: string;
+  }
 > = {
   enviado: {
     label: "Cadastro encontrado",
@@ -42,17 +47,17 @@ const STATUS_META: Record<
     hint: "Servidor possui cadastro e e-mail válido. Reset de senha enviado.",
   },
   sem_email: {
-    label: "Cadastro sem e-mail",
-    tone: "destructive",
-    Icon: ShieldAlert,
+    label: "Provável margem disponível",
+    tone: "success",
+    Icon: ShieldCheck,
     hint:
-      "A SafeConsig não retornou e-mail para esse CPF. Pode significar que o servidor não tem cadastro OU que o cadastro está sem e-mail registrado.",
+      "A SafeConsig não retornou e-mail para esse CPF — forte indício de que o servidor NÃO possui cadastro ativo e, portanto, há alta probabilidade de margem disponível.",
   },
   nao_cadastrado: {
-    label: "Não cadastrado",
-    tone: "destructive",
-    Icon: ShieldAlert,
-    hint: "CPF não encontrado na SafeConsig.",
+    label: "Não cadastrado — alta chance de margem",
+    tone: "success",
+    Icon: ShieldCheck,
+    hint: "CPF não encontrado na SafeConsig. Alta probabilidade de haver margem disponível.",
   },
   desconhecido: {
     label: "Resposta inesperada",
