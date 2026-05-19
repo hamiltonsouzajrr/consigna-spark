@@ -565,6 +565,7 @@ function SafeConsigPage() {
             </>
           )}
         </Card>
+        )}
 
 
         <p className="text-xs text-muted-foreground">
