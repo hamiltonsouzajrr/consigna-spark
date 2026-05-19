@@ -283,14 +283,18 @@ async function attemptConsulta(cpf: string, ua: string, userId: string): Promise
   // Persistir leads "sem_email" (alta chance de margem) para a aba pública
   if (status === "sem_email") {
     try {
-      await supabaseAdmin
+      console.log("[SafeConsig] upsert lead sem_email", { cpf });
+      const { error: upsertError } = await supabaseAdmin
         .from("safeconsig_leads")
         .upsert(
           { cpf, status, mensagem: message, consultado_em: new Date().toISOString(), consultado_por: userId },
           { onConflict: "cpf" },
         );
+      if (upsertError) {
+        console.error("[SafeConsig] upsert error", { msg: String(upsertError.message ?? upsertError) });
+      }
     } catch (e) {
-      console.error("[safeconsig] upsert lead failed", e);
+      console.error("[SafeConsig] upsert exception", { msg: e instanceof Error ? e.message : String(e) });
     }
   }
 
@@ -303,51 +307,87 @@ async function attemptConsulta(cpf: string, ua: string, userId: string): Promise
 const RETRY_DELAY_MS = 4000;
 const MAX_ATTEMPTS = 3; // 1 inicial + 2 retries
 
+// Garantia de serialização: nunca retorna Response/Headers/Request/Error cru.
+function safeErrorMessage(e: unknown): string {
+  try {
+    if (e instanceof Response) {
+      return `HTTP ${e.status} ${e.statusText || ""}`.trim();
+    }
+    if (e instanceof Error) {
+      const cause = (e as Error & { cause?: unknown }).cause;
+      const causeMsg =
+        cause instanceof Response
+          ? `HTTP ${cause.status}`
+          : cause instanceof Error
+            ? cause.message
+            : cause
+              ? String(cause)
+              : "";
+      return causeMsg ? `${e.message} (causa: ${causeMsg})` : e.message;
+    }
+    if (typeof e === "string") return e;
+    return JSON.stringify(e);
+  } catch {
+    return "Erro desconhecido (não serializável)";
+  }
+}
+
 export const consultarSafeConsig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => inputSchema.parse(data))
   .handler(async ({ data, context }): Promise<SafeConsigResult> => {
-    const { cpf } = data;
-    const userId = context.userId;
-    let lastReason = "";
+    console.log("[SafeConsig] handler start", { cpf: data?.cpf });
+    try {
+      const { cpf } = data;
+      const userId = context.userId;
+      let lastReason = "";
 
-    for (let i = 0; i < MAX_ATTEMPTS; i++) {
-      const ua = UA_POOL[Math.floor(Math.random() * UA_POOL.length)];
-      try {
-        const out = await attemptConsulta(cpf, ua, userId);
-        if (out.kind === "ok") return out.result;
-        lastReason = out.reason;
-        console.warn(`[safeconsig] tentativa ${i + 1} falhou: ${out.reason}`);
-        if (i < MAX_ATTEMPTS - 1) {
-          await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+      for (let i = 0; i < MAX_ATTEMPTS; i++) {
+        const ua = UA_POOL[Math.floor(Math.random() * UA_POOL.length)];
+        console.log(`[SafeConsig] tentativa ${i + 1}/${MAX_ATTEMPTS}`, { cpf });
+        try {
+          const out = await attemptConsulta(cpf, ua, userId);
+          if (out.kind === "ok") {
+            console.log("[SafeConsig] tentativa ok", { status: out.result.status });
+            // Sanitiza para garantir que apenas campos plain saem.
+            return {
+              status: out.result.status,
+              message: String(out.result.message ?? ""),
+              raw: out.result.raw ? String(out.result.raw) : undefined,
+            };
+          }
+          lastReason = String(out.reason);
+          console.warn(`[SafeConsig] tentativa ${i + 1} falhou: ${out.reason}`);
+          if (i < MAX_ATTEMPTS - 1) {
+            await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+          }
+        } catch (e) {
+          const msg = safeErrorMessage(e);
+          console.error("[SafeConsig] fetch error", { attempt: i + 1, msg });
+          const isLoop = /redirect/i.test(msg);
+          lastReason = isLoop ? "loop de redirects" : msg || "erro desconhecido";
+          if (i < MAX_ATTEMPTS - 1) {
+            await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+            continue;
+          }
+          return {
+            status: "erro",
+            message: isLoop
+              ? "Não foi possível concluir a verificação automática (loop de redirects no portal)."
+              : msg || "Erro desconhecido",
+          };
         }
-      } catch (e) {
-        const err = e as Error & { cause?: unknown };
-        const cause =
-          err.cause instanceof Error ? err.cause.message : err.cause ? String(err.cause) : "";
-        console.error("[safeconsig] fetch error", {
-          attempt: i + 1,
-          message: err.message,
-          cause,
-        });
-        const isLoop = /redirect/i.test(err.message) || /redirect/i.test(cause);
-        lastReason = isLoop ? "loop de redirects" : err.message || "erro desconhecido";
-        if (i < MAX_ATTEMPTS - 1) {
-          await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
-          continue;
-        }
-        return {
-          status: "erro",
-          message: isLoop
-            ? "Não foi possível concluir a verificação automática (loop de redirects no portal). Use 'Verificar manualmente'."
-            : `${err.message || "Erro desconhecido"}${cause ? ` (causa: ${cause})` : ""}`,
-        };
       }
-    }
 
-    return {
-      status: "erro",
-      message: `Não foi possível concluir a consulta após ${MAX_ATTEMPTS} tentativas (${lastReason}). Use 'Verificar manualmente'.`,
-    };
+      return {
+        status: "erro",
+        message: `Não foi possível concluir a consulta após ${MAX_ATTEMPTS} tentativas (${lastReason}).`,
+      };
+    } catch (e) {
+      // Última linha de defesa: nada de Response/Error cru sai daqui.
+      const msg = safeErrorMessage(e);
+      console.error("[SafeConsig] handler fatal", { msg });
+      return { status: "erro", message: msg };
+    }
   });
 
