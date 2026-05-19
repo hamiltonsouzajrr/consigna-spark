@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2 } from "lucide-react";
+import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
@@ -9,6 +9,7 @@ import type { ReactNode } from "react";
 const nav = [
   { to: "/alagoas", label: "Alagoas — Simulação", icon: Calculator },
   { to: "/calculadora-al", label: "Calculadora de Margem — AL", icon: Calculator },
+  { to: "/safe-consig", label: "Verificar SafeConsig", icon: ShieldCheck },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/upload", label: "Importar", icon: Upload },
   { to: "/consultas", label: "Consultas", icon: List },

@@ -1,0 +1,172 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { AppShell } from "@/components/AppShell";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { ShieldCheck, ShieldAlert, ShieldQuestion, Loader2, Search } from "lucide-react";
+import { consultarSafeConsig } from "@/lib/safeconsig.functions";
+import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/safe-consig")({
+  head: () => ({
+    meta: [
+      { title: "Verificar cadastro SafeConsig — Grupo Positive" },
+      {
+        name: "description",
+        content:
+          "Consulta o cadastro de um servidor no portal SafeConsig (Alagoas) a partir do CPF.",
+      },
+    ],
+  }),
+  component: SafeConsigPage,
+});
+
+type Result = Awaited<ReturnType<typeof consultarSafeConsig>>;
+
+const STATUS_META: Record<
+  Result["status"],
+  { label: string; tone: "default" | "destructive" | "secondary"; Icon: typeof ShieldCheck; hint: string }
+> = {
+  enviado: {
+    label: "Cadastro encontrado",
+    tone: "default",
+    Icon: ShieldCheck,
+    hint: "Servidor possui cadastro e e-mail válido. Reset de senha enviado.",
+  },
+  sem_email: {
+    label: "Cadastro sem e-mail",
+    tone: "destructive",
+    Icon: ShieldAlert,
+    hint:
+      "A SafeConsig não retornou e-mail para esse CPF. Pode significar que o servidor não tem cadastro OU que o cadastro está sem e-mail registrado.",
+  },
+  nao_cadastrado: {
+    label: "Não cadastrado",
+    tone: "destructive",
+    Icon: ShieldAlert,
+    hint: "CPF não encontrado na SafeConsig.",
+  },
+  desconhecido: {
+    label: "Resposta inesperada",
+    tone: "secondary",
+    Icon: ShieldQuestion,
+    hint: "A SafeConsig respondeu, mas a mensagem não foi reconhecida. Confira abaixo.",
+  },
+  erro: {
+    label: "Falha na consulta",
+    tone: "destructive",
+    Icon: ShieldAlert,
+    hint: "Não foi possível concluir a consulta. Tente novamente em instantes.",
+  },
+};
+
+function SafeConsigPage() {
+  const consultar = useServerFn(consultarSafeConsig);
+  const [cpf, setCpf] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<Result | null>(null);
+
+  const handleChange = (v: string) => {
+    const digits = normalizeCpf(v).slice(0, 11);
+    setCpf(digits.length === 11 ? formatCpf(digits) : digits);
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const digits = normalizeCpf(cpf);
+    if (!isValidCpf(digits)) {
+      toast.error("CPF inválido");
+      return;
+    }
+    setBusy(true);
+    setResult(null);
+    try {
+      const r = await consultar({ data: { cpf: digits } });
+      setResult(r);
+    } catch (err) {
+      setResult({
+        status: "erro",
+        message: err instanceof Error ? err.message : "Erro inesperado.",
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const meta = result ? STATUS_META[result.status] : null;
+  const Icon = meta?.Icon;
+
+  return (
+    <AppShell>
+      <div className="mx-auto max-w-2xl space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Verificar cadastro — SafeConsig</h1>
+          <p className="text-sm text-muted-foreground">
+            Informe o CPF do servidor para verificar se possui cadastro no portal{" "}
+            <span className="font-medium">alagoas.safeconsig.com.br</span>.
+          </p>
+        </div>
+
+        <Card className="p-6">
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cpf">CPF do servidor</Label>
+              <Input
+                id="cpf"
+                inputMode="numeric"
+                placeholder="000.000.000-00"
+                value={cpf}
+                onChange={(e) => handleChange(e.target.value)}
+                maxLength={14}
+                autoFocus
+              />
+            </div>
+            <Button type="submit" disabled={busy} className="w-full sm:w-auto gap-2">
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              {busy ? "Consultando…" : "Consultar SafeConsig"}
+            </Button>
+          </form>
+        </Card>
+
+        {result && meta && Icon && (
+          <Alert variant={meta.tone === "destructive" ? "destructive" : "default"}>
+            <Icon className="h-4 w-4" />
+            <AlertTitle className="flex items-center gap-2">
+              {meta.label}
+              <Badge variant="outline" className="font-mono text-xs">
+                {result.status}
+              </Badge>
+            </AlertTitle>
+            <AlertDescription className="space-y-2">
+              <p className="text-sm">{meta.hint}</p>
+              <div className="rounded-md border bg-muted/40 p-3 text-sm whitespace-pre-wrap">
+                {result.message}
+              </div>
+              {result.raw && (
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-muted-foreground">
+                    Ver resposta bruta
+                  </summary>
+                  <pre className="mt-2 max-h-64 overflow-auto rounded bg-background p-2 text-[10px]">
+                    {result.raw}
+                  </pre>
+                </details>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <p className="text-xs text-muted-foreground">
+          Esta consulta utiliza o fluxo público "Esqueci Minha Senha" da SafeConsig. Caso a SafeConsig
+          ative uma proteção de captcha mais estrita, esta verificação poderá deixar de funcionar.
+        </p>
+      </div>
+    </AppShell>
+  );
+}

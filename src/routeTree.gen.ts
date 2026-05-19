@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SafeConsigRouteImport } from './routes/safe-consig'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LimpezaRouteImport } from './routes/limpeza'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -27,6 +28,11 @@ const UploadRoute = UploadRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SafeConsigRoute = SafeConsigRouteImport.update({
+  id: '/safe-consig',
+  path: '/safe-consig',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/limpeza': typeof LimpezaRoute
   '/login': typeof LoginRoute
+  '/safe-consig': typeof SafeConsigRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
 }
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/limpeza': typeof LimpezaRoute
   '/login': typeof LoginRoute
+  '/safe-consig': typeof SafeConsigRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
 }
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/limpeza': typeof LimpezaRoute
   '/login': typeof LoginRoute
+  '/safe-consig': typeof SafeConsigRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
 }
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/limpeza'
     | '/login'
+    | '/safe-consig'
     | '/sitemap.xml'
     | '/upload'
   fileRoutesByTo: FileRoutesByTo
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/limpeza'
     | '/login'
+    | '/safe-consig'
     | '/sitemap.xml'
     | '/upload'
   id:
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/limpeza'
     | '/login'
+    | '/safe-consig'
     | '/sitemap.xml'
     | '/upload'
   fileRoutesById: FileRoutesById
@@ -143,6 +155,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   LimpezaRoute: typeof LimpezaRoute
   LoginRoute: typeof LoginRoute
+  SafeConsigRoute: typeof SafeConsigRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadRoute: typeof UploadRoute
 }
@@ -161,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/safe-consig': {
+      id: '/safe-consig'
+      path: '/safe-consig'
+      fullPath: '/safe-consig'
+      preLoaderRoute: typeof SafeConsigRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -223,18 +243,10 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   LimpezaRoute: LimpezaRoute,
   LoginRoute: LoginRoute,
+  SafeConsigRoute: SafeConsigRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadRoute: UploadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
