@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+
 
 const BASE = "https://alagoas.safeconsig.com.br";
 const LOGIN_URL = `${BASE}/safe/login`;
