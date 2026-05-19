@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, ShieldAlert, ShieldQuestion, Loader2, Search } from "lucide-react";
+import { ShieldCheck, ShieldAlert, ShieldQuestion, Loader2, Search, ExternalLink, Copy } from "lucide-react";
 import { consultarSafeConsig } from "@/lib/safeconsig.functions";
 import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
 import { toast } from "sonner";
+
+const SAFECONSIG_URL = "https://alagoas.safeconsig.com.br/safe/login";
 
 export const Route = createFileRoute("/safe-consig")({
   head: () => ({
