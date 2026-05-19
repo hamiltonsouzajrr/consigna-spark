@@ -33,6 +33,9 @@ import {
 import { consultarSafeConsig } from "@/lib/safeconsig.functions";
 import { formatCpf, normalizeCpf } from "@/lib/cpf";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 const SAFECONSIG_URL = "https://alagoas.safeconsig.com.br/safe/login";
 const BATCH_DELAY_MS = 2500;
@@ -155,6 +158,18 @@ function parseCpfList(input: string): { raw: string; cpf: string }[] {
 
 function SafeConsigPage() {
   const consultar = useServerFn(consultarSafeConsig);
+  const { user } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    if (!user) { setIsAdmin(false); return; }
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle()
+      .then(({ data }) => setIsAdmin(!!data));
+  }, [user]);
   const [cpf, setCpf] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -417,6 +432,7 @@ function SafeConsigPage() {
           );
         })()}
 
+{isAdmin && (
         <Card className="p-6 space-y-4">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
@@ -549,6 +565,7 @@ function SafeConsigPage() {
             </>
           )}
         </Card>
+        )}
 
 
         <p className="text-xs text-muted-foreground">
