@@ -146,7 +146,7 @@ type AttemptOutcome =
   | { kind: "ok"; result: SafeConsigResult }
   | { kind: "retry"; reason: string };
 
-async function attemptConsulta(cpf: string, ua: string): Promise<AttemptOutcome> {
+async function attemptConsulta(cpf: string, ua: string, userId: string): Promise<AttemptOutcome> {
   const commonHeaders = {
     "User-Agent": ua,
     "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
