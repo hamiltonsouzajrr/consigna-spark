@@ -41,10 +41,11 @@ const STATUS_META: Record<
   }
 > = {
   enviado: {
-    label: "Cadastro encontrado",
-    tone: "default",
-    Icon: ShieldCheck,
-    hint: "Servidor possui cadastro e e-mail válido. Reset de senha enviado.",
+    label: "Cadastro confirmado — baixa chance de margem",
+    tone: "destructive",
+    Icon: ShieldAlert,
+    hint:
+      "A SafeConsig enviou o e-mail de redefinição de senha, confirmando que o servidor JÁ possui cadastro ativo com e-mail válido. Provavelmente há consignações registradas e baixa probabilidade de margem disponível.",
   },
   sem_email: {
     label: "Provável margem disponível",
