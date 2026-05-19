@@ -35,7 +35,7 @@ import { formatCpf, normalizeCpf } from "@/lib/cpf";
 import { toast } from "sonner";
 
 const SAFECONSIG_URL = "https://alagoas.safeconsig.com.br/safe/login";
-const BATCH_DELAY_MS = 1500;
+const BATCH_DELAY_MS = 2500;
 
 function padCpf(raw: string): string {
   const digits = normalizeCpf(raw);
