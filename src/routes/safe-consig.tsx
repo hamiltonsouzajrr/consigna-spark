@@ -33,6 +33,9 @@ import {
 import { consultarSafeConsig } from "@/lib/safeconsig.functions";
 import { formatCpf, normalizeCpf } from "@/lib/cpf";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 const SAFECONSIG_URL = "https://alagoas.safeconsig.com.br/safe/login";
 const BATCH_DELAY_MS = 2500;
