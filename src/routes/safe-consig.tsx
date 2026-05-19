@@ -48,11 +48,11 @@ const STATUS_META: Record<
       "O servidor já possui acesso criado na SafeConsig (e-mail cadastrado) e o portal disparou o e-mail de recuperação. Para o fluxo de margem, oriente o servidor a recuperar a senha pelo WhatsApp 0800 000 1528 em vez de usar o e-mail.",
   },
   sem_email: {
-    label: "Cadastrado sem e-mail — apto, atenção no contato",
-    tone: "warning",
-    Icon: ShieldQuestion,
+    label: "Apto — alta chance de margem",
+    tone: "success",
+    Icon: ShieldCheck,
     hint:
-      "O CPF está cadastrado na SafeConsig, porém SEM e-mail registrado. O servidor está no sistema e apto a operar consignado, mas o contato pelo portal fica limitado — atenção ao validar dados.",
+      "O CPF está cadastrado na SafeConsig porém SEM e-mail registrado. Esse perfil costuma indicar servidor que ainda não operou pelo portal — ALTA probabilidade de margem consignável disponível. Lead positivo, vale o contato.",
   },
   nao_cadastrado: {
     label: "Não cadastrado — sem margem consignável",
