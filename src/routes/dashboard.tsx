@@ -235,12 +235,28 @@ function Page() {
   if (!user) return <Navigate to="/login" />;
 
   const cards = [
-    { label: "Total", value: stats?.total ?? 0, icon: FileText, color: "text-primary bg-primary/10" },
-    { label: "Pendentes", value: stats?.pendente ?? 0, icon: Clock, color: "text-warning bg-warning/10" },
-    { label: "Processando", value: stats?.processando ?? 0, icon: Loader2, color: "text-primary bg-primary/10" },
-    { label: "Concluídas", value: stats?.concluido ?? 0, icon: CheckCircle2, color: "text-success bg-success/10" },
-    { label: "Com erro", value: stats?.erro ?? 0, icon: AlertCircle, color: "text-destructive bg-destructive/10" },
+    { label: "Total", value: stats?.total ?? 0, icon: FileText, color: "text-primary bg-primary/10", valueColor: "" },
+    { label: "Pendentes", value: stats?.pendente ?? 0, icon: Clock, color: "text-warning bg-warning/10", valueColor: "text-warning" },
+    { label: "Processando", value: stats?.processando ?? 0, icon: Loader2, color: "text-primary bg-primary/10", valueColor: "text-primary" },
+    { label: "Concluídas", value: stats?.concluido ?? 0, icon: CheckCircle2, color: "text-success bg-success/10", valueColor: "text-success" },
+    { label: "Com erro", value: stats?.erro ?? 0, icon: AlertCircle, color: "text-destructive bg-destructive/10", valueColor: "text-destructive" },
   ];
+
+  const formatDuration = (s: number | null | undefined) => {
+    if (s == null || !Number.isFinite(s)) return "—";
+    if (s < 60) return `${s.toFixed(1)}s`;
+    const totalSec = Math.round(s);
+    const d = Math.floor(totalSec / 86400);
+    const h = Math.floor((totalSec % 86400) / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const sec = totalSec % 60;
+    const parts: string[] = [];
+    if (d) parts.push(`${d}d`);
+    if (h) parts.push(`${h}h`);
+    if (m) parts.push(`${m}min`);
+    if (!d && !h && sec) parts.push(`${sec}s`);
+    return parts.join(" ") || `${totalSec}s`;
+  };
 
   return (
     <AppShell>
@@ -265,7 +281,7 @@ function Page() {
             <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg ${c.color}`}>
               <c.icon className="h-5 w-5" />
             </div>
-            <p className="text-2xl font-bold">{c.value}</p>
+            <p className={`text-2xl font-bold ${c.valueColor}`}>{c.value}</p>
             <p className="text-sm text-muted-foreground">{c.label}</p>
           </Card>
         ))}
@@ -273,7 +289,7 @@ function Page() {
       <Card className="mt-6 mb-8 p-6">
         <h3 className="text-sm font-medium text-muted-foreground">Tempo médio de processamento</h3>
         <p className="mt-1 text-3xl font-bold">
-          {stats?.avg ? `${stats.avg.toFixed(1)}s` : "—"}
+          {formatDuration(stats?.avg)}
         </p>
         <p className="text-xs text-muted-foreground">por registro concluído</p>
       </Card>
