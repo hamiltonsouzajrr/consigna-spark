@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+
 
 const BASE = "https://alagoas.safeconsig.com.br";
 const LOGIN_URL = `${BASE}/safe/login`;
@@ -255,7 +258,22 @@ export const consultarSafeConsig = createServerFn({ method: "POST" })
         messages.join("\n") ||
         "Resposta vazia da SafeConsig. Verifique o CPF e tente novamente.";
 
+      // Persistir leads "sem_email" (alta chance de margem) para a aba pública
+      if (status === "sem_email") {
+        try {
+          await supabaseAdmin
+            .from("safeconsig_leads")
+            .upsert(
+              { cpf, status, mensagem: message, consultado_em: new Date().toISOString() },
+              { onConflict: "cpf" },
+            );
+        } catch (e) {
+          console.error("[safeconsig] upsert lead failed", e);
+        }
+      }
+
       return { status, message, raw: messages.length ? undefined : xml3.slice(0, 1200) };
+
     } catch (e) {
       const err = e as Error & { cause?: unknown };
       const cause =

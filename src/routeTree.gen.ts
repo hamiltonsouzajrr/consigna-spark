@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ServidoresSemAcessoRouteImport } from './routes/servidores-sem-acesso'
 import { Route as SafeConsigRouteImport } from './routes/safe-consig'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LimpezaRouteImport } from './routes/limpeza'
@@ -28,6 +29,11 @@ const UploadRoute = UploadRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServidoresSemAcessoRoute = ServidoresSemAcessoRouteImport.update({
+  id: '/servidores-sem-acesso',
+  path: '/servidores-sem-acesso',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SafeConsigRoute = SafeConsigRouteImport.update({
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/limpeza': typeof LimpezaRoute
   '/login': typeof LoginRoute
   '/safe-consig': typeof SafeConsigRoute
+  '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
 }
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/limpeza': typeof LimpezaRoute
   '/login': typeof LoginRoute
   '/safe-consig': typeof SafeConsigRoute
+  '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/limpeza': typeof LimpezaRoute
   '/login': typeof LoginRoute
   '/safe-consig': typeof SafeConsigRoute
+  '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
 }
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/limpeza'
     | '/login'
     | '/safe-consig'
+    | '/servidores-sem-acesso'
     | '/sitemap.xml'
     | '/upload'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/limpeza'
     | '/login'
     | '/safe-consig'
+    | '/servidores-sem-acesso'
     | '/sitemap.xml'
     | '/upload'
   id:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/limpeza'
     | '/login'
     | '/safe-consig'
+    | '/servidores-sem-acesso'
     | '/sitemap.xml'
     | '/upload'
   fileRoutesById: FileRoutesById
@@ -156,6 +168,7 @@ export interface RootRouteChildren {
   LimpezaRoute: typeof LimpezaRoute
   LoginRoute: typeof LoginRoute
   SafeConsigRoute: typeof SafeConsigRoute
+  ServidoresSemAcessoRoute: typeof ServidoresSemAcessoRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadRoute: typeof UploadRoute
 }
@@ -174,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/servidores-sem-acesso': {
+      id: '/servidores-sem-acesso'
+      path: '/servidores-sem-acesso'
+      fullPath: '/servidores-sem-acesso'
+      preLoaderRoute: typeof ServidoresSemAcessoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/safe-consig': {
@@ -244,6 +264,7 @@ const rootRouteChildren: RootRouteChildren = {
   LimpezaRoute: LimpezaRoute,
   LoginRoute: LoginRoute,
   SafeConsigRoute: SafeConsigRoute,
+  ServidoresSemAcessoRoute: ServidoresSemAcessoRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadRoute: UploadRoute,
 }
