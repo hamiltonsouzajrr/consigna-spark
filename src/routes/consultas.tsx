@@ -561,10 +561,22 @@ function Page() {
               </span>
             </div>
           )}
-          <Progress value={run.total > 0 ? (run.processed / run.total) * 100 : 0} />
-          <p className="mt-2 text-right text-xs text-muted-foreground tabular-nums">
-            {run.total > 0 ? Math.round((run.processed / run.total) * 100) : 0}%
-          </p>
+          {(() => {
+            const raw = run.total > 0 ? (run.processed / run.total) * 100 : 0;
+            const clamped = Math.min(100, Math.max(0, raw));
+            const overflow = raw > 100;
+            return (
+              <>
+                <Progress value={clamped} />
+                <p className="mt-2 text-right text-xs text-muted-foreground tabular-nums">
+                  {Math.round(clamped)}%
+                  {overflow && (
+                    <span className="ml-1 text-xs text-muted-foreground">(recalculando)</span>
+                  )}
+                </p>
+              </>
+            );
+          })()}
         </Card>
       )}
 
