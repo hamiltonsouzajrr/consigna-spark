@@ -171,17 +171,37 @@ function SafeConsigPage() {
         </Card>
 
         {result && meta && Icon && (
-          <Alert variant={meta.tone === "destructive" ? "destructive" : "default"}>
+          <Alert
+            variant={meta.tone === "destructive" ? "destructive" : "default"}
+            className={
+              meta.tone === "success"
+                ? "border-green-500/50 bg-green-50 text-green-900 dark:border-green-500/40 dark:bg-green-950/40 dark:text-green-100 [&>svg]:text-green-600 dark:[&>svg]:text-green-400"
+                : undefined
+            }
+          >
             <Icon className="h-4 w-4" />
             <AlertTitle className="flex items-center gap-2">
               {meta.label}
-              <Badge variant="outline" className="font-mono text-xs">
+              <Badge
+                variant="outline"
+                className={
+                  meta.tone === "success"
+                    ? "font-mono text-xs border-green-600/40 text-green-800 dark:text-green-200"
+                    : "font-mono text-xs"
+                }
+              >
                 {result.status}
               </Badge>
             </AlertTitle>
             <AlertDescription className="space-y-2">
               <p className="text-sm">{meta.hint}</p>
-              <div className="rounded-md border bg-muted/40 p-3 text-sm whitespace-pre-wrap">
+              <div
+                className={
+                  meta.tone === "success"
+                    ? "rounded-md border border-green-600/30 bg-green-100/60 p-3 text-sm whitespace-pre-wrap dark:bg-green-900/30"
+                    : "rounded-md border bg-muted/40 p-3 text-sm whitespace-pre-wrap"
+                }
+              >
                 {result.message}
               </div>
               {result.raw && (
