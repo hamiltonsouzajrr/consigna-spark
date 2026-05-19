@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 
 
@@ -145,7 +146,7 @@ type AttemptOutcome =
   | { kind: "ok"; result: SafeConsigResult }
   | { kind: "retry"; reason: string };
 
-async function attemptConsulta(cpf: string, ua: string): Promise<AttemptOutcome> {
+async function attemptConsulta(cpf: string, ua: string, userId: string): Promise<AttemptOutcome> {
   const commonHeaders = {
     "User-Agent": ua,
     "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
@@ -285,7 +286,7 @@ async function attemptConsulta(cpf: string, ua: string): Promise<AttemptOutcome>
       await supabaseAdmin
         .from("safeconsig_leads")
         .upsert(
-          { cpf, status, mensagem: message, consultado_em: new Date().toISOString() },
+          { cpf, status, mensagem: message, consultado_em: new Date().toISOString(), consultado_por: userId },
           { onConflict: "cpf" },
         );
     } catch (e) {
@@ -303,15 +304,17 @@ const RETRY_DELAY_MS = 4000;
 const MAX_ATTEMPTS = 3; // 1 inicial + 2 retries
 
 export const consultarSafeConsig = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => inputSchema.parse(data))
-  .handler(async ({ data }): Promise<SafeConsigResult> => {
+  .handler(async ({ data, context }): Promise<SafeConsigResult> => {
     const { cpf } = data;
+    const userId = context.userId;
     let lastReason = "";
 
     for (let i = 0; i < MAX_ATTEMPTS; i++) {
       const ua = UA_POOL[Math.floor(Math.random() * UA_POOL.length)];
       try {
-        const out = await attemptConsulta(cpf, ua);
+        const out = await attemptConsulta(cpf, ua, userId);
         if (out.kind === "ok") return out.result;
         lastReason = out.reason;
         console.warn(`[safeconsig] tentativa ${i + 1} falhou: ${out.reason}`);
