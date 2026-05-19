@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,12 +8,50 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, ShieldAlert, ShieldQuestion, Loader2, Search, ExternalLink, Copy } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  ShieldCheck,
+  ShieldAlert,
+  ShieldQuestion,
+  Loader2,
+  Search,
+  ExternalLink,
+  Copy,
+  ListChecks,
+  StopCircle,
+  Download,
+} from "lucide-react";
 import { consultarSafeConsig } from "@/lib/safeconsig.functions";
-import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
+import { formatCpf, normalizeCpf } from "@/lib/cpf";
 import { toast } from "sonner";
 
 const SAFECONSIG_URL = "https://alagoas.safeconsig.com.br/safe/login";
+const BATCH_DELAY_MS = 1500;
+
+function padCpf(raw: string): string {
+  const digits = normalizeCpf(raw);
+  if (digits.length === 0 || digits.length > 11) return digits;
+  return digits.padStart(11, "0");
+}
+
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(resolve, ms);
+    signal?.addEventListener("abort", () => {
+      clearTimeout(t);
+      reject(new DOMException("Aborted", "AbortError"));
+    });
+  });
+}
 
 export const Route = createFileRoute("/safe-consig")({
   head: () => ({
