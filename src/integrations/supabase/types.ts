@@ -184,6 +184,33 @@ export type Database = {
         }
         Relationships: []
       }
+      safeconsig_leads: {
+        Row: {
+          consultado_em: string
+          consultado_por: string | null
+          cpf: string
+          id: string
+          mensagem: string | null
+          status: string
+        }
+        Insert: {
+          consultado_em?: string
+          consultado_por?: string | null
+          cpf: string
+          id?: string
+          mensagem?: string | null
+          status: string
+        }
+        Update: {
+          consultado_em?: string
+          consultado_por?: string | null
+          cpf?: string
+          id?: string
+          mensagem?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
