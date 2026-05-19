@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { Play, Download, RefreshCw, Loader2, FileSpreadsheet, Pause, Square, FileSearch, PlayCircle, AlertTriangle } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import * as XLSX from "xlsx";
 import { formatCpf } from "@/lib/cpf";
