@@ -135,156 +135,216 @@ function classify(messages: string[]): SafeConsigResult["status"] {
 }
 
 // ---------- Server function ----------
+const UA_POOL = [
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0",
+];
+
+type AttemptOutcome =
+  | { kind: "ok"; result: SafeConsigResult }
+  | { kind: "retry"; reason: string };
+
+async function attemptConsulta(cpf: string, ua: string): Promise<AttemptOutcome> {
+  const commonHeaders = {
+    "User-Agent": ua,
+    "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+    "Accept-Encoding": "gzip, deflate, br",
+    Origin: BASE,
+  };
+
+  // Cookie jar SEMPRE novo e isolado por tentativa — nunca reutilizar entre consultas
+  const jar: Jar = new Map();
+
+  // ---- Etapa 1: GET login limpo (JSESSIONID/CSRF fresh) ----
+  const r1 = await fetchWithJar(LOGIN_URL, {
+    jar,
+    method: "GET",
+    headers: { ...commonHeaders, Accept: "text/html,application/xhtml+xml" },
+  });
+  if (!r1.response.ok) {
+    return {
+      kind: "ok",
+      result: {
+        status: "erro",
+        message: `Falha ao abrir SafeConsig (HTTP ${r1.response.status}). Trajetória: ${r1.hops.join(" → ")}`,
+      },
+    };
+  }
+  const html1 = await r1.response.text();
+  const vs1 = extractViewState(html1);
+  if (!vs1) {
+    return {
+      kind: "ok",
+      result: {
+        status: "erro",
+        message:
+          "Não foi possível ler o token da sessão (etapa 1). O portal pode ter mudado o fluxo ou exigido seleção prévia. Use 'Verificar manualmente'.",
+      },
+    };
+  }
+  const loginEndpoint = r1.finalUrl;
+
+  // ---- Etapa 2: AJAX click "Esqueci Minha Senha" ----
+  const body2 = new URLSearchParams({
+    "javax.faces.partial.ajax": "true",
+    "javax.faces.source": "j_idt32",
+    "javax.faces.partial.execute": "j_idt32",
+    "javax.faces.partial.render": "formularioDeLogin",
+    j_idt32: "j_idt32",
+    idForm12344: "idForm12344",
+    idLogin: "",
+    senhaUsuario: "",
+    "javax.faces.ViewState": vs1,
+  });
+  const r2 = await fetchWithJar(loginEndpoint, {
+    jar,
+    method: "POST",
+    headers: {
+      ...commonHeaders,
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      Accept: "application/xml, text/xml, */*; q=0.01",
+      "Faces-Request": "partial/ajax",
+      "X-Requested-With": "XMLHttpRequest",
+      Referer: loginEndpoint,
+    },
+    body: body2.toString(),
+  });
+  if (!r2.response.ok) {
+    return { kind: "retry", reason: `etapa 2 HTTP ${r2.response.status}` };
+  }
+  const xml2 = await r2.response.text();
+  if (extractRedirectFromXml(xml2)) {
+    return { kind: "retry", reason: "sessão expirou na etapa 2" };
+  }
+  const vs2 = extractViewState(xml2);
+  if (!vs2) {
+    return {
+      kind: "ok",
+      result: { status: "erro", message: "Não foi possível ler o token da sessão (etapa 2)." },
+    };
+  }
+
+  // ---- Etapa 3: POST CPF ----
+  const body3 = new URLSearchParams({
+    "javax.faces.partial.ajax": "true",
+    "javax.faces.source": "resetBotom",
+    "javax.faces.partial.execute": "form1",
+    "javax.faces.partial.render": "form1 mensagens mensagens11",
+    resetBotom: "resetBotom",
+    form1: "form1",
+    j_idt41: cpf,
+    "javax.faces.ViewState": vs2,
+  });
+  const r3 = await fetchWithJar(loginEndpoint, {
+    jar,
+    method: "POST",
+    headers: {
+      ...commonHeaders,
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      Accept: "application/xml, text/xml, */*; q=0.01",
+      "Faces-Request": "partial/ajax",
+      "X-Requested-With": "XMLHttpRequest",
+      Referer: loginEndpoint,
+    },
+    body: body3.toString(),
+  });
+  if (!r3.response.ok) {
+    return { kind: "retry", reason: `etapa 3 HTTP ${r3.response.status}` };
+  }
+  const xml3 = await r3.response.text();
+  if (extractRedirectFromXml(xml3)) {
+    return { kind: "retry", reason: "sessão expirou antes do envio" };
+  }
+
+  const messages = extractMessages(xml3);
+  const status = classify(messages);
+  const message =
+    messages.join("\n") || "Resposta vazia da SafeConsig. Verifique o CPF e tente novamente.";
+
+  // Anti-leak: classificação "enviado" exige:
+  //  1) frase literal "Esqueci Minha Senha foi encaminhada" no HTML retornado
+  //  2) o CPF consultado aparecendo no campo Usuário (form1) da página retornada
+  if (status === "enviado") {
+    const hasLiteral = xml3.includes("Esqueci Minha Senha foi encaminhada");
+    const cpfInForm =
+      xml3.includes(`value="${cpf}"`) || xml3.includes(`>${cpf}<`);
+    if (!hasLiteral || !cpfInForm) {
+      console.warn("[safeconsig] dirty session suspected", {
+        cpf,
+        hasLiteral,
+        cpfInForm,
+      });
+      return { kind: "retry", reason: "sessão suja (mensagem residual sem CPF correspondente)" };
+    }
+  }
+
+  // Persistir leads "sem_email" (alta chance de margem) para a aba pública
+  if (status === "sem_email") {
+    try {
+      await supabaseAdmin
+        .from("safeconsig_leads")
+        .upsert(
+          { cpf, status, mensagem: message, consultado_em: new Date().toISOString() },
+          { onConflict: "cpf" },
+        );
+    } catch (e) {
+      console.error("[safeconsig] upsert lead failed", e);
+    }
+  }
+
+  return {
+    kind: "ok",
+    result: { status, message, raw: messages.length ? undefined : xml3.slice(0, 1200) },
+  };
+}
+
+const RETRY_DELAY_MS = 4000;
+const MAX_ATTEMPTS = 3; // 1 inicial + 2 retries
+
 export const consultarSafeConsig = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => inputSchema.parse(data))
   .handler(async ({ data }): Promise<SafeConsigResult> => {
     const { cpf } = data;
-    const ua =
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
-    const commonHeaders = {
-      "User-Agent": ua,
-      "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
-      "Accept-Encoding": "gzip, deflate, br",
-      Origin: BASE,
-    };
+    let lastReason = "";
 
-    const jar: Jar = new Map();
-
-    try {
-      // ---- Etapa 1: GET login (segue redirects manualmente, mantendo cookies) ----
-      const r1 = await fetchWithJar(LOGIN_URL, {
-        jar,
-        method: "GET",
-        headers: { ...commonHeaders, Accept: "text/html,application/xhtml+xml" },
-      });
-      if (!r1.response.ok) {
-        return {
-          status: "erro",
-          message: `Falha ao abrir SafeConsig (HTTP ${r1.response.status}). Trajetória: ${r1.hops.join(" → ")}`,
-        };
-      }
-      const html1 = await r1.response.text();
-      const vs1 = extractViewState(html1);
-      if (!vs1) {
-        return {
-          status: "erro",
-          message:
-            "Não foi possível ler o token da sessão (etapa 1). O portal pode ter mudado o fluxo ou exigido seleção prévia. Use 'Verificar manualmente'.",
-        };
-      }
-
-      // URL final pode ter mudado (e.g. /safe/login após seguir redirects)
-      const loginEndpoint = r1.finalUrl;
-
-      // ---- Etapa 2: AJAX click "Esqueci Minha Senha" ----
-      const body2 = new URLSearchParams({
-        "javax.faces.partial.ajax": "true",
-        "javax.faces.source": "j_idt32",
-        "javax.faces.partial.execute": "j_idt32",
-        "javax.faces.partial.render": "formularioDeLogin",
-        j_idt32: "j_idt32",
-        idForm12344: "idForm12344",
-        idLogin: "",
-        senhaUsuario: "",
-        "javax.faces.ViewState": vs1,
-      });
-      const r2 = await fetchWithJar(loginEndpoint, {
-        jar,
-        method: "POST",
-        headers: {
-          ...commonHeaders,
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          Accept: "application/xml, text/xml, */*; q=0.01",
-          "Faces-Request": "partial/ajax",
-          "X-Requested-With": "XMLHttpRequest",
-          Referer: loginEndpoint,
-        },
-        body: body2.toString(),
-      });
-      if (!r2.response.ok) {
-        return { status: "erro", message: `Falha na etapa 2 (HTTP ${r2.response.status}).` };
-      }
-      const xml2 = await r2.response.text();
-      if (extractRedirectFromXml(xml2)) {
-        return {
-          status: "erro",
-          message: "A SafeConsig redirecionou a sessão na etapa 2 (provável expiração). Tente novamente.",
-        };
-      }
-      const vs2 = extractViewState(xml2);
-      if (!vs2) {
-        return { status: "erro", message: "Não foi possível ler o token da sessão (etapa 2)." };
-      }
-
-      // ---- Etapa 3: POST CPF ----
-      const body3 = new URLSearchParams({
-        "javax.faces.partial.ajax": "true",
-        "javax.faces.source": "resetBotom",
-        "javax.faces.partial.execute": "form1",
-        "javax.faces.partial.render": "form1 mensagens mensagens11",
-        resetBotom: "resetBotom",
-        form1: "form1",
-        j_idt41: cpf,
-        "javax.faces.ViewState": vs2,
-      });
-      const r3 = await fetchWithJar(loginEndpoint, {
-        jar,
-        method: "POST",
-        headers: {
-          ...commonHeaders,
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          Accept: "application/xml, text/xml, */*; q=0.01",
-          "Faces-Request": "partial/ajax",
-          "X-Requested-With": "XMLHttpRequest",
-          Referer: loginEndpoint,
-        },
-        body: body3.toString(),
-      });
-      if (!r3.response.ok) {
-        return { status: "erro", message: `Falha na etapa 3 (HTTP ${r3.response.status}).` };
-      }
-      const xml3 = await r3.response.text();
-
-      if (extractRedirectFromXml(xml3)) {
-        return {
-          status: "erro",
-          message: "A sessão na SafeConsig expirou antes do envio. Tente novamente.",
-        };
-      }
-
-      const messages = extractMessages(xml3);
-      const status = classify(messages);
-      const message =
-        messages.join("\n") ||
-        "Resposta vazia da SafeConsig. Verifique o CPF e tente novamente.";
-
-      // Persistir leads "sem_email" (alta chance de margem) para a aba pública
-      if (status === "sem_email") {
-        try {
-          await supabaseAdmin
-            .from("safeconsig_leads")
-            .upsert(
-              { cpf, status, mensagem: message, consultado_em: new Date().toISOString() },
-              { onConflict: "cpf" },
-            );
-        } catch (e) {
-          console.error("[safeconsig] upsert lead failed", e);
+    for (let i = 0; i < MAX_ATTEMPTS; i++) {
+      const ua = UA_POOL[Math.floor(Math.random() * UA_POOL.length)];
+      try {
+        const out = await attemptConsulta(cpf, ua);
+        if (out.kind === "ok") return out.result;
+        lastReason = out.reason;
+        console.warn(`[safeconsig] tentativa ${i + 1} falhou: ${out.reason}`);
+        if (i < MAX_ATTEMPTS - 1) {
+          await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
         }
+      } catch (e) {
+        const err = e as Error & { cause?: unknown };
+        const cause =
+          err.cause instanceof Error ? err.cause.message : err.cause ? String(err.cause) : "";
+        console.error("[safeconsig] fetch error", {
+          attempt: i + 1,
+          message: err.message,
+          cause,
+        });
+        const isLoop = /redirect/i.test(err.message) || /redirect/i.test(cause);
+        lastReason = isLoop ? "loop de redirects" : err.message || "erro desconhecido";
+        if (i < MAX_ATTEMPTS - 1) {
+          await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+          continue;
+        }
+        return {
+          status: "erro",
+          message: isLoop
+            ? "Não foi possível concluir a verificação automática (loop de redirects no portal). Use 'Verificar manualmente'."
+            : `${err.message || "Erro desconhecido"}${cause ? ` (causa: ${cause})` : ""}`,
+        };
       }
-
-      return { status, message, raw: messages.length ? undefined : xml3.slice(0, 1200) };
-
-    } catch (e) {
-      const err = e as Error & { cause?: unknown };
-      const cause =
-        err.cause instanceof Error ? err.cause.message : err.cause ? String(err.cause) : "";
-      console.error("[safeconsig] fetch error", { message: err.message, cause, stack: err.stack });
-      const isLoop = /redirect/i.test(err.message) || /redirect/i.test(cause);
-      return {
-        status: "erro",
-        message: isLoop
-          ? "Não foi possível concluir a verificação automática (loop de redirects no portal). Use 'Verificar manualmente'."
-          : `${err.message || "Erro desconhecido"}${cause ? ` (causa: ${cause})` : ""}`,
-      };
     }
+
+    return {
+      status: "erro",
+      message: `Não foi possível concluir a consulta após ${MAX_ATTEMPTS} tentativas (${lastReason}). Use 'Verificar manualmente'.`,
+    };
   });
+
