@@ -35,24 +35,24 @@ const STATUS_META: Record<
   Result["status"],
   {
     label: string;
-    tone: "default" | "destructive" | "secondary" | "success";
+    tone: "default" | "destructive" | "secondary" | "success" | "warning";
     Icon: typeof ShieldCheck;
     hint: string;
   }
 > = {
   enviado: {
-    label: "Cadastro ativo — apto a consignar",
+    label: "Cadastro ativo com e-mail — apto a consignar",
     tone: "success",
     Icon: ShieldCheck,
     hint:
-      "A SafeConsig enviou o e-mail de redefinição, confirmando que o servidor POSSUI cadastro ativo no portal e está apto a operar consignado. Boa probabilidade de haver margem disponível.",
+      "A SafeConsig enviou o e-mail de redefinição, confirmando que o servidor POSSUI cadastro ativo no portal COM e-mail válido. Apto a operar consignado — boa probabilidade de margem disponível.",
   },
   sem_email: {
-    label: "Cadastrado sem e-mail — apto a consignar",
-    tone: "success",
-    Icon: ShieldCheck,
+    label: "Cadastrado sem e-mail — apto, atenção no contato",
+    tone: "warning",
+    Icon: ShieldQuestion,
     hint:
-      "O CPF está cadastrado na SafeConsig, porém sem e-mail registrado. O servidor está no sistema e apto a operar consignado — há probabilidade de margem disponível.",
+      "O CPF está cadastrado na SafeConsig, porém SEM e-mail registrado. O servidor está no sistema e apto a operar consignado, mas o contato pelo portal fica limitado — atenção ao validar dados.",
   },
   nao_cadastrado: {
     label: "Não cadastrado — sem margem consignável",
@@ -172,38 +172,42 @@ function SafeConsigPage() {
           </form>
         </Card>
 
-        {result && meta && Icon && (
+        {result && meta && Icon && (() => {
+          const toneClasses =
+            meta.tone === "success"
+              ? {
+                  alert:
+                    "border-green-500/50 bg-green-50 text-green-900 dark:border-green-500/40 dark:bg-green-950/40 dark:text-green-100 [&>svg]:text-green-600 dark:[&>svg]:text-green-400",
+                  badge: "font-mono text-xs border-green-600/40 text-green-800 dark:text-green-200",
+                  box: "rounded-md border border-green-600/30 bg-green-100/60 p-3 text-sm whitespace-pre-wrap dark:bg-green-900/30",
+                }
+              : meta.tone === "warning"
+              ? {
+                  alert:
+                    "border-amber-500/50 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/40 dark:text-amber-100 [&>svg]:text-amber-600 dark:[&>svg]:text-amber-400",
+                  badge: "font-mono text-xs border-amber-600/40 text-amber-800 dark:text-amber-200",
+                  box: "rounded-md border border-amber-600/30 bg-amber-100/60 p-3 text-sm whitespace-pre-wrap dark:bg-amber-900/30",
+                }
+              : {
+                  alert: undefined,
+                  badge: "font-mono text-xs",
+                  box: "rounded-md border bg-muted/40 p-3 text-sm whitespace-pre-wrap",
+                };
+          return (
           <Alert
             variant={meta.tone === "destructive" ? "destructive" : "default"}
-            className={
-              meta.tone === "success"
-                ? "border-green-500/50 bg-green-50 text-green-900 dark:border-green-500/40 dark:bg-green-950/40 dark:text-green-100 [&>svg]:text-green-600 dark:[&>svg]:text-green-400"
-                : undefined
-            }
+            className={toneClasses.alert}
           >
             <Icon className="h-4 w-4" />
             <AlertTitle className="flex items-center gap-2">
               {meta.label}
-              <Badge
-                variant="outline"
-                className={
-                  meta.tone === "success"
-                    ? "font-mono text-xs border-green-600/40 text-green-800 dark:text-green-200"
-                    : "font-mono text-xs"
-                }
-              >
+              <Badge variant="outline" className={toneClasses.badge}>
                 {result.status}
               </Badge>
             </AlertTitle>
             <AlertDescription className="space-y-2">
               <p className="text-sm">{meta.hint}</p>
-              <div
-                className={
-                  meta.tone === "success"
-                    ? "rounded-md border border-green-600/30 bg-green-100/60 p-3 text-sm whitespace-pre-wrap dark:bg-green-900/30"
-                    : "rounded-md border bg-muted/40 p-3 text-sm whitespace-pre-wrap"
-                }
-              >
+              <div className={toneClasses.box}>
                 {result.message}
               </div>
               {result.raw && (
@@ -218,7 +222,8 @@ function SafeConsigPage() {
               )}
             </AlertDescription>
           </Alert>
-        )}
+          );
+        })()}
 
         <p className="text-xs text-muted-foreground">
           Esta consulta utiliza o fluxo público "Esqueci Minha Senha" da SafeConsig. Caso a SafeConsig
