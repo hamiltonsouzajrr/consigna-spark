@@ -113,6 +113,46 @@ const STATUS_META: Record<
   },
 };
 
+function toneBadgeClass(tone: (typeof STATUS_META)[Result["status"]]["tone"]): string {
+  switch (tone) {
+    case "success":
+      return "bg-green-600 text-white hover:bg-green-600 border-transparent";
+    case "warning":
+      return "bg-amber-500 text-white hover:bg-amber-500 border-transparent";
+    case "destructive":
+      return "bg-destructive text-destructive-foreground hover:bg-destructive border-transparent";
+    case "secondary":
+      return "bg-secondary text-secondary-foreground border-transparent";
+    default:
+      return "bg-muted text-foreground border-transparent";
+  }
+}
+
+type BatchRow = {
+  n: number;
+  cpf: string;
+  raw: string;
+  status: Result["status"] | "pendente" | "processando";
+  message: string;
+};
+
+function parseCpfList(input: string): { raw: string; cpf: string }[] {
+  const tokens = input
+    .split(/[\s,;\n\r\t]+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const seen = new Set<string>();
+  const out: { raw: string; cpf: string }[] = [];
+  for (const raw of tokens) {
+    const cpf = padCpf(raw);
+    if (cpf.length !== 11) continue;
+    if (seen.has(cpf)) continue;
+    seen.add(cpf);
+    out.push({ raw, cpf });
+  }
+  return out;
+}
+
 function SafeConsigPage() {
   const consultar = useServerFn(consultarSafeConsig);
   const [cpf, setCpf] = useState("");
