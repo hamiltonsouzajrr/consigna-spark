@@ -417,6 +417,140 @@ function SafeConsigPage() {
           );
         })()}
 
+        <Card className="p-6 space-y-4">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <ListChecks className="h-5 w-5" />
+                Consulta em lote
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Cole uma lista de CPFs (um por linha, ou separados por vírgula/espaço). CPFs com menos
+                de 11 dígitos são preenchidos com zeros à esquerda automaticamente.
+              </p>
+            </div>
+            {batchTotal > 0 && (
+              <Button variant="outline" size="sm" className="gap-2" onClick={exportCsv}>
+                <Download className="h-4 w-4" />
+                Exportar CSV
+              </Button>
+            )}
+          </div>
+
+          <Textarea
+            value={batchInput}
+            onChange={(e) => setBatchInput(e.target.value)}
+            placeholder={"04807727460\n12345678901, 98765432100\n..."}
+            rows={6}
+            className="font-mono text-sm"
+            disabled={batchRunning}
+          />
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span>{parsedPreview.length} CPF(s) válidos detectados</span>
+            {batchRunning && (
+              <span>
+                · Processando {batchIndex}/{batchTotal}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={runBatch} disabled={batchRunning || parsedPreview.length === 0} className="gap-2">
+              {batchRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <ListChecks className="h-4 w-4" />}
+              {batchRunning ? "Consultando…" : "Consultar todos"}
+            </Button>
+            {batchRunning && (
+              <Button variant="destructive" onClick={stopBatch} className="gap-2">
+                <StopCircle className="h-4 w-4" />
+                Parar
+              </Button>
+            )}
+          </div>
+
+          {batchTotal > 0 && (
+            <>
+              <Progress value={progressPct} className="h-2" />
+
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                <div className="rounded-md border border-green-600/30 bg-green-50 dark:bg-green-950/30 p-2">
+                  <div className="font-semibold text-green-800 dark:text-green-200">Aptos</div>
+                  <div className="text-lg font-bold text-green-700 dark:text-green-300">{summary.aptos}</div>
+                </div>
+                <div className="rounded-md border border-amber-600/30 bg-amber-50 dark:bg-amber-950/30 p-2">
+                  <div className="font-semibold text-amber-800 dark:text-amber-200">Com acesso</div>
+                  <div className="text-lg font-bold text-amber-700 dark:text-amber-300">{summary.comAcesso}</div>
+                </div>
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2">
+                  <div className="font-semibold text-destructive">Não cadastrados</div>
+                  <div className="text-lg font-bold text-destructive">{summary.naoCadastrado}</div>
+                </div>
+                <div className="rounded-md border bg-muted/40 p-2">
+                  <div className="font-semibold">Outros</div>
+                  <div className="text-lg font-bold">{summary.outros}</div>
+                </div>
+                <div className="rounded-md border bg-muted/40 p-2">
+                  <div className="font-semibold">Erros</div>
+                  <div className="text-lg font-bold">{summary.erros}</div>
+                </div>
+              </div>
+
+              <div className="rounded-md border overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead className="w-40">CPF</TableHead>
+                      <TableHead className="w-44">Status</TableHead>
+                      <TableHead>Mensagem</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {batchRows.map((row) => {
+                      const knownMeta =
+                        row.status === "pendente" || row.status === "processando"
+                          ? null
+                          : STATUS_META[row.status];
+                      const badgeClass =
+                        row.status === "pendente"
+                          ? "bg-muted text-muted-foreground border-transparent"
+                          : row.status === "processando"
+                          ? "bg-blue-500 text-white border-transparent"
+                          : knownMeta
+                          ? toneBadgeClass(knownMeta.tone)
+                          : "bg-muted text-foreground border-transparent";
+                      const label =
+                        row.status === "pendente"
+                          ? "Pendente"
+                          : row.status === "processando"
+                          ? "Processando…"
+                          : knownMeta?.label ?? row.status;
+                      return (
+                        <TableRow key={`${row.n}-${row.cpf}`}>
+                          <TableCell className="text-muted-foreground">{row.n}</TableCell>
+                          <TableCell className="font-mono">{formatCpf(row.cpf)}</TableCell>
+                          <TableCell>
+                            <Badge className={badgeClass}>{label}</Badge>
+                          </TableCell>
+                          <TableCell className="text-sm whitespace-pre-wrap">
+                            {row.status === "processando" ? (
+                              <span className="inline-flex items-center gap-1 text-muted-foreground">
+                                <Loader2 className="h-3 w-3 animate-spin" /> aguarde
+                              </span>
+                            ) : (
+                              row.message || <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
+        </Card>
+
+
         <p className="text-xs text-muted-foreground">
           Esta consulta utiliza o fluxo público "Esqueci Minha Senha" da SafeConsig. Caso a SafeConsig
           ative uma proteção de captcha mais estrita, esta verificação poderá deixar de funcionar.
