@@ -256,7 +256,29 @@ function Page() {
         </p>
       </div>
 
-      {/* Consulta Aracaju — destaque premium */}
+      <div className="mb-3 mt-2">
+        <h3 className="text-sm font-semibold text-muted-foreground">Visão geral</h3>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {cards.map((c) => (
+          <Card key={c.label} className="p-5">
+            <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg ${c.color}`}>
+              <c.icon className="h-5 w-5" />
+            </div>
+            <p className="text-2xl font-bold">{c.value}</p>
+            <p className="text-sm text-muted-foreground">{c.label}</p>
+          </Card>
+        ))}
+      </div>
+      <Card className="mt-6 mb-8 p-6">
+        <h3 className="text-sm font-medium text-muted-foreground">Tempo médio de processamento</h3>
+        <p className="mt-1 text-3xl font-bold">
+          {stats?.avg ? `${stats.avg.toFixed(1)}s` : "—"}
+        </p>
+        <p className="text-xs text-muted-foreground">por registro concluído</p>
+      </Card>
+
+      {/* Consulta Alagoas — destaque premium */}
       <div className="card-premium mb-8 p-6 md:p-8">
         <div className="mb-5 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20 text-primary-glow ring-1 ring-primary/40">
@@ -264,7 +286,7 @@ function Page() {
           </div>
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-primary">Grupo Positive</p>
-            <h2 className="text-xl font-bold tracking-tight md:text-2xl">Consulta de Margem <span className="text-gradient">Aracaju</span></h2>
+            <h2 className="text-xl font-bold tracking-tight md:text-2xl">Consulta de Margem <span className="text-gradient">Alagoas</span></h2>
           </div>
         </div>
         <div className="mt-6 border-t pt-4">
@@ -453,27 +475,6 @@ function Page() {
         })()}
       </div>
 
-      <div className="mb-3 mt-2">
-        <h3 className="text-sm font-semibold text-muted-foreground">Visão geral</h3>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {cards.map((c) => (
-          <Card key={c.label} className="p-5">
-            <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg ${c.color}`}>
-              <c.icon className="h-5 w-5" />
-            </div>
-            <p className="text-2xl font-bold">{c.value}</p>
-            <p className="text-sm text-muted-foreground">{c.label}</p>
-          </Card>
-        ))}
-      </div>
-      <Card className="mt-6 p-6">
-        <h3 className="text-sm font-medium text-muted-foreground">Tempo médio de processamento</h3>
-        <p className="mt-1 text-3xl font-bold">
-          {stats?.avg ? `${stats.avg.toFixed(1)}s` : "—"}
-        </p>
-        <p className="text-xs text-muted-foreground">por registro concluído</p>
-      </Card>
     </AppShell>
   );
 }
