@@ -225,7 +225,8 @@ function ResultsDisplay({
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl">
+      <Card className="rounded-3xl md:sticky md:top-4 md:z-10 md:shadow-xl">
+
         <CardHeader>
           <CardTitle>Margens Consignáveis por Produto</CardTitle>
           <CardDescription>Calculadas sobre o Salário Líquido Base ({brl(liquido)}).</CardDescription>
