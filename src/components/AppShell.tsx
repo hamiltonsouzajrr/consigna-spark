@@ -9,16 +9,36 @@ import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
 import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
 import type { ReactNode } from "react";
 
-const nav = [
-  { to: "/alagoas", label: "Simulação Alagoas", icon: Calculator },
-  { to: "/calculadora-al", label: "Calculadora AL", icon: Calculator },
-  { to: "/safe-consig", label: "Verificar SafeConsig", icon: ShieldCheck },
-  { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: TrendingUp, badge: true },
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/upload", label: "Importar", icon: Upload },
-  { to: "/consultas", label: "Consultas", icon: List },
-  { to: "/limpeza", label: "Limpeza", icon: Trash2 },
+type NavItem = { to: string; label: string; icon: typeof Calculator; badge?: boolean };
+type NavSection = { section: string; items: NavItem[] };
+
+const navSections: NavSection[] = [
+  {
+    section: "Simulação",
+    items: [
+      { to: "/alagoas", label: "Simulação Alagoas", icon: Calculator },
+      { to: "/calculadora-al", label: "Calculadora AL", icon: Calculator },
+    ],
+  },
+  {
+    section: "Prospecção",
+    items: [
+      { to: "/safe-consig", label: "Verificar SafeConsig", icon: ShieldCheck },
+      { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: TrendingUp, badge: true },
+    ],
+  },
+  {
+    section: "Processamento",
+    items: [
+      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/upload", label: "Importar", icon: Upload },
+      { to: "/consultas", label: "Consultas", icon: List },
+      { to: "/limpeza", label: "Limpeza", icon: Trash2 },
+    ],
+  },
 ];
+
+const nav: NavItem[] = navSections.flatMap((s) => s.items);
 
 function useLeadsCount(enabled: boolean) {
   const [count, setCount] = useState<number | null>(null);
@@ -69,35 +89,42 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         <nav className="flex-1 space-y-1 p-3">
-          {nav.map((n) => {
-            const active = loc.pathname.startsWith(n.to);
-            const Icon = n.icon;
-            return (
-              <Link
-                key={n.to}
-                to={n.to}
-                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
-                  active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="flex-1">{n.label}</span>
-                {n.badge && leadsCount !== null && leadsCount > 0 && (
-                  <Badge
-                    className={`h-5 min-w-5 justify-center border-0 px-1.5 text-xs ${
+          {navSections.map((sec, idx) => (
+            <div key={sec.section} className="space-y-1">
+              <p className={`px-3 pb-1 text-xs uppercase tracking-wider text-muted-foreground ${idx === 0 ? "pt-1" : "pt-4"}`}>
+                {sec.section}
+              </p>
+              {sec.items.map((n) => {
+                const active = loc.pathname.startsWith(n.to);
+                const Icon = n.icon;
+                return (
+                  <Link
+                    key={n.to}
+                    to={n.to}
+                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
                       active
-                        ? "bg-white/20 text-white hover:bg-white/20"
-                        : "bg-emerald-600 text-white hover:bg-emerald-700"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent"
                     }`}
                   >
-                    {leadsCount}
-                  </Badge>
-                )}
-              </Link>
-            );
-          })}
+                    <Icon className="h-4 w-4" />
+                    <span className="flex-1">{n.label}</span>
+                    {n.badge && leadsCount !== null && leadsCount > 0 && (
+                      <Badge
+                        className={`h-5 min-w-5 justify-center border-0 px-1.5 text-xs ${
+                          active
+                            ? "bg-white/20 text-white hover:bg-white/20"
+                            : "bg-emerald-600 text-white hover:bg-emerald-700"
+                        }`}
+                      >
+                        {leadsCount}
+                      </Badge>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
         <div className="border-t p-3">
           <p className="px-3 pb-2 text-xs text-muted-foreground truncate">{user?.email}</p>
