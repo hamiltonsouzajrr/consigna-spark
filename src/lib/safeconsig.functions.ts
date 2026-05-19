@@ -149,9 +149,13 @@ export const consultarSafeConsig = createServerFn({ method: "POST" })
 
       return { status, message, raw: messages.length ? undefined : xml3.slice(0, 800) };
     } catch (e) {
+      const err = e as Error & { cause?: unknown };
+      const cause =
+        err.cause instanceof Error ? err.cause.message : err.cause ? String(err.cause) : "";
+      console.error("[safeconsig] fetch error", { message: err.message, cause, stack: err.stack });
       return {
         status: "erro",
-        message: e instanceof Error ? e.message : "Erro desconhecido ao consultar SafeConsig.",
+        message: `${err.message || "Erro desconhecido"}${cause ? ` (causa: ${cause})` : ""}`,
       };
     }
   });
