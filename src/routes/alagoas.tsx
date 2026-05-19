@@ -15,7 +15,14 @@ export const Route = createFileRoute("/alagoas")({
       { name: "description", content: "Simulação premium de produtos consignados (empréstimo, cartão de crédito e benefício) para servidores do Governo de ARACAJU." },
       { property: "og:title", content: "Governo de ARACAJU — Simulação de Consignado" },
       { property: "og:description", content: "Simulação premium de produtos consignados (empréstimo, cartão de crédito e benefício) para servidores do Governo de ARACAJU." },
-...
+      { property: "og:url", content: "https://consigna-spark.lovable.app/alagoas" },
+    ],
+    links: [{ rel: "canonical", href: "https://consigna-spark.lovable.app/alagoas" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
           "@type": "WebApplication",
           name: "Simulador de Consignado — Governo de ARACAJU",
           url: "https://consigna-spark.lovable.app/alagoas",
