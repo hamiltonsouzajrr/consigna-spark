@@ -56,6 +56,22 @@ function Page() {
   const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
   const [running, setRunning] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!user) { setIsAdmin(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!cancelled) setIsAdmin(!!data);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   const loadDebugPanel = useCallback(async (consultaId: string) => {
     const [{ data: logs }, { data: row }] = await Promise.all([
