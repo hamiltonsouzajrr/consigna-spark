@@ -222,7 +222,8 @@ function SafeConsigPage() {
               )}
             </AlertDescription>
           </Alert>
-        )}
+          );
+        })()}
 
         <p className="text-xs text-muted-foreground">
           Esta consulta utiliza o fluxo público "Esqueci Minha Senha" da SafeConsig. Caso a SafeConsig
