@@ -1,7 +1,10 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
 import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
 import type { ReactNode } from "react";
@@ -10,16 +13,47 @@ const nav = [
   { to: "/alagoas", label: "Alagoas — Simulação", icon: Calculator },
   { to: "/calculadora-al", label: "Calculadora de Margem — AL", icon: Calculator },
   { to: "/safe-consig", label: "Verificar SafeConsig", icon: ShieldCheck },
+  { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: TrendingUp, badge: true },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/upload", label: "Importar", icon: Upload },
   { to: "/consultas", label: "Consultas", icon: List },
   { to: "/limpeza", label: "Limpeza", icon: Trash2 },
 ];
 
+function useLeadsCount(enabled: boolean) {
+  const [count, setCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    let cancelled = false;
+    const load = async () => {
+      const { count, error } = await supabase
+        .from("safeconsig_leads")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "sem_email");
+      if (!cancelled && !error) setCount(count ?? 0);
+    };
+    load();
+    const ch = supabase
+      .channel("safeconsig_leads_count")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "safeconsig_leads" },
+        () => load(),
+      )
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(ch);
+    };
+  }, [enabled]);
+  return count;
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { signOut, user } = useAuth();
   const nav2 = useNavigate();
   const loc = useLocation();
+  const leadsCount = useLeadsCount(!!user);
   return (
     <div className="flex min-h-screen bg-background">
       <HorariosOuroDialog />
@@ -49,7 +83,18 @@ export function AppShell({ children }: { children: ReactNode }) {
                 }`}
               >
                 <Icon className="h-4 w-4" />
-                {n.label}
+                <span className="flex-1">{n.label}</span>
+                {n.badge && leadsCount !== null && leadsCount > 0 && (
+                  <Badge
+                    className={`h-5 min-w-5 justify-center border-0 px-1.5 text-xs ${
+                      active
+                        ? "bg-white/20 text-white hover:bg-white/20"
+                        : "bg-emerald-600 text-white hover:bg-emerald-700"
+                    }`}
+                  >
+                    {leadsCount}
+                  </Badge>
+                )}
               </Link>
             );
           })}
@@ -71,10 +116,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             <BadgeDollarSign className="h-5 w-5 text-primary" />
             <span className="font-semibold">Grupo Positive</span>
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-wrap">
             {nav.map((n) => (
-              <Link key={n.to} to={n.to} className="px-2 py-1 text-xs rounded hover:bg-accent">
+              <Link key={n.to} to={n.to} className="px-2 py-1 text-xs rounded hover:bg-accent flex items-center gap-1">
                 {n.label}
+                {n.badge && leadsCount !== null && leadsCount > 0 && (
+                  <Badge className="h-4 min-w-4 justify-center border-0 bg-emerald-600 px-1 text-[10px] text-white hover:bg-emerald-700">
+                    {leadsCount}
+                  </Badge>
+                )}
               </Link>
             ))}
           </div>
