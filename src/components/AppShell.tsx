@@ -89,35 +89,42 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         <nav className="flex-1 space-y-1 p-3">
-          {nav.map((n) => {
-            const active = loc.pathname.startsWith(n.to);
-            const Icon = n.icon;
-            return (
-              <Link
-                key={n.to}
-                to={n.to}
-                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
-                  active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="flex-1">{n.label}</span>
-                {n.badge && leadsCount !== null && leadsCount > 0 && (
-                  <Badge
-                    className={`h-5 min-w-5 justify-center border-0 px-1.5 text-xs ${
+          {navSections.map((sec, idx) => (
+            <div key={sec.section} className="space-y-1">
+              <p className={`px-3 pb-1 text-xs uppercase tracking-wider text-muted-foreground ${idx === 0 ? "pt-1" : "pt-4"}`}>
+                {sec.section}
+              </p>
+              {sec.items.map((n) => {
+                const active = loc.pathname.startsWith(n.to);
+                const Icon = n.icon;
+                return (
+                  <Link
+                    key={n.to}
+                    to={n.to}
+                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
                       active
-                        ? "bg-white/20 text-white hover:bg-white/20"
-                        : "bg-emerald-600 text-white hover:bg-emerald-700"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent"
                     }`}
                   >
-                    {leadsCount}
-                  </Badge>
-                )}
-              </Link>
-            );
-          })}
+                    <Icon className="h-4 w-4" />
+                    <span className="flex-1">{n.label}</span>
+                    {n.badge && leadsCount !== null && leadsCount > 0 && (
+                      <Badge
+                        className={`h-5 min-w-5 justify-center border-0 px-1.5 text-xs ${
+                          active
+                            ? "bg-white/20 text-white hover:bg-white/20"
+                            : "bg-emerald-600 text-white hover:bg-emerald-700"
+                        }`}
+                      >
+                        {leadsCount}
+                      </Badge>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
         <div className="border-t p-3">
           <p className="px-3 pb-2 text-xs text-muted-foreground truncate">{user?.email}</p>
