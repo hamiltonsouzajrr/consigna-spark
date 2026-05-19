@@ -41,24 +41,25 @@ const STATUS_META: Record<
   }
 > = {
   enviado: {
-    label: "Cadastro confirmado — baixa chance de margem",
+    label: "Cadastro ativo — apto a consignar",
+    tone: "success",
+    Icon: ShieldCheck,
+    hint:
+      "A SafeConsig enviou o e-mail de redefinição, confirmando que o servidor POSSUI cadastro ativo no portal e está apto a operar consignado. Boa probabilidade de haver margem disponível.",
+  },
+  sem_email: {
+    label: "Cadastrado sem e-mail — apto a consignar",
+    tone: "success",
+    Icon: ShieldCheck,
+    hint:
+      "O CPF está cadastrado na SafeConsig, porém sem e-mail registrado. O servidor está no sistema e apto a operar consignado — há probabilidade de margem disponível.",
+  },
+  nao_cadastrado: {
+    label: "Não cadastrado — sem margem consignável",
     tone: "destructive",
     Icon: ShieldAlert,
     hint:
-      "A SafeConsig enviou o e-mail de redefinição de senha, confirmando que o servidor JÁ possui cadastro ativo com e-mail válido. Provavelmente há consignações registradas e baixa probabilidade de margem disponível.",
-  },
-  sem_email: {
-    label: "Provável margem disponível",
-    tone: "success",
-    Icon: ShieldCheck,
-    hint:
-      "A SafeConsig não retornou e-mail para esse CPF — forte indício de que o servidor NÃO possui cadastro ativo e, portanto, há alta probabilidade de margem disponível.",
-  },
-  nao_cadastrado: {
-    label: "Não cadastrado — alta chance de margem",
-    tone: "success",
-    Icon: ShieldCheck,
-    hint: "CPF não encontrado na SafeConsig. Alta probabilidade de haver margem disponível.",
+      "CPF não encontrado na SafeConsig. Sem cadastro no portal, o servidor NÃO pode operar consignado em Alagoas — não há margem disponível por esta via.",
   },
   desconhecido: {
     label: "Resposta inesperada",
