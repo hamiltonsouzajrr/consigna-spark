@@ -10,8 +10,8 @@ import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
 import type { ReactNode } from "react";
 
 const nav = [
-  { to: "/alagoas", label: "Alagoas — Simulação", icon: Calculator },
-  { to: "/calculadora-al", label: "Calculadora de Margem — AL", icon: Calculator },
+  { to: "/alagoas", label: "Simulação Alagoas", icon: Calculator },
+  { to: "/calculadora-al", label: "Calculadora AL", icon: Calculator },
   { to: "/safe-consig", label: "Verificar SafeConsig", icon: ShieldCheck },
   { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: TrendingUp, badge: true },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
