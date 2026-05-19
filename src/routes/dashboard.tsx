@@ -286,7 +286,7 @@ function Page() {
           </div>
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-primary">Grupo Positive</p>
-            <h2 className="text-xl font-bold tracking-tight md:text-2xl">Consulta de Margem <span className="text-gradient">Alagoas</span></h2>
+            <h2 className="text-xl font-bold tracking-tight md:text-2xl">Consulta de Margem <span className="text-gradient">ARACAJU</span></h2>
           </div>
         </div>
         <div className="mt-6 border-t pt-4">
