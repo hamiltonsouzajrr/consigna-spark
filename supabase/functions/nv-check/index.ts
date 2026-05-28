@@ -18,21 +18,20 @@ const b64 = (s: string) => btoa(unescape(encodeURIComponent(s)));
 
 async function gerarToken(usuario: string, senha: string, cliente: string): Promise<string> {
   const body = `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-  <soap:Body>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
     <GerarToken xmlns="http://tempuri.org/">
       <usuario>${b64(usuario)}</usuario>
       <senha>${b64(senha)}</senha>
       <cliente>${b64(cliente)}</cliente>
     </GerarToken>
-  </soap:Body>
-</soap:Envelope>`;
+  </soap12:Body>
+</soap12:Envelope>`;
 
   const res = await fetch(TOKEN_URL, {
     method: "POST",
     headers: {
-      "Content-Type": "text/xml; charset=utf-8",
-      SOAPAction: "http://tempuri.org/GerarToken",
+      "Content-Type": 'application/soap+xml; charset=utf-8; action="http://tempuri.org/GerarToken"',
     },
     body,
   });
@@ -54,20 +53,19 @@ async function gerarToken(usuario: string, senha: string, cliente: string): Prom
 
 async function nvCheck(documento: string, token: string): Promise<string> {
   const body = `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-  <soap:Body>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
     <NVCHECK xmlns="http://tempuri.org/">
       <documento>${documento}</documento>
       <token>${token}</token>
     </NVCHECK>
-  </soap:Body>
-</soap:Envelope>`;
+  </soap12:Body>
+</soap12:Envelope>`;
 
   const res = await fetch(CHECK_URL, {
     method: "POST",
     headers: {
-      "Content-Type": "text/xml; charset=utf-8",
-      SOAPAction: "http://tempuri.org/NVCHECK",
+      "Content-Type": 'application/soap+xml; charset=utf-8; action="http://tempuri.org/NVCHECK"',
     },
     body,
   });
