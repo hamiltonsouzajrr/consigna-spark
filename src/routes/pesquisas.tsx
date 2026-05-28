@@ -308,11 +308,16 @@ function PesquisasPage() {
         </Card>
 
 
-        {busy && !result && (
-          <Card className="p-10 text-center text-sm text-muted-foreground">
-            <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin" />
-            Consultando Nova Vida…
-          </Card>
+        {busy && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+            <Card className="p-8 text-center shadow-2xl">
+              <div className="relative mx-auto mb-4 h-12 w-12">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              </div>
+              <p className="text-base font-medium text-foreground">Consultando Nova Vida…</p>
+              <p className="mt-1 text-sm text-muted-foreground">Isso pode levar alguns segundos</p>
+            </Card>
+          </div>
         )}
 
         {result && <ResultView c={result} documento={searchedDoc} onCopy={copy} />}
