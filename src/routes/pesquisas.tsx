@@ -172,25 +172,22 @@ function PesquisasPage() {
 
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    const clean = cpf.replace(/\D/g, "");
-    if (clean.length !== 11 && clean.length !== 14) {
-      toast.error("Informe um CPF (11) ou CNPJ (14 dígitos) para a consulta");
+    const tipo = detectTipo(query);
+    if (!tipo) {
+      toast.error("Digite um CPF, CNPJ, nome, e-mail ou telefone para buscar");
+      return;
+    }
+    if (tipo !== "cpf" && tipo !== "cnpj") {
+      toast.error(
+        `A consulta Nova Vida exige um CPF ou CNPJ. Informe o documento para buscar (${TIPO_LABEL[tipo]} não é aceito).`,
+      );
       return;
     }
     if (!finalidade.trim()) {
       toast.error("Selecione a finalidade da consulta");
       return;
     }
-    const celularClean = celular.replace(/\D/g, "");
-    if (celularClean && (celularClean.length < 10 || celularClean.length > 11)) {
-      toast.error("Celular inválido (use DDD + número)");
-      return;
-    }
-    const emailTrim = email.trim();
-    if (emailTrim && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
-      toast.error("E-mail inválido");
-      return;
-    }
+    const clean = query.replace(/\D/g, "");
 
     setBusy(true);
     setResult(null);
@@ -199,9 +196,6 @@ function PesquisasPage() {
         body: {
           cpf: clean,
           documento: clean,
-          nome: nome.trim() || undefined,
-          celular: celularClean || undefined,
-          email: emailTrim || undefined,
           finalidade: finalidade.trim(),
         },
       });
@@ -217,17 +211,17 @@ function PesquisasPage() {
       setSearchedDoc(clean);
       setResult(consulta);
 
-      // Salva no histórico de pesquisas (com critérios e finalidade — auditoria/LGPD)
+      // Salva no histórico de pesquisas (com finalidade — auditoria/LGPD)
       const cad = consulta.CADASTRAIS ?? {};
-      const nomeResp = (cad.NOME as string) || (cad.RAZAO as string) || nome.trim() || null;
-      const tipo = cad.CNPJ ? "PJ" : "PF";
+      const nomeResp = (cad.NOME as string) || (cad.RAZAO as string) || null;
+      const tipoDoc = cad.CNPJ ? "PJ" : "PF";
       const { error: insErr } = await supabase.from("pesquisas_nv").insert({
         user_id: user.id,
         documento: clean,
-        tipo,
+        tipo: tipoDoc,
         nome: nomeResp,
-        celular: celularClean || null,
-        email: emailTrim || null,
+        celular: null,
+        email: null,
         finalidade: finalidade.trim(),
         resultado: consulta as unknown as Json,
       });
@@ -239,9 +233,7 @@ function PesquisasPage() {
 
   const openFromHistory = (row: HistoryRow) => {
     if (!row.resultado) {
-      setCpf(row.documento);
-      setCelular(row.celular ?? "");
-      setEmail(row.email ?? "");
+      setQuery(maskQuery(row.documento));
       setFinalidade(row.finalidade ?? "");
       return;
     }
