@@ -702,10 +702,10 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
             {(c.TELEFONES ?? []).map((t, i) => {
               const full = `(${t.DDD ?? ""}) ${t.TELEFONE ?? ""}`.trim();
               return (
-                <div key={i} className="flex items-center justify-between rounded-md border bg-muted/30 p-2.5 text-sm">
+                <div key={i} className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 p-2.5 text-sm">
                   <div>
                     <p className="font-mono">{full}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-slate-500">
                       {[t.TIPO_TELEFONE, t.OPERADORA].filter(Boolean).join(" · ")}
                       {flagYes(t.PROCON) && " · PROCON"}
                       {flagYes(t.FLHOT) && " · HOT"}
@@ -725,7 +725,7 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           {(c.EMAILS ?? []).length === 0 && <Empty />}
           <div className="space-y-2">
             {(c.EMAILS ?? []).map((e, i) => (
-              <div key={i} className="flex items-center justify-between rounded-md border bg-muted/30 p-2.5 text-sm">
+              <div key={i} className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 p-2.5 text-sm">
                 <span className="truncate">{e.EMAIL}</span>
                 <Button size="sm" variant="ghost" onClick={() => e.EMAIL && navigator.clipboard.writeText(e.EMAIL)}>
                   <Copy className="h-3.5 w-3.5" />
@@ -740,12 +740,12 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           <Section icon={<Users className="h-4 w-4" />} title={`Pessoas ligadas (${c.PESSOASLIGADAS!.length})`}>
             <div className="space-y-2">
               {c.PESSOASLIGADAS!.map((p, i) => (
-                <div key={i} className="rounded-md border bg-muted/30 p-2.5 text-sm">
+                <div key={i} className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-sm">
                   <div className="flex items-center gap-2">
                     <p className="font-medium">{p.NOME}</p>
                     <VinculoBadge vinculo={p.VINCULO} />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-slate-500">
                     {p.CPF ? `CPF ${formatCpf(p.CPF)}` : ""}{p.NASC ? ` · ${p.NASC}` : ""}
                   </p>
                 </div>
