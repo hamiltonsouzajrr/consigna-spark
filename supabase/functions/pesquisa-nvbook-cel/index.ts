@@ -55,20 +55,19 @@ async function gerarToken(usuario: string, senha: string, cliente: string): Prom
 async function nvBookCelObr(celular: string, token: string): Promise<string> {
   // NVBOOK recebe o telefone/celular (DDD + número) e o token.
   const body = `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-  <soap:Body>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
     <NVBOOK_CEL_OBR xmlns="http://tempuri.org/">
       <telefone>${celular}</telefone>
       <token>${token}</token>
     </NVBOOK_CEL_OBR>
-  </soap:Body>
-</soap:Envelope>`;
+  </soap12:Body>
+</soap12:Envelope>`;
 
   const res = await fetch(BOOK_URL, {
     method: "POST",
     headers: {
-      "Content-Type": "text/xml; charset=utf-8",
-      SOAPAction: "http://tempuri.org/NVBOOK_CEL_OBR",
+      "Content-Type": 'application/soap+xml; charset=utf-8; action="http://tempuri.org/NVBOOK_CEL_OBR"',
     },
     body,
   });
