@@ -495,7 +495,7 @@ function PesquisasPage() {
           </div>
         )}
 
-        {result && <ResultView c={result} documento={searchedDoc} onCopy={copy} />}
+        {result && <ResultView c={result} documento={searchedDoc} onCopy={copy} cachedAt={cachedAt} />}
 
         <HistoryPanel rows={history} onOpen={openFromHistory} onRemove={removeHistory} />
 
