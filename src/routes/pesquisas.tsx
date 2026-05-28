@@ -322,12 +322,22 @@ function PesquisasPage() {
                   max={new Date().toISOString().slice(0, 10)}
                 />
               </div>
-              <div className="space-y-1.5 self-end">
-                <p className="text-xs text-muted-foreground">
-                  Opcional — registrada no histórico para confirmação cadastral.
-                </p>
+              <div className="space-y-1.5">
+                <Label htmlFor="f-email">E-mail</Label>
+                <Input
+                  id="f-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="email@exemplo.com (opcional)"
+                  maxLength={255}
+                />
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Data de nascimento e e-mail são opcionais — registrados no histórico para confirmação cadastral.
+            </p>
+
 
 
             <div className="space-y-1.5">
