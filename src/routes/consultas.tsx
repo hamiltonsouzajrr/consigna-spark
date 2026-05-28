@@ -280,6 +280,18 @@ function Page() {
     return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
   }, [items]);
 
+  const uniqueOpts = (key: keyof Consulta) => {
+    const s = new Set<string>();
+    for (const i of items) {
+      const v = i[key];
+      if (typeof v === "string" && v.trim()) s.add(v.trim());
+    }
+    return Array.from(s).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  };
+  const orgaoOpts = useMemo(() => uniqueOpts("orgao"), [items]);
+  const categoriaOpts = useMemo(() => uniqueOpts("categoria"), [items]);
+  const situacaoOpts = useMemo(() => uniqueOpts("situacao"), [items]);
+
   const filtered = useMemo(() => {
     let f = items;
     if (statusFilter !== "all") f = f.filter((i) => i.status === statusFilter);
@@ -290,8 +302,24 @@ function Page() {
       const q = search.toLowerCase();
       f = f.filter((i) => i.cpf.includes(q.replace(/\D/g, "")) || i.nome.toLowerCase().includes(q));
     }
+    if (fOrgao !== "all") f = f.filter((i) => (i.orgao ?? "") === fOrgao);
+    if (fCategoria !== "all") f = f.filter((i) => (i.categoria ?? "") === fCategoria);
+    if (fSituacao !== "all") f = f.filter((i) => (i.situacao ?? "") === fSituacao);
+    const mn = parseFloat(fMargemMin.replace(",", "."));
+    const mx = parseFloat(fMargemMax.replace(",", "."));
+    if (!Number.isNaN(mn)) f = f.filter((i) => (i.margem_disponivel ?? 0) >= mn);
+    if (!Number.isNaN(mx)) f = f.filter((i) => (i.margem_disponivel ?? 0) <= mx);
+    if (fDataIni) {
+      const t = new Date(fDataIni).getTime();
+      f = f.filter((i) => i.processed_at && new Date(i.processed_at).getTime() >= t);
+    }
+    if (fDataFim) {
+      const t = new Date(fDataFim).getTime() + 24 * 3600 * 1000;
+      f = f.filter((i) => i.processed_at && new Date(i.processed_at).getTime() < t);
+    }
+    if (fComMatricula) f = f.filter((i) => !!(i.matricula && i.matricula.trim()));
     return f;
-  }, [items, statusFilter, erroTipoFilter, search]);
+  }, [items, statusFilter, erroTipoFilter, search, fOrgao, fCategoria, fSituacao, fMargemMin, fMargemMax, fDataIni, fDataFim, fComMatricula]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
