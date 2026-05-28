@@ -518,7 +518,7 @@ function VinculoBadge({ vinculo }: { vinculo?: string }) {
 function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; onCopy: (v?: string) => void }) {
   if (c.erro) {
     return (
-      <Card className="p-6 border-destructive/40 bg-destructive/5">
+      <Card className="p-6 border-red-200 bg-red-50">
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 h-5 w-5 text-destructive" />
           <div>
@@ -577,7 +577,7 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="p-6">
+      <Card className="p-6 bg-white border-slate-200 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -598,7 +598,7 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
                   </Badge>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-500">
                 {isPJ ? cad.CNPJ : formatCpf(documento)}
                 {cad.NASC && ` · Nasc. ${cad.NASC}`}
                 {cad.IDADE && ` · ${cad.IDADE} anos`}
@@ -676,12 +676,12 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           {(c.ENDERECOS ?? []).length === 0 && <Empty />}
           <div className="space-y-2">
             {(c.ENDERECOS ?? []).map((e, i) => (
-              <div key={i} className="rounded-md border bg-muted/30 p-3 text-sm">
+              <div key={i} className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
                 <p className="font-medium">
                   {[e.TIPO, e.TITULO, e.LOGRADOURO].filter(Boolean).join(" ")}{e.NUMERO ? `, ${e.NUMERO}` : ""}
                   {e.COMPLEMENTO ? ` — ${e.COMPLEMENTO}` : ""}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-slate-500">
                   {[e.BAIRRO, e.CIDADE, e.UF].filter(Boolean).join(" · ")}
                   {e.CEP ? ` · CEP ${e.CEP}` : ""}
                 </p>
