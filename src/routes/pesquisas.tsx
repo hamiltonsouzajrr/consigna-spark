@@ -761,13 +761,13 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
               {c.SOCIEDADES!.map((s, i) => (
                 <div key={i} className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-sm">
                   <p className="font-medium">{s.RAZAO}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-slate-500">
                     CNPJ {s.CNPJ}
                     {s.PARTICIPACAO ? ` · ${s.PARTICIPACAO}%` : ""}
                     {s.STATUS_RF ? ` · ${s.STATUS_RF}` : ""}
                   </p>
                   {s.DESCRICAO_CNAE && (
-                    <p className="text-xs text-muted-foreground">{s.CNAE} — {s.DESCRICAO_CNAE}</p>
+                    <p className="text-xs text-slate-500">{s.CNAE} — {s.DESCRICAO_CNAE}</p>
                   )}
                 </div>
               ))}
@@ -780,12 +780,12 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           <Section icon={<Shield className="h-4 w-4" />} title={`PEP relacionados (${c.PEPRELACIONADOS!.length})`}>
             <div className="space-y-2">
               {c.PEPRELACIONADOS!.map((p, i) => (
-                <div key={i} className="rounded-md border bg-muted/30 p-2.5 text-sm">
+                <div key={i} className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-sm">
                   <div className="flex items-center gap-2">
                     <p className="font-medium">{p.NOME}</p>
                     <VinculoBadge vinculo={p.VINCULO} />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-slate-500">
                     {p.CPF ? `CPF ${formatCpf(p.CPF)}` : ""}
                   </p>
                 </div>
@@ -799,7 +799,7 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           <Section icon={<HardHat className="h-4 w-4" />} title={`Vínculos empregatícios (${c.VINCULOSEMPREGATICIOS!.length})`} wide>
             <div className="space-y-2">
               {c.VINCULOSEMPREGATICIOS!.map((v, i) => (
-                <div key={i} className="rounded-md border bg-muted/30 p-3 text-sm">
+                <div key={i} className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
                   <div className="flex items-center justify-between">
                     <p className="font-medium">{v.RAZAO}</p>
                     <VinculoBadge vinculo={v.VINCULO} />
