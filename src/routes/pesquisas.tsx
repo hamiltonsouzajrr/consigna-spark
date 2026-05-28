@@ -8,12 +8,26 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   Search, Loader2, User, MapPin, Phone, Mail, Building2, AlertTriangle,
   Skull, Shield, Users, Briefcase, TrendingUp, Copy, HardHat, History, Trash2, Clock,
 } from "lucide-react";
 import { formatCpf } from "@/lib/cpf";
+
+const FINALIDADES = [
+  "Análise de crédito",
+  "Prevenção à fraude",
+  "Cobrança / recuperação",
+  "Prospecção comercial",
+  "Cadastro / onboarding",
+  "Confirmação cadastral",
+  "Outra",
+] as const;
 
 export const Route = createFileRoute("/pesquisas")({
   head: () => ({
@@ -81,13 +95,20 @@ type HistoryRow = {
   documento: string;
   tipo: string;
   nome: string | null;
+  celular: string | null;
+  email: string | null;
+  finalidade: string | null;
   resultado: Consulta | null;
   created_at: string;
 };
 
 function PesquisasPage() {
   const { user, loading } = useAuth();
-  const [doc, setDoc] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [nome, setNome] = useState("");
+  const [celular, setCelular] = useState("");
+  const [email, setEmail] = useState("");
+  const [finalidade, setFinalidade] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Consulta | null>(null);
   const [searchedDoc, setSearchedDoc] = useState<string>("");
@@ -96,7 +117,7 @@ function PesquisasPage() {
   const loadHistory = useCallback(async () => {
     const { data, error } = await supabase
       .from("pesquisas_nv")
-      .select("id, documento, tipo, nome, resultado, created_at")
+      .select("id, documento, tipo, nome, celular, email, finalidade, resultado, created_at")
       .order("created_at", { ascending: false })
       .limit(20);
     if (!error && data) setHistory(data as HistoryRow[]);
@@ -111,11 +132,26 @@ function PesquisasPage() {
 
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    const clean = doc.replace(/\D/g, "");
+    const clean = cpf.replace(/\D/g, "");
     if (clean.length !== 11 && clean.length !== 14) {
-      toast.error("Informe um CPF (11) ou CNPJ (14 dígitos)");
+      toast.error("Informe um CPF (11) ou CNPJ (14 dígitos) para a consulta");
       return;
     }
+    if (!finalidade.trim()) {
+      toast.error("Selecione a finalidade da consulta");
+      return;
+    }
+    const celularClean = celular.replace(/\D/g, "");
+    if (celularClean && (celularClean.length < 10 || celularClean.length > 11)) {
+      toast.error("Celular inválido (use DDD + número)");
+      return;
+    }
+    const emailTrim = email.trim();
+    if (emailTrim && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
+      toast.error("E-mail inválido");
+      return;
+    }
+
     setBusy(true);
     setResult(null);
     try {
@@ -134,15 +170,18 @@ function PesquisasPage() {
       setSearchedDoc(clean);
       setResult(consulta);
 
-      // Salva no histórico de pesquisas
+      // Salva no histórico de pesquisas (com critérios e finalidade — auditoria/LGPD)
       const cad = consulta.CADASTRAIS ?? {};
-      const nome = (cad.NOME as string) || (cad.RAZAO as string) || null;
+      const nomeResp = (cad.NOME as string) || (cad.RAZAO as string) || nome.trim() || null;
       const tipo = cad.CNPJ ? "PJ" : "PF";
       const { error: insErr } = await supabase.from("pesquisas_nv").insert({
         user_id: user.id,
         documento: clean,
         tipo,
-        nome,
+        nome: nomeResp,
+        celular: celularClean || null,
+        email: emailTrim || null,
+        finalidade: finalidade.trim(),
         resultado: consulta as unknown as Json,
       });
       if (!insErr) loadHistory();
@@ -153,7 +192,10 @@ function PesquisasPage() {
 
   const openFromHistory = (row: HistoryRow) => {
     if (!row.resultado) {
-      setDoc(row.documento);
+      setCpf(row.documento);
+      setCelular(row.celular ?? "");
+      setEmail(row.email ?? "");
+      setFinalidade(row.finalidade ?? "");
       return;
     }
     setSearchedDoc(row.documento);
@@ -180,25 +222,91 @@ function PesquisasPage() {
           </p>
         </div>
 
-        <Card className="p-4">
-          <form onSubmit={submit} className="flex gap-2">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={doc}
-                onChange={(e) => setDoc(e.target.value)}
-                placeholder="Digite o CPF ou CNPJ…"
-                inputMode="numeric"
-                className="pl-9"
-                maxLength={18}
-              />
+        <Card className="p-5">
+          <form onSubmit={submit} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="f-cpf">
+                  CPF / CNPJ <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="f-cpf"
+                    value={cpf}
+                    onChange={(e) => setCpf(e.target.value)}
+                    placeholder="Documento para a consulta…"
+                    inputMode="numeric"
+                    className="pl-9"
+                    maxLength={18}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="f-nome">Nome</Label>
+                <Input
+                  id="f-nome"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  placeholder="Nome (opcional)"
+                  maxLength={120}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="f-celular">Celular</Label>
+                <Input
+                  id="f-celular"
+                  value={celular}
+                  onChange={(e) => setCelular(e.target.value)}
+                  placeholder="(DDD) número (opcional)"
+                  inputMode="numeric"
+                  maxLength={16}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="f-email">E-mail</Label>
+                <Input
+                  id="f-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="email@exemplo.com (opcional)"
+                  maxLength={255}
+                />
+              </div>
+
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="f-finalidade">
+                  Finalidade <span className="text-destructive">*</span>
+                </Label>
+                <Select value={finalidade} onValueChange={setFinalidade}>
+                  <SelectTrigger id="f-finalidade">
+                    <SelectValue placeholder="Selecione o motivo da consulta…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FINALIDADES.map((f) => (
+                      <SelectItem key={f} value={f}>{f}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <Button type="submit" disabled={busy}>
-              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-              Consultar
-            </Button>
+
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                A consulta usa o CPF/CNPJ. Os demais campos e a finalidade ficam registrados no histórico.
+              </p>
+              <Button type="submit" disabled={busy}>
+                {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                Consultar
+              </Button>
+            </div>
           </form>
         </Card>
+
 
         {busy && !result && (
           <Card className="p-10 text-center text-sm text-muted-foreground">
@@ -259,6 +367,11 @@ function HistoryPanel({
                       <Clock className="mr-1 h-3 w-3" /> {fmtDate(row.created_at)}
                     </span>
                   </p>
+                  {row.finalidade && (
+                    <Badge variant="secondary" className="mt-1 text-[10px] font-normal">
+                      {row.finalidade}
+                    </Badge>
+                  )}
                 </div>
               </button>
               <Button

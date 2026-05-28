@@ -112,8 +112,11 @@ export type Database = {
       }
       pesquisas_nv: {
         Row: {
+          celular: string | null
           created_at: string
           documento: string
+          email: string | null
+          finalidade: string | null
           id: string
           nome: string | null
           resultado: Json | null
@@ -121,8 +124,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          celular?: string | null
           created_at?: string
           documento: string
+          email?: string | null
+          finalidade?: string | null
           id?: string
           nome?: string | null
           resultado?: Json | null
@@ -130,8 +136,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          celular?: string | null
           created_at?: string
           documento?: string
+          email?: string | null
+          finalidade?: string | null
           id?: string
           nome?: string | null
           resultado?: Json | null
