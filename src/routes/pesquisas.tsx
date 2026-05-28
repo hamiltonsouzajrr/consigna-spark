@@ -170,6 +170,7 @@ function PesquisasPage() {
   const [result, setResult] = useState<Consulta | null>(null);
   const [searchedDoc, setSearchedDoc] = useState<string>("");
   const [history, setHistory] = useState<HistoryRow[]>([]);
+  const [showLoteModal, setShowLoteModal] = useState(false);
 
   const tipoDetectado = detectTipo(query);
 
