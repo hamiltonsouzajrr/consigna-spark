@@ -234,7 +234,25 @@ function PesquisasPage() {
                   <Input
                     id="f-cpf"
                     value={cpf}
-                    onChange={(e) => setCpf(e.target.value)}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/\D/g, "");
+                      let masked = raw;
+                      if (raw.length > 11) {
+                        // CNPJ: 00.000.000/0000-00
+                        masked = raw
+                          .replace(/^(\d{2})(\d)/, "$1.$2")
+                          .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+                          .replace(/\.(\d{3})(\d)/, ".$1/$2")
+                          .replace(/(\d{4})(\d)/, "$1-$2");
+                      } else {
+                        // CPF: 000.000.000-00
+                        masked = raw
+                          .replace(/^(\d{3})(\d)/, "$1.$2")
+                          .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+                          .replace(/\.(\d{3})(\d{1,2})$/, ".$1-$2");
+                      }
+                      setCpf(masked);
+                    }}
                     placeholder="Documento para a consulta…"
                     inputMode="numeric"
                     className="pl-9"
