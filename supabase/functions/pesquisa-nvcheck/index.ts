@@ -1,9 +1,11 @@
 // Edge Function: pesquisa-nvcheck
 // Busca multi-critério da tela de Pesquisas. Backend usa SOMENTE o documento (CPF/CNPJ).
 // Payload: { cpf?, documento?, nome?, celular?, email?, finalidade? }
-// Autenticação: REST com Bearer token.
-//   - NOVA_VIDA_API_URL: endpoint base da API Nova Vida.
-//   - NOVA_VIDA_API_KEY: enviada no header Authorization (Bearer).
+// Autenticação: SOAP 1.2 direto no endpoint Nova Vida (NVCHECK), usando o token.
+//   - NOVA_VIDA_API_URL: endpoint SOAP da Nova Vida (.asmx).
+//   - NOVA_VIDA_API_KEY: token usado diretamente na chamada NVCHECK.
+
+import { XMLParser } from "https://esm.sh/fast-xml-parser@4.5.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,33 +23,89 @@ class NovaVidaUnavailableError extends Error {
   }
 }
 
-async function novaVidaCheck(documento: string, apiUrl: string, apiKey: string): Promise<unknown> {
+// Chamada SOAP 1.2 ao método NVCHECK.
+// Envelope no namespace http://www.w3.org/2003/05/soap-envelope e
+// Content-Type application/soap+xml com a action embutida (sem header SOAPAction).
+async function nvCheckSoap(documento: string, apiUrl: string, token: string): Promise<string> {
+  const body = `<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <NVCHECK xmlns="http://tempuri.org/">
+      <documento>${documento}</documento>
+      <token>${token}</token>
+    </NVCHECK>
+  </soap12:Body>
+</soap12:Envelope>`;
+
   const res = await fetch(apiUrl, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": 'application/soap+xml; charset=utf-8; action="http://tempuri.org/NVCHECK"',
     },
-    body: JSON.stringify({ documento }),
+    body,
   });
 
   const text = await res.text();
   if (!res.ok) {
-    console.error("Nova Vida API error", { status: res.status, body: text.slice(0, 1000) });
+    console.error("Nova Vida SOAP error", { status: res.status, body: text.slice(0, 1000) });
     throw new NovaVidaUnavailableError();
   }
 
-  let json: unknown;
-  try {
-    json = JSON.parse(text);
-  } catch {
-    console.error("Nova Vida non-JSON response", { body: text.slice(0, 1000) });
+  // Resposta SOAP traz o XML da consulta dentro de <NVCHECKResult>...</NVCHECKResult>,
+  // podendo vir HTML-encoded (&lt;...&gt;).
+  const m = text.match(/<NVCHECKResult>([\s\S]*?)<\/NVCHECKResult>/);
+  if (!m) {
+    console.error("Nova Vida resposta inesperada", { body: text.slice(0, 1000) });
     throw new NovaVidaUnavailableError();
   }
+  let inner = m[1].trim();
+  if (inner.includes("&lt;")) {
+    inner = inner
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'");
+  }
 
-  // Normaliza: alguns endpoints encapsulam o resultado em { CONSULTA: {...} } ou { data: {...} }.
-  const obj = json as Record<string, unknown>;
-  return obj.CONSULTA ?? obj.data ?? obj;
+  // Quando o token está inválido/expirado a Nova Vida devolve uma mensagem curta
+  // (ex.: "TOKEN EXPIRADO.") no lugar do XML da consulta. Tratamos como falha.
+  if (!inner.startsWith("<")) {
+    const lower = inner.toLowerCase();
+    if (
+      lower.includes("token") ||
+      lower.includes("expirad") ||
+      lower.includes("incorreto") ||
+      lower.includes("sem acesso") ||
+      lower.includes("acesso negado")
+    ) {
+      console.error("Nova Vida token/auth inválido", { result: inner.slice(0, 300) });
+      throw new NovaVidaUnavailableError();
+    }
+  }
+  return inner;
+}
+
+function parseConsulta(xml: string): unknown {
+  const trimmed = xml.trim();
+  if (!trimmed.startsWith("<")) return trimmed;
+  const parser = new XMLParser({
+    ignoreAttributes: true,
+    trimValues: true,
+    isArray: (name) => [
+      "ENDERECOS",
+      "TELEFONES",
+      "EMAILS",
+      "CONTATOSRUINS",
+      "ULTIMAEMPRESALIGADA",
+      "PESSOASLIGADAS",
+      "SOCIEDADES",
+      "PEPRELACIONADOS",
+      "QSA",
+    ].includes(name),
+  });
+  const obj = parser.parse(trimmed) as Record<string, unknown>;
+  return (obj.CONSULTA as unknown) ?? obj;
 }
 
 Deno.serve(async (req) => {
@@ -95,7 +153,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const data = await novaVidaCheck(documento, apiUrl, apiKey);
+    const xml = await nvCheckSoap(documento, apiUrl, apiKey);
+    const data = parseConsulta(xml);
     return new Response(JSON.stringify({ ok: true, documento, data }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
