@@ -296,7 +296,7 @@ function PesquisasPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="f-email">E-mail</Label>
+                <Label htmlFor="f-email">E-mail(s)</Label>
                 <Input
                   id="f-email"
                   type="email"
