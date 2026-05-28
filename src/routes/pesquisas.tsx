@@ -319,10 +319,12 @@ function PesquisasPage() {
       setDataNasc(row.data_nascimento ?? "");
       setEmail(row.email ?? "");
       setFinalidade(row.finalidade ?? "");
+      setCachedAt(null);
       return;
     }
     setSearchedDoc(row.documento);
     setResult(row.resultado);
+    setCachedAt(row.created_at);
   };
 
   const removeHistory = async (id: string) => {
