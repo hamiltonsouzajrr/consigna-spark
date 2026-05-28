@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   Search, Loader2, User, MapPin, Phone, Mail, Building2, AlertTriangle,
-  Skull, Shield, Users, Briefcase, TrendingUp, Copy,
+  Skull, Shield, Users, Briefcase, TrendingUp, Copy, HardHat,
 } from "lucide-react";
 import { formatCpf } from "@/lib/cpf";
 
@@ -40,6 +40,16 @@ type Sociedade = {
   CNAE?: string; DESCRICAO_CNAE?: string; STATUS_RF?: string;
 };
 type Pessoa = { CPF?: string; NOME?: string; VINCULO?: string; NASC?: string };
+type VinculoEmpregaticio = {
+  CNPJ?: string;
+  RAZAO?: string;
+  CARGO?: string;
+  ADMISSAO?: string;
+  VINCULO?: string;
+  SALARIO?: string;
+  UF?: string;
+  CIDADE?: string;
+};
 
 type Consulta = {
   CADASTRAIS?: Record<string, string>;
@@ -55,6 +65,7 @@ type Consulta = {
   SOCIEDADES?: Sociedade[];
   PEP?: { FLPEP?: string };
   PEPRELACIONADOS?: Pessoa[];
+  VINCULOSEMPREGATICIOS?: VinculoEmpregaticio[];
   erro?: string;
 };
 
@@ -147,6 +158,34 @@ function PesquisasPage() {
         {result && <ResultView c={result} documento={searchedDoc} onCopy={copy} />}
       </div>
     </AppShell>
+  );
+}
+
+function VinculoBadge({ vinculo }: { vinculo?: string }) {
+  if (!vinculo) return null;
+  const v = vinculo.toUpperCase();
+  const isAtivo = v.includes("ATIVO") || v === "ATIVO" || v === "EMPREGADO" || v === "TRABALHANDO";
+  const isInativo = v.includes("INATIVO") || v === "INATIVO" || v === "DESLIGADO" || v === "DEMITIDO";
+  if (isAtivo) {
+    return (
+      <Badge variant="outline" className="border-emerald-400/40 bg-emerald-400/10 text-emerald-600">
+        <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        Ativo
+      </Badge>
+    );
+  }
+  if (isInativo) {
+    return (
+      <Badge variant="outline" className="border-amber-400/40 bg-amber-400/10 text-amber-600">
+        <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
+        Inativo
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="border-muted-foreground/30 bg-muted/40 text-muted-foreground">
+      {vinculo}
+    </Badge>
   );
 }
 
@@ -314,9 +353,12 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
             <div className="space-y-2">
               {c.PESSOASLIGADAS!.map((p, i) => (
                 <div key={i} className="rounded-md border bg-muted/30 p-2.5 text-sm">
-                  <p className="font-medium">{p.NOME}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{p.NOME}</p>
+                    <VinculoBadge vinculo={p.VINCULO} />
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    {p.VINCULO}{p.CPF ? ` · CPF ${formatCpf(p.CPF)}` : ""}{p.NASC ? ` · ${p.NASC}` : ""}
+                    {p.CPF ? `CPF ${formatCpf(p.CPF)}` : ""}{p.NASC ? ` · ${p.NASC}` : ""}
                   </p>
                 </div>
               ))}
@@ -351,10 +393,40 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
             <div className="space-y-2">
               {c.PEPRELACIONADOS!.map((p, i) => (
                 <div key={i} className="rounded-md border bg-muted/30 p-2.5 text-sm">
-                  <p className="font-medium">{p.NOME}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{p.NOME}</p>
+                    <VinculoBadge vinculo={p.VINCULO} />
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    {p.VINCULO}{p.CPF ? ` · ${formatCpf(p.CPF)}` : ""}
+                    {p.CPF ? `CPF ${formatCpf(p.CPF)}` : ""}
                   </p>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Vinculos empregaticios */}
+        {(c.VINCULOSEMPREGATICIOS?.length ?? 0) > 0 && (
+          <Section icon={<HardHat className="h-4 w-4" />} title={`Vínculos empregatícios (${c.VINCULOSEMPREGATICIOS!.length})`} wide>
+            <div className="space-y-2">
+              {c.VINCULOSEMPREGATICIOS!.map((v, i) => (
+                <div key={i} className="rounded-md border bg-muted/30 p-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">{v.RAZAO}</p>
+                    <VinculoBadge vinculo={v.VINCULO} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {v.CNPJ ? `CNPJ ${v.CNPJ}` : ""}
+                    {v.CARGO ? ` · ${v.CARGO}` : ""}
+                    {v.ADMISSAO ? ` · Admissão ${v.ADMISSAO}` : ""}
+                  </p>
+                  {(v.SALARIO || v.UF || v.CIDADE) && (
+                    <p className="text-xs text-muted-foreground">
+                      {v.SALARIO ? `Salário ${v.SALARIO}` : ""}
+                      {v.UF ? ` · ${v.UF}${v.CIDADE ? `/${v.CIDADE}` : ""}` : ""}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
