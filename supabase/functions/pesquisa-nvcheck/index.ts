@@ -11,6 +11,16 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const NOVA_VIDA_FRIENDLY_ERROR =
+  "A consulta Nova Vida está indisponível no momento. Tente novamente em alguns instantes.";
+
+class NovaVidaUnavailableError extends Error {
+  constructor() {
+    super(NOVA_VIDA_FRIENDLY_ERROR);
+    this.name = "NovaVidaUnavailableError";
+  }
+}
+
 async function novaVidaCheck(documento: string, apiUrl: string, apiKey: string): Promise<unknown> {
   const res = await fetch(apiUrl, {
     method: "POST",
@@ -23,14 +33,16 @@ async function novaVidaCheck(documento: string, apiUrl: string, apiKey: string):
 
   const text = await res.text();
   if (!res.ok) {
-    throw new Error(`Nova Vida ${res.status}: ${text.slice(0, 300)}`);
+    console.error("Nova Vida API error", { status: res.status, body: text.slice(0, 1000) });
+    throw new NovaVidaUnavailableError();
   }
 
   let json: unknown;
   try {
     json = JSON.parse(text);
   } catch {
-    throw new Error(`Resposta não-JSON da Nova Vida: ${text.slice(0, 300)}`);
+    console.error("Nova Vida non-JSON response", { body: text.slice(0, 1000) });
+    throw new NovaVidaUnavailableError();
   }
 
   // Normaliza: alguns endpoints encapsulam o resultado em { CONSULTA: {...} } ou { data: {...} }.
@@ -91,8 +103,15 @@ Deno.serve(async (req) => {
   } catch (err) {
     // Retorna 200 com ok:false para o cliente tratar a falha sem blank screen
     // (status >= 400 faz supabase.functions.invoke descartar o corpo JSON).
+    const isNovaVidaUnavailable = err instanceof NovaVidaUnavailableError;
     return new Response(
-      JSON.stringify({ ok: false, error: String(err instanceof Error ? err.message : err) }),
+      JSON.stringify({
+        ok: false,
+        error: isNovaVidaUnavailable
+          ? NOVA_VIDA_FRIENDLY_ERROR
+          : "Não foi possível concluir a consulta. Tente novamente em alguns instantes.",
+        code: isNovaVidaUnavailable ? "NOVA_VIDA_UNAVAILABLE" : "CONSULTA_ERROR",
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
