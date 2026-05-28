@@ -90,6 +90,18 @@ const blank = (v?: string | number | null) => {
 };
 const flagYes = (v?: string) => (v ?? "").toUpperCase() === "S";
 
+// Calcula a idade (anos completos) a partir de uma data ISO (YYYY-MM-DD).
+function calcIdade(iso: string): number | null {
+  if (!iso) return null;
+  const nasc = new Date(iso + "T00:00:00");
+  if (Number.isNaN(nasc.getTime())) return null;
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - nasc.getFullYear();
+  const m = hoje.getMonth() - nasc.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+  return idade >= 0 && idade <= 130 ? idade : null;
+}
+
 type SearchTipo = "cpf" | "cnpj" | "email" | "telefone" | "nome" | null;
 
 // Detecta automaticamente o tipo do termo digitado na barra de busca única.
@@ -313,7 +325,14 @@ function PesquisasPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="f-nasc">Data de nascimento</Label>
+                <Label htmlFor="f-nasc" className="flex items-center gap-2">
+                  Data de nascimento
+                  {calcIdade(dataNasc) != null && (
+                    <Badge variant="secondary" className="font-normal">
+                      {calcIdade(dataNasc)} anos
+                    </Badge>
+                  )}
+                </Label>
                 <Input
                   id="f-nasc"
                   type="date"
