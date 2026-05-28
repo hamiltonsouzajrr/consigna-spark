@@ -142,7 +142,7 @@ function PesquisasPage() {
         documento: clean,
         tipo,
         nome,
-        resultado: consulta as unknown as Record<string, unknown>,
+        resultado: consulta as unknown as Json,
       });
       if (!insErr) loadHistory();
     } finally {
