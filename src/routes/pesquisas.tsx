@@ -325,7 +325,14 @@ function PesquisasPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="f-nasc">Data de nascimento</Label>
+                <Label htmlFor="f-nasc" className="flex items-center gap-2">
+                  Data de nascimento
+                  {calcIdade(dataNasc) != null && (
+                    <Badge variant="secondary" className="font-normal">
+                      {calcIdade(dataNasc)} anos
+                    </Badge>
+                  )}
+                </Label>
                 <Input
                   id="f-nasc"
                   type="date"
