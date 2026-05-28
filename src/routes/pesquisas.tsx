@@ -147,6 +147,17 @@ const TIPO_LABEL: Record<Exclude<SearchTipo, null>, string> = {
   nome: "Nome",
 };
 
+const CONSULTA_INDISPONIVEL_MSG =
+  "A consulta Nova Vida está indisponível no momento. Tente novamente em alguns instantes.";
+
+function friendlyApiError(message?: string | null) {
+  if (!message) return CONSULTA_INDISPONIVEL_MSG;
+  if (/Nova Vida\s+\d{3}|<\?xml|<soap:|soap:Fault|Resposta não-JSON/i.test(message)) {
+    return CONSULTA_INDISPONIVEL_MSG;
+  }
+  return message;
+}
+
 type HistoryRow = {
   id: string;
   documento: string;
@@ -279,9 +290,10 @@ function PesquisasPage() {
         return;
       }
       if (!data?.ok) {
-        setApiError(data?.error ?? "A consulta não retornou resultados. Verifique o documento e tente novamente.");
-        toast.error(data?.error ?? "Falha na consulta");
-        await logConsulta("erro", null, data?.error ?? "Falha na consulta");
+        const message = friendlyApiError(data?.error);
+        setApiError(message);
+        toast.error(message);
+        await logConsulta("erro", null, message);
         return;
       }
       const consulta = data.data as Consulta;
