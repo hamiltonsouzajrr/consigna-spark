@@ -23,6 +23,7 @@ const navSections: NavSection[] = [
   {
     section: "Prospecção",
     items: [
+      { to: "/pesquisas", label: "Pesquisas", icon: Search },
       { to: "/safe-consig", label: "Verificar SafeConsig", icon: ShieldCheck },
       { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: TrendingUp, badge: true },
     ],
