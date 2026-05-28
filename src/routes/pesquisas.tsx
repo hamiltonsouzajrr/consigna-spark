@@ -367,6 +367,11 @@ function HistoryPanel({
                       <Clock className="mr-1 h-3 w-3" /> {fmtDate(row.created_at)}
                     </span>
                   </p>
+                  {row.finalidade && (
+                    <Badge variant="secondary" className="mt-1 text-[10px] font-normal">
+                      {row.finalidade}
+                    </Badge>
+                  )}
                 </div>
               </button>
               <Button
