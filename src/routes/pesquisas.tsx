@@ -334,6 +334,7 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
     "SEXO", "ESTADOCIVIL", "NACIONALIDADE", "RG", "ORGAOEMISSOR", "POSSIVELPROFISSAO",
     "POSSIVELESCOLARIDADE", "CLASSEECONOMICA", "PERSONADEMOGRAFICA", "FONTE_DE_RENDA",
     "PERSONACREDITO", "MENSAGEMSCORE", "AUXILIOBRASIL", "DIVIDAATIVADAUNIAO_FLAG_DAU",
+    "CIDADE", "UF",
   ]);
   const outrosCad = Object.entries(cad).filter(
     ([k, v]) => !shownCadKeys.has(k) && v != null && String(v).trim() !== "",
