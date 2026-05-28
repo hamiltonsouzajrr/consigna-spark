@@ -90,6 +90,47 @@ const blank = (v?: string | number | null) => {
 };
 const flagYes = (v?: string) => (v ?? "").toUpperCase() === "S";
 
+type SearchTipo = "cpf" | "cnpj" | "email" | "telefone" | "nome" | null;
+
+// Detecta automaticamente o tipo do termo digitado na barra de busca única.
+function detectTipo(value: string): SearchTipo {
+  const v = value.trim();
+  if (!v) return null;
+  if (v.includes("@")) return "email";
+  if (/[a-zA-ZÀ-ÿ]/.test(v)) return "nome";
+  const digits = v.replace(/\D/g, "");
+  if (digits.length === 14) return "cnpj";
+  if (digits.length === 11) return "cpf";
+  if (digits.length === 10) return "telefone";
+  return null; // dígitos incompletos
+}
+
+// Máscara para a barra única: formata CPF/CNPJ quando só há dígitos; mantém o texto cru caso contrário.
+function maskQuery(value: string): string {
+  if (value.includes("@") || /[a-zA-ZÀ-ÿ]/.test(value)) return value;
+  const raw = value.replace(/\D/g, "");
+  if (raw.length > 11) {
+    return raw
+      .replace(/^(\d{2})(\d)/, "$1.$2")
+      .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+      .replace(/\.(\d{3})(\d)/, ".$1/$2")
+      .replace(/(\d{4})(\d)/, "$1-$2")
+      .slice(0, 18);
+  }
+  return raw
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d{1,2})$/, ".$1-$2");
+}
+
+const TIPO_LABEL: Record<Exclude<SearchTipo, null>, string> = {
+  cpf: "CPF",
+  cnpj: "CNPJ",
+  email: "E-mail",
+  telefone: "Telefone",
+  nome: "Nome",
+};
+
 type HistoryRow = {
   id: string;
   documento: string;
