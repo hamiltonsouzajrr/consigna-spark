@@ -32,7 +32,7 @@ type Endereco = {
 };
 type Telefone = {
   POSICAO?: string; DDD?: string; TELEFONE?: string; ASSINANTE?: string;
-  TIPO_TELEFONE?: string; PROCON?: string; OPERADORA?: string; FLHOT?: string;
+  TIPO?: string; TIPO_TELEFONE?: string; PROCON?: string; OPERADORA?: string; FLHOT?: string;
 };
 type Email = { EMAIL?: string; POSICAO?: string };
 type Sociedade = {
