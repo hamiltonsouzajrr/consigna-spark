@@ -172,6 +172,7 @@ function PesquisasPage() {
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [showLoteModal, setShowLoteModal] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [cachedAt, setCachedAt] = useState<string | null>(null);
 
   const tipoDetectado = detectTipo(query);
 
