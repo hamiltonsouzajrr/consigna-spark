@@ -75,12 +75,35 @@ const blank = (v?: string | number | null) => {
 };
 const flagYes = (v?: string) => (v ?? "").toUpperCase() === "S";
 
+type HistoryRow = {
+  id: string;
+  documento: string;
+  tipo: string;
+  nome: string | null;
+  resultado: Consulta | null;
+  created_at: string;
+};
+
 function PesquisasPage() {
   const { user, loading } = useAuth();
   const [doc, setDoc] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Consulta | null>(null);
   const [searchedDoc, setSearchedDoc] = useState<string>("");
+  const [history, setHistory] = useState<HistoryRow[]>([]);
+
+  const loadHistory = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("pesquisas_nv")
+      .select("id, documento, tipo, nome, resultado, created_at")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (!error && data) setHistory(data as HistoryRow[]);
+  }, []);
+
+  useEffect(() => {
+    if (user) loadHistory();
+  }, [user, loadHistory]);
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
@@ -106,11 +129,39 @@ function PesquisasPage() {
         toast.error(data?.error ?? "Falha na consulta");
         return;
       }
+      const consulta = data.data as Consulta;
       setSearchedDoc(clean);
-      setResult(data.data as Consulta);
+      setResult(consulta);
+
+      // Salva no histórico de pesquisas
+      const cad = consulta.CADASTRAIS ?? {};
+      const nome = (cad.NOME as string) || (cad.RAZAO as string) || null;
+      const tipo = cad.CNPJ ? "PJ" : "PF";
+      const { error: insErr } = await supabase.from("pesquisas_nv").insert({
+        user_id: user.id,
+        documento: clean,
+        tipo,
+        nome,
+        resultado: consulta as unknown as Record<string, unknown>,
+      });
+      if (!insErr) loadHistory();
     } finally {
       setBusy(false);
     }
+  };
+
+  const openFromHistory = (row: HistoryRow) => {
+    if (!row.resultado) {
+      setDoc(row.documento);
+      return;
+    }
+    setSearchedDoc(row.documento);
+    setResult(row.resultado);
+  };
+
+  const removeHistory = async (id: string) => {
+    setHistory((h) => h.filter((r) => r.id !== id));
+    await supabase.from("pesquisas_nv").delete().eq("id", id);
   };
 
   const copy = (v?: string) => {
@@ -156,8 +207,73 @@ function PesquisasPage() {
         )}
 
         {result && <ResultView c={result} documento={searchedDoc} onCopy={copy} />}
+
+        <HistoryPanel rows={history} onOpen={openFromHistory} onRemove={removeHistory} />
       </div>
     </AppShell>
+  );
+}
+
+function HistoryPanel({
+  rows, onOpen, onRemove,
+}: {
+  rows: HistoryRow[];
+  onOpen: (row: HistoryRow) => void;
+  onRemove: (id: string) => void;
+}) {
+  const fmtDoc = (d: string, tipo: string) => (tipo === "PJ" ? d : formatCpf(d));
+  const fmtDate = (iso: string) => {
+    const dt = new Date(iso);
+    return dt.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+  };
+  return (
+    <Card className="p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <History className="h-4 w-4" />
+        </div>
+        <h3 className="text-sm font-semibold">Histórico de pesquisas</h3>
+        <span className="text-xs text-muted-foreground">({rows.length})</span>
+      </div>
+      {rows.length === 0 ? (
+        <p className="text-sm italic text-muted-foreground">Nenhuma pesquisa realizada ainda.</p>
+      ) : (
+        <div className="space-y-2">
+          {rows.map((row) => (
+            <div
+              key={row.id}
+              className="flex items-center justify-between gap-3 rounded-md border bg-muted/30 p-2.5 text-sm"
+            >
+              <button
+                type="button"
+                onClick={() => onOpen(row)}
+                className="flex min-w-0 flex-1 items-center gap-3 text-left"
+              >
+                <Badge variant="outline" className="shrink-0">{row.tipo}</Badge>
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{row.nome || "—"}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    <span className="font-mono">{fmtDoc(row.documento, row.tipo)}</span>
+                    <span className="mx-1.5 inline-flex items-center">
+                      <Clock className="mr-1 h-3 w-3" /> {fmtDate(row.created_at)}
+                    </span>
+                  </p>
+                </div>
+              </button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="shrink-0 text-muted-foreground hover:text-destructive"
+                onClick={() => onRemove(row.id)}
+                aria-label="Remover do histórico"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 
