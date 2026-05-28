@@ -210,6 +210,20 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
   const obito = flagYes(c.OBITO?.FLOBITO);
   const pep = flagYes(c.PEP?.FLPEP);
 
+  // "Dados cadastrais completos": exibe TODOS os demais campos retornados em
+  // CADASTRAIS que ainda não aparecem em outras seções, garantindo resposta completa.
+  const shownCadKeys = new Set([
+    "NOME", "RAZAO", "CNPJ", "CPF", "NASC", "IDADE", "SCORE", "RENDA", "RENDAPRESUMIDA",
+    "SEXO", "ESTADOCIVIL", "NACIONALIDADE", "RG", "ORGAOEMISSOR", "POSSIVELPROFISSAO",
+    "POSSIVELESCOLARIDADE", "CLASSEECONOMICA", "PERSONADEMOGRAFICA", "FONTE_DE_RENDA",
+    "PERSONACREDITO", "MENSAGEMSCORE", "AUXILIOBRASIL", "DIVIDAATIVADAUNIAO_FLAG_DAU",
+  ]);
+  const outrosCad = Object.entries(cad).filter(
+    ([k, v]) => !shownCadKeys.has(k) && v != null && String(v).trim() !== "",
+  );
+  const humanize = (k: string) =>
+    k.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -283,6 +297,17 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           <KV label="Possível aposentado" value={c.PERFILCONSUMO?.POSSIVEL_APOSENTADO} />
           {cad.RENDAPRESUMIDA && <KV label="Renda presumida" value={String(cad.RENDAPRESUMIDA)} />}
         </Section>
+
+        {/* Dados cadastrais completos — todos os demais campos retornados */}
+        {outrosCad.length > 0 && (
+          <Section icon={<User className="h-4 w-4" />} title="Dados cadastrais completos" wide>
+            <div className="grid gap-x-6 sm:grid-cols-2">
+              {outrosCad.map(([k, v]) => (
+                <KV key={k} label={humanize(k)} value={String(v)} />
+              ))}
+            </div>
+          </Section>
+        )}
 
         {/* Endereços */}
         <Section icon={<MapPin className="h-4 w-4" />} title={`Endereços (${c.ENDERECOS?.length ?? 0})`} wide>
