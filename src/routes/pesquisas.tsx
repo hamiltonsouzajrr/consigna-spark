@@ -298,6 +298,17 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           {cad.RENDAPRESUMIDA && <KV label="Renda presumida" value={String(cad.RENDAPRESUMIDA)} />}
         </Section>
 
+        {/* Dados cadastrais completos — todos os demais campos retornados */}
+        {outrosCad.length > 0 && (
+          <Section icon={<User className="h-4 w-4" />} title="Dados cadastrais completos" wide>
+            <div className="grid gap-x-6 sm:grid-cols-2">
+              {outrosCad.map(([k, v]) => (
+                <KV key={k} label={humanize(k)} value={String(v)} />
+              ))}
+            </div>
+          </Section>
+        )}
+
         {/* Endereços */}
         <Section icon={<MapPin className="h-4 w-4" />} title={`Endereços (${c.ENDERECOS?.length ?? 0})`} wide>
           {(c.ENDERECOS ?? []).length === 0 && <Empty />}
