@@ -190,6 +190,11 @@ function PesquisasPage() {
       toast.error("Selecione a finalidade da consulta");
       return;
     }
+    const emailTrim = email.trim();
+    if (emailTrim && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
+      toast.error("E-mail inválido");
+      return;
+    }
     const clean = query.replace(/\D/g, "");
 
     setBusy(true);
