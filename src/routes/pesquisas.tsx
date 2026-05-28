@@ -148,6 +148,7 @@ function PesquisasPage() {
   const { user, loading } = useAuth();
   const [query, setQuery] = useState("");
   const [dataNasc, setDataNasc] = useState("");
+  const [email, setEmail] = useState("");
   const [finalidade, setFinalidade] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Consulta | null>(null);
@@ -189,6 +190,11 @@ function PesquisasPage() {
       toast.error("Selecione a finalidade da consulta");
       return;
     }
+    const emailTrim = email.trim();
+    if (emailTrim && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
+      toast.error("E-mail inválido");
+      return;
+    }
     const clean = query.replace(/\D/g, "");
 
     setBusy(true);
@@ -223,7 +229,7 @@ function PesquisasPage() {
         tipo: tipoDoc,
         nome: nomeResp,
         celular: null,
-        email: null,
+        email: emailTrim || null,
         data_nascimento: dataNasc || null,
         finalidade: finalidade.trim(),
         resultado: consulta as unknown as Json,
@@ -238,6 +244,7 @@ function PesquisasPage() {
     if (!row.resultado) {
       setQuery(maskQuery(row.documento));
       setDataNasc(row.data_nascimento ?? "");
+      setEmail(row.email ?? "");
       setFinalidade(row.finalidade ?? "");
       return;
     }
@@ -315,12 +322,22 @@ function PesquisasPage() {
                   max={new Date().toISOString().slice(0, 10)}
                 />
               </div>
-              <div className="space-y-1.5 self-end">
-                <p className="text-xs text-muted-foreground">
-                  Opcional — registrada no histórico para confirmação cadastral.
-                </p>
+              <div className="space-y-1.5">
+                <Label htmlFor="f-email">E-mail</Label>
+                <Input
+                  id="f-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="email@exemplo.com (opcional)"
+                  maxLength={255}
+                />
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Data de nascimento e e-mail são opcionais — registrados no histórico para confirmação cadastral.
+            </p>
+
 
 
             <div className="space-y-1.5">
