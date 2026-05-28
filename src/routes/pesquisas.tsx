@@ -406,6 +406,33 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           </Section>
         )}
 
+        {/* Vinculos empregaticios */}
+        {(c.VINCULOSEMPREGATICIOS?.length ?? 0) > 0 && (
+          <Section icon={<HardHat className="h-4 w-4" />} title={`Vínculos empregatícios (${c.VINCULOSEMPREGATICIOS!.length})`} wide>
+            <div className="space-y-2">
+              {c.VINCULOSEMPREGATICIOS!.map((v, i) => (
+                <div key={i} className="rounded-md border bg-muted/30 p-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">{v.RAZAO}</p>
+                    <VinculoBadge vinculo={v.VINCULO} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {v.CNPJ ? `CNPJ ${v.CNPJ}` : ""}
+                    {v.CARGO ? ` · ${v.CARGO}` : ""}
+                    {v.ADMISSAO ? ` · Admissão ${v.ADMISSAO}` : ""}
+                  </p>
+                  {(v.SALARIO || v.UF || v.CIDADE) && (
+                    <p className="text-xs text-muted-foreground">
+                      {v.SALARIO ? `Salário ${v.SALARIO}` : ""}
+                      {v.UF ? ` · ${v.UF}${v.CIDADE ? `/${v.CIDADE}` : ""}` : ""}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
         {/* Contatos ruins */}
         {(c.CONTATOSRUINS?.length ?? 0) > 0 && (
           <Section icon={<AlertTriangle className="h-4 w-4" />} title={`Contatos ruins (${c.CONTATOSRUINS!.length})`}>
