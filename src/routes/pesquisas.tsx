@@ -342,6 +342,29 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
   const humanize = (k: string) =>
     k.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 
+  // Perfil de consumo: demais campos não exibidos na seção "Situação e perfil".
+  const shownPerfilKeys = new Set([
+    "PROPENSAO_PAGAMENTO", "CONSUMO", "PERSONADIGITAL",
+    "CONSULTADOS_6MESES", "CONSULTADOS_12MESES", "POSSIVEL_APOSENTADO",
+  ]);
+  const perfil = c.PERFILCONSUMO ?? {};
+  const outrosPerfil = Object.entries(perfil).filter(
+    ([k, v]) => !shownPerfilKeys.has(k) && v != null && String(v).trim() !== "",
+  );
+
+  // Catch-all: qualquer outra seção retornada que ainda não tem exibição própria.
+  const handledTopKeys = new Set([
+    "CADASTRAIS", "ENDERECOS", "TELEFONES", "EMAILS", "SITUACAOCADASTRAL",
+    "PERFILCONSUMO", "CONTATOSRUINS", "OBITO", "PESSOASLIGADAS", "SOCIEDADES",
+    "PEP", "PEPRELACIONADOS", "VINCULOSEMPREGATICIOS", "erro",
+  ]);
+  const extras = Object.entries(c as Record<string, unknown>).filter(
+    ([k, v]) =>
+      !handledTopKeys.has(k) &&
+      v != null &&
+      (Array.isArray(v) ? v.length > 0 : String(v).trim() !== ""),
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -422,6 +445,17 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           <Section icon={<User className="h-4 w-4" />} title="Dados cadastrais completos" wide>
             <div className="grid gap-x-6 sm:grid-cols-2">
               {outrosCad.map(([k, v]) => (
+                <KV key={k} label={humanize(k)} value={String(v)} />
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Perfil de consumo completo — demais campos retornados */}
+        {outrosPerfil.length > 0 && (
+          <Section icon={<TrendingUp className="h-4 w-4" />} title="Perfil de consumo completo" wide>
+            <div className="grid gap-x-6 sm:grid-cols-2">
+              {outrosPerfil.map(([k, v]) => (
                 <KV key={k} label={humanize(k)} value={String(v)} />
               ))}
             </div>
@@ -590,6 +624,41 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
             </div>
           </Section>
         )}
+
+        {/* Outras informações — qualquer outra seção retornada sem exibição própria */}
+        {extras.map(([k, v]) => (
+          <Section key={k} icon={<User className="h-4 w-4" />} title={humanize(k)} wide>
+            {Array.isArray(v) ? (
+              <div className="space-y-2">
+                {(v as Record<string, unknown>[]).map((item, i) => (
+                  <div key={i} className="rounded-md border bg-muted/30 p-2.5 text-sm">
+                    {item && typeof item === "object" ? (
+                      <div className="grid gap-x-6 sm:grid-cols-2">
+                        {Object.entries(item).map(([ik, iv]) =>
+                          iv != null && String(iv).trim() !== "" ? (
+                            <KV key={ik} label={humanize(ik)} value={String(iv)} />
+                          ) : null,
+                        )}
+                      </div>
+                    ) : (
+                      <span>{String(item)}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : typeof v === "object" ? (
+              <div className="grid gap-x-6 sm:grid-cols-2">
+                {Object.entries(v as Record<string, unknown>).map(([ik, iv]) =>
+                  iv != null && String(iv).trim() !== "" ? (
+                    <KV key={ik} label={humanize(ik)} value={String(iv)} />
+                  ) : null,
+                )}
+              </div>
+            ) : (
+              <p className="text-sm">{String(v)}</p>
+            )}
+          </Section>
+        ))}
       </div>
     </div>
   );
