@@ -89,9 +89,11 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
+    // Retorna 200 com ok:false para o cliente tratar a falha sem blank screen
+    // (status >= 400 faz supabase.functions.invoke descartar o corpo JSON).
     return new Response(
       JSON.stringify({ ok: false, error: String(err instanceof Error ? err.message : err) }),
-      { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
