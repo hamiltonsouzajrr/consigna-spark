@@ -637,7 +637,7 @@ function VinculoBadge({ vinculo }: { vinculo?: string }) {
   );
 }
 
-function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; onCopy: (v?: string) => void }) {
+function ResultView({ c, documento, onCopy, cachedAt }: { c: Consulta; documento: string; onCopy: (v?: string) => void; cachedAt?: string | null }) {
   if (c.erro) {
     return (
       <Card className="p-6 border-red-200 bg-red-50">
