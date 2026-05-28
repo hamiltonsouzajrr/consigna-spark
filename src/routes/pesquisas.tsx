@@ -244,6 +244,7 @@ function PesquisasPage() {
     if (!row.resultado) {
       setQuery(maskQuery(row.documento));
       setDataNasc(row.data_nascimento ?? "");
+      setEmail(row.email ?? "");
       setFinalidade(row.finalidade ?? "");
       return;
     }
