@@ -429,6 +429,44 @@ function PesquisasPage() {
         {result && <ResultView c={result} documento={searchedDoc} onCopy={copy} />}
 
         <HistoryPanel rows={history} onOpen={openFromHistory} onRemove={removeHistory} />
+
+        <Dialog open={showLoteModal} onOpenChange={setShowLoteModal}>
+          <DialogContent className="bg-white text-slate-900 border-slate-200 max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-slate-900">
+                <Info className="h-5 w-5 text-blue-600" />
+                Busca de dados em lote
+              </DialogTitle>
+              <DialogDescription className="text-slate-500" />
+            </DialogHeader>
+            <div className="space-y-4 text-sm text-slate-700">
+              <p>
+                Para consultar <strong>múltiplos CPFs ou CNPJs de uma só vez</strong>, utilize a
+                ferramenta de <strong>Upload</strong> na barra lateral.
+              </p>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2">
+                <p className="font-semibold text-slate-900">Como funciona:</p>
+                <ol className="list-decimal list-inside space-y-1.5">
+                  <li>Acesse a página <strong>Importar</strong> no menu lateral.</li>
+                  <li>Faça o upload de uma planilha (.xlsx ou .csv) com a coluna de documentos (CPF/CNPJ).</li>
+                  <li>O sistema processa cada linha automaticamente e gera o resultado consolidado.</li>
+                </ol>
+              </div>
+              <p className="text-xs text-slate-500">
+                Cada consulta em lote também é registrada no histórico com a mesma
+                finalidade informada no upload.
+              </p>
+              <div className="flex justify-end pt-2">
+                <Button
+                  onClick={() => setShowLoteModal(false)}
+                  className="bg-blue-600 text-white hover:bg-blue-700 border-0"
+                >
+                  Entendi
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppShell>
   );
