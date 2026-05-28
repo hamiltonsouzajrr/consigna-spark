@@ -281,6 +281,7 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           <KV label="Consultas 6m" value={c.PERFILCONSUMO?.CONSULTADOS_6MESES} />
           <KV label="Consultas 12m" value={c.PERFILCONSUMO?.CONSULTADOS_12MESES} />
           <KV label="Possível aposentado" value={c.PERFILCONSUMO?.POSSIVEL_APOSENTADO} />
+          {cad.RENDAPRESUMIDA && <KV label="Renda presumida" value={String(cad.RENDAPRESUMIDA)} />}
         </Section>
 
         {/* Endereços */}
