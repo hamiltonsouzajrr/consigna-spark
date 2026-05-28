@@ -12,10 +12,14 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   Search, Loader2, User, MapPin, Phone, Mail, Building2, AlertTriangle,
   Skull, Shield, Users, Briefcase, TrendingUp, Copy, HardHat, History, Trash2, Clock,
+  Info,
 } from "lucide-react";
 import { formatCpf } from "@/lib/cpf";
 
@@ -166,6 +170,7 @@ function PesquisasPage() {
   const [result, setResult] = useState<Consulta | null>(null);
   const [searchedDoc, setSearchedDoc] = useState<string>("");
   const [history, setHistory] = useState<HistoryRow[]>([]);
+  const [showLoteModal, setShowLoteModal] = useState(false);
 
   const tipoDetectado = detectTipo(query);
 
@@ -386,9 +391,19 @@ function PesquisasPage() {
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-slate-500">
-                A finalidade fica registrada no histórico (auditoria/LGPD).
-              </p>
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-slate-500">
+                  A finalidade fica registrada no histórico (auditoria/LGPD).
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowLoteModal(true)}
+                  className="text-left text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1"
+                >
+                  <Info className="h-3 w-3" />
+                  PRECISO BUSCAR DADOS EM LOTE
+                </button>
+              </div>
               <Button type="submit" disabled={busy} className="bg-blue-600 text-white hover:bg-blue-700 border-0 shadow-sm">
                 {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
                 Consultar
@@ -414,6 +429,44 @@ function PesquisasPage() {
         {result && <ResultView c={result} documento={searchedDoc} onCopy={copy} />}
 
         <HistoryPanel rows={history} onOpen={openFromHistory} onRemove={removeHistory} />
+
+        <Dialog open={showLoteModal} onOpenChange={setShowLoteModal}>
+          <DialogContent className="bg-white text-slate-900 border-slate-200 max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-slate-900">
+                <Info className="h-5 w-5 text-blue-600" />
+                Busca de dados em lote
+              </DialogTitle>
+              <DialogDescription className="text-slate-500" />
+            </DialogHeader>
+            <div className="space-y-4 text-sm text-slate-700">
+              <p>
+                Para consultar <strong>múltiplos CPFs ou CNPJs de uma só vez</strong>, utilize a
+                ferramenta de <strong>Upload</strong> na barra lateral.
+              </p>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2">
+                <p className="font-semibold text-slate-900">Como funciona:</p>
+                <ol className="list-decimal list-inside space-y-1.5">
+                  <li>Acesse a página <strong>Importar</strong> no menu lateral.</li>
+                  <li>Faça o upload de uma planilha (.xlsx ou .csv) com a coluna de documentos (CPF/CNPJ).</li>
+                  <li>O sistema processa cada linha automaticamente e gera o resultado consolidado.</li>
+                </ol>
+              </div>
+              <p className="text-xs text-slate-500">
+                Cada consulta em lote também é registrada no histórico com a mesma
+                finalidade informada no upload.
+              </p>
+              <div className="flex justify-end pt-2">
+                <Button
+                  onClick={() => setShowLoteModal(false)}
+                  className="bg-blue-600 text-white hover:bg-blue-700 border-0"
+                >
+                  Entendi
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppShell>
   );
