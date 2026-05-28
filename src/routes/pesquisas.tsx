@@ -224,6 +224,7 @@ function PesquisasPage() {
         nome: nomeResp,
         celular: null,
         email: null,
+        data_nascimento: dataNasc || null,
         finalidade: finalidade.trim(),
         resultado: consulta as unknown as Json,
       });
@@ -236,6 +237,7 @@ function PesquisasPage() {
   const openFromHistory = (row: HistoryRow) => {
     if (!row.resultado) {
       setQuery(maskQuery(row.documento));
+      setDataNasc(row.data_nascimento ?? "");
       setFinalidade(row.finalidade ?? "");
       return;
     }
