@@ -286,7 +286,7 @@ function PesquisasPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
+      <div className="space-y-6 bg-white text-slate-900 -mx-4 -my-4 md:-mx-8 md:-my-8 min-h-screen p-4 md:p-8">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Pesquisas</h1>
           <p className="text-sm text-muted-foreground">
