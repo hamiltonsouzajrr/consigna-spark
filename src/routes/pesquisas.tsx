@@ -148,6 +148,7 @@ function PesquisasPage() {
   const { user, loading } = useAuth();
   const [query, setQuery] = useState("");
   const [dataNasc, setDataNasc] = useState("");
+  const [email, setEmail] = useState("");
   const [finalidade, setFinalidade] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Consulta | null>(null);
