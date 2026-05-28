@@ -40,6 +40,16 @@ type Sociedade = {
   CNAE?: string; DESCRICAO_CNAE?: string; STATUS_RF?: string;
 };
 type Pessoa = { CPF?: string; NOME?: string; VINCULO?: string; NASC?: string };
+type VinculoEmpregaticio = {
+  CNPJ?: string;
+  RAZAO?: string;
+  CARGO?: string;
+  ADMISSAO?: string;
+  VINCULO?: string;
+  SALARIO?: string;
+  UF?: string;
+  CIDADE?: string;
+};
 
 type Consulta = {
   CADASTRAIS?: Record<string, string>;
@@ -55,6 +65,7 @@ type Consulta = {
   SOCIEDADES?: Sociedade[];
   PEP?: { FLPEP?: string };
   PEPRELACIONADOS?: Pessoa[];
+  VINCULOSEMPREGATICIOS?: VinculoEmpregaticio[];
   erro?: string;
 };
 
