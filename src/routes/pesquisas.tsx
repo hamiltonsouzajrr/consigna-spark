@@ -210,6 +210,20 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
   const obito = flagYes(c.OBITO?.FLOBITO);
   const pep = flagYes(c.PEP?.FLPEP);
 
+  // "Dados cadastrais completos": exibe TODOS os demais campos retornados em
+  // CADASTRAIS que ainda não aparecem em outras seções, garantindo resposta completa.
+  const shownCadKeys = new Set([
+    "NOME", "RAZAO", "CNPJ", "CPF", "NASC", "IDADE", "SCORE", "RENDA", "RENDAPRESUMIDA",
+    "SEXO", "ESTADOCIVIL", "NACIONALIDADE", "RG", "ORGAOEMISSOR", "POSSIVELPROFISSAO",
+    "POSSIVELESCOLARIDADE", "CLASSEECONOMICA", "PERSONADEMOGRAFICA", "FONTE_DE_RENDA",
+    "PERSONACREDITO", "MENSAGEMSCORE", "AUXILIOBRASIL", "DIVIDAATIVADAUNIAO_FLAG_DAU",
+  ]);
+  const outrosCad = Object.entries(cad).filter(
+    ([k, v]) => !shownCadKeys.has(k) && v != null && String(v).trim() !== "",
+  );
+  const humanize = (k: string) =>
+    k.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+
   return (
     <div className="space-y-6">
       {/* Header */}
