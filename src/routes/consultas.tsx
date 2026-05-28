@@ -784,7 +784,105 @@ function Page() {
           {erroTipoFilter !== "all" && (
             <Button variant="ghost" size="sm" onClick={() => setErroTipoFilter("all")}>Limpar tipo</Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto gap-2"
+            onClick={() => setAdvOpen(true)}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            Filtros avançados
+            {advCount > 0 && (
+              <Badge className="ml-1 h-5 min-w-5 justify-center border-0 bg-primary px-1.5 text-xs text-primary-foreground">
+                {advCount}
+              </Badge>
+            )}
+          </Button>
         </div>
+
+        <Sheet open={advOpen} onOpenChange={setAdvOpen}>
+          <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>Filtros avançados</SheetTitle>
+              <SheetDescription>Refine a lista por órgão, categoria, situação, margem e período.</SheetDescription>
+            </SheetHeader>
+
+            <div className="mt-6 space-y-5">
+              <div className="space-y-2">
+                <Label className="text-xs">Órgão</Label>
+                <Select value={fOrgao} onValueChange={setFOrgao}>
+                  <SelectTrigger><SelectValue placeholder="Todos os órgãos" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os órgãos</SelectItem>
+                    {orgaoOpts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Categoria</Label>
+                <Select value={fCategoria} onValueChange={setFCategoria}>
+                  <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {categoriaOpts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Situação</Label>
+                <Select value={fSituacao} onValueChange={setFSituacao}>
+                  <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {situacaoOpts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Margem disponível (R$)</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    type="number" inputMode="decimal" placeholder="Mín."
+                    value={fMargemMin} onChange={(e) => setFMargemMin(e.target.value)}
+                  />
+                  <Input
+                    type="number" inputMode="decimal" placeholder="Máx."
+                    value={fMargemMax} onChange={(e) => setFMargemMax(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Processado entre</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input type="date" value={fDataIni} onChange={(e) => setFDataIni(e.target.value)} />
+                  <Input type="date" value={fDataFim} onChange={(e) => setFDataFim(e.target.value)} />
+                </div>
+              </div>
+
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={fComMatricula}
+                  onCheckedChange={(v) => setFComMatricula(!!v)}
+                />
+                Apenas com matrícula preenchida
+              </label>
+            </div>
+
+            <div className="mt-8 flex items-center justify-between gap-2 border-t pt-4">
+              <Button variant="ghost" size="sm" onClick={clearAdv} className="gap-2">
+                <X className="h-4 w-4" /> Limpar filtros
+              </Button>
+              <Button size="sm" onClick={() => setAdvOpen(false)}>
+                Aplicar ({filtered.length})
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+
 
         <div className="overflow-x-auto">
           <Table>
