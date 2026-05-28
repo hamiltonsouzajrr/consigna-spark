@@ -138,6 +138,7 @@ type HistoryRow = {
   nome: string | null;
   celular: string | null;
   email: string | null;
+  data_nascimento: string | null;
   finalidade: string | null;
   resultado: Consulta | null;
   created_at: string;
@@ -146,6 +147,7 @@ type HistoryRow = {
 function PesquisasPage() {
   const { user, loading } = useAuth();
   const [query, setQuery] = useState("");
+  const [dataNasc, setDataNasc] = useState("");
   const [finalidade, setFinalidade] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Consulta | null>(null);
@@ -157,7 +159,7 @@ function PesquisasPage() {
   const loadHistory = useCallback(async () => {
     const { data, error } = await supabase
       .from("pesquisas_nv")
-      .select("id, documento, tipo, nome, celular, email, finalidade, resultado, created_at")
+      .select("id, documento, tipo, nome, celular, email, data_nascimento, finalidade, resultado, created_at")
       .order("created_at", { ascending: false })
       .limit(20);
     if (!error && data) setHistory(data as HistoryRow[]);
@@ -222,6 +224,7 @@ function PesquisasPage() {
         nome: nomeResp,
         celular: null,
         email: null,
+        data_nascimento: dataNasc || null,
         finalidade: finalidade.trim(),
         resultado: consulta as unknown as Json,
       });
@@ -234,6 +237,7 @@ function PesquisasPage() {
   const openFromHistory = (row: HistoryRow) => {
     if (!row.resultado) {
       setQuery(maskQuery(row.documento));
+      setDataNasc(row.data_nascimento ?? "");
       setFinalidade(row.finalidade ?? "");
       return;
     }
@@ -299,6 +303,25 @@ function PesquisasPage() {
                 A consulta Nova Vida é feita por CPF ou CNPJ. O tipo do termo é detectado automaticamente.
               </p>
             </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="f-nasc">Data de nascimento</Label>
+                <Input
+                  id="f-nasc"
+                  type="date"
+                  value={dataNasc}
+                  onChange={(e) => setDataNasc(e.target.value)}
+                  max={new Date().toISOString().slice(0, 10)}
+                />
+              </div>
+              <div className="space-y-1.5 self-end">
+                <p className="text-xs text-muted-foreground">
+                  Opcional — registrada no histórico para confirmação cadastral.
+                </p>
+              </div>
+            </div>
+
 
             <div className="space-y-1.5">
               <Label htmlFor="f-finalidade">
