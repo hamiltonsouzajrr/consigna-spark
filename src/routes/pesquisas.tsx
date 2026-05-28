@@ -294,7 +294,7 @@ function PesquisasPage() {
           </p>
         </div>
 
-        <Card className="p-5">
+        <Card className="p-5 bg-white border-slate-200 shadow-sm">
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="f-busca">
@@ -400,13 +400,13 @@ function PesquisasPage() {
 
 
         {busy && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-            <Card className="p-8 text-center shadow-2xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+            <Card className="p-8 text-center shadow-2xl bg-white border-slate-200">
               <div className="relative mx-auto mb-4 h-12 w-12">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
               </div>
-              <p className="text-base font-medium text-foreground">Consultando Nova Vida…</p>
-              <p className="mt-1 text-sm text-muted-foreground">Isso pode levar alguns segundos</p>
+              <p className="text-base font-medium text-slate-900">Consultando Nova Vida…</p>
+              <p className="mt-1 text-sm text-slate-500">Isso pode levar alguns segundos</p>
             </Card>
           </div>
         )}
@@ -432,7 +432,7 @@ function HistoryPanel({
     return dt.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
   };
   return (
-    <Card className="p-5">
+    <Card className="p-5 bg-white border-slate-200 shadow-sm">
       <div className="mb-3 flex items-center gap-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
           <History className="h-4 w-4" />
@@ -447,7 +447,7 @@ function HistoryPanel({
           {rows.map((row) => (
             <div
               key={row.id}
-              className="flex items-center justify-between gap-3 rounded-md border bg-muted/30 p-2.5 text-sm"
+              className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 p-2.5 text-sm"
             >
               <button
                 type="button"
