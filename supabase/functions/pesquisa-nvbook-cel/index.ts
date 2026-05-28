@@ -53,15 +53,15 @@ async function gerarToken(usuario: string, senha: string, cliente: string): Prom
   return token;
 }
 
-async function nvBook(celular: string, token: string): Promise<string> {
+async function nvBookCelObr(celular: string, token: string): Promise<string> {
   // NVBOOK recebe o telefone/celular (DDD + número) e o token.
   const body = `<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
-    <NVBOOK xmlns="http://tempuri.org/">
+    <NVBOOK_CEL_OBR xmlns="http://tempuri.org/">
       <telefone>${celular}</telefone>
       <token>${token}</token>
-    </NVBOOK>
+    </NVBOOK_CEL_OBR>
   </soap:Body>
 </soap:Envelope>`;
 
@@ -69,16 +69,16 @@ async function nvBook(celular: string, token: string): Promise<string> {
     method: "POST",
     headers: {
       "Content-Type": "text/xml; charset=utf-8",
-      SOAPAction: "http://tempuri.org/NVBOOK",
+      SOAPAction: "http://tempuri.org/NVBOOK_CEL_OBR",
     },
     body,
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`NVBOOK ${res.status}: ${text.slice(0, 300)}`);
 
-  // O XML da consulta vem dentro de <NVBOOKResult>...</NVBOOKResult>,
+  // O XML da consulta vem dentro de <NVBOOK_CEL_OBRResult>...</NVBOOK_CEL_OBRResult>,
   // podendo estar HTML-encoded (&lt;...&gt;).
-  const m = text.match(/<NVBOOKResult>([\s\S]*?)<\/NVBOOKResult>/);
+  const m = text.match(/<NVBOOK_CEL_OBRResult>([\s\S]*?)<\/NVBOOK_CEL_OBRResult>/);
   if (!m) throw new Error(`Resposta inesperada: ${text.slice(0, 300)}`);
   let inner = m[1].trim();
   if (inner.includes("&lt;")) {
@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
 
   try {
     const token = await gerarToken(usuario, senha, cliente);
-    const xml = await nvBook(celular, token);
+    const xml = await nvBookCelObr(celular, token);
     const data = parseConsulta(xml);
     return new Response(JSON.stringify({ ok: true, celular, data }), {
       status: 200,
