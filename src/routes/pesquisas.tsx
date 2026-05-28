@@ -804,13 +804,13 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
                     <p className="font-medium">{v.RAZAO}</p>
                     <VinculoBadge vinculo={v.VINCULO} />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-slate-500">
                     {v.CNPJ ? `CNPJ ${v.CNPJ}` : ""}
                     {v.CARGO ? ` · ${v.CARGO}` : ""}
                     {v.ADMISSAO ? ` · Admissão ${v.ADMISSAO}` : ""}
                   </p>
                   {(v.SALARIO || v.UF || v.CIDADE) && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-slate-500">
                       {v.SALARIO ? `Salário ${v.SALARIO}` : ""}
                       {v.UF ? ` · ${v.UF}${v.CIDADE ? `/${v.CIDADE}` : ""}` : ""}
                     </p>
