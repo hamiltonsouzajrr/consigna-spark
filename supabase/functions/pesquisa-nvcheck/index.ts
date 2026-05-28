@@ -46,6 +46,7 @@ async function nvCheckSoap(documento: string, apiUrl: string, token: string): Pr
   });
 
   const text = await res.text();
+  console.log("Nova Vida raw response", { status: res.status, body: text.slice(0, 600) });
   if (!res.ok) {
     console.error("Nova Vida SOAP error", { status: res.status, body: text.slice(0, 1000) });
     throw new NovaVidaUnavailableError();
