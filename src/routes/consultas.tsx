@@ -128,6 +128,27 @@ function Page() {
   const [run, setRun] = useState<Run | null>(null);
   const [detalheConsulta, setDetalheConsulta] = useState<Consulta | null>(null);
 
+  // Filtros avançados
+  const [advOpen, setAdvOpen] = useState(false);
+  const [fOrgao, setFOrgao] = useState<string>("all");
+  const [fCategoria, setFCategoria] = useState<string>("all");
+  const [fSituacao, setFSituacao] = useState<string>("all");
+  const [fMargemMin, setFMargemMin] = useState<string>("");
+  const [fMargemMax, setFMargemMax] = useState<string>("");
+  const [fDataIni, setFDataIni] = useState<string>("");
+  const [fDataFim, setFDataFim] = useState<string>("");
+  const [fComMatricula, setFComMatricula] = useState<boolean>(false);
+
+  const clearAdv = () => {
+    setFOrgao("all"); setFCategoria("all"); setFSituacao("all");
+    setFMargemMin(""); setFMargemMax("");
+    setFDataIni(""); setFDataFim(""); setFComMatricula(false);
+  };
+  const advCount =
+    (fOrgao !== "all" ? 1 : 0) + (fCategoria !== "all" ? 1 : 0) + (fSituacao !== "all" ? 1 : 0) +
+    (fMargemMin ? 1 : 0) + (fMargemMax ? 1 : 0) +
+    (fDataIni ? 1 : 0) + (fDataFim ? 1 : 0) + (fComMatricula ? 1 : 0);
+
   useEffect(() => {
     if (!user) return;
     const loadRun = async () => {
