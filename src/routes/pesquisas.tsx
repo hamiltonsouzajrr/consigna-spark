@@ -138,6 +138,7 @@ type HistoryRow = {
   nome: string | null;
   celular: string | null;
   email: string | null;
+  data_nascimento: string | null;
   finalidade: string | null;
   resultado: Consulta | null;
   created_at: string;
@@ -146,6 +147,7 @@ type HistoryRow = {
 function PesquisasPage() {
   const { user, loading } = useAuth();
   const [query, setQuery] = useState("");
+  const [dataNasc, setDataNasc] = useState("");
   const [finalidade, setFinalidade] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Consulta | null>(null);
@@ -157,7 +159,7 @@ function PesquisasPage() {
   const loadHistory = useCallback(async () => {
     const { data, error } = await supabase
       .from("pesquisas_nv")
-      .select("id, documento, tipo, nome, celular, email, finalidade, resultado, created_at")
+      .select("id, documento, tipo, nome, celular, email, data_nascimento, finalidade, resultado, created_at")
       .order("created_at", { ascending: false })
       .limit(20);
     if (!error && data) setHistory(data as HistoryRow[]);
