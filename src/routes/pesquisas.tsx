@@ -8,12 +8,26 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   Search, Loader2, User, MapPin, Phone, Mail, Building2, AlertTriangle,
   Skull, Shield, Users, Briefcase, TrendingUp, Copy, HardHat, History, Trash2, Clock,
 } from "lucide-react";
 import { formatCpf } from "@/lib/cpf";
+
+const FINALIDADES = [
+  "Análise de crédito",
+  "Prevenção à fraude",
+  "Cobrança / recuperação",
+  "Prospecção comercial",
+  "Cadastro / onboarding",
+  "Confirmação cadastral",
+  "Outra",
+] as const;
 
 export const Route = createFileRoute("/pesquisas")({
   head: () => ({
