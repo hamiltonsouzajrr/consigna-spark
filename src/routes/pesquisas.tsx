@@ -145,15 +145,14 @@ type HistoryRow = {
 
 function PesquisasPage() {
   const { user, loading } = useAuth();
-  const [cpf, setCpf] = useState("");
-  const [nome, setNome] = useState("");
-  const [celular, setCelular] = useState("");
-  const [email, setEmail] = useState("");
+  const [query, setQuery] = useState("");
   const [finalidade, setFinalidade] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Consulta | null>(null);
   const [searchedDoc, setSearchedDoc] = useState<string>("");
   const [history, setHistory] = useState<HistoryRow[]>([]);
+
+  const tipoDetectado = detectTipo(query);
 
   const loadHistory = useCallback(async () => {
     const { data, error } = await supabase
