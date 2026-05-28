@@ -161,6 +161,34 @@ function PesquisasPage() {
   );
 }
 
+function VinculoBadge({ vinculo }: { vinculo?: string }) {
+  if (!vinculo) return null;
+  const v = vinculo.toUpperCase();
+  const isAtivo = v.includes("ATIVO") || v === "ATIVO" || v === "EMPREGADO" || v === "TRABALHANDO";
+  const isInativo = v.includes("INATIVO") || v === "INATIVO" || v === "DESLIGADO" || v === "DEMITIDO";
+  if (isAtivo) {
+    return (
+      <Badge variant="outline" className="border-emerald-400/40 bg-emerald-400/10 text-emerald-600">
+        <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        Ativo
+      </Badge>
+    );
+  }
+  if (isInativo) {
+    return (
+      <Badge variant="outline" className="border-amber-400/40 bg-amber-400/10 text-amber-600">
+        <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
+        Inativo
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="border-muted-foreground/30 bg-muted/40 text-muted-foreground">
+      {vinculo}
+    </Badge>
+  );
+}
+
 function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; onCopy: (v?: string) => void }) {
   if (c.erro) {
     return (
