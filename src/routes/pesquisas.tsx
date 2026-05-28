@@ -90,6 +90,47 @@ const blank = (v?: string | number | null) => {
 };
 const flagYes = (v?: string) => (v ?? "").toUpperCase() === "S";
 
+type SearchTipo = "cpf" | "cnpj" | "email" | "telefone" | "nome" | null;
+
+// Detecta automaticamente o tipo do termo digitado na barra de busca única.
+function detectTipo(value: string): SearchTipo {
+  const v = value.trim();
+  if (!v) return null;
+  if (v.includes("@")) return "email";
+  if (/[a-zA-ZÀ-ÿ]/.test(v)) return "nome";
+  const digits = v.replace(/\D/g, "");
+  if (digits.length === 14) return "cnpj";
+  if (digits.length === 11) return "cpf";
+  if (digits.length === 10) return "telefone";
+  return null; // dígitos incompletos
+}
+
+// Máscara para a barra única: formata CPF/CNPJ quando só há dígitos; mantém o texto cru caso contrário.
+function maskQuery(value: string): string {
+  if (value.includes("@") || /[a-zA-ZÀ-ÿ]/.test(value)) return value;
+  const raw = value.replace(/\D/g, "");
+  if (raw.length > 11) {
+    return raw
+      .replace(/^(\d{2})(\d)/, "$1.$2")
+      .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+      .replace(/\.(\d{3})(\d)/, ".$1/$2")
+      .replace(/(\d{4})(\d)/, "$1-$2")
+      .slice(0, 18);
+  }
+  return raw
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d{1,2})$/, ".$1-$2");
+}
+
+const TIPO_LABEL: Record<Exclude<SearchTipo, null>, string> = {
+  cpf: "CPF",
+  cnpj: "CNPJ",
+  email: "E-mail",
+  telefone: "Telefone",
+  nome: "Nome",
+};
+
 type HistoryRow = {
   id: string;
   documento: string;
@@ -104,15 +145,14 @@ type HistoryRow = {
 
 function PesquisasPage() {
   const { user, loading } = useAuth();
-  const [cpf, setCpf] = useState("");
-  const [nome, setNome] = useState("");
-  const [celular, setCelular] = useState("");
-  const [email, setEmail] = useState("");
+  const [query, setQuery] = useState("");
   const [finalidade, setFinalidade] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Consulta | null>(null);
   const [searchedDoc, setSearchedDoc] = useState<string>("");
   const [history, setHistory] = useState<HistoryRow[]>([]);
+
+  const tipoDetectado = detectTipo(query);
 
   const loadHistory = useCallback(async () => {
     const { data, error } = await supabase
@@ -132,25 +172,22 @@ function PesquisasPage() {
 
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    const clean = cpf.replace(/\D/g, "");
-    if (clean.length !== 11 && clean.length !== 14) {
-      toast.error("Informe um CPF (11) ou CNPJ (14 dígitos) para a consulta");
+    const tipo = detectTipo(query);
+    if (!tipo) {
+      toast.error("Digite um CPF, CNPJ, nome, e-mail ou telefone para buscar");
+      return;
+    }
+    if (tipo !== "cpf" && tipo !== "cnpj") {
+      toast.error(
+        `A consulta Nova Vida exige um CPF ou CNPJ. Informe o documento para buscar (${TIPO_LABEL[tipo]} não é aceito).`,
+      );
       return;
     }
     if (!finalidade.trim()) {
       toast.error("Selecione a finalidade da consulta");
       return;
     }
-    const celularClean = celular.replace(/\D/g, "");
-    if (celularClean && (celularClean.length < 10 || celularClean.length > 11)) {
-      toast.error("Celular inválido (use DDD + número)");
-      return;
-    }
-    const emailTrim = email.trim();
-    if (emailTrim && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
-      toast.error("E-mail inválido");
-      return;
-    }
+    const clean = query.replace(/\D/g, "");
 
     setBusy(true);
     setResult(null);
@@ -159,9 +196,6 @@ function PesquisasPage() {
         body: {
           cpf: clean,
           documento: clean,
-          nome: nome.trim() || undefined,
-          celular: celularClean || undefined,
-          email: emailTrim || undefined,
           finalidade: finalidade.trim(),
         },
       });
@@ -177,17 +211,17 @@ function PesquisasPage() {
       setSearchedDoc(clean);
       setResult(consulta);
 
-      // Salva no histórico de pesquisas (com critérios e finalidade — auditoria/LGPD)
+      // Salva no histórico de pesquisas (com finalidade — auditoria/LGPD)
       const cad = consulta.CADASTRAIS ?? {};
-      const nomeResp = (cad.NOME as string) || (cad.RAZAO as string) || nome.trim() || null;
-      const tipo = cad.CNPJ ? "PJ" : "PF";
+      const nomeResp = (cad.NOME as string) || (cad.RAZAO as string) || null;
+      const tipoDoc = cad.CNPJ ? "PJ" : "PF";
       const { error: insErr } = await supabase.from("pesquisas_nv").insert({
         user_id: user.id,
         documento: clean,
-        tipo,
+        tipo: tipoDoc,
         nome: nomeResp,
-        celular: celularClean || null,
-        email: emailTrim || null,
+        celular: null,
+        email: null,
         finalidade: finalidade.trim(),
         resultado: consulta as unknown as Json,
       });
@@ -199,9 +233,7 @@ function PesquisasPage() {
 
   const openFromHistory = (row: HistoryRow) => {
     if (!row.resultado) {
-      setCpf(row.documento);
-      setCelular(row.celular ?? "");
-      setEmail(row.email ?? "");
+      setQuery(maskQuery(row.documento));
       setFinalidade(row.finalidade ?? "");
       return;
     }
@@ -231,109 +263,62 @@ function PesquisasPage() {
 
         <Card className="p-5">
           <form onSubmit={submit} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="f-cpf">
-                  CPF (formatado: 000.000.000-00) <span className="text-destructive">*</span>
-                </Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="f-cpf"
-                    value={cpf}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/\D/g, "");
-                      let masked = raw;
-                      if (raw.length > 11) {
-                        // CNPJ: 00.000.000/0000-00
-                        masked = raw
-                          .replace(/^(\d{2})(\d)/, "$1.$2")
-                          .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-                          .replace(/\.(\d{3})(\d)/, ".$1/$2")
-                          .replace(/(\d{4})(\d)/, "$1-$2");
-                      } else {
-                        // CPF: 000.000.000-00
-                        masked = raw
-                          .replace(/^(\d{3})(\d)/, "$1.$2")
-                          .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
-                          .replace(/\.(\d{3})(\d{1,2})$/, ".$1-$2");
-                      }
-                      setCpf(masked);
-                    }}
-                    placeholder="Documento para a consulta…"
-                    inputMode="numeric"
-                    className="pl-9"
-                    maxLength={18}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="f-nome">Nome</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="f-busca">
+                Buscar <span className="text-destructive">*</span>
+              </Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  id="f-nome"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  placeholder="Nome (opcional)"
-                  maxLength={120}
+                  id="f-busca"
+                  value={query}
+                  onChange={(e) => setQuery(maskQuery(e.target.value))}
+                  placeholder="CPF, CNPJ, nome, e-mail ou telefone…"
+                  className="pl-9 pr-24"
+                  autoComplete="off"
                 />
+                {tipoDetectado && (
+                  <Badge
+                    variant="secondary"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 gap-1"
+                  >
+                    {tipoDetectado === "email" ? (
+                      <Mail className="h-3 w-3" />
+                    ) : tipoDetectado === "telefone" ? (
+                      <Phone className="h-3 w-3" />
+                    ) : tipoDetectado === "cnpj" ? (
+                      <Building2 className="h-3 w-3" />
+                    ) : (
+                      <User className="h-3 w-3" />
+                    )}
+                    {TIPO_LABEL[tipoDetectado]}
+                  </Badge>
+                )}
               </div>
+              <p className="text-xs text-muted-foreground">
+                A consulta Nova Vida é feita por CPF ou CNPJ. O tipo do termo é detectado automaticamente.
+              </p>
+            </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="f-celular">Celular</Label>
-                <Input
-                  id="f-celular"
-                  value={celular}
-                  onChange={(e) => {
-                    const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
-                    let masked = digits;
-                    if (digits.length > 6) {
-                      masked = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-                    } else if (digits.length > 2) {
-                      masked = `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-                    } else if (digits.length > 0) {
-                      masked = `(${digits}`;
-                    }
-                    setCelular(masked);
-                  }}
-                  placeholder="(DDD) número (opcional)"
-                  inputMode="numeric"
-                  maxLength={16}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="f-email">E-mail(s)</Label>
-                <Input
-                  id="f-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="email@exemplo.com (opcional)"
-                  maxLength={255}
-                />
-              </div>
-
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="f-finalidade">
-                  Finalidade <span className="text-destructive">*</span>
-                </Label>
-                <Select value={finalidade} onValueChange={setFinalidade}>
-                  <SelectTrigger id="f-finalidade">
-                    <SelectValue placeholder="Selecione o motivo da consulta…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FINALIDADES.map((f) => (
-                      <SelectItem key={f} value={f}>{f}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="f-finalidade">
+                Finalidade <span className="text-destructive">*</span>
+              </Label>
+              <Select value={finalidade} onValueChange={setFinalidade}>
+                <SelectTrigger id="f-finalidade">
+                  <SelectValue placeholder="Selecione o motivo da consulta…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {FINALIDADES.map((f) => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">
-                A consulta usa o CPF/CNPJ. Os demais campos e a finalidade ficam registrados no histórico.
+                A finalidade fica registrada no histórico (auditoria/LGPD).
               </p>
               <Button type="submit" disabled={busy}>
                 {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
@@ -342,6 +327,7 @@ function PesquisasPage() {
             </div>
           </form>
         </Card>
+
 
 
         {busy && (
