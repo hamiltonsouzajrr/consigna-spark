@@ -353,9 +353,12 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
             <div className="space-y-2">
               {c.PESSOASLIGADAS!.map((p, i) => (
                 <div key={i} className="rounded-md border bg-muted/30 p-2.5 text-sm">
-                  <p className="font-medium">{p.NOME}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{p.NOME}</p>
+                    <VinculoBadge vinculo={p.VINCULO} />
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    {p.VINCULO}{p.CPF ? ` · CPF ${formatCpf(p.CPF)}` : ""}{p.NASC ? ` · ${p.NASC}` : ""}
+                    {p.CPF ? `CPF ${formatCpf(p.CPF)}` : ""}{p.NASC ? ` · ${p.NASC}` : ""}
                   </p>
                 </div>
               ))}
