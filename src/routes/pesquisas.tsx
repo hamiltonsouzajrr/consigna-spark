@@ -286,22 +286,22 @@ function PesquisasPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
+      <div className="space-y-6 bg-white text-slate-900 -mx-4 -my-4 md:-mx-8 md:-my-8 min-h-screen p-4 md:p-8">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Pesquisas</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Pesquisas</h1>
+          <p className="text-sm text-slate-500">
             Consulta cadastral por CPF/CNPJ via Nova Vida (NVCHECK).
           </p>
         </div>
 
-        <Card className="p-5">
+        <Card className="p-5 bg-white border-slate-200 shadow-sm">
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="f-busca">
                 Buscar <span className="text-destructive">*</span>
               </Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <Input
                   id="f-busca"
                   value={query}
@@ -328,7 +328,7 @@ function PesquisasPage() {
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-500">
                 A consulta Nova Vida é feita por CPF ou CNPJ. O tipo do termo é detectado automaticamente.
               </p>
             </div>
@@ -363,7 +363,7 @@ function PesquisasPage() {
                 />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-500">
               Data de nascimento e e-mail são opcionais — registrados no histórico para confirmação cadastral.
             </p>
 
@@ -386,7 +386,7 @@ function PesquisasPage() {
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-500">
                 A finalidade fica registrada no histórico (auditoria/LGPD).
               </p>
               <Button type="submit" disabled={busy}>
@@ -400,13 +400,13 @@ function PesquisasPage() {
 
 
         {busy && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-            <Card className="p-8 text-center shadow-2xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+            <Card className="p-8 text-center shadow-2xl bg-white border-slate-200">
               <div className="relative mx-auto mb-4 h-12 w-12">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
               </div>
-              <p className="text-base font-medium text-foreground">Consultando Nova Vida…</p>
-              <p className="mt-1 text-sm text-muted-foreground">Isso pode levar alguns segundos</p>
+              <p className="text-base font-medium text-slate-900">Consultando Nova Vida…</p>
+              <p className="mt-1 text-sm text-slate-500">Isso pode levar alguns segundos</p>
             </Card>
           </div>
         )}
@@ -432,22 +432,22 @@ function HistoryPanel({
     return dt.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
   };
   return (
-    <Card className="p-5">
+    <Card className="p-5 bg-white border-slate-200 shadow-sm">
       <div className="mb-3 flex items-center gap-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
           <History className="h-4 w-4" />
         </div>
         <h3 className="text-sm font-semibold">Histórico de pesquisas</h3>
-        <span className="text-xs text-muted-foreground">({rows.length})</span>
+        <span className="text-xs text-slate-500">({rows.length})</span>
       </div>
       {rows.length === 0 ? (
-        <p className="text-sm italic text-muted-foreground">Nenhuma pesquisa realizada ainda.</p>
+        <p className="text-sm italic text-slate-500">Nenhuma pesquisa realizada ainda.</p>
       ) : (
         <div className="space-y-2">
           {rows.map((row) => (
             <div
               key={row.id}
-              className="flex items-center justify-between gap-3 rounded-md border bg-muted/30 p-2.5 text-sm"
+              className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 p-2.5 text-sm"
             >
               <button
                 type="button"
@@ -457,7 +457,7 @@ function HistoryPanel({
                 <Badge variant="outline" className="shrink-0">{row.tipo}</Badge>
                 <div className="min-w-0">
                   <p className="truncate font-medium">{row.nome || "—"}</p>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="truncate text-xs text-slate-500">
                     <span className="font-mono">{fmtDoc(row.documento, row.tipo)}</span>
                     <span className="mx-1.5 inline-flex items-center">
                       <Clock className="mr-1 h-3 w-3" /> {fmtDate(row.created_at)}
@@ -473,7 +473,7 @@ function HistoryPanel({
               <Button
                 size="sm"
                 variant="ghost"
-                className="shrink-0 text-muted-foreground hover:text-destructive"
+                className="shrink-0 text-slate-400 hover:text-red-600"
                 onClick={() => onRemove(row.id)}
                 aria-label="Remover do histórico"
               >
@@ -509,7 +509,7 @@ function VinculoBadge({ vinculo }: { vinculo?: string }) {
     );
   }
   return (
-    <Badge variant="outline" className="border-muted-foreground/30 bg-muted/40 text-muted-foreground">
+    <Badge variant="outline" className="border-slate-300 bg-slate-100 text-slate-600">
       {vinculo}
     </Badge>
   );
@@ -518,12 +518,12 @@ function VinculoBadge({ vinculo }: { vinculo?: string }) {
 function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; onCopy: (v?: string) => void }) {
   if (c.erro) {
     return (
-      <Card className="p-6 border-destructive/40 bg-destructive/5">
+      <Card className="p-6 border-red-200 bg-red-50">
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 h-5 w-5 text-destructive" />
           <div>
             <p className="font-semibold text-destructive">Sem retorno</p>
-            <p className="text-sm text-muted-foreground">{c.erro}</p>
+            <p className="text-sm text-slate-500">{c.erro}</p>
           </div>
         </div>
       </Card>
@@ -577,7 +577,7 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="p-6">
+      <Card className="p-6 bg-white border-slate-200 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -598,7 +598,7 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
                   </Badge>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-500">
                 {isPJ ? cad.CNPJ : formatCpf(documento)}
                 {cad.NASC && ` · Nasc. ${cad.NASC}`}
                 {cad.IDADE && ` · ${cad.IDADE} anos`}
@@ -676,12 +676,12 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           {(c.ENDERECOS ?? []).length === 0 && <Empty />}
           <div className="space-y-2">
             {(c.ENDERECOS ?? []).map((e, i) => (
-              <div key={i} className="rounded-md border bg-muted/30 p-3 text-sm">
+              <div key={i} className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
                 <p className="font-medium">
                   {[e.TIPO, e.TITULO, e.LOGRADOURO].filter(Boolean).join(" ")}{e.NUMERO ? `, ${e.NUMERO}` : ""}
                   {e.COMPLEMENTO ? ` — ${e.COMPLEMENTO}` : ""}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-slate-500">
                   {[e.BAIRRO, e.CIDADE, e.UF].filter(Boolean).join(" · ")}
                   {e.CEP ? ` · CEP ${e.CEP}` : ""}
                 </p>
@@ -702,10 +702,10 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
             {(c.TELEFONES ?? []).map((t, i) => {
               const full = `(${t.DDD ?? ""}) ${t.TELEFONE ?? ""}`.trim();
               return (
-                <div key={i} className="flex items-center justify-between rounded-md border bg-muted/30 p-2.5 text-sm">
+                <div key={i} className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 p-2.5 text-sm">
                   <div>
                     <p className="font-mono">{full}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-slate-500">
                       {[t.TIPO_TELEFONE, t.OPERADORA].filter(Boolean).join(" · ")}
                       {flagYes(t.PROCON) && " · PROCON"}
                       {flagYes(t.FLHOT) && " · HOT"}
@@ -725,7 +725,7 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           {(c.EMAILS ?? []).length === 0 && <Empty />}
           <div className="space-y-2">
             {(c.EMAILS ?? []).map((e, i) => (
-              <div key={i} className="flex items-center justify-between rounded-md border bg-muted/30 p-2.5 text-sm">
+              <div key={i} className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 p-2.5 text-sm">
                 <span className="truncate">{e.EMAIL}</span>
                 <Button size="sm" variant="ghost" onClick={() => e.EMAIL && navigator.clipboard.writeText(e.EMAIL)}>
                   <Copy className="h-3.5 w-3.5" />
@@ -740,12 +740,12 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           <Section icon={<Users className="h-4 w-4" />} title={`Pessoas ligadas (${c.PESSOASLIGADAS!.length})`}>
             <div className="space-y-2">
               {c.PESSOASLIGADAS!.map((p, i) => (
-                <div key={i} className="rounded-md border bg-muted/30 p-2.5 text-sm">
+                <div key={i} className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-sm">
                   <div className="flex items-center gap-2">
                     <p className="font-medium">{p.NOME}</p>
                     <VinculoBadge vinculo={p.VINCULO} />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-slate-500">
                     {p.CPF ? `CPF ${formatCpf(p.CPF)}` : ""}{p.NASC ? ` · ${p.NASC}` : ""}
                   </p>
                 </div>
@@ -759,15 +759,15 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           <Section icon={<Briefcase className="h-4 w-4" />} title={`Sociedades (${c.SOCIEDADES!.length})`} wide>
             <div className="space-y-2">
               {c.SOCIEDADES!.map((s, i) => (
-                <div key={i} className="rounded-md border bg-muted/30 p-2.5 text-sm">
+                <div key={i} className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-sm">
                   <p className="font-medium">{s.RAZAO}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-slate-500">
                     CNPJ {s.CNPJ}
                     {s.PARTICIPACAO ? ` · ${s.PARTICIPACAO}%` : ""}
                     {s.STATUS_RF ? ` · ${s.STATUS_RF}` : ""}
                   </p>
                   {s.DESCRICAO_CNAE && (
-                    <p className="text-xs text-muted-foreground">{s.CNAE} — {s.DESCRICAO_CNAE}</p>
+                    <p className="text-xs text-slate-500">{s.CNAE} — {s.DESCRICAO_CNAE}</p>
                   )}
                 </div>
               ))}
@@ -780,12 +780,12 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           <Section icon={<Shield className="h-4 w-4" />} title={`PEP relacionados (${c.PEPRELACIONADOS!.length})`}>
             <div className="space-y-2">
               {c.PEPRELACIONADOS!.map((p, i) => (
-                <div key={i} className="rounded-md border bg-muted/30 p-2.5 text-sm">
+                <div key={i} className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-sm">
                   <div className="flex items-center gap-2">
                     <p className="font-medium">{p.NOME}</p>
                     <VinculoBadge vinculo={p.VINCULO} />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-slate-500">
                     {p.CPF ? `CPF ${formatCpf(p.CPF)}` : ""}
                   </p>
                 </div>
@@ -799,18 +799,18 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           <Section icon={<HardHat className="h-4 w-4" />} title={`Vínculos empregatícios (${c.VINCULOSEMPREGATICIOS!.length})`} wide>
             <div className="space-y-2">
               {c.VINCULOSEMPREGATICIOS!.map((v, i) => (
-                <div key={i} className="rounded-md border bg-muted/30 p-3 text-sm">
+                <div key={i} className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
                   <div className="flex items-center justify-between">
                     <p className="font-medium">{v.RAZAO}</p>
                     <VinculoBadge vinculo={v.VINCULO} />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-slate-500">
                     {v.CNPJ ? `CNPJ ${v.CNPJ}` : ""}
                     {v.CARGO ? ` · ${v.CARGO}` : ""}
                     {v.ADMISSAO ? ` · Admissão ${v.ADMISSAO}` : ""}
                   </p>
                   {(v.SALARIO || v.UF || v.CIDADE) && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-slate-500">
                       {v.SALARIO ? `Salário ${v.SALARIO}` : ""}
                       {v.UF ? ` · ${v.UF}${v.CIDADE ? `/${v.CIDADE}` : ""}` : ""}
                     </p>
@@ -840,7 +840,7 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
             {Array.isArray(v) ? (
               <div className="space-y-2">
                 {(v as Record<string, unknown>[]).map((item, i) => (
-                  <div key={i} className="rounded-md border bg-muted/30 p-2.5 text-sm">
+                  <div key={i} className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-sm">
                     {item && typeof item === "object" ? (
                       <div className="grid gap-x-6 sm:grid-cols-2">
                         {Object.entries(item).map(([ik, iv]) =>
@@ -877,7 +877,7 @@ function Section({
   icon, title, children, wide,
 }: { icon: React.ReactNode; title: string; children: React.ReactNode; wide?: boolean }) {
   return (
-    <Card className={`p-5 ${wide ? "md:col-span-2" : ""}`}>
+    <Card className={`p-5 bg-white border-slate-200 shadow-sm ${wide ? "md:col-span-2" : ""}`}>
       <div className="mb-3 flex items-center gap-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
           {icon}
@@ -891,9 +891,9 @@ function Section({
 
 function KV({ label, value }: { label: string; value?: string | number | null }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-border/40 py-1.5 text-sm last:border-0">
-      <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
-      <span className="text-right font-medium">{blank(value)}</span>
+    <div className="flex items-baseline justify-between gap-3 border-b border-slate-200 py-1.5 text-sm last:border-0">
+      <span className="text-xs uppercase tracking-wide text-slate-500">{label}</span>
+      <span className="text-right font-medium text-slate-900">{blank(value)}</span>
     </div>
   );
 }
@@ -902,15 +902,15 @@ function StatBadge({ label, value, accent }: { label: string; value: string; acc
   return (
     <div
       className={`rounded-lg border px-3 py-2 text-right ${
-        accent ? "border-primary/30 bg-primary/10" : "bg-muted/40"
+        accent ? "border-blue-200 bg-blue-50" : "bg-slate-100 border-slate-200"
       }`}
     >
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
-      <p className={`text-lg font-bold ${accent ? "text-primary" : ""}`}>{value}</p>
+      <p className="text-[10px] uppercase tracking-widest text-slate-500">{label}</p>
+      <p className={`text-lg font-bold ${accent ? "text-blue-600" : "text-slate-900"}`}>{value}</p>
     </div>
   );
 }
 
 function Empty() {
-  return <p className="text-sm text-muted-foreground italic">Nenhum registro retornado.</p>;
+  return <p className="text-sm text-slate-500 italic">Nenhum registro retornado.</p>;
 }
