@@ -259,7 +259,18 @@ function PesquisasPage() {
                 <Input
                   id="f-celular"
                   value={celular}
-                  onChange={(e) => setCelular(e.target.value)}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                    let masked = digits;
+                    if (digits.length > 6) {
+                      masked = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+                    } else if (digits.length > 2) {
+                      masked = `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+                    } else if (digits.length > 0) {
+                      masked = `(${digits}`;
+                    }
+                    setCelular(masked);
+                  }}
                   placeholder="(DDD) número (opcional)"
                   inputMode="numeric"
                   maxLength={16}
