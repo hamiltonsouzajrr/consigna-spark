@@ -342,6 +342,29 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
   const humanize = (k: string) =>
     k.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 
+  // Perfil de consumo: demais campos não exibidos na seção "Situação e perfil".
+  const shownPerfilKeys = new Set([
+    "PROPENSAO_PAGAMENTO", "CONSUMO", "PERSONADIGITAL",
+    "CONSULTADOS_6MESES", "CONSULTADOS_12MESES", "POSSIVEL_APOSENTADO",
+  ]);
+  const perfil = c.PERFILCONSUMO ?? {};
+  const outrosPerfil = Object.entries(perfil).filter(
+    ([k, v]) => !shownPerfilKeys.has(k) && v != null && String(v).trim() !== "",
+  );
+
+  // Catch-all: qualquer outra seção retornada que ainda não tem exibição própria.
+  const handledTopKeys = new Set([
+    "CADASTRAIS", "ENDERECOS", "TELEFONES", "EMAILS", "SITUACAOCADASTRAL",
+    "PERFILCONSUMO", "CONTATOSRUINS", "OBITO", "PESSOASLIGADAS", "SOCIEDADES",
+    "PEP", "PEPRELACIONADOS", "VINCULOSEMPREGATICIOS", "erro",
+  ]);
+  const extras = Object.entries(c as Record<string, unknown>).filter(
+    ([k, v]) =>
+      !handledTopKeys.has(k) &&
+      v != null &&
+      (Array.isArray(v) ? v.length > 0 : String(v).trim() !== ""),
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
