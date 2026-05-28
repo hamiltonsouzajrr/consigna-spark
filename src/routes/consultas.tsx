@@ -11,7 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Play, Download, RefreshCw, Loader2, FileSpreadsheet, Pause, Square, FileSearch, PlayCircle, AlertTriangle } from "lucide-react";
+import { Play, Download, RefreshCw, Loader2, FileSpreadsheet, Pause, Square, FileSearch, PlayCircle, AlertTriangle, SlidersHorizontal, X } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
@@ -126,6 +127,27 @@ function Page() {
   const [maxAttempts, setMaxAttempts] = useState(3);
   const [run, setRun] = useState<Run | null>(null);
   const [detalheConsulta, setDetalheConsulta] = useState<Consulta | null>(null);
+
+  // Filtros avançados
+  const [advOpen, setAdvOpen] = useState(false);
+  const [fOrgao, setFOrgao] = useState<string>("all");
+  const [fCategoria, setFCategoria] = useState<string>("all");
+  const [fSituacao, setFSituacao] = useState<string>("all");
+  const [fMargemMin, setFMargemMin] = useState<string>("");
+  const [fMargemMax, setFMargemMax] = useState<string>("");
+  const [fDataIni, setFDataIni] = useState<string>("");
+  const [fDataFim, setFDataFim] = useState<string>("");
+  const [fComMatricula, setFComMatricula] = useState<boolean>(false);
+
+  const clearAdv = () => {
+    setFOrgao("all"); setFCategoria("all"); setFSituacao("all");
+    setFMargemMin(""); setFMargemMax("");
+    setFDataIni(""); setFDataFim(""); setFComMatricula(false);
+  };
+  const advCount =
+    (fOrgao !== "all" ? 1 : 0) + (fCategoria !== "all" ? 1 : 0) + (fSituacao !== "all" ? 1 : 0) +
+    (fMargemMin ? 1 : 0) + (fMargemMax ? 1 : 0) +
+    (fDataIni ? 1 : 0) + (fDataFim ? 1 : 0) + (fComMatricula ? 1 : 0);
 
   useEffect(() => {
     if (!user) return;
@@ -258,6 +280,18 @@ function Page() {
     return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
   }, [items]);
 
+  const uniqueOpts = (key: keyof Consulta) => {
+    const s = new Set<string>();
+    for (const i of items) {
+      const v = i[key];
+      if (typeof v === "string" && v.trim()) s.add(v.trim());
+    }
+    return Array.from(s).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  };
+  const orgaoOpts = useMemo(() => uniqueOpts("orgao"), [items]);
+  const categoriaOpts = useMemo(() => uniqueOpts("categoria"), [items]);
+  const situacaoOpts = useMemo(() => uniqueOpts("situacao"), [items]);
+
   const filtered = useMemo(() => {
     let f = items;
     if (statusFilter !== "all") f = f.filter((i) => i.status === statusFilter);
@@ -268,8 +302,24 @@ function Page() {
       const q = search.toLowerCase();
       f = f.filter((i) => i.cpf.includes(q.replace(/\D/g, "")) || i.nome.toLowerCase().includes(q));
     }
+    if (fOrgao !== "all") f = f.filter((i) => (i.orgao ?? "") === fOrgao);
+    if (fCategoria !== "all") f = f.filter((i) => (i.categoria ?? "") === fCategoria);
+    if (fSituacao !== "all") f = f.filter((i) => (i.situacao ?? "") === fSituacao);
+    const mn = parseFloat(fMargemMin.replace(",", "."));
+    const mx = parseFloat(fMargemMax.replace(",", "."));
+    if (!Number.isNaN(mn)) f = f.filter((i) => (i.margem_disponivel ?? 0) >= mn);
+    if (!Number.isNaN(mx)) f = f.filter((i) => (i.margem_disponivel ?? 0) <= mx);
+    if (fDataIni) {
+      const t = new Date(fDataIni).getTime();
+      f = f.filter((i) => i.processed_at && new Date(i.processed_at).getTime() >= t);
+    }
+    if (fDataFim) {
+      const t = new Date(fDataFim).getTime() + 24 * 3600 * 1000;
+      f = f.filter((i) => i.processed_at && new Date(i.processed_at).getTime() < t);
+    }
+    if (fComMatricula) f = f.filter((i) => !!(i.matricula && i.matricula.trim()));
     return f;
-  }, [items, statusFilter, erroTipoFilter, search]);
+  }, [items, statusFilter, erroTipoFilter, search, fOrgao, fCategoria, fSituacao, fMargemMin, fMargemMax, fDataIni, fDataFim, fComMatricula]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -734,7 +784,105 @@ function Page() {
           {erroTipoFilter !== "all" && (
             <Button variant="ghost" size="sm" onClick={() => setErroTipoFilter("all")}>Limpar tipo</Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto gap-2"
+            onClick={() => setAdvOpen(true)}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            Filtros avançados
+            {advCount > 0 && (
+              <Badge className="ml-1 h-5 min-w-5 justify-center border-0 bg-primary px-1.5 text-xs text-primary-foreground">
+                {advCount}
+              </Badge>
+            )}
+          </Button>
         </div>
+
+        <Sheet open={advOpen} onOpenChange={setAdvOpen}>
+          <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>Filtros avançados</SheetTitle>
+              <SheetDescription>Refine a lista por órgão, categoria, situação, margem e período.</SheetDescription>
+            </SheetHeader>
+
+            <div className="mt-6 space-y-5">
+              <div className="space-y-2">
+                <Label className="text-xs">Órgão</Label>
+                <Select value={fOrgao} onValueChange={setFOrgao}>
+                  <SelectTrigger><SelectValue placeholder="Todos os órgãos" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os órgãos</SelectItem>
+                    {orgaoOpts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Categoria</Label>
+                <Select value={fCategoria} onValueChange={setFCategoria}>
+                  <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {categoriaOpts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Situação</Label>
+                <Select value={fSituacao} onValueChange={setFSituacao}>
+                  <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {situacaoOpts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Margem disponível (R$)</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    type="number" inputMode="decimal" placeholder="Mín."
+                    value={fMargemMin} onChange={(e) => setFMargemMin(e.target.value)}
+                  />
+                  <Input
+                    type="number" inputMode="decimal" placeholder="Máx."
+                    value={fMargemMax} onChange={(e) => setFMargemMax(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Processado entre</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input type="date" value={fDataIni} onChange={(e) => setFDataIni(e.target.value)} />
+                  <Input type="date" value={fDataFim} onChange={(e) => setFDataFim(e.target.value)} />
+                </div>
+              </div>
+
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={fComMatricula}
+                  onCheckedChange={(v) => setFComMatricula(!!v)}
+                />
+                Apenas com matrícula preenchida
+              </label>
+            </div>
+
+            <div className="mt-8 flex items-center justify-between gap-2 border-t pt-4">
+              <Button variant="ghost" size="sm" onClick={clearAdv} className="gap-2">
+                <X className="h-4 w-4" /> Limpar filtros
+              </Button>
+              <Button size="sm" onClick={() => setAdvOpen(false)}>
+                Aplicar ({filtered.length})
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+
 
         <div className="overflow-x-auto">
           <Table>
