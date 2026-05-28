@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import {
   Search, Loader2, User, MapPin, Phone, Mail, Building2, AlertTriangle,
   Skull, Shield, Users, Briefcase, TrendingUp, Copy, HardHat, History, Trash2, Clock,
+  Info,
 } from "lucide-react";
 import { formatCpf } from "@/lib/cpf";
 
