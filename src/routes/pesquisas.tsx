@@ -438,10 +438,10 @@ function HistoryPanel({
           <History className="h-4 w-4" />
         </div>
         <h3 className="text-sm font-semibold">Histórico de pesquisas</h3>
-        <span className="text-xs text-muted-foreground">({rows.length})</span>
+        <span className="text-xs text-slate-500">({rows.length})</span>
       </div>
       {rows.length === 0 ? (
-        <p className="text-sm italic text-muted-foreground">Nenhuma pesquisa realizada ainda.</p>
+        <p className="text-sm italic text-slate-500">Nenhuma pesquisa realizada ainda.</p>
       ) : (
         <div className="space-y-2">
           {rows.map((row) => (
@@ -457,7 +457,7 @@ function HistoryPanel({
                 <Badge variant="outline" className="shrink-0">{row.tipo}</Badge>
                 <div className="min-w-0">
                   <p className="truncate font-medium">{row.nome || "—"}</p>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="truncate text-xs text-slate-500">
                     <span className="font-mono">{fmtDoc(row.documento, row.tipo)}</span>
                     <span className="mx-1.5 inline-flex items-center">
                       <Clock className="mr-1 h-3 w-3" /> {fmtDate(row.created_at)}
@@ -473,7 +473,7 @@ function HistoryPanel({
               <Button
                 size="sm"
                 variant="ghost"
-                className="shrink-0 text-muted-foreground hover:text-destructive"
+                className="shrink-0 text-slate-400 hover:text-red-600"
                 onClick={() => onRemove(row.id)}
                 aria-label="Remover do histórico"
               >
@@ -509,7 +509,7 @@ function VinculoBadge({ vinculo }: { vinculo?: string }) {
     );
   }
   return (
-    <Badge variant="outline" className="border-muted-foreground/30 bg-muted/40 text-muted-foreground">
+    <Badge variant="outline" className="border-slate-300 bg-slate-100 text-slate-600">
       {vinculo}
     </Badge>
   );
