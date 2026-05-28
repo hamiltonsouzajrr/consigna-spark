@@ -155,8 +155,15 @@ function PesquisasPage() {
     setBusy(true);
     setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke("nv-check", {
-        body: { documento: clean },
+      const { data, error } = await supabase.functions.invoke("pesquisa-nvcheck", {
+        body: {
+          cpf: clean,
+          documento: clean,
+          nome: nome.trim() || undefined,
+          celular: celularClean || undefined,
+          email: emailTrim || undefined,
+          finalidade: finalidade.trim(),
+        },
       });
       if (error) {
         toast.error(error.message);
