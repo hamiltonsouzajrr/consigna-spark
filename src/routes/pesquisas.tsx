@@ -219,10 +219,15 @@ function PesquisasPage() {
     setBusy(true);
     setResult(null);
     setApiError(null);
+    setCachedAt(null);
 
     // Registra o log de auditoria de cada consulta com o user_id da consultora.
-    // Executado sempre (sucesso ou falha) para garantir rastreabilidade LGPD.
-    const logConsulta = async (status: "sucesso" | "erro", payload: Json | null, mensagem?: string) => {
+    // Executado sempre (sucesso, cache ou falha) para garantir rastreabilidade LGPD.
+    const logConsulta = async (
+      status: "sucesso" | "cache" | "erro",
+      payload: Json | null,
+      mensagem?: string,
+    ) => {
       try {
         await supabase.from("pesquisas").insert({
           user_id: user.id,
@@ -237,6 +242,29 @@ function PesquisasPage() {
     };
 
     try {
+      // Cache: evita cobrança dupla na Nova Vida. Se já houver um resultado salvo
+      // para o MESMO CPF + MESMA finalidade com menos de 30 dias, reaproveita.
+      const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: cacheRows } = await supabase
+        .from("pesquisas_nv")
+        .select("resultado, created_at")
+        .eq("documento", clean)
+        .eq("finalidade", finalidade.trim())
+        .not("resultado", "is", null)
+        .gte("created_at", cutoff)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const cached = cacheRows?.[0];
+      if (cached?.resultado) {
+        const consulta = cached.resultado as unknown as Consulta;
+        setSearchedDoc(clean);
+        setResult(consulta);
+        setCachedAt(cached.created_at);
+        toast.success("Resultado reaproveitado do cache (consulta < 30 dias)");
+        await logConsulta("cache", consulta as unknown as Json);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("pesquisa-nvcheck", {
         body: {
           cpf: clean,
