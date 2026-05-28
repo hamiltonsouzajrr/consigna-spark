@@ -624,6 +624,41 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
             </div>
           </Section>
         )}
+
+        {/* Outras informações — qualquer outra seção retornada sem exibição própria */}
+        {extras.map(([k, v]) => (
+          <Section key={k} icon={<User className="h-4 w-4" />} title={humanize(k)} wide>
+            {Array.isArray(v) ? (
+              <div className="space-y-2">
+                {(v as Record<string, unknown>[]).map((item, i) => (
+                  <div key={i} className="rounded-md border bg-muted/30 p-2.5 text-sm">
+                    {item && typeof item === "object" ? (
+                      <div className="grid gap-x-6 sm:grid-cols-2">
+                        {Object.entries(item).map(([ik, iv]) =>
+                          iv != null && String(iv).trim() !== "" ? (
+                            <KV key={ik} label={humanize(ik)} value={String(iv)} />
+                          ) : null,
+                        )}
+                      </div>
+                    ) : (
+                      <span>{String(item)}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : typeof v === "object" ? (
+              <div className="grid gap-x-6 sm:grid-cols-2">
+                {Object.entries(v as Record<string, unknown>).map(([ik, iv]) =>
+                  iv != null && String(iv).trim() !== "" ? (
+                    <KV key={ik} label={humanize(ik)} value={String(iv)} />
+                  ) : null,
+                )}
+              </div>
+            ) : (
+              <p className="text-sm">{String(v)}</p>
+            )}
+          </Section>
+        ))}
       </div>
     </div>
   );
