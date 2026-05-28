@@ -110,6 +110,36 @@ export type Database = {
         }
         Relationships: []
       }
+      pesquisas: {
+        Row: {
+          created_at: string
+          finalidade: string | null
+          id: string
+          resultado_json: Json | null
+          termo_busca: string
+          tipo_busca: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          finalidade?: string | null
+          id?: string
+          resultado_json?: Json | null
+          termo_busca: string
+          tipo_busca: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          finalidade?: string | null
+          id?: string
+          resultado_json?: Json | null
+          termo_busca?: string
+          tipo_busca?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pesquisas_nv: {
         Row: {
           celular: string | null

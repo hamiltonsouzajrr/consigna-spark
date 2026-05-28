@@ -246,6 +246,16 @@ function PesquisasPage() {
         finalidade: finalidade.trim(),
         resultado: consulta as unknown as Json,
       });
+
+      // Registro canônico de auditoria de cada pesquisa
+      await supabase.from("pesquisas").insert({
+        user_id: user.id,
+        tipo_busca: TIPO_LABEL[tipo],
+        termo_busca: clean,
+        finalidade: finalidade.trim(),
+        resultado_json: consulta as unknown as Json,
+      });
+
       if (!insErr) loadHistory();
     } finally {
       setBusy(false);
