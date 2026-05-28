@@ -840,7 +840,7 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
             {Array.isArray(v) ? (
               <div className="space-y-2">
                 {(v as Record<string, unknown>[]).map((item, i) => (
-                  <div key={i} className="rounded-md border bg-muted/30 p-2.5 text-sm">
+                  <div key={i} className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-sm">
                     {item && typeof item === "object" ? (
                       <div className="grid gap-x-6 sm:grid-cols-2">
                         {Object.entries(item).map(([ik, iv]) =>
@@ -877,7 +877,7 @@ function Section({
   icon, title, children, wide,
 }: { icon: React.ReactNode; title: string; children: React.ReactNode; wide?: boolean }) {
   return (
-    <Card className={`p-5 ${wide ? "md:col-span-2" : ""}`}>
+    <Card className={`p-5 bg-white border-slate-200 shadow-sm ${wide ? "md:col-span-2" : ""}`}>
       <div className="mb-3 flex items-center gap-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
           {icon}
@@ -891,9 +891,9 @@ function Section({
 
 function KV({ label, value }: { label: string; value?: string | number | null }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-border/40 py-1.5 text-sm last:border-0">
-      <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
-      <span className="text-right font-medium">{blank(value)}</span>
+    <div className="flex items-baseline justify-between gap-3 border-b border-slate-200 py-1.5 text-sm last:border-0">
+      <span className="text-xs uppercase tracking-wide text-slate-500">{label}</span>
+      <span className="text-right font-medium text-slate-900">{blank(value)}</span>
     </div>
   );
 }
@@ -902,15 +902,15 @@ function StatBadge({ label, value, accent }: { label: string; value: string; acc
   return (
     <div
       className={`rounded-lg border px-3 py-2 text-right ${
-        accent ? "border-primary/30 bg-primary/10" : "bg-muted/40"
+        accent ? "border-blue-200 bg-blue-50" : "bg-slate-100 border-slate-200"
       }`}
     >
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
-      <p className={`text-lg font-bold ${accent ? "text-primary" : ""}`}>{value}</p>
+      <p className="text-[10px] uppercase tracking-widest text-slate-500">{label}</p>
+      <p className={`text-lg font-bold ${accent ? "text-blue-600" : "text-slate-900"}`}>{value}</p>
     </div>
   );
 }
 
 function Empty() {
-  return <p className="text-sm text-muted-foreground italic">Nenhum registro retornado.</p>;
+  return <p className="text-sm text-slate-500 italic">Nenhum registro retornado.</p>;
 }
