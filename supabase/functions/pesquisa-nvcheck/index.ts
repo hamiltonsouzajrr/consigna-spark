@@ -67,6 +67,22 @@ async function nvCheckSoap(documento: string, apiUrl: string, token: string): Pr
       .replace(/&quot;/g, '"')
       .replace(/&apos;/g, "'");
   }
+
+  // Quando o token está inválido/expirado a Nova Vida devolve uma mensagem curta
+  // (ex.: "TOKEN EXPIRADO.") no lugar do XML da consulta. Tratamos como falha.
+  if (!inner.startsWith("<")) {
+    const lower = inner.toLowerCase();
+    if (
+      lower.includes("token") ||
+      lower.includes("expirad") ||
+      lower.includes("incorreto") ||
+      lower.includes("sem acesso") ||
+      lower.includes("acesso negado")
+    ) {
+      console.error("Nova Vida token/auth inválido", { result: inner.slice(0, 300) });
+      throw new NovaVidaUnavailableError();
+    }
+  }
   return inner;
 }
 
