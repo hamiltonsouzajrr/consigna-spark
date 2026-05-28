@@ -172,6 +172,7 @@ function PesquisasPage() {
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [showLoteModal, setShowLoteModal] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [cachedAt, setCachedAt] = useState<string | null>(null);
 
   const tipoDetectado = detectTipo(query);
 
@@ -218,10 +219,15 @@ function PesquisasPage() {
     setBusy(true);
     setResult(null);
     setApiError(null);
+    setCachedAt(null);
 
     // Registra o log de auditoria de cada consulta com o user_id da consultora.
-    // Executado sempre (sucesso ou falha) para garantir rastreabilidade LGPD.
-    const logConsulta = async (status: "sucesso" | "erro", payload: Json | null, mensagem?: string) => {
+    // Executado sempre (sucesso, cache ou falha) para garantir rastreabilidade LGPD.
+    const logConsulta = async (
+      status: "sucesso" | "cache" | "erro",
+      payload: Json | null,
+      mensagem?: string,
+    ) => {
       try {
         await supabase.from("pesquisas").insert({
           user_id: user.id,
@@ -236,6 +242,29 @@ function PesquisasPage() {
     };
 
     try {
+      // Cache: evita cobrança dupla na Nova Vida. Se já houver um resultado salvo
+      // para o MESMO CPF + MESMA finalidade com menos de 30 dias, reaproveita.
+      const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: cacheRows } = await supabase
+        .from("pesquisas_nv")
+        .select("resultado, created_at")
+        .eq("documento", clean)
+        .eq("finalidade", finalidade.trim())
+        .not("resultado", "is", null)
+        .gte("created_at", cutoff)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const cached = cacheRows?.[0];
+      if (cached?.resultado) {
+        const consulta = cached.resultado as unknown as Consulta;
+        setSearchedDoc(clean);
+        setResult(consulta);
+        setCachedAt(cached.created_at);
+        toast.success("Resultado reaproveitado do cache (consulta < 30 dias)");
+        await logConsulta("cache", consulta as unknown as Json);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("pesquisa-nvcheck", {
         body: {
           cpf: clean,
@@ -290,10 +319,12 @@ function PesquisasPage() {
       setDataNasc(row.data_nascimento ?? "");
       setEmail(row.email ?? "");
       setFinalidade(row.finalidade ?? "");
+      setCachedAt(null);
       return;
     }
     setSearchedDoc(row.documento);
     setResult(row.resultado);
+    setCachedAt(row.created_at);
   };
 
   const removeHistory = async (id: string) => {
@@ -464,7 +495,7 @@ function PesquisasPage() {
           </div>
         )}
 
-        {result && <ResultView c={result} documento={searchedDoc} onCopy={copy} />}
+        {result && <ResultView c={result} documento={searchedDoc} onCopy={copy} cachedAt={cachedAt} />}
 
         <HistoryPanel rows={history} onOpen={openFromHistory} onRemove={removeHistory} />
 
@@ -606,7 +637,7 @@ function VinculoBadge({ vinculo }: { vinculo?: string }) {
   );
 }
 
-function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; onCopy: (v?: string) => void }) {
+function ResultView({ c, documento, onCopy, cachedAt }: { c: Consulta; documento: string; onCopy: (v?: string) => void; cachedAt?: string | null }) {
   if (c.erro) {
     return (
       <Card className="p-6 border-red-200 bg-red-50">
@@ -667,6 +698,18 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
 
   return (
     <div className="space-y-6">
+      {cachedAt && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+          <Badge variant="outline" className="border-blue-300 bg-blue-100 text-blue-700">
+            <Clock className="mr-1 h-3 w-3" /> Resultado em cache
+          </Badge>
+          <span className="text-sm text-blue-800">
+            Reaproveitado da consulta de{" "}
+            {new Date(cachedAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+            {" "}(sem nova cobrança · válido por 30 dias)
+          </span>
+        </div>
+      )}
       {/* Header */}
       <Card className="p-6 bg-white border-slate-200 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
