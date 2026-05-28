@@ -229,7 +229,7 @@ function PesquisasPage() {
         tipo: tipoDoc,
         nome: nomeResp,
         celular: null,
-        email: null,
+        email: emailTrim || null,
         data_nascimento: dataNasc || null,
         finalidade: finalidade.trim(),
         resultado: consulta as unknown as Json,
