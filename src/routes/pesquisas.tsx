@@ -234,7 +234,7 @@ function PesquisasPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="f-cpf">
-                  CPF / CNPJ <span className="text-destructive">*</span>
+                  CPF (formatado: 000.000.000-00) <span className="text-destructive">*</span>
                 </Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
