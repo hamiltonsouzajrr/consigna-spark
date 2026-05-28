@@ -416,7 +416,28 @@ function PesquisasPage() {
           </form>
         </Card>
 
-
+        {apiError && (
+          <Card className="p-6 bg-amber-50 border-amber-200 shadow-sm">
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold text-amber-900">Consulta indisponível no momento</h3>
+                <p className="text-sm text-amber-800">{apiError}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => submit()}
+                  className="mt-2 border-amber-300 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+                >
+                  Tentar novamente
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {busy && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
