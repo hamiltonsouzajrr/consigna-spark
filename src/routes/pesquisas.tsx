@@ -391,9 +391,19 @@ function PesquisasPage() {
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-slate-500">
-                A finalidade fica registrada no histórico (auditoria/LGPD).
-              </p>
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-slate-500">
+                  A finalidade fica registrada no histórico (auditoria/LGPD).
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowLoteModal(true)}
+                  className="text-left text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1"
+                >
+                  <Info className="h-3 w-3" />
+                  PRECISO BUSCAR DADOS EM LOTE
+                </button>
+              </div>
               <Button type="submit" disabled={busy} className="bg-blue-600 text-white hover:bg-blue-700 border-0 shadow-sm">
                 {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
                 Consultar
