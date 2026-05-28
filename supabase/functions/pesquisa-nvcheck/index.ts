@@ -1,9 +1,9 @@
 // Edge Function: pesquisa-nvcheck
 // Busca multi-critério da tela de Pesquisas. Backend usa SOMENTE o documento (CPF/CNPJ).
 // Payload: { cpf?, documento?, nome?, celular?, email?, finalidade? }
-// Autenticação: SOAP 1.2 direto no endpoint Nova Vida (NVCHECK), usando o token.
+// Fluxo: GerarToken (SOAP 1.2) -> NVCHECK (SOAP 1.2) -> parse XML -> JSON.
+// Secrets necessários: NV_USUARIO, NV_SENHA, NV_CLIENTE (texto puro; convertidos p/ Base64 aqui).
 //   - NOVA_VIDA_API_URL: endpoint SOAP da Nova Vida (.asmx).
-//   - NOVA_VIDA_API_KEY: token usado diretamente na chamada NVCHECK.
 
 import { XMLParser } from "https://esm.sh/fast-xml-parser@4.5.0";
 
@@ -23,10 +23,72 @@ class NovaVidaUnavailableError extends Error {
   }
 }
 
-// Chamada SOAP 1.2 ao método NVCHECK.
-// Envelope no namespace http://www.w3.org/2003/05/soap-envelope e
-// Content-Type application/soap+xml com a action embutida (sem header SOAPAction).
-async function nvCheckSoap(documento: string, apiUrl: string, token: string): Promise<string> {
+const b64 = (s: string) => btoa(unescape(encodeURIComponent(s)));
+
+const AUTH_ERROR_TERMS = [
+  "token",
+  "expirad",
+  "incorreto",
+  "sem acesso",
+  "acesso negado",
+  "nao autorizado",
+  "não autorizado",
+  "quantidade configurada",
+];
+
+function looksLikeAuthError(value: string): boolean {
+  const lower = value.toLowerCase();
+  return AUTH_ERROR_TERMS.some((t) => lower.includes(t));
+}
+
+// GerarToken (SOAP 1.2): a action vai no Content-Type, sem header SOAPAction.
+async function gerarToken(
+  apiUrl: string,
+  usuario: string,
+  senha: string,
+  cliente: string,
+): Promise<string> {
+  const body = `<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <GerarToken xmlns="http://tempuri.org/">
+      <usuario>${b64(usuario)}</usuario>
+      <senha>${b64(senha)}</senha>
+      <cliente>${b64(cliente)}</cliente>
+    </GerarToken>
+  </soap12:Body>
+</soap12:Envelope>`;
+
+  const res = await fetch(apiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": 'application/soap+xml; charset=utf-8; action="http://tempuri.org/GerarToken"',
+    },
+    body,
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    console.error("GerarToken SOAP error", { status: res.status, body: text.slice(0, 1000) });
+    throw new NovaVidaUnavailableError();
+  }
+
+  // A resposta traz o token em <GerarTokenResult> dentro de <GerarTokenResponse xmlns="http://tempuri.org/">.
+  const m = text.match(/<GerarTokenResult>([\s\S]*?)<\/GerarTokenResult>/);
+  if (!m) {
+    console.error("GerarToken: token não encontrado", { body: text.slice(0, 1000) });
+    throw new NovaVidaUnavailableError();
+  }
+  const token = m[1].trim();
+  if (!token || looksLikeAuthError(token)) {
+    console.error("GerarToken: falha de autenticação", { result: token.slice(0, 300) });
+    throw new NovaVidaUnavailableError();
+  }
+  return token;
+}
+
+// NVCHECK (SOAP 1.2): a action vai no Content-Type, sem header SOAPAction.
+async function nvCheckSoap(apiUrl: string, documento: string, token: string): Promise<string> {
   const body = `<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
   <soap12:Body>
@@ -47,7 +109,7 @@ async function nvCheckSoap(documento: string, apiUrl: string, token: string): Pr
 
   const text = await res.text();
   if (!res.ok) {
-    console.error("Nova Vida SOAP error", { status: res.status, body: text.slice(0, 1000) });
+    console.error("NVCHECK SOAP error", { status: res.status, body: text.slice(0, 1000) });
     throw new NovaVidaUnavailableError();
   }
 
@@ -68,20 +130,10 @@ async function nvCheckSoap(documento: string, apiUrl: string, token: string): Pr
       .replace(/&apos;/g, "'");
   }
 
-  // Quando o token está inválido/expirado a Nova Vida devolve uma mensagem curta
-  // (ex.: "<CONSULTA>TOKEN EXPIRADO.</CONSULTA>") no lugar do XML completo da consulta.
-  // Removemos as tags e checamos o conteúdo textual para tratar como falha.
+  // Mesmo com token, a Nova Vida pode devolver mensagens curtas de erro/limite
+  // (ex.: "<CONSULTA>TOKEN EXPIRADO.</CONSULTA>"). Removemos as tags e tratamos como falha.
   const textOnly = inner.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-  const lower = textOnly.toLowerCase();
-  if (
-    lower.includes("token") ||
-    lower.includes("expirad") ||
-    lower.includes("incorreto") ||
-    lower.includes("sem acesso") ||
-    lower.includes("acesso negado") ||
-    lower.includes("nao autorizado") ||
-    lower.includes("não autorizado")
-  ) {
+  if (looksLikeAuthError(textOnly)) {
     console.error("Nova Vida token/auth inválido", { result: textOnly.slice(0, 300) });
     throw new NovaVidaUnavailableError();
   }
@@ -120,10 +172,15 @@ Deno.serve(async (req) => {
   }
 
   const apiUrl = Deno.env.get("NOVA_VIDA_API_URL");
-  const apiKey = Deno.env.get("NOVA_VIDA_API_KEY");
-  if (!apiUrl || !apiKey) {
+  const usuario = Deno.env.get("NV_USUARIO");
+  const senha = Deno.env.get("NV_SENHA");
+  const cliente = Deno.env.get("NV_CLIENTE");
+  if (!apiUrl || !usuario || !senha || !cliente) {
     return new Response(
-      JSON.stringify({ error: "Credenciais Nova Vida não configuradas (NOVA_VIDA_API_URL, NOVA_VIDA_API_KEY)" }),
+      JSON.stringify({
+        error:
+          "Credenciais Nova Vida não configuradas (NOVA_VIDA_API_URL, NV_USUARIO, NV_SENHA, NV_CLIENTE)",
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
@@ -155,7 +212,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const xml = await nvCheckSoap(documento, apiUrl, apiKey);
+    const token = await gerarToken(apiUrl, usuario, senha, cliente);
+    const xml = await nvCheckSoap(apiUrl, documento, token);
     const data = parseConsulta(xml);
     return new Response(JSON.stringify({ ok: true, documento, data }), {
       status: 200,
