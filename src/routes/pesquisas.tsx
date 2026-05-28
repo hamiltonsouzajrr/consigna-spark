@@ -392,6 +392,7 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           <KV label="Estado civil" value={cad.ESTADOCIVIL} />
           <KV label="Nacionalidade" value={cad.NACIONALIDADE} />
           <KV label="RG" value={cad.RG && `${cad.RG} ${cad.ORGAOEMISSOR ?? ""}`.trim()} />
+          <KV label="Cidade / UF" value={[cad.CIDADE, cad.UF].filter(Boolean).join(" / ")} />
           <KV label="Profissão (possível)" value={cad.POSSIVELPROFISSAO} />
           <KV label="Escolaridade (possível)" value={cad.POSSIVELESCOLARIDADE} />
           <KV label="Classe econômica" value={cad.CLASSEECONOMICA} />
