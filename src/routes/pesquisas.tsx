@@ -759,7 +759,7 @@ function ResultView({ c, documento, onCopy }: { c: Consulta; documento: string; 
           <Section icon={<Briefcase className="h-4 w-4" />} title={`Sociedades (${c.SOCIEDADES!.length})`} wide>
             <div className="space-y-2">
               {c.SOCIEDADES!.map((s, i) => (
-                <div key={i} className="rounded-md border bg-muted/30 p-2.5 text-sm">
+                <div key={i} className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-sm">
                   <p className="font-medium">{s.RAZAO}</p>
                   <p className="text-xs text-muted-foreground">
                     CNPJ {s.CNPJ}
