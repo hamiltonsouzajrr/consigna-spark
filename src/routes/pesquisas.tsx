@@ -288,8 +288,8 @@ function PesquisasPage() {
     <AppShell>
       <div className="space-y-6 bg-white text-slate-900 -mx-4 -my-4 md:-mx-8 md:-my-8 min-h-screen p-4 md:p-8">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Pesquisas</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Pesquisas</h1>
+          <p className="text-sm text-slate-500">
             Consulta cadastral por CPF/CNPJ via Nova Vida (NVCHECK).
           </p>
         </div>
@@ -301,7 +301,7 @@ function PesquisasPage() {
                 Buscar <span className="text-destructive">*</span>
               </Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <Input
                   id="f-busca"
                   value={query}
@@ -328,7 +328,7 @@ function PesquisasPage() {
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-500">
                 A consulta Nova Vida é feita por CPF ou CNPJ. O tipo do termo é detectado automaticamente.
               </p>
             </div>
@@ -363,7 +363,7 @@ function PesquisasPage() {
                 />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-500">
               Data de nascimento e e-mail são opcionais — registrados no histórico para confirmação cadastral.
             </p>
 
@@ -386,7 +386,7 @@ function PesquisasPage() {
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-500">
                 A finalidade fica registrada no histórico (auditoria/LGPD).
               </p>
               <Button type="submit" disabled={busy}>
