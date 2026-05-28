@@ -389,11 +389,24 @@ async function consultarServico(
     motivo = "sessao_expirada";
   } else if (/mostraPopUpAlert\s*\(/i.test(body)) {
     motivo = "popup_alerta";
-    const m = body.match(/mostraPopUpAlert\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/);
-    if (m) detalhe = `${m[1]} - ${m[2]}`.slice(0, 200);
+    // Captura TODOS os argumentos passados para mostraPopUpAlert(...),
+    // independente de aspas simples/duplas, nº de argumentos ou quebras de linha.
+    const call = body.match(/mostraPopUpAlert\s*\(([\s\S]*?)\)\s*;?/i);
+    if (call && call[1]) {
+      const args = [...call[1].matchAll(/(['"])((?:\\.|(?!\1)[\s\S])*?)\1/g)]
+        .map((a) => a[2].replace(/\\(['"])/g, "$1").trim())
+        .filter(Boolean);
+      if (args.length) detalhe = args.join(" - ").slice(0, 300);
+    }
     // Caso típico: hiddenResposta com mensagem do servidor
     const hiddenResp = body.match(/id="MainContent_hiddenResposta"\s+value="([^"]+)"/);
     if (hiddenResp && hiddenResp[1]) detalhe = (detalhe ? `${detalhe} | ` : "") + `hiddenResposta='${hiddenResp[1]}'`;
+    // Fallback: registra um trecho bruto ao redor da chamada para diagnóstico
+    if (!detalhe) {
+      const idx = body.search(/mostraPopUpAlert\s*\(/i);
+      const snippet = body.slice(Math.max(0, idx - 60), idx + 240).replace(/\s+/g, " ").trim();
+      detalhe = `raw='${snippet}'`;
+    }
   } else {
     const lbl = body.match(/<span[^>]*id="[^"]*(lbl(?:Msg|Erro|Mensagem|Aviso))[^"]*"[^>]*>([\s\S]{0,400}?)<\/span>/i);
     if (lbl) {
