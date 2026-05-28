@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   Search, Loader2, User, MapPin, Phone, Mail, Building2, AlertTriangle,
-  Skull, Shield, Users, Briefcase, TrendingUp, Copy,
+  Skull, Shield, Users, Briefcase, TrendingUp, Copy, HardHat,
 } from "lucide-react";
 import { formatCpf } from "@/lib/cpf";
 
