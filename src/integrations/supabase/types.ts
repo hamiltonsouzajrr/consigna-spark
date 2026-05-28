@@ -110,6 +110,36 @@ export type Database = {
         }
         Relationships: []
       }
+      pesquisas_nv: {
+        Row: {
+          created_at: string
+          documento: string
+          id: string
+          nome: string | null
+          resultado: Json | null
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          documento: string
+          id?: string
+          nome?: string | null
+          resultado?: Json | null
+          tipo?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          documento?: string
+          id?: string
+          nome?: string | null
+          resultado?: Json | null
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       processar_logs: {
         Row: {
           consulta_id: string
