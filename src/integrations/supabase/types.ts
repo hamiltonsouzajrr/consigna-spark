@@ -114,6 +114,7 @@ export type Database = {
         Row: {
           celular: string | null
           created_at: string
+          data_nascimento: string | null
           documento: string
           email: string | null
           finalidade: string | null
@@ -126,6 +127,7 @@ export type Database = {
         Insert: {
           celular?: string | null
           created_at?: string
+          data_nascimento?: string | null
           documento: string
           email?: string | null
           finalidade?: string | null
@@ -138,6 +140,7 @@ export type Database = {
         Update: {
           celular?: string | null
           created_at?: string
+          data_nascimento?: string | null
           documento?: string
           email?: string | null
           finalidade?: string | null
