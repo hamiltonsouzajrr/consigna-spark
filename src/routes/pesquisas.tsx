@@ -218,6 +218,23 @@ function PesquisasPage() {
     setBusy(true);
     setResult(null);
     setApiError(null);
+
+    // Registra o log de auditoria de cada consulta com o user_id da consultora.
+    // Executado sempre (sucesso ou falha) para garantir rastreabilidade LGPD.
+    const logConsulta = async (status: "sucesso" | "erro", payload: Json | null, mensagem?: string) => {
+      try {
+        await supabase.from("pesquisas").insert({
+          user_id: user.id,
+          tipo_busca: TIPO_LABEL[tipo],
+          termo_busca: clean,
+          finalidade: finalidade.trim(),
+          resultado_json: { status, mensagem: mensagem ?? null, dados: payload } as unknown as Json,
+        });
+      } catch {
+        // Falha ao gravar o log não deve interromper a experiência do usuário.
+      }
+    };
+
     try {
       const { data, error } = await supabase.functions.invoke("pesquisa-nvcheck", {
         body: {
@@ -229,11 +246,13 @@ function PesquisasPage() {
       if (error) {
         setApiError("Não foi possível conectar ao serviço de consulta. Tente novamente em alguns instantes.");
         toast.error(error.message);
+        await logConsulta("erro", null, error.message);
         return;
       }
       if (!data?.ok) {
         setApiError(data?.error ?? "A consulta não retornou resultados. Verifique o documento e tente novamente.");
         toast.error(data?.error ?? "Falha na consulta");
+        await logConsulta("erro", null, data?.error ?? "Falha na consulta");
         return;
       }
       const consulta = data.data as Consulta;
@@ -257,13 +276,7 @@ function PesquisasPage() {
       });
 
       // Registro canônico de auditoria de cada pesquisa
-      await supabase.from("pesquisas").insert({
-        user_id: user.id,
-        tipo_busca: TIPO_LABEL[tipo],
-        termo_busca: clean,
-        finalidade: finalidade.trim(),
-        resultado_json: consulta as unknown as Json,
-      });
+      await logConsulta("sucesso", consulta as unknown as Json);
 
       if (!insErr) loadHistory();
     } finally {
