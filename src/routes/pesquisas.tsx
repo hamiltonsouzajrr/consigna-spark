@@ -217,6 +217,7 @@ function PesquisasPage() {
 
     setBusy(true);
     setResult(null);
+    setApiError(null);
     try {
       const { data, error } = await supabase.functions.invoke("pesquisa-nvcheck", {
         body: {
@@ -226,10 +227,12 @@ function PesquisasPage() {
         },
       });
       if (error) {
+        setApiError("Não foi possível conectar ao serviço de consulta. Tente novamente em alguns instantes.");
         toast.error(error.message);
         return;
       }
       if (!data?.ok) {
+        setApiError(data?.error ?? "A consulta não retornou resultados. Verifique o documento e tente novamente.");
         toast.error(data?.error ?? "Falha na consulta");
         return;
       }
