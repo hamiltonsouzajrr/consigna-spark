@@ -389,7 +389,7 @@ function PesquisasPage() {
               <p className="text-xs text-slate-500">
                 A finalidade fica registrada no histórico (auditoria/LGPD).
               </p>
-              <Button type="submit" disabled={busy}>
+              <Button type="submit" disabled={busy} className="bg-blue-600 text-white hover:bg-blue-700 border-0 shadow-sm">
                 {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
                 Consultar
               </Button>
