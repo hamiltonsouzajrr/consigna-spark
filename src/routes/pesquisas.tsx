@@ -304,6 +304,25 @@ function PesquisasPage() {
               </p>
             </div>
 
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="f-nasc">Data de nascimento</Label>
+                <Input
+                  id="f-nasc"
+                  type="date"
+                  value={dataNasc}
+                  onChange={(e) => setDataNasc(e.target.value)}
+                  max={new Date().toISOString().slice(0, 10)}
+                />
+              </div>
+              <div className="space-y-1.5 self-end">
+                <p className="text-xs text-muted-foreground">
+                  Opcional — registrada no histórico para confirmação cadastral.
+                </p>
+              </div>
+            </div>
+
+
             <div className="space-y-1.5">
               <Label htmlFor="f-finalidade">
                 Finalidade <span className="text-destructive">*</span>
