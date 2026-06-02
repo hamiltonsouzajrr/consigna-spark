@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, FileText, ExternalLink, AlertTriangle, Camera, CheckCircle2 } from "lucide-react";
+import { Download, FileText, ExternalLink, AlertTriangle, Camera, CheckCircle2, Scale } from "lucide-react";
 import letterhead from "@/assets/contrato-letterhead.jpg";
 import logo from "@/assets/contrato-logo.png";
 
@@ -73,6 +73,8 @@ async function imageToDataUrl(src: string): Promise<string> {
 function ContratoPage() {
   const [form, setForm] = useState<Form>(inicial);
   const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [estimando, setEstimando] = useState(false);
+  const [tamanhoMb, setTamanhoMb] = useState<number | null>(null);
   const contratoRef = useRef<HTMLElement>(null);
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -82,10 +84,9 @@ function ContratoPage() {
 
   const ph = (v: string, n = 30) => v.trim() || "_".repeat(n);
 
-  const gerarPdf = async () => {
-    if (!contratoRef.current || gerandoPdf) return;
+  const construirPdf = async () => {
+    if (!contratoRef.current) throw new Error("Contrato indisponível.");
 
-    setGerandoPdf(true);
     let wrapper: HTMLDivElement | null = null;
 
     try {
@@ -201,12 +202,39 @@ function ContratoPage() {
         pageIndex += 1;
       }
 
+      return pdf;
+    } finally {
+      wrapper?.remove();
+    }
+  };
+
+  const estimarTamanho = async () => {
+    if (gerandoPdf || estimando) return;
+    setEstimando(true);
+    try {
+      const pdf = await construirPdf();
+      const blob = pdf.output("blob") as Blob;
+      setTamanhoMb(blob.size / (1024 * 1024));
+    } catch (error) {
+      console.error("Erro ao estimar tamanho", error);
+      alert("Não foi possível estimar o tamanho. Tente novamente em instantes.");
+    } finally {
+      setEstimando(false);
+    }
+  };
+
+  const gerarPdf = async () => {
+    if (gerandoPdf || estimando) return;
+    setGerandoPdf(true);
+    try {
+      const pdf = await construirPdf();
+      const blob = pdf.output("blob") as Blob;
+      setTamanhoMb(blob.size / (1024 * 1024));
       pdf.save(`contrato-${form.nome.trim() || "cliente"}.pdf`);
     } catch (error) {
       console.error("Erro ao gerar PDF", error);
       alert("Não foi possível gerar o PDF. Tente novamente em instantes.");
     } finally {
-      wrapper?.remove();
       setGerandoPdf(false);
     }
   };
@@ -279,10 +307,37 @@ function ContratoPage() {
               <ExternalLink className="h-4 w-4" /> Abrir ZapSign
             </a>
           </Button>
-          <Button onClick={gerarPdf} disabled={gerandoPdf} className="gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={estimarTamanho}
+            disabled={gerandoPdf || estimando}
+            className="gap-2"
+          >
+            <Scale className="h-4 w-4" /> {estimando ? "Estimando..." : "Estimar tamanho"}
+          </Button>
+          <Button onClick={gerarPdf} disabled={gerandoPdf || estimando} className="gap-2">
             <Download className="h-4 w-4" /> {gerandoPdf ? "Gerando PDF..." : "Gerar PDF para imprimir"}
           </Button>
         </div>
+
+        {tamanhoMb !== null && (
+          <div
+            className={`rounded-lg border p-3 text-sm ${
+              tamanhoMb <= 10
+                ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+                : "border-red-300 bg-red-50 text-red-900"
+            }`}
+          >
+            <p className="flex items-center gap-2 font-medium">
+              <Scale className="h-4 w-4" />
+              Tamanho estimado: {tamanhoMb.toFixed(2)} MB
+              {tamanhoMb <= 10
+                ? " — dentro do limite de 10 MB."
+                : " — acima do limite de 10 MB."}
+            </p>
+          </div>
+        )}
 
         <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
           <p className="flex items-center gap-2 font-semibold">
