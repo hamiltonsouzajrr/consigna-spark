@@ -26,6 +26,7 @@ const navSections: NavSection[] = [
       { to: "/pesquisas", label: "Pesquisas", icon: Search },
       { to: "/safe-consig", label: "Verificar SafeConsig", icon: ShieldCheck },
       { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: TrendingUp, badge: true },
+      { to: "/contrato", label: "Gerar Contrato", icon: FileText },
     ],
   },
   {
