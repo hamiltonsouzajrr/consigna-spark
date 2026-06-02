@@ -187,12 +187,14 @@ function ContratoPage() {
         );
 
         pdf.addImage(
-          pageCanvas.toDataURL("image/png"),
-          "PNG",
+          pageCanvas.toDataURL("image/jpeg", 0.8),
+          "JPEG",
           contentX,
           contentY,
           contentWidth,
           sliceHeightPx / pxPerMm,
+          undefined,
+          "FAST",
         );
 
         renderedPx += sliceHeightPx;
