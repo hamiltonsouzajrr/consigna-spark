@@ -97,6 +97,7 @@ function ContratoPage() {
       wrapper = document.createElement("div");
       const clone = contratoRef.current.cloneNode(true) as HTMLElement;
 
+      clone.classList.add("pdf-export-safe");
       clone.querySelectorAll("img, footer").forEach((el) => el.remove());
       Object.assign(wrapper.style, {
         position: "fixed",
@@ -128,6 +129,22 @@ function ContratoPage() {
           logging: false,
           backgroundColor: null,
           windowWidth: 642,
+          onclone: (doc) => {
+            const style = doc.createElement("style");
+            style.textContent = `
+              html, body { background: #ffffff !important; background-image: none !important; color: #000000 !important; }
+              .pdf-export-safe, .pdf-export-safe * {
+                color: #000000 !important;
+                background: transparent !important;
+                background-image: none !important;
+                border-color: #000000 !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+                filter: none !important;
+              }
+            `;
+            doc.head.appendChild(style);
+          },
         }),
         imageToDataUrl(letterhead),
       ]);
