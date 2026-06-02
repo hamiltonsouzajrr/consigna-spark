@@ -196,3 +196,22 @@ html, body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
     text-shadow: 0 0 18px color-mix(in oklab, var(--primary) 45%, transparent);
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .contrato,
+  .contrato * {
+    visibility: visible;
+  }
+  .contrato {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  @page {
+    margin: 1.5cm;
+  }
+}
