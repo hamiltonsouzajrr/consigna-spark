@@ -257,9 +257,18 @@ function ContratoPage() {
               <div className="mt-8 border-t border-black w-full max-w-[420px]" />
             </div>
           </div>
-        </article>
+
+            {/* Rodapé de contato (apenas na tela; na impressão vem do papel timbrado) */}
+            <footer className="mt-12 border-t pt-4 text-[11px] text-muted-foreground print:hidden">
+              <p>(82) 3336-3233 · falecom@lagesadvogados.com</p>
+              <p>@lalagesadvocacia · lalagesadvocacia.com</p>
+              <p>Rua Barão de Penedo, 61, Centro, Edf. Afranio Lages, 5º Andar, CEP 57020-340, Maceió-AL</p>
+            </footer>
+          </article>
+        </div>
       </div>
     </AppShell>
+
   );
 }
 
