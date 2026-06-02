@@ -217,15 +217,17 @@ html, body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
     border-radius: 0 !important;
     padding: 0 !important;
   }
-  /* Papel timbrado (logo, marca d'água e rodapé) fixo em cada página impressa */
+  /* Papel timbrado (logo, marca d'água e rodapé) fixo em cada página impressa.
+     Usa dimensões físicas exatas do A4 para o rodapé cair sempre no fim da página. */
   .contrato-bg {
     display: block;
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-size: 100% 100%;
+    width: 210mm;
+    height: 297mm;
+    background-size: 210mm 297mm;
+    background-position: top left;
     background-repeat: no-repeat;
     z-index: -1;
     -webkit-print-color-adjust: exact;
@@ -235,8 +237,14 @@ html, body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
 
 @page {
   size: A4;
-  /* Margens reservam espaço para o cabeçalho (logo) e rodapé do papel timbrado */
-  margin: 40mm 18mm 28mm 22mm;
+  margin: 0;
+}
+
+@media print {
+  /* Margens internas reservam espaço para o cabeçalho (logo) e rodapé do papel timbrado */
+  .contrato-content {
+    margin: 40mm 18mm 28mm 22mm;
+  }
 }
 
 
