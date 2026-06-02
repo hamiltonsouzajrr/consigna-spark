@@ -307,10 +307,37 @@ function ContratoPage() {
               <ExternalLink className="h-4 w-4" /> Abrir ZapSign
             </a>
           </Button>
-          <Button onClick={gerarPdf} disabled={gerandoPdf} className="gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={estimarTamanho}
+            disabled={gerandoPdf || estimando}
+            className="gap-2"
+          >
+            <Scale className="h-4 w-4" /> {estimando ? "Estimando..." : "Estimar tamanho"}
+          </Button>
+          <Button onClick={gerarPdf} disabled={gerandoPdf || estimando} className="gap-2">
             <Download className="h-4 w-4" /> {gerandoPdf ? "Gerando PDF..." : "Gerar PDF para imprimir"}
           </Button>
         </div>
+
+        {tamanhoMb !== null && (
+          <div
+            className={`rounded-lg border p-3 text-sm ${
+              tamanhoMb <= 10
+                ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+                : "border-red-300 bg-red-50 text-red-900"
+            }`}
+          >
+            <p className="flex items-center gap-2 font-medium">
+              <Scale className="h-4 w-4" />
+              Tamanho estimado: {tamanhoMb.toFixed(2)} MB
+              {tamanhoMb <= 10
+                ? " — dentro do limite de 10 MB."
+                : " — acima do limite de 10 MB."}
+            </p>
+          </div>
+        )}
 
         <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
           <p className="flex items-center gap-2 font-semibold">
