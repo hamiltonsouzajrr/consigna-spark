@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Printer, FileText } from "lucide-react";
+import { Printer, FileText, ExternalLink, AlertTriangle, Camera, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/contrato")({
   head: () => ({
@@ -124,16 +124,46 @@ function ContratoPage() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            asChild
+            variant="outline"
+            className="gap-2"
+          >
+            <a href="https://app.zapsign.com.br/" target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-4 w-4" /> Abrir ZapSign
+            </a>
+          </Button>
           <Button onClick={() => window.print()} className="gap-2">
             <Printer className="h-4 w-4" /> Imprimir / Salvar PDF
           </Button>
+        </div>
+
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="flex items-center gap-2 font-semibold">
+            <AlertTriangle className="h-4 w-4" /> Antes de enviar, confira:
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+              Confira se o <strong>nome completo</strong>, <strong>CPF</strong>, <strong>endereço</strong> e <strong>telefone</strong> foram digitados corretamente.
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+              Verifique se o <strong>valor da prestação de serviço</strong> está certo antes de gerar o PDF.
+            </li>
+            <li className="flex items-start gap-2">
+              <Camera className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+              No momento da assinatura no ZapSign, lembre-se de <strong>adicionar a foto</strong> da pessoa.
+            </li>
+          </ul>
         </div>
 
         <p className="text-xs text-muted-foreground">
           Pré-visualização abaixo. Ao imprimir, apenas o contrato é incluído.
         </p>
       </div>
+
 
       {/* Documento imprimível */}
       <div className="mt-8 print:mt-0">
