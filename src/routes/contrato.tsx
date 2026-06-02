@@ -165,7 +165,7 @@ function ContratoPage() {
       while (renderedPx < canvas.height) {
         if (pageIndex > 0) pdf.addPage();
 
-        pdf.addImage(letterheadDataUrl, "JPEG", 0, 0, pageWidth, pageHeight);
+        pdf.addImage(letterheadDataUrl, "JPEG", 0, 0, pageWidth, pageHeight, "letterhead", "FAST");
 
         const sliceHeightPx = Math.min(pageSliceHeightPx, canvas.height - renderedPx);
         const pageCanvas = document.createElement("canvas");
