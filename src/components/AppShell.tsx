@@ -140,8 +140,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Button>
         </div>
       </aside>
-      <main className="flex-1 overflow-x-hidden">
-        <div className="md:hidden flex items-center justify-between border-b bg-card px-4 py-3">
+      <main className="flex-1 overflow-x-hidden print:overflow-visible">
+        <div className="md:hidden flex items-center justify-between border-b bg-card px-4 py-3 print:!hidden">
+
           <div className="flex items-center gap-2">
             <BadgeDollarSign className="h-5 w-5 text-primary" />
             <span className="font-semibold">Grupo Positive</span>
