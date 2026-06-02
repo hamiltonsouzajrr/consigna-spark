@@ -124,7 +124,7 @@ function ContratoPage() {
 
       const [canvas, letterheadDataUrl] = await Promise.all([
         html2canvas(clone, {
-          scale: 3,
+          scale: 2,
           useCORS: true,
           logging: false,
           backgroundColor: null,
