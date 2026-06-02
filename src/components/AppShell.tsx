@@ -77,10 +77,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const loc = useLocation();
   const leadsCount = useLeadsCount(!!user);
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background print:block print:min-h-0">
       <HorariosOuroDialog />
       <HorariosOuroReminder />
-      <aside className="hidden w-64 shrink-0 border-r bg-sidebar md:flex md:flex-col">
+      <aside className="hidden w-64 shrink-0 border-r bg-sidebar md:flex md:flex-col print:!hidden">
+
         <div className="flex items-center gap-2 px-6 py-5 border-b">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <BadgeDollarSign className="h-5 w-5" />
