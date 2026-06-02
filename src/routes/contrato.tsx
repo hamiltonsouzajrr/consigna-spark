@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, FileText, ExternalLink, AlertTriangle, Camera, CheckCircle2 } from "lucide-react";
+import { Download, FileText, ExternalLink, AlertTriangle, Camera, CheckCircle2, Scale } from "lucide-react";
 import letterhead from "@/assets/contrato-letterhead.jpg";
 import logo from "@/assets/contrato-logo.png";
 
