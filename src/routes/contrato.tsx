@@ -58,6 +58,18 @@ function dataPorExtenso(): string {
   return `${d.getDate()} DE ${meses[d.getMonth()]} DE ${d.getFullYear()}`;
 }
 
+async function imageToDataUrl(src: string): Promise<string> {
+  const response = await fetch(src);
+  const blob = await response.blob();
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 function ContratoPage() {
   const [form, setForm] = useState<Form>(inicial);
   const [gerandoPdf, setGerandoPdf] = useState(false);
