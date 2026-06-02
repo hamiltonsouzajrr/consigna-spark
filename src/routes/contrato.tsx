@@ -154,9 +154,9 @@ function ContratoPage() {
       const pageWidth = 210;
       const pageHeight = 297;
       const contentX = 22;
-      const contentY = 40;
+      const contentY = 50;
       const contentWidth = 170;
-      const usableHeight = 229;
+      const usableHeight = 200;
       const pxPerMm = canvas.width / contentWidth;
       const pageSliceHeightPx = Math.floor(usableHeight * pxPerMm);
 
