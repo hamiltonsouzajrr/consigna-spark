@@ -160,6 +160,46 @@ function ContratoPage() {
       const pxPerMm = canvas.width / contentWidth;
       const pageSliceHeightPx = Math.floor(usableHeight * pxPerMm);
 
+      // Lê os pixels do canvas para encontrar linhas "em branco" e quebrar
+      // a página nelas, evitando cortar texto no meio.
+      const fullCtx = canvas.getContext("2d");
+      const imageData = fullCtx?.getImageData(0, 0, canvas.width, canvas.height);
+
+      const linhaTemConteudo = (y: number): boolean => {
+        if (!imageData) return true;
+        const { data, width } = imageData;
+        const rowStart = y * width * 4;
+        for (let x = 0; x < width; x++) {
+          const i = rowStart + x * 4;
+          const alpha = data[i + 3];
+          if (alpha < 16) continue; // transparente = vazio
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          if (r < 245 || g < 245 || b < 245) return true; // pixel escuro = conteúdo
+        }
+        return false;
+      };
+
+      // A partir de um corte máximo, recua até achar uma faixa em branco.
+      const acharQuebra = (inicio: number, alturaMax: number): number => {
+        const limite = Math.min(inicio + alturaMax, canvas.height);
+        if (limite >= canvas.height) return canvas.height;
+        const minimo = inicio + Math.floor(alturaMax * 0.5);
+        const margem = Math.max(2, Math.floor(pxPerMm)); // ~1mm de faixa limpa
+        for (let y = limite; y > minimo; y--) {
+          let limpo = true;
+          for (let k = 0; k < margem && y - k > minimo; k++) {
+            if (linhaTemConteudo(y - k)) {
+              limpo = false;
+              break;
+            }
+          }
+          if (limpo) return y;
+        }
+        return limite;
+      };
+
       let renderedPx = 0;
       let pageIndex = 0;
 
@@ -168,7 +208,8 @@ function ContratoPage() {
 
         pdf.addImage(letterheadDataUrl, "JPEG", 0, 0, pageWidth, pageHeight, "letterhead", "FAST");
 
-        const sliceHeightPx = Math.min(pageSliceHeightPx, canvas.height - renderedPx);
+        const corte = acharQuebra(renderedPx, pageSliceHeightPx);
+        const sliceHeightPx = corte - renderedPx;
         const pageCanvas = document.createElement("canvas");
         pageCanvas.width = canvas.width;
         pageCanvas.height = sliceHeightPx;
@@ -198,7 +239,7 @@ function ContratoPage() {
           "FAST",
         );
 
-        renderedPx += sliceHeightPx;
+        renderedPx = corte;
         pageIndex += 1;
       }
 
