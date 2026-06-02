@@ -200,6 +200,9 @@ function ContratoPage() {
       }
 
       pdf.save(`contrato-${form.nome.trim() || "cliente"}.pdf`);
+    } catch (error) {
+      console.error("Erro ao gerar PDF", error);
+      alert("Não foi possível gerar o PDF. Tente novamente em instantes.");
     } finally {
       wrapper?.remove();
       setGerandoPdf(false);
