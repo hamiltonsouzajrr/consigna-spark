@@ -77,10 +77,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const loc = useLocation();
   const leadsCount = useLeadsCount(!!user);
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background print:block print:min-h-0">
       <HorariosOuroDialog />
       <HorariosOuroReminder />
-      <aside className="hidden w-64 shrink-0 border-r bg-sidebar md:flex md:flex-col">
+      <aside className="hidden w-64 shrink-0 border-r bg-sidebar md:flex md:flex-col print:!hidden">
+
         <div className="flex items-center gap-2 px-6 py-5 border-b">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <BadgeDollarSign className="h-5 w-5" />
@@ -139,8 +140,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Button>
         </div>
       </aside>
-      <main className="flex-1 overflow-x-hidden">
-        <div className="md:hidden flex items-center justify-between border-b bg-card px-4 py-3">
+      <main className="flex-1 overflow-x-hidden print:overflow-visible">
+        <div className="md:hidden flex items-center justify-between border-b bg-card px-4 py-3 print:!hidden">
+
           <div className="flex items-center gap-2">
             <BadgeDollarSign className="h-5 w-5 text-primary" />
             <span className="font-semibold">Grupo Positive</span>
@@ -158,7 +160,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </div>
         </div>
-        <div className="mx-auto max-w-7xl p-4 md:p-8">{children}</div>
+        <div className="mx-auto max-w-7xl p-4 md:p-8 print:max-w-none print:p-0">{children}</div>
       </main>
     </div>
   );
