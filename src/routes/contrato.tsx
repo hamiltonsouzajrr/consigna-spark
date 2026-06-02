@@ -124,7 +124,7 @@ function ContratoPage() {
 
       const [canvas, letterheadDataUrl] = await Promise.all([
         html2canvas(clone, {
-          scale: 3,
+          scale: 2,
           useCORS: true,
           logging: false,
           backgroundColor: null,
@@ -149,7 +149,7 @@ function ContratoPage() {
         imageToDataUrl(letterhead),
       ]);
 
-      const pdf = new jsPDF("p", "mm", "a4");
+      const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4", compress: true });
       const pageWidth = 210;
       const pageHeight = 297;
       const contentX = 22;
@@ -165,7 +165,7 @@ function ContratoPage() {
       while (renderedPx < canvas.height) {
         if (pageIndex > 0) pdf.addPage();
 
-        pdf.addImage(letterheadDataUrl, "JPEG", 0, 0, pageWidth, pageHeight);
+        pdf.addImage(letterheadDataUrl, "JPEG", 0, 0, pageWidth, pageHeight, "letterhead", "FAST");
 
         const sliceHeightPx = Math.min(pageSliceHeightPx, canvas.height - renderedPx);
         const pageCanvas = document.createElement("canvas");
@@ -193,6 +193,8 @@ function ContratoPage() {
           contentY,
           contentWidth,
           sliceHeightPx / pxPerMm,
+          undefined,
+          "FAST",
         );
 
         renderedPx += sliceHeightPx;
