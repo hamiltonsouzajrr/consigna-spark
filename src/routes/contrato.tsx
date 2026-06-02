@@ -73,6 +73,8 @@ async function imageToDataUrl(src: string): Promise<string> {
 function ContratoPage() {
   const [form, setForm] = useState<Form>(inicial);
   const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [estimando, setEstimando] = useState(false);
+  const [tamanhoMb, setTamanhoMb] = useState<number | null>(null);
   const contratoRef = useRef<HTMLElement>(null);
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -82,10 +84,9 @@ function ContratoPage() {
 
   const ph = (v: string, n = 30) => v.trim() || "_".repeat(n);
 
-  const gerarPdf = async () => {
-    if (!contratoRef.current || gerandoPdf) return;
+  const construirPdf = async () => {
+    if (!contratoRef.current) throw new Error("Contrato indisponível.");
 
-    setGerandoPdf(true);
     let wrapper: HTMLDivElement | null = null;
 
     try {
@@ -201,12 +202,39 @@ function ContratoPage() {
         pageIndex += 1;
       }
 
+      return pdf;
+    } finally {
+      wrapper?.remove();
+    }
+  };
+
+  const estimarTamanho = async () => {
+    if (gerandoPdf || estimando) return;
+    setEstimando(true);
+    try {
+      const pdf = await construirPdf();
+      const blob = pdf.output("blob") as Blob;
+      setTamanhoMb(blob.size / (1024 * 1024));
+    } catch (error) {
+      console.error("Erro ao estimar tamanho", error);
+      alert("Não foi possível estimar o tamanho. Tente novamente em instantes.");
+    } finally {
+      setEstimando(false);
+    }
+  };
+
+  const gerarPdf = async () => {
+    if (gerandoPdf || estimando) return;
+    setGerandoPdf(true);
+    try {
+      const pdf = await construirPdf();
+      const blob = pdf.output("blob") as Blob;
+      setTamanhoMb(blob.size / (1024 * 1024));
       pdf.save(`contrato-${form.nome.trim() || "cliente"}.pdf`);
     } catch (error) {
       console.error("Erro ao gerar PDF", error);
       alert("Não foi possível gerar o PDF. Tente novamente em instantes.");
     } finally {
-      wrapper?.remove();
       setGerandoPdf(false);
     }
   };
