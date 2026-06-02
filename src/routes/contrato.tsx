@@ -173,6 +173,8 @@ function ContratoPage() {
         pageCanvas.height = sliceHeightPx;
         const ctx = pageCanvas.getContext("2d");
         if (!ctx) throw new Error("Não foi possível renderizar o PDF.");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
 
         ctx.drawImage(
           canvas,
