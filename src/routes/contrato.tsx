@@ -169,10 +169,23 @@ function ContratoPage() {
 
       {/* Documento imprimível */}
       <div className="mt-8 print:mt-0">
-        <article className="contrato mx-auto max-w-[800px] rounded-lg border bg-white p-10 text-[13px] leading-relaxed text-black shadow-sm print:border-0 print:shadow-none print:p-0 print:max-w-none">
-          <h2 className="text-center font-bold uppercase text-[15px] leading-snug">
-            Contrato Particular de Prestação de Serviço de Intermediação, Consultoria e Assessoramento Financeiro
-          </h2>
+        <div className="contrato relative mx-auto max-w-[800px]">
+          {/* Papel timbrado (logo, marca d'água e rodapé) — repetido em cada página impressa */}
+          <div
+            className="contrato-bg"
+            style={{ backgroundImage: `url(${letterhead})` }}
+            aria-hidden
+          />
+          <article className="contrato-content relative rounded-lg border bg-white p-10 text-[12.5px] leading-relaxed text-black shadow-sm">
+            <img
+              src={logo}
+              alt="LA LAGES Advocacia e Consultoria Jurídica"
+              className="mx-auto mb-8 w-[220px] print:hidden"
+            />
+            <h2 className="text-center font-bold uppercase text-[15px] leading-snug">
+              Contrato Particular de Prestação de Serviço de Intermediação, Consultoria e Assessoramento Financeiro
+            </h2>
+
 
           <p className="mt-6">
             Pelo presente instrumento particular de contrato de prestação de serviços, de um lado:
