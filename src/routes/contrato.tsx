@@ -187,8 +187,8 @@ function ContratoPage() {
         );
 
         pdf.addImage(
-          pageCanvas.toDataURL("image/jpeg", 0.8),
-          "JPEG",
+          pageCanvas.toDataURL("image/png"),
+          "PNG",
           contentX,
           contentY,
           contentWidth,
