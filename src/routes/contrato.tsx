@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Printer, FileText, ExternalLink, AlertTriangle, Camera, CheckCircle2 } from "lucide-react";
+import { Download, FileText, ExternalLink, AlertTriangle, Camera, CheckCircle2 } from "lucide-react";
 import letterhead from "@/assets/contrato-letterhead.jpg";
 import logo from "@/assets/contrato-logo.png";
 
@@ -58,8 +58,22 @@ function dataPorExtenso(): string {
   return `${d.getDate()} DE ${meses[d.getMonth()]} DE ${d.getFullYear()}`;
 }
 
+async function imageToDataUrl(src: string): Promise<string> {
+  const response = await fetch(src);
+  const blob = await response.blob();
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 function ContratoPage() {
   const [form, setForm] = useState<Form>(inicial);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
+  const contratoRef = useRef<HTMLElement>(null);
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -67,6 +81,133 @@ function ContratoPage() {
   const data = useMemo(() => dataPorExtenso(), []);
 
   const ph = (v: string, n = 30) => v.trim() || "_".repeat(n);
+
+  const gerarPdf = async () => {
+    if (!contratoRef.current || gerandoPdf) return;
+
+    setGerandoPdf(true);
+    let wrapper: HTMLDivElement | null = null;
+
+    try {
+      const [{ jsPDF }, { default: html2canvas }] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas"),
+      ]);
+
+      wrapper = document.createElement("div");
+      const clone = contratoRef.current.cloneNode(true) as HTMLElement;
+
+      clone.classList.add("pdf-export-safe");
+      clone.querySelectorAll("img, footer").forEach((el) => el.remove());
+      Object.assign(wrapper.style, {
+        position: "fixed",
+        left: "-10000px",
+        top: "0",
+        width: "642px",
+        background: "transparent",
+        pointerEvents: "none",
+      });
+      Object.assign(clone.style, {
+        width: "642px",
+        maxWidth: "642px",
+        margin: "0",
+        padding: "0",
+        border: "0",
+        boxShadow: "none",
+        borderRadius: "0",
+        background: "transparent",
+        color: "#000000",
+      });
+
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+
+      const [canvas, letterheadDataUrl] = await Promise.all([
+        html2canvas(clone, {
+          scale: 3,
+          useCORS: true,
+          logging: false,
+          backgroundColor: null,
+          windowWidth: 642,
+          onclone: (doc) => {
+            const style = doc.createElement("style");
+            style.textContent = `
+              html, body { background: #ffffff !important; background-image: none !important; color: #000000 !important; }
+              .pdf-export-safe, .pdf-export-safe * {
+                color: #000000 !important;
+                background: transparent !important;
+                background-image: none !important;
+                border-color: #000000 !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+                filter: none !important;
+              }
+            `;
+            doc.head.appendChild(style);
+          },
+        }),
+        imageToDataUrl(letterhead),
+      ]);
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const contentX = 22;
+      const contentY = 40;
+      const contentWidth = 170;
+      const usableHeight = 229;
+      const pxPerMm = canvas.width / contentWidth;
+      const pageSliceHeightPx = Math.floor(usableHeight * pxPerMm);
+
+      let renderedPx = 0;
+      let pageIndex = 0;
+
+      while (renderedPx < canvas.height) {
+        if (pageIndex > 0) pdf.addPage();
+
+        pdf.addImage(letterheadDataUrl, "JPEG", 0, 0, pageWidth, pageHeight);
+
+        const sliceHeightPx = Math.min(pageSliceHeightPx, canvas.height - renderedPx);
+        const pageCanvas = document.createElement("canvas");
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = sliceHeightPx;
+        const ctx = pageCanvas.getContext("2d");
+        if (!ctx) throw new Error("Não foi possível renderizar o PDF.");
+
+        ctx.drawImage(
+          canvas,
+          0,
+          renderedPx,
+          canvas.width,
+          sliceHeightPx,
+          0,
+          0,
+          canvas.width,
+          sliceHeightPx,
+        );
+
+        pdf.addImage(
+          pageCanvas.toDataURL("image/png"),
+          "PNG",
+          contentX,
+          contentY,
+          contentWidth,
+          sliceHeightPx / pxPerMm,
+        );
+
+        renderedPx += sliceHeightPx;
+        pageIndex += 1;
+      }
+
+      pdf.save(`contrato-${form.nome.trim() || "cliente"}.pdf`);
+    } catch (error) {
+      console.error("Erro ao gerar PDF", error);
+      alert("Não foi possível gerar o PDF. Tente novamente em instantes.");
+    } finally {
+      wrapper?.remove();
+      setGerandoPdf(false);
+    }
+  };
 
   return (
     <AppShell>
@@ -136,8 +277,8 @@ function ContratoPage() {
               <ExternalLink className="h-4 w-4" /> Abrir ZapSign
             </a>
           </Button>
-          <Button onClick={() => window.print()} className="gap-2">
-            <Printer className="h-4 w-4" /> Imprimir / Salvar PDF
+          <Button onClick={gerarPdf} disabled={gerandoPdf} className="gap-2">
+            <Download className="h-4 w-4" /> {gerandoPdf ? "Gerando PDF..." : "Gerar PDF para imprimir"}
           </Button>
         </div>
 
@@ -162,7 +303,7 @@ function ContratoPage() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Pré-visualização abaixo. Ao imprimir, apenas o contrato é incluído.
+          Pré-visualização abaixo. Ao gerar o PDF, apenas o contrato é incluído.
         </p>
       </div>
 
@@ -176,7 +317,7 @@ function ContratoPage() {
             style={{ backgroundImage: `url(${letterhead})` }}
             aria-hidden
           />
-          <article className="contrato-content relative rounded-lg border bg-white p-10 text-[12.5px] leading-relaxed text-black shadow-sm">
+          <article ref={contratoRef} className="contrato-content relative rounded-lg border bg-white p-10 text-[12.5px] leading-relaxed text-black shadow-sm">
             <img
               src={logo}
               alt="LA LAGES Advocacia e Consultoria Jurídica"
