@@ -211,7 +211,8 @@ html, body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
     top: 0;
     width: 100%;
   }
-  @page {
-    margin: 1.5cm;
-  }
+}
+
+@page {
+  margin: 1.5cm;
 }
