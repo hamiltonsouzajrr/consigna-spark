@@ -27,6 +27,7 @@ const navSections: NavSection[] = [
       { to: "/safe-consig", label: "Verificar SafeConsig", icon: ShieldCheck },
       { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: TrendingUp, badge: true },
       { to: "/contrato", label: "Gerar Contrato", icon: FileText },
+      { to: "/qrcodes", label: "QR Codes Avaliação", icon: QrCode },
     ],
   },
   {
