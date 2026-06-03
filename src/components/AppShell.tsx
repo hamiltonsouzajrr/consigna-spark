@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, FileText } from "lucide-react";
+import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, FileText, QrCode } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,7 @@ const navSections: NavSection[] = [
       { to: "/safe-consig", label: "Verificar SafeConsig", icon: ShieldCheck },
       { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: TrendingUp, badge: true },
       { to: "/contrato", label: "Gerar Contrato", icon: FileText },
+      { to: "/qrcodes", label: "QR Codes Avaliação", icon: QrCode },
     ],
   },
   {

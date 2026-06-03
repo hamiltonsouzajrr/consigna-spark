@@ -13,6 +13,7 @@ import { Route as UploadRouteImport } from './routes/upload'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServidoresSemAcessoRouteImport } from './routes/servidores-sem-acesso'
 import { Route as SafeConsigRouteImport } from './routes/safe-consig'
+import { Route as QrcodesRouteImport } from './routes/qrcodes'
 import { Route as PesquisasRouteImport } from './routes/pesquisas'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LimpezaRouteImport } from './routes/limpeza'
@@ -41,6 +42,11 @@ const ServidoresSemAcessoRoute = ServidoresSemAcessoRouteImport.update({
 const SafeConsigRoute = SafeConsigRouteImport.update({
   id: '/safe-consig',
   path: '/safe-consig',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QrcodesRoute = QrcodesRouteImport.update({
+  id: '/qrcodes',
+  path: '/qrcodes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PesquisasRoute = PesquisasRouteImport.update({
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/limpeza': typeof LimpezaRoute
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
+  '/qrcodes': typeof QrcodesRoute
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/limpeza': typeof LimpezaRoute
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
+  '/qrcodes': typeof QrcodesRoute
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/limpeza': typeof LimpezaRoute
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
+  '/qrcodes': typeof QrcodesRoute
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/limpeza'
     | '/login'
     | '/pesquisas'
+    | '/qrcodes'
     | '/safe-consig'
     | '/servidores-sem-acesso'
     | '/sitemap.xml'
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | '/limpeza'
     | '/login'
     | '/pesquisas'
+    | '/qrcodes'
     | '/safe-consig'
     | '/servidores-sem-acesso'
     | '/sitemap.xml'
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '/limpeza'
     | '/login'
     | '/pesquisas'
+    | '/qrcodes'
     | '/safe-consig'
     | '/servidores-sem-acesso'
     | '/sitemap.xml'
@@ -193,6 +205,7 @@ export interface RootRouteChildren {
   LimpezaRoute: typeof LimpezaRoute
   LoginRoute: typeof LoginRoute
   PesquisasRoute: typeof PesquisasRoute
+  QrcodesRoute: typeof QrcodesRoute
   SafeConsigRoute: typeof SafeConsigRoute
   ServidoresSemAcessoRoute: typeof ServidoresSemAcessoRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -227,6 +240,13 @@ declare module '@tanstack/react-router' {
       path: '/safe-consig'
       fullPath: '/safe-consig'
       preLoaderRoute: typeof SafeConsigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qrcodes': {
+      id: '/qrcodes'
+      path: '/qrcodes'
+      fullPath: '/qrcodes'
+      preLoaderRoute: typeof QrcodesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pesquisas': {
@@ -305,6 +325,7 @@ const rootRouteChildren: RootRouteChildren = {
   LimpezaRoute: LimpezaRoute,
   LoginRoute: LoginRoute,
   PesquisasRoute: PesquisasRoute,
+  QrcodesRoute: QrcodesRoute,
   SafeConsigRoute: SafeConsigRoute,
   ServidoresSemAcessoRoute: ServidoresSemAcessoRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
@@ -313,13 +334,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
