@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SimulacaoAlagoasRouteImport } from './routes/simulacao-alagoas'
 import { Route as ServidoresSemAcessoRouteImport } from './routes/servidores-sem-acesso'
 import { Route as SafeConsigRouteImport } from './routes/safe-consig'
 import { Route as QrcodesRouteImport } from './routes/qrcodes'
@@ -32,6 +33,11 @@ const UploadRoute = UploadRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SimulacaoAlagoasRoute = SimulacaoAlagoasRouteImport.update({
+  id: '/simulacao-alagoas',
+  path: '/simulacao-alagoas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServidoresSemAcessoRoute = ServidoresSemAcessoRouteImport.update({
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/qrcodes': typeof QrcodesRoute
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
+  '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
 }
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/qrcodes': typeof QrcodesRoute
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
+  '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
 }
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/qrcodes': typeof QrcodesRoute
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
+  '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
 }
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/qrcodes'
     | '/safe-consig'
     | '/servidores-sem-acesso'
+    | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
   fileRoutesByTo: FileRoutesByTo
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/qrcodes'
     | '/safe-consig'
     | '/servidores-sem-acesso'
+    | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
   id:
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
     | '/qrcodes'
     | '/safe-consig'
     | '/servidores-sem-acesso'
+    | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
   fileRoutesById: FileRoutesById
@@ -208,6 +220,7 @@ export interface RootRouteChildren {
   QrcodesRoute: typeof QrcodesRoute
   SafeConsigRoute: typeof SafeConsigRoute
   ServidoresSemAcessoRoute: typeof ServidoresSemAcessoRoute
+  SimulacaoAlagoasRoute: typeof SimulacaoAlagoasRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadRoute: typeof UploadRoute
 }
@@ -226,6 +239,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/simulacao-alagoas': {
+      id: '/simulacao-alagoas'
+      path: '/simulacao-alagoas'
+      fullPath: '/simulacao-alagoas'
+      preLoaderRoute: typeof SimulacaoAlagoasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/servidores-sem-acesso': {
@@ -328,6 +348,7 @@ const rootRouteChildren: RootRouteChildren = {
   QrcodesRoute: QrcodesRoute,
   SafeConsigRoute: SafeConsigRoute,
   ServidoresSemAcessoRoute: ServidoresSemAcessoRoute,
+  SimulacaoAlagoasRoute: SimulacaoAlagoasRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadRoute: UploadRoute,
 }
