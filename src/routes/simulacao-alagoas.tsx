@@ -17,7 +17,7 @@ import { Calculator, Eraser, AlertTriangle } from "lucide-react";
 export const Route = createFileRoute("/simulacao-alagoas")({
   head: () => ({
     meta: [
-      { title: "Simulação Alagoas | Grupo Positive" },
+      { title: "SIMULAÇÃO BANESE | Grupo Positive" },
       { name: "description", content: "Calculadora de Margem Principal Banese: calcule o valor liberado por parcela, idade e prazo." },
     ],
   }),
@@ -128,7 +128,7 @@ function SimulacaoAlagoasPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: "#003B7A" }}>
-            Simulação Alagoas
+            SIMULAÇÃO BANESE
           </h1>
           <p className="text-muted-foreground">Calculadoras de crédito consignado.</p>
         </div>

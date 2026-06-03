@@ -18,7 +18,7 @@ const navSections: NavSection[] = [
     items: [
       { to: "/alagoas", label: "Simulação ALAGOAS", icon: Calculator },
       { to: "/calculadora-al", label: "Calculadora ALAGOAS", icon: Calculator },
-      { to: "/simulacao-alagoas", label: "Simulação Alagoas", icon: Calculator },
+      { to: "/simulacao-alagoas", label: "SIMULAÇÃO BANESE", icon: Calculator },
     ],
   },
   {
