@@ -9,16 +9,16 @@ import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
 import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
 import type { ReactNode } from "react";
 
-type NavItem = { to: string; label: string; icon: typeof Calculator; badge?: boolean };
+type NavItem = { to: string; label: string; full?: string; icon: typeof Calculator; badge?: boolean };
 type NavSection = { section: string; items: NavItem[] };
 
 const navSections: NavSection[] = [
   {
     section: "Simulação",
     items: [
-      { to: "/alagoas", label: "SIMULAÇAO PREVIA ALAGOAS - TODOS BANCOS", icon: Calculator },
-      { to: "/calculadora-al", label: "CALCULADORA POR CONTRA CHEQUE - GOV AL", icon: Calculator },
-      { to: "/simulacao-alagoas", label: "SIMULAÇÃO BANESE", icon: Calculator },
+      { to: "/alagoas", label: "Prévia AL – Todos Bancos", full: "SIMULAÇÃO PRÉVIA ALAGOAS - TODOS BANCOS", icon: Calculator },
+      { to: "/calculadora-al", label: "Contracheque – GOV AL", full: "CALCULADORA POR CONTRA CHEQUE - GOV AL", icon: Calculator },
+      { to: "/simulacao-alagoas", label: "Banese", full: "SIMULAÇÃO BANESE", icon: Calculator },
     ],
   },
   {
