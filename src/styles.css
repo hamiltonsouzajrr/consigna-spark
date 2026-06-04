@@ -211,6 +211,60 @@ html, body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
   a:hover {
     color: var(--primary);
   }
+
+  /* High-contrast keyboard focus — visible only for keyboard users */
+  :focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Strong focus ring on interactive controls */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [role="tab"]:focus-visible,
+  [role="menuitem"]:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 5px color-mix(in oklab, var(--ring) 35%, transparent);
+  }
+
+  /* Mouse users keep a clean look (no double outline) */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Focus contrast inside the solid blue premium card */
+  .card-premium :focus-visible {
+    outline-color: oklch(1 0 0);
+    box-shadow: 0 0 0 5px color-mix(in oklab, oklch(1 0 0) 45%, transparent);
+  }
+
+  /* Respect reduced-motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Accessible loading state — clear, high-contrast pulse */
+[data-loading="true"],
+[aria-busy="true"] {
+  cursor: progress;
+}
+[aria-busy="true"] {
+  position: relative;
 }
 
 .contrato-bg {
