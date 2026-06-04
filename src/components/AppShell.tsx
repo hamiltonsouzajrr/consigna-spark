@@ -106,14 +106,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Link
                     key={n.to}
                     to={n.to}
+                    title={n.full ?? n.label}
                     className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
                       active
                         ? "bg-primary text-primary-foreground"
                         : "text-sidebar-foreground hover:bg-sidebar-accent"
                     }`}
                   >
-                    <Icon className="h-4 w-4" />
-                    <span className="flex-1">{n.label}</span>
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="flex-1 truncate">{n.label}</span>
                     {n.badge && leadsCount !== null && leadsCount > 0 && (
                       <Badge
                         className={`h-5 min-w-5 justify-center border-0 px-1.5 text-xs ${
