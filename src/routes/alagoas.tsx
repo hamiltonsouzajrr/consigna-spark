@@ -91,7 +91,7 @@ function ProdutoCard({ p }: { p: Produto }) {
       }`}
     >
       {p.highlight && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border border-primary/40 bg-background px-3 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-primary shadow">
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border border-primary/40 bg-background px-3 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-primary shadow text-slate-800">
           <Sparkles className="mr-1 inline h-3 w-3" /> Destaque
         </div>
       )}
