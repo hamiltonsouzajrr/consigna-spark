@@ -82,7 +82,7 @@ const STATUS_META: Record<
   }
 > = {
   enviado: {
-    label: "Acesso já criado — recuperar senha via WhatsApp",
+    label: "O SERVIDOR JÁ POSSUI ACESSO À SAFE",
     tone: "warning",
     Icon: ShieldAlert,
     hint:
