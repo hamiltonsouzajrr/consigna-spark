@@ -2,11 +2,37 @@
 // Faz POST para a API Nova Vida com o payload recebido.
 // Configure os secrets NOVA_VIDA_URL e NOVA_VIDA_TOKEN antes de usar.
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+// Verifica o JWT do usuário; retorna null se autorizado, ou uma Response 401 caso contrário.
+async function requireAuth(req: Request): Promise<Response | null> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response(JSON.stringify({ error: "Não autorizado" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const userClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: authHeader } } },
+  );
+  const { data, error } = await userClient.auth.getUser();
+  if (error || !data.user) {
+    return new Response(JSON.stringify({ error: "Não autorizado" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  return null;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -19,6 +45,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
+  const unauthorized = await requireAuth(req);
+  if (unauthorized) return unauthorized;
 
   const NOVA_VIDA_URL = Deno.env.get("NOVA_VIDA_URL");
   const NOVA_VIDA_TOKEN = Deno.env.get("NOVA_VIDA_TOKEN");
