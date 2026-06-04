@@ -43,7 +43,7 @@ const navSections: NavSection[] = [
   },
 ];
 
-const nav: NavItem[] = navSections.flatMap((s) => s.items);
+
 
 function useLeadsCount(enabled: boolean) {
   const [count, setCount] = useState<number | null>(null);
