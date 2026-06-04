@@ -182,8 +182,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
+    console.error("[pesquisa-nvbook-cel] erro:", err instanceof Error ? err.message : String(err));
     return new Response(
-      JSON.stringify({ ok: false, error: String(err instanceof Error ? err.message : err) }),
+      JSON.stringify({ ok: false, error: "Serviço temporariamente indisponível" }),
       { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
