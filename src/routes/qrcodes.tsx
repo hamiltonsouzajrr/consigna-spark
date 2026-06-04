@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExternalLink, Star, MessageSquareHeart, Instagram } from "lucide-react";
+import instaQr from "@/assets/insta-qr.png.asset.json";
 
 export const Route = createFileRoute("/qrcodes")({
   head: () => ({
@@ -23,6 +24,7 @@ type QrItem = {
   url: string;
   icon: typeof Star;
   cor: string;
+  imagem?: string;
 };
 
 const itens: QrItem[] = [
@@ -46,9 +48,10 @@ const itens: QrItem[] = [
     id: "instagram",
     titulo: "Instagram",
     descricao: "Convide o cliente a seguir nosso perfil.",
-    url: "https://instagram.com/grupopositive",
+    url: "https://www.instagram.com/grupo.positive?igsh=N295bGZ5amVocHo3&utm_source=qr",
     icon: Instagram,
     cor: "#db2777",
+    imagem: instaQr.url,
   },
 ];
 
@@ -65,7 +68,11 @@ function QrCard({ item }: { item: QrItem }) {
       <CardContent className="flex flex-1 flex-col items-center gap-4 text-center">
         <p className="text-sm text-muted-foreground">{item.descricao}</p>
         <div className="rounded-xl bg-white p-4 shadow-sm">
-          <QRCode value={item.url} size={180} fgColor="#0f172a" bgColor="#ffffff" />
+          {item.imagem ? (
+            <img src={item.imagem} alt={`QR Code ${item.titulo}`} className="h-[180px] w-[180px]" />
+          ) : (
+            <QRCode value={item.url} size={180} fgColor="#0f172a" bgColor="#ffffff" />
+          )}
         </div>
         <Button asChild variant="outline" className="mt-auto w-full gap-2">
           <a href={item.url} target="_blank" rel="noopener noreferrer">
@@ -110,7 +117,11 @@ function QrCodesPage() {
         >
           <h2 className="text-2xl font-bold text-white">{fullscreen.titulo}</h2>
           <div className="rounded-2xl bg-white p-6">
-            <QRCode value={fullscreen.url} size={260} fgColor="#0f172a" bgColor="#ffffff" />
+            {fullscreen.imagem ? (
+              <img src={fullscreen.imagem} alt={`QR Code ${fullscreen.titulo}`} className="h-[260px] w-[260px]" />
+            ) : (
+              <QRCode value={fullscreen.url} size={260} fgColor="#0f172a" bgColor="#ffffff" />
+            )}
           </div>
           <p className="text-sm text-white/80">Toque em qualquer lugar para fechar</p>
         </div>
