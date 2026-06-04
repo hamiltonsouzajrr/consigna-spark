@@ -4,12 +4,37 @@
 // Secrets necessários: NV_USUARIO, NV_SENHA, NV_CLIENTE (texto puro; convertidos para Base64 aqui).
 
 import { XMLParser } from "https://esm.sh/fast-xml-parser@4.5.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+// Verifica o JWT do usuário; retorna null se autorizado, ou uma Response 401 caso contrário.
+async function requireAuth(req: Request): Promise<Response | null> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response(JSON.stringify({ error: "Não autorizado" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const userClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: authHeader } } },
+  );
+  const { data, error } = await userClient.auth.getUser();
+  if (error || !data.user) {
+    return new Response(JSON.stringify({ error: "Não autorizado" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  return null;
+}
 
 const TOKEN_URL = "https://wsnv.novavidati.com.br/WSLocalizador.asmx";
 const CHECK_URL = "https://wsnv.novavidati.com.br/WSLocalizador.asmx";
@@ -123,6 +148,10 @@ Deno.serve(async (req) => {
     });
   }
 
+  const unauthorized = await requireAuth(req);
+  if (unauthorized) return unauthorized;
+
+
   const usuario = Deno.env.get("NV_USUARIO");
   const senha = Deno.env.get("NV_SENHA");
   const cliente = Deno.env.get("NV_CLIENTE");
@@ -160,8 +189,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
+    console.error("[nv-check] erro:", err instanceof Error ? err.message : String(err));
     return new Response(
-      JSON.stringify({ ok: false, error: String(err instanceof Error ? err.message : err) }),
+      JSON.stringify({ ok: false, error: "Serviço temporariamente indisponível" }),
       { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }

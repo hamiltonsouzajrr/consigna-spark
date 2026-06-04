@@ -6,12 +6,37 @@
 //   - NOVA_VIDA_API_URL: endpoint SOAP da Nova Vida (.asmx).
 
 import { XMLParser } from "https://esm.sh/fast-xml-parser@4.5.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+// Verifica o JWT do usuário; retorna null se autorizado, ou uma Response 401 caso contrário.
+async function requireAuth(req: Request): Promise<Response | null> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response(JSON.stringify({ error: "Não autorizado" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const userClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: authHeader } } },
+  );
+  const { data, error } = await userClient.auth.getUser();
+  if (error || !data.user) {
+    return new Response(JSON.stringify({ error: "Não autorizado" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  return null;
+}
 
 const NOVA_VIDA_FRIENDLY_ERROR =
   "A consulta Nova Vida está indisponível no momento. Tente novamente em alguns instantes.";
@@ -187,6 +212,10 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
+  const unauthorized = await requireAuth(req);
+  if (unauthorized) return unauthorized;
+
 
   const apiUrl = Deno.env.get("NOVA_VIDA_API_URL");
   const usuario = Deno.env.get("NV_USUARIO");
