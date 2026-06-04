@@ -146,6 +146,33 @@ html, body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
     0 40px 120px -20px color-mix(in oklab, var(--primary) 45%, transparent);
 }
 
+/* High-contrast text on the solid blue premium card */
+.card-premium,
+.card-premium .text-foreground,
+.card-premium .text-muted-foreground,
+.card-premium .text-primary {
+  color: oklch(1 0 0);
+}
+.card-premium .text-muted-foreground {
+  color: color-mix(in oklab, oklch(1 0 0) 78%, transparent);
+}
+.card-premium .text-warning {
+  color: oklch(0.92 0.13 95);
+}
+.card-premium .text-gradient {
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  color: oklch(1 0 0);
+}
+.card-premium .text-primary-glow,
+.card-premium svg {
+  color: oklch(1 0 0);
+}
+.card-premium .font-mono {
+  color: oklch(1 0 0);
+}
+
 @utility card-elegant {
   background: var(--gradient-subtle);
   border: 1px solid var(--color-border);
