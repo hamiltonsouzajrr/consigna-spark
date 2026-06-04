@@ -79,6 +79,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const nav2 = useNavigate();
   const loc = useLocation();
   const leadsCount = useLeadsCount(!!user);
+  const [mobileOpen, setMobileOpen] = useState(false);
   return (
     <div className="flex min-h-screen bg-background print:block print:min-h-0">
       <HorariosOuroDialog />
