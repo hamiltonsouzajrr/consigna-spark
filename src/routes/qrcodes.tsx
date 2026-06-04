@@ -117,7 +117,11 @@ function QrCodesPage() {
         >
           <h2 className="text-2xl font-bold text-white">{fullscreen.titulo}</h2>
           <div className="rounded-2xl bg-white p-6">
-            <QRCode value={fullscreen.url} size={260} fgColor="#0f172a" bgColor="#ffffff" />
+            {fullscreen.imagem ? (
+              <img src={fullscreen.imagem} alt={`QR Code ${fullscreen.titulo}`} className="h-[260px] w-[260px]" />
+            ) : (
+              <QRCode value={fullscreen.url} size={260} fgColor="#0f172a" bgColor="#ffffff" />
+            )}
           </div>
           <p className="text-sm text-white/80">Toque em qualquer lugar para fechar</p>
         </div>
