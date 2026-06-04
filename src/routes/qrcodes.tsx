@@ -38,7 +38,7 @@ const itens: QrItem[] = [
     id: "google",
     titulo: "Google",
     descricao: "Avaliação com estrelas no perfil do Google.",
-    url: "https://www.google.com/search?q=grupo+positive",
+    url: "https://g.page/r/CZX61pouEbLAEAE/review?utm_source=gbp&utm_medium=reviews&utm_campaign=qr",
     icon: Star,
     cor: "#eab308",
   },
