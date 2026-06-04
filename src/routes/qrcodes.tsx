@@ -24,6 +24,7 @@ type QrItem = {
   url: string;
   icon: typeof Star;
   cor: string;
+  imagem?: string;
 };
 
 const itens: QrItem[] = [
