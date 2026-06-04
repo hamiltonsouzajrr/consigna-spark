@@ -4,12 +4,37 @@
 // Secrets necessários: NV_USUARIO, NV_SENHA, NV_CLIENTE (texto puro; convertidos para Base64 aqui).
 
 import { XMLParser } from "https://esm.sh/fast-xml-parser@4.5.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+// Verifica o JWT do usuário; retorna null se autorizado, ou uma Response 401 caso contrário.
+async function requireAuth(req: Request): Promise<Response | null> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response(JSON.stringify({ error: "Não autorizado" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const userClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: authHeader } } },
+  );
+  const { data, error } = await userClient.auth.getUser();
+  if (error || !data.user) {
+    return new Response(JSON.stringify({ error: "Não autorizado" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  return null;
+}
 
 const TOKEN_URL = "https://wsnv.novavidati.com.br/WSLocalizador.asmx";
 const CHECK_URL = "https://wsnv.novavidati.com.br/WSLocalizador.asmx";
