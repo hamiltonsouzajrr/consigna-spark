@@ -9,16 +9,16 @@ import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
 import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
 import type { ReactNode } from "react";
 
-type NavItem = { to: string; label: string; icon: typeof Calculator; badge?: boolean };
+type NavItem = { to: string; label: string; full?: string; icon: typeof Calculator; badge?: boolean };
 type NavSection = { section: string; items: NavItem[] };
 
 const navSections: NavSection[] = [
   {
     section: "Simulação",
     items: [
-      { to: "/alagoas", label: "SIMULAÇAO PREVIA ALAGOAS - TODOS BANCOS", icon: Calculator },
-      { to: "/calculadora-al", label: "CALCULADORA POR CONTRA CHEQUE - GOV AL", icon: Calculator },
-      { to: "/simulacao-alagoas", label: "SIMULAÇÃO BANESE", icon: Calculator },
+      { to: "/alagoas", label: "Prévia AL – Todos Bancos", full: "SIMULAÇÃO PRÉVIA ALAGOAS - TODOS BANCOS", icon: Calculator },
+      { to: "/calculadora-al", label: "Contracheque – GOV AL", full: "CALCULADORA POR CONTRA CHEQUE - GOV AL", icon: Calculator },
+      { to: "/simulacao-alagoas", label: "Banese", full: "SIMULAÇÃO BANESE", icon: Calculator },
     ],
   },
   {
@@ -106,14 +106,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Link
                     key={n.to}
                     to={n.to}
+                    title={n.full ?? n.label}
                     className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
                       active
                         ? "bg-primary text-primary-foreground"
                         : "text-sidebar-foreground hover:bg-sidebar-accent"
                     }`}
                   >
-                    <Icon className="h-4 w-4" />
-                    <span className="flex-1">{n.label}</span>
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="flex-1 truncate">{n.label}</span>
                     {n.badge && leadsCount !== null && leadsCount > 0 && (
                       <Badge
                         className={`h-5 min-w-5 justify-center border-0 px-1.5 text-xs ${
@@ -151,7 +152,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="flex gap-1 flex-wrap">
             {nav.map((n) => (
-              <Link key={n.to} to={n.to} className="px-2 py-1 text-xs rounded hover:bg-accent flex items-center gap-1">
+              <Link key={n.to} to={n.to} title={n.full ?? n.label} className="px-2 py-1 text-xs rounded hover:bg-accent flex items-center gap-1">
                 {n.label}
                 {n.badge && leadsCount !== null && leadsCount > 0 && (
                   <Badge className="h-4 min-w-4 justify-center border-0 bg-emerald-600 px-1 text-[10px] text-white hover:bg-emerald-700">
