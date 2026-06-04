@@ -114,6 +114,35 @@ function extractViewState(html: string, index = 0): string | null {
   return hidden?.[1] ?? null;
 }
 
+// Descobre dinamicamente o id JSF do link "Esqueci Minha Senha" (muda a cada deploy do portal).
+function extractEsqueciSource(html: string): string | null {
+  const m = html.match(
+    /<a[^>]*\bid="([^"]+)"[^>]*onclick="[^"]*u:&quot;formularioDeLogin&quot;[^"]*"[^>]*>\s*Esqueci/i,
+  );
+  return m?.[1] ?? null;
+}
+
+// Descobre o id do campo de usuário/CPF dentro do form de reset (muda a cada deploy).
+function extractResetField(xml: string): string | null {
+  const m = xml.match(
+    /<input id="([^"]+)" name="\1" type="text"[^>]*placeholder="Informe o seu/i,
+  );
+  return m?.[1] ?? null;
+}
+
+// Descobre o id do botão de submit do reset.
+function extractResetButton(xml: string): string | null {
+  const m = xml.match(
+    /<button id="([^"]+)" name="\1"[^>]*onclick="PrimeFaces\.ab\(\{s:&quot;\1&quot;,f:&quot;form1&quot;/i,
+  );
+  return m?.[1] ?? null;
+}
+
+// O portal passou a exigir Cloudflare Turnstile/reCAPTCHA no fluxo de reset.
+function hasCaptcha(html: string): boolean {
+  return /cf-turnstile|data-sitekey|challenges\.cloudflare|g-recaptcha|renderTurnstile/i.test(html);
+}
+
 function extractRedirectFromXml(xml: string): string | null {
   const m = xml.match(/<redirect\s+url="([^"]+)"\s*\/?>/i);
   return m?.[1] ?? null;
@@ -187,12 +216,13 @@ async function attemptConsulta(cpf: string, ua: string, userId: string): Promise
   const loginEndpoint = r1.finalUrl;
 
   // ---- Etapa 2: AJAX click "Esqueci Minha Senha" ----
+  const esqueciSrc = extractEsqueciSource(html1) ?? "j_idt33";
   const body2 = new URLSearchParams({
     "javax.faces.partial.ajax": "true",
-    "javax.faces.source": "j_idt32",
-    "javax.faces.partial.execute": "j_idt32",
+    "javax.faces.source": esqueciSrc,
+    "javax.faces.partial.execute": esqueciSrc,
     "javax.faces.partial.render": "formularioDeLogin",
-    j_idt32: "j_idt32",
+    [esqueciSrc]: esqueciSrc,
     idForm12344: "idForm12344",
     idLogin: "",
     senhaUsuario: "",
@@ -226,15 +256,21 @@ async function attemptConsulta(cpf: string, ua: string, userId: string): Promise
     };
   }
 
+  // O portal SafeConsig passou a exigir Cloudflare Turnstile/reCAPTCHA no reset.
+  // Sem token de captcha o envio é rejeitado (redirect para /safe/login).
+  const captcha = hasCaptcha(xml2);
+
   // ---- Etapa 3: POST CPF ----
+  const resetBtn = extractResetButton(xml2) ?? "resetBotom";
+  const resetField = extractResetField(xml2) ?? "j_idt42";
   const body3 = new URLSearchParams({
     "javax.faces.partial.ajax": "true",
-    "javax.faces.source": "resetBotom",
+    "javax.faces.source": resetBtn,
     "javax.faces.partial.execute": "form1",
     "javax.faces.partial.render": "form1 mensagens mensagens11",
-    resetBotom: "resetBotom",
+    [resetBtn]: resetBtn,
     form1: "form1",
-    j_idt41: cpf,
+    [resetField]: cpf,
     "javax.faces.ViewState": vs2,
   });
   const r3 = await fetchWithJar(loginEndpoint, {
@@ -255,6 +291,17 @@ async function attemptConsulta(cpf: string, ua: string, userId: string): Promise
   }
   const xml3 = await r3.response.text();
   if (extractRedirectFromXml(xml3)) {
+    // Se o portal exige captcha, o redirect é definitivo — não adianta repetir.
+    if (captcha) {
+      return {
+        kind: "ok",
+        result: {
+          status: "erro",
+          message:
+            "A SafeConsig passou a exigir verificação anti-robô (captcha Cloudflare Turnstile) no fluxo 'Esqueci Minha Senha'. Por isso a consulta automática não é mais possível por esta via. Use o botão 'Verificar manualmente' para conferir o CPF diretamente no portal.",
+        },
+      };
+    }
     return { kind: "retry", reason: "sessão expirou antes do envio" };
   }
 
