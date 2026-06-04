@@ -94,8 +94,9 @@ Deno.serve(async (req) => {
       },
     );
   } catch (err) {
+    console.error("[nova-vida-post] erro:", err instanceof Error ? err.message : String(err));
     return new Response(
-      JSON.stringify({ error: "Falha ao contatar API Nova Vida", detail: String(err) }),
+      JSON.stringify({ error: "Serviço temporariamente indisponível" }),
       { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
