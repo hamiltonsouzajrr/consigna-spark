@@ -48,9 +48,10 @@ const itens: QrItem[] = [
     id: "instagram",
     titulo: "Instagram",
     descricao: "Convide o cliente a seguir nosso perfil.",
-    url: "https://instagram.com/grupopositive",
+    url: "https://www.instagram.com/grupo.positive?igsh=N295bGZ5amVocHo3&utm_source=qr",
     icon: Instagram,
     cor: "#db2777",
+    imagem: instaQr.url,
   },
 ];
 
