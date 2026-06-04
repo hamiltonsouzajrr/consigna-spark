@@ -42,19 +42,21 @@ function looksLikeAuthError(value: string): boolean {
 }
 
 // GerarToken (SOAP 1.2): a action vai no Content-Type, sem header SOAPAction.
-async function gerarToken(
+async function tryGerarToken(
   apiUrl: string,
   usuario: string,
   senha: string,
   cliente: string,
-): Promise<string> {
+  encode: boolean,
+): Promise<{ ok: boolean; token?: string; detail: string }> {
+  const tx = (v: string) => (encode ? b64(v) : v);
   const body = `<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
   <soap12:Body>
     <GerarToken xmlns="http://tempuri.org/">
-      <usuario>${b64(usuario)}</usuario>
-      <senha>${b64(senha)}</senha>
-      <cliente>${b64(cliente)}</cliente>
+      <usuario>${tx(usuario)}</usuario>
+      <senha>${tx(senha)}</senha>
+      <cliente>${tx(cliente)}</cliente>
     </GerarToken>
   </soap12:Body>
 </soap12:Envelope>`;
@@ -69,22 +71,49 @@ async function gerarToken(
 
   const text = await res.text();
   if (!res.ok) {
-    console.error("GerarToken SOAP error", { status: res.status, body: text.slice(0, 1000) });
-    throw new NovaVidaUnavailableError();
+    return { ok: false, detail: `HTTP ${res.status}: ${text.slice(0, 200)}` };
   }
-
-  // A resposta traz o token em <GerarTokenResult> dentro de <GerarTokenResponse xmlns="http://tempuri.org/">.
   const m = text.match(/<GerarTokenResult>([\s\S]*?)<\/GerarTokenResult>/);
   if (!m) {
-    console.error("GerarToken: token não encontrado", { body: text.slice(0, 1000) });
-    throw new NovaVidaUnavailableError();
+    return { ok: false, detail: `sem GerarTokenResult: ${text.slice(0, 200)}` };
   }
   const token = m[1].trim();
   if (!token || looksLikeAuthError(token)) {
-    console.error("GerarToken: falha de autenticação", { result: token.slice(0, 300) });
-    throw new NovaVidaUnavailableError();
+    return { ok: false, detail: `auth: ${token.slice(0, 200)}` };
   }
-  return token;
+  return { ok: true, token, detail: "ok" };
+}
+
+async function gerarToken(
+  apiUrl: string,
+  usuario: string,
+  senha: string,
+  cliente: string,
+): Promise<string> {
+  // DIAGNÓSTICO TEMPORÁRIO: testa Base64 e texto puro para identificar a causa.
+  try {
+    console.log("NV diag", {
+      host: new URL(apiUrl).host,
+      usuarioLen: usuario.length,
+      senhaLen: senha.length,
+      clienteLen: cliente.length,
+    });
+  } catch {
+    // ignore
+  }
+
+  const enc = await tryGerarToken(apiUrl, usuario, senha, cliente, true);
+  if (enc.ok && enc.token) return enc.token;
+  const plain = await tryGerarToken(apiUrl, usuario, senha, cliente, false);
+  if (plain.ok && plain.token) {
+    console.log("NV diag: texto puro funcionou (Base64 falhou)");
+    return plain.token;
+  }
+  console.error("GerarToken: falha nas duas variações", {
+    base64: enc.detail,
+    textoPuro: plain.detail,
+  });
+  throw new NovaVidaUnavailableError();
 }
 
 // NVCHECK (SOAP 1.2): a action vai no Content-Type, sem header SOAPAction.
