@@ -90,26 +90,14 @@ async function gerarToken(
   senha: string,
   cliente: string,
 ): Promise<string> {
-  // DIAGNÓSTICO TEMPORÁRIO: testa Base64 e texto puro para identificar a causa.
-  try {
-    console.log("NV diag", {
-      host: new URL(apiUrl).host,
-      usuarioLen: usuario.length,
-      senhaLen: senha.length,
-      clienteLen: cliente.length,
-    });
-  } catch {
-    // ignore
-  }
-
+  // A Nova Vida deste cliente espera as credenciais em TEXTO PURO.
+  // Mantemos o Base64 como tentativa primária por compatibilidade e caímos
+  // para texto puro caso o Base64 seja recusado.
   const enc = await tryGerarToken(apiUrl, usuario, senha, cliente, true);
   if (enc.ok && enc.token) return enc.token;
   const plain = await tryGerarToken(apiUrl, usuario, senha, cliente, false);
-  if (plain.ok && plain.token) {
-    console.log("NV diag: texto puro funcionou (Base64 falhou)");
-    return plain.token;
-  }
-  console.error("GerarToken: falha nas duas variações", {
+  if (plain.ok && plain.token) return plain.token;
+  console.error("GerarToken: falha de autenticação", {
     base64: enc.detail,
     textoPuro: plain.detail,
   });
