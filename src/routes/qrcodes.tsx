@@ -68,7 +68,11 @@ function QrCard({ item }: { item: QrItem }) {
       <CardContent className="flex flex-1 flex-col items-center gap-4 text-center">
         <p className="text-sm text-muted-foreground">{item.descricao}</p>
         <div className="rounded-xl bg-white p-4 shadow-sm">
-          <QRCode value={item.url} size={180} fgColor="#0f172a" bgColor="#ffffff" />
+          {item.imagem ? (
+            <img src={item.imagem} alt={`QR Code ${item.titulo}`} className="h-[180px] w-[180px]" />
+          ) : (
+            <QRCode value={item.url} size={180} fgColor="#0f172a" bgColor="#ffffff" />
+          )}
         </div>
         <Button asChild variant="outline" className="mt-auto w-full gap-2">
           <a href={item.url} target="_blank" rel="noopener noreferrer">
