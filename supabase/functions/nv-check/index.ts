@@ -148,6 +148,10 @@ Deno.serve(async (req) => {
     });
   }
 
+  const unauthorized = await requireAuth(req);
+  if (unauthorized) return unauthorized;
+
+
   const usuario = Deno.env.get("NV_USUARIO");
   const senha = Deno.env.get("NV_SENHA");
   const cliente = Deno.env.get("NV_CLIENTE");
