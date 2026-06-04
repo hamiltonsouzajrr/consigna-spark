@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExternalLink, Star, MessageSquareHeart, Instagram } from "lucide-react";
+import instaQr from "@/assets/insta-qr.png.asset.json";
 
 export const Route = createFileRoute("/qrcodes")({
   head: () => ({
