@@ -1,10 +1,11 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, FileText, QrCode } from "lucide-react";
+import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, FileText, QrCode, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
 import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
 import type { ReactNode } from "react";
@@ -42,7 +43,7 @@ const navSections: NavSection[] = [
   },
 ];
 
-const nav: NavItem[] = navSections.flatMap((s) => s.items);
+
 
 function useLeadsCount(enabled: boolean) {
   const [count, setCount] = useState<number | null>(null);
@@ -78,6 +79,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const nav2 = useNavigate();
   const loc = useLocation();
   const leadsCount = useLeadsCount(!!user);
+  const [mobileOpen, setMobileOpen] = useState(false);
   return (
     <div className="flex min-h-screen bg-background print:block print:min-h-0">
       <HorariosOuroDialog />
@@ -145,25 +147,86 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
       <main className="flex-1 overflow-x-hidden print:overflow-visible">
         <div className="md:hidden flex items-center justify-between border-b bg-card px-4 py-3 print:!hidden">
-
           <div className="flex items-center gap-2">
             <BadgeDollarSign className="h-5 w-5 text-primary" />
             <span className="font-semibold">Grupo Positive</span>
           </div>
-          <div className="flex gap-1 flex-wrap">
-            {nav.map((n) => (
-              <Link key={n.to} to={n.to} title={n.full ?? n.label} className="px-2 py-1 text-xs rounded hover:bg-accent flex items-center gap-1">
-                {n.label}
-                {n.badge && leadsCount !== null && leadsCount > 0 && (
-                  <Badge className="h-4 min-w-4 justify-center border-0 bg-emerald-600 px-1 text-[10px] text-white hover:bg-emerald-700">
-                    {leadsCount}
-                  </Badge>
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative">
+                <Menu className="h-5 w-5" />
+                {leadsCount !== null && leadsCount > 0 && (
+                  <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-emerald-600" />
                 )}
-              </Link>
-            ))}
-          </div>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 bg-sidebar p-0">
+              <SheetHeader className="border-b px-6 py-5 text-left">
+                <SheetTitle className="flex items-center gap-2">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <BadgeDollarSign className="h-5 w-5" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold leading-tight">Grupo Positive</span>
+                    <span className="block text-xs font-normal text-muted-foreground">Consultas e simulação</span>
+                  </span>
+                </SheetTitle>
+              </SheetHeader>
+              <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+                {navSections.map((sec, idx) => (
+                  <div key={sec.section} className="space-y-1">
+                    <p className={`px-3 pb-1 text-xs uppercase tracking-wider text-muted-foreground ${idx === 0 ? "pt-1" : "pt-4"}`}>
+                      {sec.section}
+                    </p>
+                    {sec.items.map((n) => {
+                      const active = loc.pathname.startsWith(n.to);
+                      const Icon = n.icon;
+                      return (
+                        <Link
+                          key={n.to}
+                          to={n.to}
+                          title={n.full ?? n.label}
+                          onClick={() => setMobileOpen(false)}
+                          className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
+                            active
+                              ? "bg-primary text-primary-foreground"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent"
+                          }`}
+                        >
+                          <Icon className="h-4 w-4 shrink-0" />
+                          <span className="flex-1 truncate">{n.label}</span>
+                          {n.badge && leadsCount !== null && leadsCount > 0 && (
+                            <Badge
+                              className={`h-5 min-w-5 justify-center border-0 px-1.5 text-xs ${
+                                active
+                                  ? "bg-white/20 text-white hover:bg-white/20"
+                                  : "bg-emerald-600 text-white hover:bg-emerald-700"
+                              }`}
+                            >
+                              {leadsCount}
+                            </Badge>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ))}
+              </nav>
+              <div className="border-t p-3">
+                <p className="px-3 pb-2 text-xs text-muted-foreground truncate">{user?.email}</p>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2"
+                  onClick={async () => { setMobileOpen(false); await signOut(); nav2({ to: "/login" }); }}
+                >
+                  <LogOut className="h-4 w-4" /> Sair
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
         <div className="mx-auto max-w-7xl p-4 md:p-8 print:max-w-none print:p-0">{children}</div>
+
       </main>
     </div>
   );
