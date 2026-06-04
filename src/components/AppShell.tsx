@@ -152,7 +152,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="flex gap-1 flex-wrap">
             {nav.map((n) => (
-              <Link key={n.to} to={n.to} className="px-2 py-1 text-xs rounded hover:bg-accent flex items-center gap-1">
+              <Link key={n.to} to={n.to} title={n.full ?? n.label} className="px-2 py-1 text-xs rounded hover:bg-accent flex items-center gap-1">
                 {n.label}
                 {n.badge && leadsCount !== null && leadsCount > 0 && (
                   <Badge className="h-4 min-w-4 justify-center border-0 bg-emerald-600 px-1 text-[10px] text-white hover:bg-emerald-700">
