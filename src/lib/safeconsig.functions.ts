@@ -256,15 +256,21 @@ async function attemptConsulta(cpf: string, ua: string, userId: string): Promise
     };
   }
 
+  // O portal SafeConsig passou a exigir Cloudflare Turnstile/reCAPTCHA no reset.
+  // Sem token de captcha o envio é rejeitado (redirect para /safe/login).
+  const captcha = hasCaptcha(xml2);
+
   // ---- Etapa 3: POST CPF ----
+  const resetBtn = extractResetButton(xml2) ?? "resetBotom";
+  const resetField = extractResetField(xml2) ?? "j_idt42";
   const body3 = new URLSearchParams({
     "javax.faces.partial.ajax": "true",
-    "javax.faces.source": "resetBotom",
+    "javax.faces.source": resetBtn,
     "javax.faces.partial.execute": "form1",
     "javax.faces.partial.render": "form1 mensagens mensagens11",
-    resetBotom: "resetBotom",
+    [resetBtn]: resetBtn,
     form1: "form1",
-    j_idt41: cpf,
+    [resetField]: cpf,
     "javax.faces.ViewState": vs2,
   });
   const r3 = await fetchWithJar(loginEndpoint, {
@@ -285,6 +291,17 @@ async function attemptConsulta(cpf: string, ua: string, userId: string): Promise
   }
   const xml3 = await r3.response.text();
   if (extractRedirectFromXml(xml3)) {
+    // Se o portal exige captcha, o redirect é definitivo — não adianta repetir.
+    if (captcha) {
+      return {
+        kind: "ok",
+        result: {
+          status: "erro",
+          message:
+            "A SafeConsig passou a exigir verificação anti-robô (captcha Cloudflare Turnstile) no fluxo 'Esqueci Minha Senha'. Por isso a consulta automática não é mais possível por esta via. Use o botão 'Verificar manualmente' para conferir o CPF diretamente no portal.",
+        },
+      };
+    }
     return { kind: "retry", reason: "sessão expirou antes do envio" };
   }
 
