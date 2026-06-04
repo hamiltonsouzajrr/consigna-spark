@@ -114,6 +114,35 @@ function extractViewState(html: string, index = 0): string | null {
   return hidden?.[1] ?? null;
 }
 
+// Descobre dinamicamente o id JSF do link "Esqueci Minha Senha" (muda a cada deploy do portal).
+function extractEsqueciSource(html: string): string | null {
+  const m = html.match(
+    /<a[^>]*\bid="([^"]+)"[^>]*onclick="[^"]*u:&quot;formularioDeLogin&quot;[^"]*"[^>]*>\s*Esqueci/i,
+  );
+  return m?.[1] ?? null;
+}
+
+// Descobre o id do campo de usuário/CPF dentro do form de reset (muda a cada deploy).
+function extractResetField(xml: string): string | null {
+  const m = xml.match(
+    /<input id="([^"]+)" name="\1" type="text"[^>]*placeholder="Informe o seu/i,
+  );
+  return m?.[1] ?? null;
+}
+
+// Descobre o id do botão de submit do reset.
+function extractResetButton(xml: string): string | null {
+  const m = xml.match(
+    /<button id="([^"]+)" name="\1"[^>]*onclick="PrimeFaces\.ab\(\{s:&quot;\1&quot;,f:&quot;form1&quot;/i,
+  );
+  return m?.[1] ?? null;
+}
+
+// O portal passou a exigir Cloudflare Turnstile/reCAPTCHA no fluxo de reset.
+function hasCaptcha(html: string): boolean {
+  return /cf-turnstile|data-sitekey|challenges\.cloudflare|g-recaptcha|renderTurnstile/i.test(html);
+}
+
 function extractRedirectFromXml(xml: string): string | null {
   const m = xml.match(/<redirect\s+url="([^"]+)"\s*\/?>/i);
   return m?.[1] ?? null;
