@@ -216,12 +216,13 @@ async function attemptConsulta(cpf: string, ua: string, userId: string): Promise
   const loginEndpoint = r1.finalUrl;
 
   // ---- Etapa 2: AJAX click "Esqueci Minha Senha" ----
+  const esqueciSrc = extractEsqueciSource(html1) ?? "j_idt33";
   const body2 = new URLSearchParams({
     "javax.faces.partial.ajax": "true",
-    "javax.faces.source": "j_idt32",
-    "javax.faces.partial.execute": "j_idt32",
+    "javax.faces.source": esqueciSrc,
+    "javax.faces.partial.execute": esqueciSrc,
     "javax.faces.partial.render": "formularioDeLogin",
-    j_idt32: "j_idt32",
+    [esqueciSrc]: esqueciSrc,
     idForm12344: "idForm12344",
     idLogin: "",
     senhaUsuario: "",
