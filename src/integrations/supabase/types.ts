@@ -362,6 +362,27 @@ export type Database = {
           },
         ]
       }
+      rh_tab_access: {
+        Row: {
+          created_at: string
+          id: string
+          tab_key: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          tab_key: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          tab_key?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       rh_vacation_requests: {
         Row: {
           created_at: string

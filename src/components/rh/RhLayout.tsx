@@ -5,10 +5,11 @@ import {
   FileText, GraduationCap, Laptop, Star, AlertTriangle, UserSearch,
   ClipboardCheck, UserMinus, Settings, Network, ReceiptText, HeartHandshake,
   Target, Gauge, Brain, TrendingDown, Trophy, IdCard, MessagesSquare, Bot,
-  Goal, Award, ScrollText,
+  Goal, Award, ScrollText, ShieldCheck, Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { useRhAccess } from "@/hooks/use-rh-access";
 
 export const rhNav = [
   { to: "/rh/dashboard", label: "Dashboard RH", icon: LayoutDashboard },
@@ -42,14 +43,41 @@ export const rhNav = [
   { to: "/rh/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
 
+// Admin-only entries (appended for admins, hidden from everyone else).
+export const rhAdminNav = [
+  { to: "/rh/acessos", label: "Acessos", icon: ShieldCheck },
+] as const;
+
+// Tabs only admins may open even if granted elsewhere.
+const ADMIN_ONLY = new Set<string>(["/rh/configuracoes", "/rh/acessos"]);
 
 export function RhLayout({ children }: { children: ReactNode }) {
   const loc = useLocation();
+  const { isAdmin, canAccess, isLoading } = useRhAccess();
+
+  const items = [...rhNav, ...(isAdmin ? rhAdminNav : [])].filter((n) => {
+    if (ADMIN_ONLY.has(n.to)) return isAdmin;
+    if (isAdmin) return true;
+    // While access is still loading, only show the always-allowed tabs to
+    // avoid flashing restricted entries to a non-admin user.
+    return canAccess(n.to);
+  });
+
+  // Resolve the most specific nav entry matching the current path.
+  const current = [...rhNav, ...rhAdminNav]
+    .filter((n) => loc.pathname.startsWith(n.to))
+    .sort((a, b) => b.to.length - a.to.length)[0];
+
+  const denied =
+    !isLoading &&
+    !!current &&
+    (ADMIN_ONLY.has(current.to) ? !isAdmin : !canAccess(current.to));
+
   return (
     <div className="flex flex-col gap-6 lg:flex-row">
       <aside className="lg:w-60 lg:shrink-0">
         <nav className="flex gap-1 overflow-x-auto rounded-xl border bg-card p-2 lg:flex-col lg:overflow-visible">
-          {rhNav.map((n) => {
+          {items.map((n) => {
             const active = loc.pathname.startsWith(n.to);
             const Icon = n.icon;
             return (
@@ -70,7 +98,19 @@ export function RhLayout({ children }: { children: ReactNode }) {
           })}
         </nav>
       </aside>
-      <div className="min-w-0 flex-1">{children}</div>
+      <div className="min-w-0 flex-1">
+        {denied ? (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border bg-card py-20 text-center">
+            <Lock className="h-10 w-10 text-muted-foreground" />
+            <p className="font-medium">Você não tem acesso a esta área</p>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              Solicite ao administrador a liberação desta aba do RH.
+            </p>
+          </div>
+        ) : (
+          children
+        )}
+      </div>
     </div>
   );
 }
