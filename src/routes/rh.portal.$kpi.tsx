@@ -101,7 +101,12 @@ function KpiDetailPage() {
         }
       />
 
+      <div
+        aria-busy={isPlaceholderData}
+        className={isPlaceholderData ? "opacity-60 transition-opacity" : "transition-opacity"}
+      >
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
+
         {data.resumo.map((r) => (
           <Card key={r.label} className="p-5">
             <p className="text-sm text-muted-foreground">{r.label}</p>
