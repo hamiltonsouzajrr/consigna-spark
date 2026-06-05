@@ -25,6 +25,7 @@ import { Route as ConsultasRouteImport } from './routes/consultas'
 import { Route as CalculadoraAlRouteImport } from './routes/calculadora-al'
 import { Route as AlagoasRouteImport } from './routes/alagoas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RhIndexRouteImport } from './routes/rh.index'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -106,6 +107,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RhIndexRoute = RhIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RhRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -118,12 +124,13 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
   '/qrcodes': typeof QrcodesRoute
-  '/rh': typeof RhRoute
+  '/rh': typeof RhRouteWithChildren
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/rh/': typeof RhIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -136,12 +143,12 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
   '/qrcodes': typeof QrcodesRoute
-  '/rh': typeof RhRoute
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/rh': typeof RhIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -155,12 +162,13 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
   '/qrcodes': typeof QrcodesRoute
-  '/rh': typeof RhRoute
+  '/rh': typeof RhRouteWithChildren
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/rh/': typeof RhIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -181,6 +189,7 @@ export interface FileRouteTypes {
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/rh/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -193,12 +202,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/pesquisas'
     | '/qrcodes'
-    | '/rh'
     | '/safe-consig'
     | '/servidores-sem-acesso'
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/rh'
   id:
     | '__root__'
     | '/'
@@ -217,6 +226,7 @@ export interface FileRouteTypes {
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/rh/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -230,7 +240,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PesquisasRoute: typeof PesquisasRoute
   QrcodesRoute: typeof QrcodesRoute
-  RhRoute: typeof RhRoute
+  RhRoute: typeof RhRouteWithChildren
   SafeConsigRoute: typeof SafeConsigRoute
   ServidoresSemAcessoRoute: typeof ServidoresSemAcessoRoute
   SimulacaoAlagoasRoute: typeof SimulacaoAlagoasRoute
@@ -352,8 +362,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rh/': {
+      id: '/rh/'
+      path: '/'
+      fullPath: '/rh/'
+      preLoaderRoute: typeof RhIndexRouteImport
+      parentRoute: typeof RhRoute
+    }
   }
 }
+
+interface RhRouteChildren {
+  RhIndexRoute: typeof RhIndexRoute
+}
+
+const RhRouteChildren: RhRouteChildren = {
+  RhIndexRoute: RhIndexRoute,
+}
+
+const RhRouteWithChildren = RhRoute._addFileChildren(RhRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -366,7 +393,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PesquisasRoute: PesquisasRoute,
   QrcodesRoute: QrcodesRoute,
-  RhRoute: RhRoute,
+  RhRoute: RhRouteWithChildren,
   SafeConsigRoute: SafeConsigRoute,
   ServidoresSemAcessoRoute: ServidoresSemAcessoRoute,
   SimulacaoAlagoasRoute: SimulacaoAlagoasRoute,
