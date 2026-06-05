@@ -33,6 +33,7 @@ import { Route as RhOcorrenciasRouteImport } from './routes/rh.ocorrencias'
 import { Route as RhFeriasRouteImport } from './routes/rh.ferias'
 import { Route as RhEquipamentosRouteImport } from './routes/rh.equipamentos'
 import { Route as RhDocumentosRouteImport } from './routes/rh.documentos'
+import { Route as RhDesligamentosRouteImport } from './routes/rh.desligamentos'
 import { Route as RhDepartamentosRouteImport } from './routes/rh.departamentos'
 import { Route as RhDashboardRouteImport } from './routes/rh.dashboard'
 import { Route as RhColaboradoresRouteImport } from './routes/rh.colaboradores'
@@ -161,6 +162,11 @@ const RhDocumentosRoute = RhDocumentosRouteImport.update({
   path: '/documentos',
   getParentRoute: () => RhRoute,
 } as any)
+const RhDesligamentosRoute = RhDesligamentosRouteImport.update({
+  id: '/desligamentos',
+  path: '/desligamentos',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhDepartamentosRoute = RhDepartamentosRouteImport.update({
   id: '/departamentos',
   path: '/departamentos',
@@ -220,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/departamentos': typeof RhDepartamentosRoute
+  '/rh/desligamentos': typeof RhDesligamentosRoute
   '/rh/documentos': typeof RhDocumentosRoute
   '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
@@ -252,6 +259,7 @@ export interface FileRoutesByTo {
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/departamentos': typeof RhDepartamentosRoute
+  '/rh/desligamentos': typeof RhDesligamentosRoute
   '/rh/documentos': typeof RhDocumentosRoute
   '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
@@ -286,6 +294,7 @@ export interface FileRoutesById {
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/departamentos': typeof RhDepartamentosRoute
+  '/rh/desligamentos': typeof RhDesligamentosRoute
   '/rh/documentos': typeof RhDocumentosRoute
   '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
@@ -321,6 +330,7 @@ export interface FileRouteTypes {
     | '/rh/colaboradores'
     | '/rh/dashboard'
     | '/rh/departamentos'
+    | '/rh/desligamentos'
     | '/rh/documentos'
     | '/rh/equipamentos'
     | '/rh/ferias'
@@ -353,6 +363,7 @@ export interface FileRouteTypes {
     | '/rh/colaboradores'
     | '/rh/dashboard'
     | '/rh/departamentos'
+    | '/rh/desligamentos'
     | '/rh/documentos'
     | '/rh/equipamentos'
     | '/rh/ferias'
@@ -386,6 +397,7 @@ export interface FileRouteTypes {
     | '/rh/colaboradores'
     | '/rh/dashboard'
     | '/rh/departamentos'
+    | '/rh/desligamentos'
     | '/rh/documentos'
     | '/rh/equipamentos'
     | '/rh/ferias'
@@ -586,6 +598,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhDocumentosRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/desligamentos': {
+      id: '/rh/desligamentos'
+      path: '/desligamentos'
+      fullPath: '/rh/desligamentos'
+      preLoaderRoute: typeof RhDesligamentosRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/departamentos': {
       id: '/rh/departamentos'
       path: '/departamentos'
@@ -657,6 +676,7 @@ interface RhRouteChildren {
   RhColaboradoresRoute: typeof RhColaboradoresRouteWithChildren
   RhDashboardRoute: typeof RhDashboardRoute
   RhDepartamentosRoute: typeof RhDepartamentosRoute
+  RhDesligamentosRoute: typeof RhDesligamentosRoute
   RhDocumentosRoute: typeof RhDocumentosRoute
   RhEquipamentosRoute: typeof RhEquipamentosRoute
   RhFeriasRoute: typeof RhFeriasRoute
@@ -674,6 +694,7 @@ const RhRouteChildren: RhRouteChildren = {
   RhColaboradoresRoute: RhColaboradoresRouteWithChildren,
   RhDashboardRoute: RhDashboardRoute,
   RhDepartamentosRoute: RhDepartamentosRoute,
+  RhDesligamentosRoute: RhDesligamentosRoute,
   RhDocumentosRoute: RhDocumentosRoute,
   RhEquipamentosRoute: RhEquipamentosRoute,
   RhFeriasRoute: RhFeriasRoute,
