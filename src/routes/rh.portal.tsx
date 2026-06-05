@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { RhPageHeader } from "@/components/rh/RhLayout";
 import { RhStatCard } from "@/components/rh/RhStatCard";
-import { colaboradores, formatDate, formatCurrency } from "@/lib/rh/mock";
+import { colaboradores, formatDate, brl } from "@/lib/rh/mock";
 
 export const Route = createFileRoute("/rh/portal")({
   component: Portal,
