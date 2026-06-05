@@ -93,3 +93,159 @@ export const portalQueryOptions = (colaboradorId?: string) =>
     queryFn: () => fetchPortalData(colaboradorId),
     staleTime: 30_000,
   });
+
+// ---------------------------------------------------------------- KPI details
+
+export type KpiKey = "ferias" | "banco-horas" | "salario" | "beneficios";
+export type PeriodKey = "3m" | "6m" | "12m";
+
+export const KPI_KEYS: KpiKey[] = ["ferias", "banco-horas", "salario", "beneficios"];
+export const PERIODS: { value: PeriodKey; label: string; months: number }[] = [
+  { value: "3m", label: "Últimos 3 meses", months: 3 },
+  { value: "6m", label: "Últimos 6 meses", months: 6 },
+  { value: "12m", label: "Últimos 12 meses", months: 12 },
+];
+
+export type KpiDetail = {
+  key: KpiKey;
+  title: string;
+  description: string;
+  unidade: string;
+  resumo: { label: string; value: string }[];
+  serie: { mes: string; valor: number }[];
+  historico: { data: string; descricao: string; valor: string }[];
+};
+
+const MESES = [
+  "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+  "Jul", "Ago", "Set", "Out", "Nov", "Dez",
+];
+
+// Deterministic pseudo-random so mock series stay stable per render.
+const seeded = (seed: number) => {
+  let s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return () => (s = (s * 16807) % 2147483647) / 2147483647;
+};
+
+function buildSerie(months: number, base: number, spread: number, seed: number) {
+  const rnd = seeded(seed);
+  const now = new Date();
+  return Array.from({ length: months }).map((_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (months - 1 - i), 1);
+    return {
+      mes: `${MESES[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`,
+      valor: Math.round((base + (rnd() - 0.5) * spread) * 10) / 10,
+    };
+  });
+}
+
+export function computeKpiDetail(key: KpiKey, period: PeriodKey, colaboradorId?: string): KpiDetail {
+  const data = computePortalData(colaboradorId);
+  const months = PERIODS.find((p) => p.value === period)?.months ?? 6;
+
+  switch (key) {
+    case "ferias": {
+      const serie = buildSerie(months, 18, 12, 11);
+      return {
+        key,
+        title: "Saldo de Férias",
+        description: "Evolução do saldo e histórico de períodos.",
+        unidade: "dias",
+        resumo: [
+          { label: "Saldo atual", value: `${data.saldoFerias} dias` },
+          { label: "Dias usufruídos", value: `${data.solicitacoes.filter((s) => s.tipo === "Férias" && s.status === "Aprovado").reduce((a, s) => a + s.dias, 0)} dias` },
+          { label: "Solicitações", value: `${data.solicitacoes.length}` },
+        ],
+        serie: serie.map((p) => ({ ...p, valor: Math.max(0, Math.round(p.valor)) })),
+        historico: data.solicitacoes.map((s) => ({
+          data: s.inicio,
+          descricao: `${s.tipo} (${s.status})`,
+          valor: `${s.dias} dias`,
+        })),
+      };
+    }
+    case "banco-horas": {
+      const serie = buildSerie(months, 6, 16, 23);
+      return {
+        key,
+        title: "Banco de Horas",
+        description: "Saldo mensal de horas extras e compensações.",
+        unidade: "h",
+        resumo: [
+          { label: "Saldo atual", value: `${data.bancoHoras >= 0 ? "+" : ""}${data.bancoHoras}h` },
+          { label: "Maior pico", value: `${Math.max(...serie.map((s) => s.valor))}h` },
+          { label: "Média mensal", value: `${Math.round(serie.reduce((a, s) => a + s.valor, 0) / serie.length)}h` },
+        ],
+        serie,
+        historico: serie.slice().reverse().map((p) => ({
+          data: p.mes,
+          descricao: p.valor >= 0 ? "Horas a compensar" : "Horas devidas",
+          valor: `${p.valor >= 0 ? "+" : ""}${p.valor}h`,
+        })),
+      };
+    }
+    case "salario": {
+      const serie = buildSerie(months, data.salario, data.salario * 0.06, 41).map((p) => ({
+        ...p,
+        valor: Math.round(p.valor),
+      }));
+      return {
+        key,
+        title: "Remuneração",
+        description: "Histórico de proventos e composição salarial.",
+        unidade: "R$",
+        resumo: [
+          { label: "Salário bruto", value: brl(data.salario) },
+          { label: "Estimado líquido", value: brl(Math.round(data.salario * 0.78)) },
+          { label: "Média do período", value: brl(Math.round(serie.reduce((a, s) => a + s.valor, 0) / serie.length)) },
+        ],
+        serie,
+        historico: serie.slice().reverse().map((p) => ({
+          data: p.mes,
+          descricao: "Pagamento processado",
+          valor: brl(p.valor),
+        })),
+      };
+    }
+    case "beneficios":
+    default: {
+      const serie = buildSerie(months, data.beneficiosAtivos, 1.5, 67).map((p) => ({
+        ...p,
+        valor: Math.max(0, Math.round(p.valor)),
+      }));
+      const lista = ["Vale Refeição", "Plano de Saúde", "Vale Transporte"];
+      return {
+        key: "beneficios",
+        title: "Benefícios",
+        description: "Benefícios ativos e adesões ao longo do tempo.",
+        unidade: "ativos",
+        resumo: [
+          { label: "Ativos", value: `${data.beneficiosAtivos}` },
+          { label: "Disponíveis", value: "6" },
+          { label: "Adesão", value: `${Math.round((data.beneficiosAtivos / 6) * 100)}%` },
+        ],
+        serie,
+        historico: lista.map((b, i) => ({
+          data: `2024-0${i + 1}-01`,
+          descricao: `${b} ativado`,
+          valor: "Ativo",
+        })),
+      };
+    }
+  }
+}
+
+export async function fetchKpiDetail(key: KpiKey, period: PeriodKey, colaboradorId?: string): Promise<KpiDetail> {
+  // TODO(supabase): replace with a createServerFn reading the employee's
+  // vacation/timebank/payroll/benefit records scoped to auth.uid().
+  return computeKpiDetail(key, period, colaboradorId);
+}
+
+export const kpiDetailQueryOptions = (key: KpiKey, period: PeriodKey, colaboradorId?: string) =>
+  queryOptions({
+    queryKey: ["rh", "portal", "kpi", colaboradorId ?? "me", key, period],
+    queryFn: () => fetchKpiDetail(key, period, colaboradorId),
+    staleTime: 30_000,
+  });
+
