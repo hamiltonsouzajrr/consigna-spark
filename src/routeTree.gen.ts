@@ -26,10 +26,16 @@ import { Route as CalculadoraAlRouteImport } from './routes/calculadora-al'
 import { Route as AlagoasRouteImport } from './routes/alagoas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RhIndexRouteImport } from './routes/rh.index'
+import { Route as RhTurnoverRouteImport } from './routes/rh.turnover'
 import { Route as RhTreinamentosRouteImport } from './routes/rh.treinamentos'
 import { Route as RhRecrutamentoRouteImport } from './routes/rh.recrutamento'
+import { Route as RhRankingRouteImport } from './routes/rh.ranking'
+import { Route as RhPeopleAnalyticsRouteImport } from './routes/rh.people-analytics'
+import { Route as RhPdiRouteImport } from './routes/rh.pdi'
+import { Route as RhOrganogramaRouteImport } from './routes/rh.organograma'
 import { Route as RhOnboardingRouteImport } from './routes/rh.onboarding'
 import { Route as RhOcorrenciasRouteImport } from './routes/rh.ocorrencias'
+import { Route as RhHoleritesRouteImport } from './routes/rh.holerites'
 import { Route as RhFeriasRouteImport } from './routes/rh.ferias'
 import { Route as RhEquipamentosRouteImport } from './routes/rh.equipamentos'
 import { Route as RhDocumentosRouteImport } from './routes/rh.documentos'
@@ -38,7 +44,9 @@ import { Route as RhDepartamentosRouteImport } from './routes/rh.departamentos'
 import { Route as RhDashboardRouteImport } from './routes/rh.dashboard'
 import { Route as RhConfiguracoesRouteImport } from './routes/rh.configuracoes'
 import { Route as RhColaboradoresRouteImport } from './routes/rh.colaboradores'
+import { Route as RhClimaRouteImport } from './routes/rh.clima'
 import { Route as RhCargosRouteImport } from './routes/rh.cargos'
+import { Route as RhBeneficiosRouteImport } from './routes/rh.beneficios'
 import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
 import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
@@ -128,6 +136,11 @@ const RhIndexRoute = RhIndexRouteImport.update({
   path: '/',
   getParentRoute: () => RhRoute,
 } as any)
+const RhTurnoverRoute = RhTurnoverRouteImport.update({
+  id: '/turnover',
+  path: '/turnover',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhTreinamentosRoute = RhTreinamentosRouteImport.update({
   id: '/treinamentos',
   path: '/treinamentos',
@@ -138,6 +151,26 @@ const RhRecrutamentoRoute = RhRecrutamentoRouteImport.update({
   path: '/recrutamento',
   getParentRoute: () => RhRoute,
 } as any)
+const RhRankingRoute = RhRankingRouteImport.update({
+  id: '/ranking',
+  path: '/ranking',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhPeopleAnalyticsRoute = RhPeopleAnalyticsRouteImport.update({
+  id: '/people-analytics',
+  path: '/people-analytics',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhPdiRoute = RhPdiRouteImport.update({
+  id: '/pdi',
+  path: '/pdi',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhOrganogramaRoute = RhOrganogramaRouteImport.update({
+  id: '/organograma',
+  path: '/organograma',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhOnboardingRoute = RhOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -146,6 +179,11 @@ const RhOnboardingRoute = RhOnboardingRouteImport.update({
 const RhOcorrenciasRoute = RhOcorrenciasRouteImport.update({
   id: '/ocorrencias',
   path: '/ocorrencias',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhHoleritesRoute = RhHoleritesRouteImport.update({
+  id: '/holerites',
+  path: '/holerites',
   getParentRoute: () => RhRoute,
 } as any)
 const RhFeriasRoute = RhFeriasRouteImport.update({
@@ -188,9 +226,19 @@ const RhColaboradoresRoute = RhColaboradoresRouteImport.update({
   path: '/colaboradores',
   getParentRoute: () => RhRoute,
 } as any)
+const RhClimaRoute = RhClimaRouteImport.update({
+  id: '/clima',
+  path: '/clima',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhCargosRoute = RhCargosRouteImport.update({
   id: '/cargos',
   path: '/cargos',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhBeneficiosRoute = RhBeneficiosRouteImport.update({
+  id: '/beneficios',
+  path: '/beneficios',
   getParentRoute: () => RhRoute,
 } as any)
 const RhBancoHorasRoute = RhBancoHorasRouteImport.update({
@@ -228,7 +276,9 @@ export interface FileRoutesByFullPath {
   '/upload': typeof UploadRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
+  '/rh/beneficios': typeof RhBeneficiosRoute
   '/rh/cargos': typeof RhCargosRoute
+  '/rh/clima': typeof RhClimaRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/configuracoes': typeof RhConfiguracoesRoute
   '/rh/dashboard': typeof RhDashboardRoute
@@ -237,10 +287,16 @@ export interface FileRoutesByFullPath {
   '/rh/documentos': typeof RhDocumentosRoute
   '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
+  '/rh/holerites': typeof RhHoleritesRoute
   '/rh/ocorrencias': typeof RhOcorrenciasRoute
   '/rh/onboarding': typeof RhOnboardingRoute
+  '/rh/organograma': typeof RhOrganogramaRoute
+  '/rh/pdi': typeof RhPdiRoute
+  '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
+  '/rh/ranking': typeof RhRankingRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
+  '/rh/turnover': typeof RhTurnoverRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
 }
@@ -262,7 +318,9 @@ export interface FileRoutesByTo {
   '/upload': typeof UploadRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
+  '/rh/beneficios': typeof RhBeneficiosRoute
   '/rh/cargos': typeof RhCargosRoute
+  '/rh/clima': typeof RhClimaRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/configuracoes': typeof RhConfiguracoesRoute
   '/rh/dashboard': typeof RhDashboardRoute
@@ -271,10 +329,16 @@ export interface FileRoutesByTo {
   '/rh/documentos': typeof RhDocumentosRoute
   '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
+  '/rh/holerites': typeof RhHoleritesRoute
   '/rh/ocorrencias': typeof RhOcorrenciasRoute
   '/rh/onboarding': typeof RhOnboardingRoute
+  '/rh/organograma': typeof RhOrganogramaRoute
+  '/rh/pdi': typeof RhPdiRoute
+  '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
+  '/rh/ranking': typeof RhRankingRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
+  '/rh/turnover': typeof RhTurnoverRoute
   '/rh': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
 }
@@ -298,7 +362,9 @@ export interface FileRoutesById {
   '/upload': typeof UploadRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
+  '/rh/beneficios': typeof RhBeneficiosRoute
   '/rh/cargos': typeof RhCargosRoute
+  '/rh/clima': typeof RhClimaRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/configuracoes': typeof RhConfiguracoesRoute
   '/rh/dashboard': typeof RhDashboardRoute
@@ -307,10 +373,16 @@ export interface FileRoutesById {
   '/rh/documentos': typeof RhDocumentosRoute
   '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
+  '/rh/holerites': typeof RhHoleritesRoute
   '/rh/ocorrencias': typeof RhOcorrenciasRoute
   '/rh/onboarding': typeof RhOnboardingRoute
+  '/rh/organograma': typeof RhOrganogramaRoute
+  '/rh/pdi': typeof RhPdiRoute
+  '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
+  '/rh/ranking': typeof RhRankingRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
+  '/rh/turnover': typeof RhTurnoverRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
 }
@@ -335,7 +407,9 @@ export interface FileRouteTypes {
     | '/upload'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
+    | '/rh/beneficios'
     | '/rh/cargos'
+    | '/rh/clima'
     | '/rh/colaboradores'
     | '/rh/configuracoes'
     | '/rh/dashboard'
@@ -344,10 +418,16 @@ export interface FileRouteTypes {
     | '/rh/documentos'
     | '/rh/equipamentos'
     | '/rh/ferias'
+    | '/rh/holerites'
     | '/rh/ocorrencias'
     | '/rh/onboarding'
+    | '/rh/organograma'
+    | '/rh/pdi'
+    | '/rh/people-analytics'
+    | '/rh/ranking'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
+    | '/rh/turnover'
     | '/rh/'
     | '/rh/colaboradores/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -369,7 +449,9 @@ export interface FileRouteTypes {
     | '/upload'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
+    | '/rh/beneficios'
     | '/rh/cargos'
+    | '/rh/clima'
     | '/rh/colaboradores'
     | '/rh/configuracoes'
     | '/rh/dashboard'
@@ -378,10 +460,16 @@ export interface FileRouteTypes {
     | '/rh/documentos'
     | '/rh/equipamentos'
     | '/rh/ferias'
+    | '/rh/holerites'
     | '/rh/ocorrencias'
     | '/rh/onboarding'
+    | '/rh/organograma'
+    | '/rh/pdi'
+    | '/rh/people-analytics'
+    | '/rh/ranking'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
+    | '/rh/turnover'
     | '/rh'
     | '/rh/colaboradores/$id'
   id:
@@ -404,7 +492,9 @@ export interface FileRouteTypes {
     | '/upload'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
+    | '/rh/beneficios'
     | '/rh/cargos'
+    | '/rh/clima'
     | '/rh/colaboradores'
     | '/rh/configuracoes'
     | '/rh/dashboard'
@@ -413,10 +503,16 @@ export interface FileRouteTypes {
     | '/rh/documentos'
     | '/rh/equipamentos'
     | '/rh/ferias'
+    | '/rh/holerites'
     | '/rh/ocorrencias'
     | '/rh/onboarding'
+    | '/rh/organograma'
+    | '/rh/pdi'
+    | '/rh/people-analytics'
+    | '/rh/ranking'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
+    | '/rh/turnover'
     | '/rh/'
     | '/rh/colaboradores/$id'
   fileRoutesById: FileRoutesById
@@ -561,6 +657,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhIndexRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/turnover': {
+      id: '/rh/turnover'
+      path: '/turnover'
+      fullPath: '/rh/turnover'
+      preLoaderRoute: typeof RhTurnoverRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/treinamentos': {
       id: '/rh/treinamentos'
       path: '/treinamentos'
@@ -575,6 +678,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhRecrutamentoRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/ranking': {
+      id: '/rh/ranking'
+      path: '/ranking'
+      fullPath: '/rh/ranking'
+      preLoaderRoute: typeof RhRankingRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/people-analytics': {
+      id: '/rh/people-analytics'
+      path: '/people-analytics'
+      fullPath: '/rh/people-analytics'
+      preLoaderRoute: typeof RhPeopleAnalyticsRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/pdi': {
+      id: '/rh/pdi'
+      path: '/pdi'
+      fullPath: '/rh/pdi'
+      preLoaderRoute: typeof RhPdiRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/organograma': {
+      id: '/rh/organograma'
+      path: '/organograma'
+      fullPath: '/rh/organograma'
+      preLoaderRoute: typeof RhOrganogramaRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/onboarding': {
       id: '/rh/onboarding'
       path: '/onboarding'
@@ -587,6 +718,13 @@ declare module '@tanstack/react-router' {
       path: '/ocorrencias'
       fullPath: '/rh/ocorrencias'
       preLoaderRoute: typeof RhOcorrenciasRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/holerites': {
+      id: '/rh/holerites'
+      path: '/holerites'
+      fullPath: '/rh/holerites'
+      preLoaderRoute: typeof RhHoleritesRouteImport
       parentRoute: typeof RhRoute
     }
     '/rh/ferias': {
@@ -645,11 +783,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhColaboradoresRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/clima': {
+      id: '/rh/clima'
+      path: '/clima'
+      fullPath: '/rh/clima'
+      preLoaderRoute: typeof RhClimaRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/cargos': {
       id: '/rh/cargos'
       path: '/cargos'
       fullPath: '/rh/cargos'
       preLoaderRoute: typeof RhCargosRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/beneficios': {
+      id: '/rh/beneficios'
+      path: '/beneficios'
+      fullPath: '/rh/beneficios'
+      preLoaderRoute: typeof RhBeneficiosRouteImport
       parentRoute: typeof RhRoute
     }
     '/rh/banco-horas': {
@@ -691,7 +843,9 @@ const RhColaboradoresRouteWithChildren = RhColaboradoresRoute._addFileChildren(
 interface RhRouteChildren {
   RhAvaliacoesRoute: typeof RhAvaliacoesRoute
   RhBancoHorasRoute: typeof RhBancoHorasRoute
+  RhBeneficiosRoute: typeof RhBeneficiosRoute
   RhCargosRoute: typeof RhCargosRoute
+  RhClimaRoute: typeof RhClimaRoute
   RhColaboradoresRoute: typeof RhColaboradoresRouteWithChildren
   RhConfiguracoesRoute: typeof RhConfiguracoesRoute
   RhDashboardRoute: typeof RhDashboardRoute
@@ -700,17 +854,25 @@ interface RhRouteChildren {
   RhDocumentosRoute: typeof RhDocumentosRoute
   RhEquipamentosRoute: typeof RhEquipamentosRoute
   RhFeriasRoute: typeof RhFeriasRoute
+  RhHoleritesRoute: typeof RhHoleritesRoute
   RhOcorrenciasRoute: typeof RhOcorrenciasRoute
   RhOnboardingRoute: typeof RhOnboardingRoute
+  RhOrganogramaRoute: typeof RhOrganogramaRoute
+  RhPdiRoute: typeof RhPdiRoute
+  RhPeopleAnalyticsRoute: typeof RhPeopleAnalyticsRoute
+  RhRankingRoute: typeof RhRankingRoute
   RhRecrutamentoRoute: typeof RhRecrutamentoRoute
   RhTreinamentosRoute: typeof RhTreinamentosRoute
+  RhTurnoverRoute: typeof RhTurnoverRoute
   RhIndexRoute: typeof RhIndexRoute
 }
 
 const RhRouteChildren: RhRouteChildren = {
   RhAvaliacoesRoute: RhAvaliacoesRoute,
   RhBancoHorasRoute: RhBancoHorasRoute,
+  RhBeneficiosRoute: RhBeneficiosRoute,
   RhCargosRoute: RhCargosRoute,
+  RhClimaRoute: RhClimaRoute,
   RhColaboradoresRoute: RhColaboradoresRouteWithChildren,
   RhConfiguracoesRoute: RhConfiguracoesRoute,
   RhDashboardRoute: RhDashboardRoute,
@@ -719,10 +881,16 @@ const RhRouteChildren: RhRouteChildren = {
   RhDocumentosRoute: RhDocumentosRoute,
   RhEquipamentosRoute: RhEquipamentosRoute,
   RhFeriasRoute: RhFeriasRoute,
+  RhHoleritesRoute: RhHoleritesRoute,
   RhOcorrenciasRoute: RhOcorrenciasRoute,
   RhOnboardingRoute: RhOnboardingRoute,
+  RhOrganogramaRoute: RhOrganogramaRoute,
+  RhPdiRoute: RhPdiRoute,
+  RhPeopleAnalyticsRoute: RhPeopleAnalyticsRoute,
+  RhRankingRoute: RhRankingRoute,
   RhRecrutamentoRoute: RhRecrutamentoRoute,
   RhTreinamentosRoute: RhTreinamentosRoute,
+  RhTurnoverRoute: RhTurnoverRoute,
   RhIndexRoute: RhIndexRoute,
 }
 
