@@ -26,6 +26,7 @@ import { Route as CalculadoraAlRouteImport } from './routes/calculadora-al'
 import { Route as AlagoasRouteImport } from './routes/alagoas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RhIndexRouteImport } from './routes/rh.index'
+import { Route as RhTurnoverRouteImport } from './routes/rh.turnover'
 import { Route as RhTreinamentosRouteImport } from './routes/rh.treinamentos'
 import { Route as RhRecrutamentoRouteImport } from './routes/rh.recrutamento'
 import { Route as RhPeopleAnalyticsRouteImport } from './routes/rh.people-analytics'
@@ -132,6 +133,11 @@ const IndexRoute = IndexRouteImport.update({
 const RhIndexRoute = RhIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhTurnoverRoute = RhTurnoverRouteImport.update({
+  id: '/turnover',
+  path: '/turnover',
   getParentRoute: () => RhRoute,
 } as any)
 const RhTreinamentosRoute = RhTreinamentosRouteImport.update({
@@ -283,6 +289,7 @@ export interface FileRoutesByFullPath {
   '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
+  '/rh/turnover': typeof RhTurnoverRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
 }
@@ -323,6 +330,7 @@ export interface FileRoutesByTo {
   '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
+  '/rh/turnover': typeof RhTurnoverRoute
   '/rh': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
 }
@@ -365,6 +373,7 @@ export interface FileRoutesById {
   '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
+  '/rh/turnover': typeof RhTurnoverRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
 }
@@ -408,6 +417,7 @@ export interface FileRouteTypes {
     | '/rh/people-analytics'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
+    | '/rh/turnover'
     | '/rh/'
     | '/rh/colaboradores/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -448,6 +458,7 @@ export interface FileRouteTypes {
     | '/rh/people-analytics'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
+    | '/rh/turnover'
     | '/rh'
     | '/rh/colaboradores/$id'
   id:
@@ -489,6 +500,7 @@ export interface FileRouteTypes {
     | '/rh/people-analytics'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
+    | '/rh/turnover'
     | '/rh/'
     | '/rh/colaboradores/$id'
   fileRoutesById: FileRoutesById
@@ -631,6 +643,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/rh/'
       preLoaderRoute: typeof RhIndexRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/turnover': {
+      id: '/rh/turnover'
+      path: '/turnover'
+      fullPath: '/rh/turnover'
+      preLoaderRoute: typeof RhTurnoverRouteImport
       parentRoute: typeof RhRoute
     }
     '/rh/treinamentos': {
@@ -824,6 +843,7 @@ interface RhRouteChildren {
   RhPeopleAnalyticsRoute: typeof RhPeopleAnalyticsRoute
   RhRecrutamentoRoute: typeof RhRecrutamentoRoute
   RhTreinamentosRoute: typeof RhTreinamentosRoute
+  RhTurnoverRoute: typeof RhTurnoverRoute
   RhIndexRoute: typeof RhIndexRoute
 }
 
@@ -849,6 +869,7 @@ const RhRouteChildren: RhRouteChildren = {
   RhPeopleAnalyticsRoute: RhPeopleAnalyticsRoute,
   RhRecrutamentoRoute: RhRecrutamentoRoute,
   RhTreinamentosRoute: RhTreinamentosRoute,
+  RhTurnoverRoute: RhTurnoverRoute,
   RhIndexRoute: RhIndexRoute,
 }
 
