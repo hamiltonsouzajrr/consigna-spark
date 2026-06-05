@@ -52,8 +52,27 @@ function KpiDetailPage() {
   const { kpi } = Route.useParams();
   const { periodo } = Route.useSearch();
   const navigate = useNavigate({ from: "/rh/portal/$kpi" });
+  const queryClient = useQueryClient();
 
-  const { data } = useSuspenseQuery(kpiDetailQueryOptions(kpi as KpiKey, periodo));
+  const { data, isPlaceholderData, isLoading } = useQuery({
+    ...kpiDetailQueryOptions(kpi as KpiKey, periodo),
+    // Keep the previous period's data on screen while the new one loads,
+    // so switching 3/6/12 months refetches smoothly without a blank flash.
+    placeholderData: keepPreviousData,
+  });
+
+  // Warm the cache for the other periods so subsequent switches are instant.
+  useEffect(() => {
+    for (const p of PERIODS) {
+      if (p.value === periodo) continue;
+      queryClient.prefetchQuery(kpiDetailQueryOptions(kpi as KpiKey, p.value));
+    }
+  }, [kpi, periodo, queryClient]);
+
+  if (isLoading || !data) {
+    return <div className="p-6 text-sm text-muted-foreground">Carregando indicador…</div>;
+  }
+
 
   return (
     <div>
