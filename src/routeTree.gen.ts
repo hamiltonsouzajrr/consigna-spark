@@ -29,6 +29,7 @@ import { Route as RhIndexRouteImport } from './routes/rh.index'
 import { Route as RhDepartamentosRouteImport } from './routes/rh.departamentos'
 import { Route as RhDashboardRouteImport } from './routes/rh.dashboard'
 import { Route as RhColaboradoresRouteImport } from './routes/rh.colaboradores'
+import { Route as RhCargosRouteImport } from './routes/rh.cargos'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
 
 const UploadRoute = UploadRouteImport.update({
@@ -131,6 +132,11 @@ const RhColaboradoresRoute = RhColaboradoresRouteImport.update({
   path: '/colaboradores',
   getParentRoute: () => RhRoute,
 } as any)
+const RhCargosRoute = RhCargosRouteImport.update({
+  id: '/cargos',
+  path: '/cargos',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhColaboradoresIdRoute = RhColaboradoresIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/rh/cargos': typeof RhCargosRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/departamentos': typeof RhDepartamentosRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByTo {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/rh/cargos': typeof RhCargosRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/departamentos': typeof RhDepartamentosRoute
@@ -200,6 +208,7 @@ export interface FileRoutesById {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/rh/cargos': typeof RhCargosRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/departamentos': typeof RhDepartamentosRoute
@@ -225,6 +234,7 @@ export interface FileRouteTypes {
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/rh/cargos'
     | '/rh/colaboradores'
     | '/rh/dashboard'
     | '/rh/departamentos'
@@ -247,6 +257,7 @@ export interface FileRouteTypes {
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/rh/cargos'
     | '/rh/colaboradores'
     | '/rh/dashboard'
     | '/rh/departamentos'
@@ -270,6 +281,7 @@ export interface FileRouteTypes {
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/rh/cargos'
     | '/rh/colaboradores'
     | '/rh/dashboard'
     | '/rh/departamentos'
@@ -438,6 +450,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhColaboradoresRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/cargos': {
+      id: '/rh/cargos'
+      path: '/cargos'
+      fullPath: '/rh/cargos'
+      preLoaderRoute: typeof RhCargosRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/colaboradores/$id': {
       id: '/rh/colaboradores/$id'
       path: '/$id'
@@ -461,6 +480,7 @@ const RhColaboradoresRouteWithChildren = RhColaboradoresRoute._addFileChildren(
 )
 
 interface RhRouteChildren {
+  RhCargosRoute: typeof RhCargosRoute
   RhColaboradoresRoute: typeof RhColaboradoresRouteWithChildren
   RhDashboardRoute: typeof RhDashboardRoute
   RhDepartamentosRoute: typeof RhDepartamentosRoute
@@ -468,6 +488,7 @@ interface RhRouteChildren {
 }
 
 const RhRouteChildren: RhRouteChildren = {
+  RhCargosRoute: RhCargosRoute,
   RhColaboradoresRoute: RhColaboradoresRouteWithChildren,
   RhDashboardRoute: RhDashboardRoute,
   RhDepartamentosRoute: RhDepartamentosRoute,
