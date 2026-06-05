@@ -34,6 +34,7 @@ import { Route as RhPeopleAnalyticsRouteImport } from './routes/rh.people-analyt
 import { Route as RhPdiRouteImport } from './routes/rh.pdi'
 import { Route as RhOrganogramaRouteImport } from './routes/rh.organograma'
 import { Route as RhOnboardingRouteImport } from './routes/rh.onboarding'
+import { Route as RhOkrsRouteImport } from './routes/rh.okrs'
 import { Route as RhOcorrenciasRouteImport } from './routes/rh.ocorrencias'
 import { Route as RhHoleritesRouteImport } from './routes/rh.holerites'
 import { Route as RhFeriasRouteImport } from './routes/rh.ferias'
@@ -176,6 +177,11 @@ const RhOnboardingRoute = RhOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => RhRoute,
 } as any)
+const RhOkrsRoute = RhOkrsRouteImport.update({
+  id: '/okrs',
+  path: '/okrs',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhOcorrenciasRoute = RhOcorrenciasRouteImport.update({
   id: '/ocorrencias',
   path: '/ocorrencias',
@@ -289,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/rh/ferias': typeof RhFeriasRoute
   '/rh/holerites': typeof RhHoleritesRoute
   '/rh/ocorrencias': typeof RhOcorrenciasRoute
+  '/rh/okrs': typeof RhOkrsRoute
   '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/organograma': typeof RhOrganogramaRoute
   '/rh/pdi': typeof RhPdiRoute
@@ -331,6 +338,7 @@ export interface FileRoutesByTo {
   '/rh/ferias': typeof RhFeriasRoute
   '/rh/holerites': typeof RhHoleritesRoute
   '/rh/ocorrencias': typeof RhOcorrenciasRoute
+  '/rh/okrs': typeof RhOkrsRoute
   '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/organograma': typeof RhOrganogramaRoute
   '/rh/pdi': typeof RhPdiRoute
@@ -375,6 +383,7 @@ export interface FileRoutesById {
   '/rh/ferias': typeof RhFeriasRoute
   '/rh/holerites': typeof RhHoleritesRoute
   '/rh/ocorrencias': typeof RhOcorrenciasRoute
+  '/rh/okrs': typeof RhOkrsRoute
   '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/organograma': typeof RhOrganogramaRoute
   '/rh/pdi': typeof RhPdiRoute
@@ -420,6 +429,7 @@ export interface FileRouteTypes {
     | '/rh/ferias'
     | '/rh/holerites'
     | '/rh/ocorrencias'
+    | '/rh/okrs'
     | '/rh/onboarding'
     | '/rh/organograma'
     | '/rh/pdi'
@@ -462,6 +472,7 @@ export interface FileRouteTypes {
     | '/rh/ferias'
     | '/rh/holerites'
     | '/rh/ocorrencias'
+    | '/rh/okrs'
     | '/rh/onboarding'
     | '/rh/organograma'
     | '/rh/pdi'
@@ -505,6 +516,7 @@ export interface FileRouteTypes {
     | '/rh/ferias'
     | '/rh/holerites'
     | '/rh/ocorrencias'
+    | '/rh/okrs'
     | '/rh/onboarding'
     | '/rh/organograma'
     | '/rh/pdi'
@@ -713,6 +725,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhOnboardingRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/okrs': {
+      id: '/rh/okrs'
+      path: '/okrs'
+      fullPath: '/rh/okrs'
+      preLoaderRoute: typeof RhOkrsRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/ocorrencias': {
       id: '/rh/ocorrencias'
       path: '/ocorrencias'
@@ -856,6 +875,7 @@ interface RhRouteChildren {
   RhFeriasRoute: typeof RhFeriasRoute
   RhHoleritesRoute: typeof RhHoleritesRoute
   RhOcorrenciasRoute: typeof RhOcorrenciasRoute
+  RhOkrsRoute: typeof RhOkrsRoute
   RhOnboardingRoute: typeof RhOnboardingRoute
   RhOrganogramaRoute: typeof RhOrganogramaRoute
   RhPdiRoute: typeof RhPdiRoute
@@ -883,6 +903,7 @@ const RhRouteChildren: RhRouteChildren = {
   RhFeriasRoute: RhFeriasRoute,
   RhHoleritesRoute: RhHoleritesRoute,
   RhOcorrenciasRoute: RhOcorrenciasRoute,
+  RhOkrsRoute: RhOkrsRoute,
   RhOnboardingRoute: RhOnboardingRoute,
   RhOrganogramaRoute: RhOrganogramaRoute,
   RhPdiRoute: RhPdiRoute,
