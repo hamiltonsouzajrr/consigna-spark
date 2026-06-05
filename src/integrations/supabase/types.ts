@@ -256,6 +256,156 @@ export type Database = {
         }
         Relationships: []
       }
+      rh_benefits: {
+        Row: {
+          activated_at: string | null
+          active: boolean
+          created_at: string
+          employee_id: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          activated_at?: string | null
+          active?: boolean
+          created_at?: string
+          employee_id: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          activated_at?: string | null
+          active?: boolean
+          created_at?: string
+          employee_id?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_benefits_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "rh_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_employees: {
+        Row: {
+          created_at: string
+          department: string | null
+          full_name: string
+          id: string
+          job_title: string | null
+          salary: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          full_name: string
+          id?: string
+          job_title?: string | null
+          salary?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          full_name?: string
+          id?: string
+          job_title?: string | null
+          salary?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rh_kpi_metrics: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          kpi: string
+          ref_month: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          kpi: string
+          ref_month: string
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          kpi?: string
+          ref_month?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_kpi_metrics_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "rh_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_vacation_requests: {
+        Row: {
+          created_at: string
+          dias: number
+          employee_id: string
+          fim: string
+          id: string
+          inicio: string
+          status: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dias?: number
+          employee_id: string
+          fim: string
+          id?: string
+          inicio: string
+          status: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dias?: number
+          employee_id?: string
+          fim?: string
+          id?: string
+          inicio?: string
+          status?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_vacation_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "rh_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       safeconsig_leads: {
         Row: {
           consultado_em: string
