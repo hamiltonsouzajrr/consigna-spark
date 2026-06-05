@@ -5,10 +5,11 @@ import {
   FileText, GraduationCap, Laptop, Star, AlertTriangle, UserSearch,
   ClipboardCheck, UserMinus, Settings, Network, ReceiptText, HeartHandshake,
   Target, Gauge, Brain, TrendingDown, Trophy, IdCard, MessagesSquare, Bot,
-  Goal, Award, ScrollText,
+  Goal, Award, ScrollText, ShieldCheck, Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { useRhAccess } from "@/hooks/use-rh-access";
 
 export const rhNav = [
   { to: "/rh/dashboard", label: "Dashboard RH", icon: LayoutDashboard },
