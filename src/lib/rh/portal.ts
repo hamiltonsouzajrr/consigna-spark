@@ -10,6 +10,7 @@ import {
   ferias,
   treinamentos,
   documentos,
+  brl,
   type Colaborador,
   type Ferias,
 } from "./mock";
