@@ -28,6 +28,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as RhIndexRouteImport } from './routes/rh.index'
 import { Route as RhDashboardRouteImport } from './routes/rh.dashboard'
 import { Route as RhColaboradoresRouteImport } from './routes/rh.colaboradores'
+import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -124,6 +125,11 @@ const RhColaboradoresRoute = RhColaboradoresRouteImport.update({
   path: '/colaboradores',
   getParentRoute: () => RhRoute,
 } as any)
+const RhColaboradoresIdRoute = RhColaboradoresIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => RhColaboradoresRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -142,9 +148,10 @@ export interface FileRoutesByFullPath {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
-  '/rh/colaboradores': typeof RhColaboradoresRoute
+  '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/': typeof RhIndexRoute
+  '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -162,9 +169,10 @@ export interface FileRoutesByTo {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
-  '/rh/colaboradores': typeof RhColaboradoresRoute
+  '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh': typeof RhIndexRoute
+  '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -184,9 +192,10 @@ export interface FileRoutesById {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
-  '/rh/colaboradores': typeof RhColaboradoresRoute
+  '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/': typeof RhIndexRoute
+  '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/rh/colaboradores'
     | '/rh/dashboard'
     | '/rh/'
+    | '/rh/colaboradores/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/rh/colaboradores'
     | '/rh/dashboard'
     | '/rh'
+    | '/rh/colaboradores/$id'
   id:
     | '__root__'
     | '/'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/rh/colaboradores'
     | '/rh/dashboard'
     | '/rh/'
+    | '/rh/colaboradores/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -407,17 +419,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhColaboradoresRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/colaboradores/$id': {
+      id: '/rh/colaboradores/$id'
+      path: '/$id'
+      fullPath: '/rh/colaboradores/$id'
+      preLoaderRoute: typeof RhColaboradoresIdRouteImport
+      parentRoute: typeof RhColaboradoresRoute
+    }
   }
 }
 
+interface RhColaboradoresRouteChildren {
+  RhColaboradoresIdRoute: typeof RhColaboradoresIdRoute
+}
+
+const RhColaboradoresRouteChildren: RhColaboradoresRouteChildren = {
+  RhColaboradoresIdRoute: RhColaboradoresIdRoute,
+}
+
+const RhColaboradoresRouteWithChildren = RhColaboradoresRoute._addFileChildren(
+  RhColaboradoresRouteChildren,
+)
+
 interface RhRouteChildren {
-  RhColaboradoresRoute: typeof RhColaboradoresRoute
+  RhColaboradoresRoute: typeof RhColaboradoresRouteWithChildren
   RhDashboardRoute: typeof RhDashboardRoute
   RhIndexRoute: typeof RhIndexRoute
 }
 
 const RhRouteChildren: RhRouteChildren = {
-  RhColaboradoresRoute: RhColaboradoresRoute,
+  RhColaboradoresRoute: RhColaboradoresRouteWithChildren,
   RhDashboardRoute: RhDashboardRoute,
   RhIndexRoute: RhIndexRoute,
 }
