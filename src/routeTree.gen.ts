@@ -31,6 +31,7 @@ import { Route as RhRecrutamentoRouteImport } from './routes/rh.recrutamento'
 import { Route as RhOrganogramaRouteImport } from './routes/rh.organograma'
 import { Route as RhOnboardingRouteImport } from './routes/rh.onboarding'
 import { Route as RhOcorrenciasRouteImport } from './routes/rh.ocorrencias'
+import { Route as RhHoleritesRouteImport } from './routes/rh.holerites'
 import { Route as RhFeriasRouteImport } from './routes/rh.ferias'
 import { Route as RhEquipamentosRouteImport } from './routes/rh.equipamentos'
 import { Route as RhDocumentosRouteImport } from './routes/rh.documentos'
@@ -40,6 +41,7 @@ import { Route as RhDashboardRouteImport } from './routes/rh.dashboard'
 import { Route as RhConfiguracoesRouteImport } from './routes/rh.configuracoes'
 import { Route as RhColaboradoresRouteImport } from './routes/rh.colaboradores'
 import { Route as RhCargosRouteImport } from './routes/rh.cargos'
+import { Route as RhBeneficiosRouteImport } from './routes/rh.beneficios'
 import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
 import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
@@ -154,6 +156,11 @@ const RhOcorrenciasRoute = RhOcorrenciasRouteImport.update({
   path: '/ocorrencias',
   getParentRoute: () => RhRoute,
 } as any)
+const RhHoleritesRoute = RhHoleritesRouteImport.update({
+  id: '/holerites',
+  path: '/holerites',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhFeriasRoute = RhFeriasRouteImport.update({
   id: '/ferias',
   path: '/ferias',
@@ -199,6 +206,11 @@ const RhCargosRoute = RhCargosRouteImport.update({
   path: '/cargos',
   getParentRoute: () => RhRoute,
 } as any)
+const RhBeneficiosRoute = RhBeneficiosRouteImport.update({
+  id: '/beneficios',
+  path: '/beneficios',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhBancoHorasRoute = RhBancoHorasRouteImport.update({
   id: '/banco-horas',
   path: '/banco-horas',
@@ -234,6 +246,7 @@ export interface FileRoutesByFullPath {
   '/upload': typeof UploadRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
+  '/rh/beneficios': typeof RhBeneficiosRoute
   '/rh/cargos': typeof RhCargosRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/configuracoes': typeof RhConfiguracoesRoute
@@ -243,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/rh/documentos': typeof RhDocumentosRoute
   '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
+  '/rh/holerites': typeof RhHoleritesRoute
   '/rh/ocorrencias': typeof RhOcorrenciasRoute
   '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/organograma': typeof RhOrganogramaRoute
@@ -269,6 +283,7 @@ export interface FileRoutesByTo {
   '/upload': typeof UploadRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
+  '/rh/beneficios': typeof RhBeneficiosRoute
   '/rh/cargos': typeof RhCargosRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/configuracoes': typeof RhConfiguracoesRoute
@@ -278,6 +293,7 @@ export interface FileRoutesByTo {
   '/rh/documentos': typeof RhDocumentosRoute
   '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
+  '/rh/holerites': typeof RhHoleritesRoute
   '/rh/ocorrencias': typeof RhOcorrenciasRoute
   '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/organograma': typeof RhOrganogramaRoute
@@ -306,6 +322,7 @@ export interface FileRoutesById {
   '/upload': typeof UploadRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
+  '/rh/beneficios': typeof RhBeneficiosRoute
   '/rh/cargos': typeof RhCargosRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/configuracoes': typeof RhConfiguracoesRoute
@@ -315,6 +332,7 @@ export interface FileRoutesById {
   '/rh/documentos': typeof RhDocumentosRoute
   '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
+  '/rh/holerites': typeof RhHoleritesRoute
   '/rh/ocorrencias': typeof RhOcorrenciasRoute
   '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/organograma': typeof RhOrganogramaRoute
@@ -344,6 +362,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
+    | '/rh/beneficios'
     | '/rh/cargos'
     | '/rh/colaboradores'
     | '/rh/configuracoes'
@@ -353,6 +372,7 @@ export interface FileRouteTypes {
     | '/rh/documentos'
     | '/rh/equipamentos'
     | '/rh/ferias'
+    | '/rh/holerites'
     | '/rh/ocorrencias'
     | '/rh/onboarding'
     | '/rh/organograma'
@@ -379,6 +399,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
+    | '/rh/beneficios'
     | '/rh/cargos'
     | '/rh/colaboradores'
     | '/rh/configuracoes'
@@ -388,6 +409,7 @@ export interface FileRouteTypes {
     | '/rh/documentos'
     | '/rh/equipamentos'
     | '/rh/ferias'
+    | '/rh/holerites'
     | '/rh/ocorrencias'
     | '/rh/onboarding'
     | '/rh/organograma'
@@ -415,6 +437,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
+    | '/rh/beneficios'
     | '/rh/cargos'
     | '/rh/colaboradores'
     | '/rh/configuracoes'
@@ -424,6 +447,7 @@ export interface FileRouteTypes {
     | '/rh/documentos'
     | '/rh/equipamentos'
     | '/rh/ferias'
+    | '/rh/holerites'
     | '/rh/ocorrencias'
     | '/rh/onboarding'
     | '/rh/organograma'
@@ -608,6 +632,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhOcorrenciasRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/holerites': {
+      id: '/rh/holerites'
+      path: '/holerites'
+      fullPath: '/rh/holerites'
+      preLoaderRoute: typeof RhHoleritesRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/ferias': {
       id: '/rh/ferias'
       path: '/ferias'
@@ -671,6 +702,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhCargosRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/beneficios': {
+      id: '/rh/beneficios'
+      path: '/beneficios'
+      fullPath: '/rh/beneficios'
+      preLoaderRoute: typeof RhBeneficiosRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/banco-horas': {
       id: '/rh/banco-horas'
       path: '/banco-horas'
@@ -710,6 +748,7 @@ const RhColaboradoresRouteWithChildren = RhColaboradoresRoute._addFileChildren(
 interface RhRouteChildren {
   RhAvaliacoesRoute: typeof RhAvaliacoesRoute
   RhBancoHorasRoute: typeof RhBancoHorasRoute
+  RhBeneficiosRoute: typeof RhBeneficiosRoute
   RhCargosRoute: typeof RhCargosRoute
   RhColaboradoresRoute: typeof RhColaboradoresRouteWithChildren
   RhConfiguracoesRoute: typeof RhConfiguracoesRoute
@@ -719,6 +758,7 @@ interface RhRouteChildren {
   RhDocumentosRoute: typeof RhDocumentosRoute
   RhEquipamentosRoute: typeof RhEquipamentosRoute
   RhFeriasRoute: typeof RhFeriasRoute
+  RhHoleritesRoute: typeof RhHoleritesRoute
   RhOcorrenciasRoute: typeof RhOcorrenciasRoute
   RhOnboardingRoute: typeof RhOnboardingRoute
   RhOrganogramaRoute: typeof RhOrganogramaRoute
@@ -730,6 +770,7 @@ interface RhRouteChildren {
 const RhRouteChildren: RhRouteChildren = {
   RhAvaliacoesRoute: RhAvaliacoesRoute,
   RhBancoHorasRoute: RhBancoHorasRoute,
+  RhBeneficiosRoute: RhBeneficiosRoute,
   RhCargosRoute: RhCargosRoute,
   RhColaboradoresRoute: RhColaboradoresRouteWithChildren,
   RhConfiguracoesRoute: RhConfiguracoesRoute,
@@ -739,6 +780,7 @@ const RhRouteChildren: RhRouteChildren = {
   RhDocumentosRoute: RhDocumentosRoute,
   RhEquipamentosRoute: RhEquipamentosRoute,
   RhFeriasRoute: RhFeriasRoute,
+  RhHoleritesRoute: RhHoleritesRoute,
   RhOcorrenciasRoute: RhOcorrenciasRoute,
   RhOnboardingRoute: RhOnboardingRoute,
   RhOrganogramaRoute: RhOrganogramaRoute,
@@ -770,3 +812,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
