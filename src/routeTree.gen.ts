@@ -29,6 +29,7 @@ import { Route as RhIndexRouteImport } from './routes/rh.index'
 import { Route as RhTurnoverRouteImport } from './routes/rh.turnover'
 import { Route as RhTreinamentosRouteImport } from './routes/rh.treinamentos'
 import { Route as RhRecrutamentoRouteImport } from './routes/rh.recrutamento'
+import { Route as RhReconhecimentosRouteImport } from './routes/rh.reconhecimentos'
 import { Route as RhRankingRouteImport } from './routes/rh.ranking'
 import { Route as RhPeopleAnalyticsRouteImport } from './routes/rh.people-analytics'
 import { Route as RhPdiRouteImport } from './routes/rh.pdi'
@@ -150,6 +151,11 @@ const RhTreinamentosRoute = RhTreinamentosRouteImport.update({
 const RhRecrutamentoRoute = RhRecrutamentoRouteImport.update({
   id: '/recrutamento',
   path: '/recrutamento',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhReconhecimentosRoute = RhReconhecimentosRouteImport.update({
+  id: '/reconhecimentos',
+  path: '/reconhecimentos',
   getParentRoute: () => RhRoute,
 } as any)
 const RhRankingRoute = RhRankingRouteImport.update({
@@ -301,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/rh/pdi': typeof RhPdiRoute
   '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
   '/rh/ranking': typeof RhRankingRoute
+  '/rh/reconhecimentos': typeof RhReconhecimentosRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/turnover': typeof RhTurnoverRoute
@@ -344,6 +351,7 @@ export interface FileRoutesByTo {
   '/rh/pdi': typeof RhPdiRoute
   '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
   '/rh/ranking': typeof RhRankingRoute
+  '/rh/reconhecimentos': typeof RhReconhecimentosRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/turnover': typeof RhTurnoverRoute
@@ -389,6 +397,7 @@ export interface FileRoutesById {
   '/rh/pdi': typeof RhPdiRoute
   '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
   '/rh/ranking': typeof RhRankingRoute
+  '/rh/reconhecimentos': typeof RhReconhecimentosRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/turnover': typeof RhTurnoverRoute
@@ -435,6 +444,7 @@ export interface FileRouteTypes {
     | '/rh/pdi'
     | '/rh/people-analytics'
     | '/rh/ranking'
+    | '/rh/reconhecimentos'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh/turnover'
@@ -478,6 +488,7 @@ export interface FileRouteTypes {
     | '/rh/pdi'
     | '/rh/people-analytics'
     | '/rh/ranking'
+    | '/rh/reconhecimentos'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh/turnover'
@@ -522,6 +533,7 @@ export interface FileRouteTypes {
     | '/rh/pdi'
     | '/rh/people-analytics'
     | '/rh/ranking'
+    | '/rh/reconhecimentos'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh/turnover'
@@ -688,6 +700,13 @@ declare module '@tanstack/react-router' {
       path: '/recrutamento'
       fullPath: '/rh/recrutamento'
       preLoaderRoute: typeof RhRecrutamentoRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/reconhecimentos': {
+      id: '/rh/reconhecimentos'
+      path: '/reconhecimentos'
+      fullPath: '/rh/reconhecimentos'
+      preLoaderRoute: typeof RhReconhecimentosRouteImport
       parentRoute: typeof RhRoute
     }
     '/rh/ranking': {
@@ -881,6 +900,7 @@ interface RhRouteChildren {
   RhPdiRoute: typeof RhPdiRoute
   RhPeopleAnalyticsRoute: typeof RhPeopleAnalyticsRoute
   RhRankingRoute: typeof RhRankingRoute
+  RhReconhecimentosRoute: typeof RhReconhecimentosRoute
   RhRecrutamentoRoute: typeof RhRecrutamentoRoute
   RhTreinamentosRoute: typeof RhTreinamentosRoute
   RhTurnoverRoute: typeof RhTurnoverRoute
@@ -909,6 +929,7 @@ const RhRouteChildren: RhRouteChildren = {
   RhPdiRoute: RhPdiRoute,
   RhPeopleAnalyticsRoute: RhPeopleAnalyticsRoute,
   RhRankingRoute: RhRankingRoute,
+  RhReconhecimentosRoute: RhReconhecimentosRoute,
   RhRecrutamentoRoute: RhRecrutamentoRoute,
   RhTreinamentosRoute: RhTreinamentosRoute,
   RhTurnoverRoute: RhTurnoverRoute,
