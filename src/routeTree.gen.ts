@@ -51,6 +51,7 @@ import { Route as RhCargosRouteImport } from './routes/rh.cargos'
 import { Route as RhBeneficiosRouteImport } from './routes/rh.beneficios'
 import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
 import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
+import { Route as RhAuditoriaRouteImport } from './routes/rh.auditoria'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
 
 const UploadRoute = UploadRouteImport.update({
@@ -263,6 +264,11 @@ const RhAvaliacoesRoute = RhAvaliacoesRouteImport.update({
   path: '/avaliacoes',
   getParentRoute: () => RhRoute,
 } as any)
+const RhAuditoriaRoute = RhAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhColaboradoresIdRoute = RhColaboradoresIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -286,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
   '/rh/beneficios': typeof RhBeneficiosRoute
@@ -330,6 +337,7 @@ export interface FileRoutesByTo {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
   '/rh/beneficios': typeof RhBeneficiosRoute
@@ -376,6 +384,7 @@ export interface FileRoutesById {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
   '/rh/beneficios': typeof RhBeneficiosRoute
@@ -423,6 +432,7 @@ export interface FileRouteTypes {
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/rh/auditoria'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
     | '/rh/beneficios'
@@ -467,6 +477,7 @@ export interface FileRouteTypes {
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/rh/auditoria'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
     | '/rh/beneficios'
@@ -512,6 +523,7 @@ export interface FileRouteTypes {
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/rh/auditoria'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
     | '/rh/beneficios'
@@ -856,6 +868,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhAvaliacoesRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/auditoria': {
+      id: '/rh/auditoria'
+      path: '/auditoria'
+      fullPath: '/rh/auditoria'
+      preLoaderRoute: typeof RhAuditoriaRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/colaboradores/$id': {
       id: '/rh/colaboradores/$id'
       path: '/$id'
@@ -879,6 +898,7 @@ const RhColaboradoresRouteWithChildren = RhColaboradoresRoute._addFileChildren(
 )
 
 interface RhRouteChildren {
+  RhAuditoriaRoute: typeof RhAuditoriaRoute
   RhAvaliacoesRoute: typeof RhAvaliacoesRoute
   RhBancoHorasRoute: typeof RhBancoHorasRoute
   RhBeneficiosRoute: typeof RhBeneficiosRoute
@@ -908,6 +928,7 @@ interface RhRouteChildren {
 }
 
 const RhRouteChildren: RhRouteChildren = {
+  RhAuditoriaRoute: RhAuditoriaRoute,
   RhAvaliacoesRoute: RhAvaliacoesRoute,
   RhBancoHorasRoute: RhBancoHorasRoute,
   RhBeneficiosRoute: RhBeneficiosRoute,
