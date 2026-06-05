@@ -28,6 +28,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as RhIndexRouteImport } from './routes/rh.index'
 import { Route as RhTreinamentosRouteImport } from './routes/rh.treinamentos'
 import { Route as RhRecrutamentoRouteImport } from './routes/rh.recrutamento'
+import { Route as RhPdiRouteImport } from './routes/rh.pdi'
 import { Route as RhOrganogramaRouteImport } from './routes/rh.organograma'
 import { Route as RhOnboardingRouteImport } from './routes/rh.onboarding'
 import { Route as RhOcorrenciasRouteImport } from './routes/rh.ocorrencias'
@@ -40,6 +41,7 @@ import { Route as RhDepartamentosRouteImport } from './routes/rh.departamentos'
 import { Route as RhDashboardRouteImport } from './routes/rh.dashboard'
 import { Route as RhConfiguracoesRouteImport } from './routes/rh.configuracoes'
 import { Route as RhColaboradoresRouteImport } from './routes/rh.colaboradores'
+import { Route as RhClimaRouteImport } from './routes/rh.clima'
 import { Route as RhCargosRouteImport } from './routes/rh.cargos'
 import { Route as RhBeneficiosRouteImport } from './routes/rh.beneficios'
 import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
@@ -141,6 +143,11 @@ const RhRecrutamentoRoute = RhRecrutamentoRouteImport.update({
   path: '/recrutamento',
   getParentRoute: () => RhRoute,
 } as any)
+const RhPdiRoute = RhPdiRouteImport.update({
+  id: '/pdi',
+  path: '/pdi',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhOrganogramaRoute = RhOrganogramaRouteImport.update({
   id: '/organograma',
   path: '/organograma',
@@ -201,6 +208,11 @@ const RhColaboradoresRoute = RhColaboradoresRouteImport.update({
   path: '/colaboradores',
   getParentRoute: () => RhRoute,
 } as any)
+const RhClimaRoute = RhClimaRouteImport.update({
+  id: '/clima',
+  path: '/clima',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhCargosRoute = RhCargosRouteImport.update({
   id: '/cargos',
   path: '/cargos',
@@ -248,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/rh/banco-horas': typeof RhBancoHorasRoute
   '/rh/beneficios': typeof RhBeneficiosRoute
   '/rh/cargos': typeof RhCargosRoute
+  '/rh/clima': typeof RhClimaRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/configuracoes': typeof RhConfiguracoesRoute
   '/rh/dashboard': typeof RhDashboardRoute
@@ -260,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/rh/ocorrencias': typeof RhOcorrenciasRoute
   '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/organograma': typeof RhOrganogramaRoute
+  '/rh/pdi': typeof RhPdiRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/': typeof RhIndexRoute
@@ -285,6 +299,7 @@ export interface FileRoutesByTo {
   '/rh/banco-horas': typeof RhBancoHorasRoute
   '/rh/beneficios': typeof RhBeneficiosRoute
   '/rh/cargos': typeof RhCargosRoute
+  '/rh/clima': typeof RhClimaRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/configuracoes': typeof RhConfiguracoesRoute
   '/rh/dashboard': typeof RhDashboardRoute
@@ -297,6 +312,7 @@ export interface FileRoutesByTo {
   '/rh/ocorrencias': typeof RhOcorrenciasRoute
   '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/organograma': typeof RhOrganogramaRoute
+  '/rh/pdi': typeof RhPdiRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh': typeof RhIndexRoute
@@ -324,6 +340,7 @@ export interface FileRoutesById {
   '/rh/banco-horas': typeof RhBancoHorasRoute
   '/rh/beneficios': typeof RhBeneficiosRoute
   '/rh/cargos': typeof RhCargosRoute
+  '/rh/clima': typeof RhClimaRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/configuracoes': typeof RhConfiguracoesRoute
   '/rh/dashboard': typeof RhDashboardRoute
@@ -336,6 +353,7 @@ export interface FileRoutesById {
   '/rh/ocorrencias': typeof RhOcorrenciasRoute
   '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/organograma': typeof RhOrganogramaRoute
+  '/rh/pdi': typeof RhPdiRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/': typeof RhIndexRoute
@@ -364,6 +382,7 @@ export interface FileRouteTypes {
     | '/rh/banco-horas'
     | '/rh/beneficios'
     | '/rh/cargos'
+    | '/rh/clima'
     | '/rh/colaboradores'
     | '/rh/configuracoes'
     | '/rh/dashboard'
@@ -376,6 +395,7 @@ export interface FileRouteTypes {
     | '/rh/ocorrencias'
     | '/rh/onboarding'
     | '/rh/organograma'
+    | '/rh/pdi'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh/'
@@ -401,6 +421,7 @@ export interface FileRouteTypes {
     | '/rh/banco-horas'
     | '/rh/beneficios'
     | '/rh/cargos'
+    | '/rh/clima'
     | '/rh/colaboradores'
     | '/rh/configuracoes'
     | '/rh/dashboard'
@@ -413,6 +434,7 @@ export interface FileRouteTypes {
     | '/rh/ocorrencias'
     | '/rh/onboarding'
     | '/rh/organograma'
+    | '/rh/pdi'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh'
@@ -439,6 +461,7 @@ export interface FileRouteTypes {
     | '/rh/banco-horas'
     | '/rh/beneficios'
     | '/rh/cargos'
+    | '/rh/clima'
     | '/rh/colaboradores'
     | '/rh/configuracoes'
     | '/rh/dashboard'
@@ -451,6 +474,7 @@ export interface FileRouteTypes {
     | '/rh/ocorrencias'
     | '/rh/onboarding'
     | '/rh/organograma'
+    | '/rh/pdi'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh/'
@@ -611,6 +635,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhRecrutamentoRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/pdi': {
+      id: '/rh/pdi'
+      path: '/pdi'
+      fullPath: '/rh/pdi'
+      preLoaderRoute: typeof RhPdiRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/organograma': {
       id: '/rh/organograma'
       path: '/organograma'
@@ -695,6 +726,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhColaboradoresRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/clima': {
+      id: '/rh/clima'
+      path: '/clima'
+      fullPath: '/rh/clima'
+      preLoaderRoute: typeof RhClimaRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/cargos': {
       id: '/rh/cargos'
       path: '/cargos'
@@ -750,6 +788,7 @@ interface RhRouteChildren {
   RhBancoHorasRoute: typeof RhBancoHorasRoute
   RhBeneficiosRoute: typeof RhBeneficiosRoute
   RhCargosRoute: typeof RhCargosRoute
+  RhClimaRoute: typeof RhClimaRoute
   RhColaboradoresRoute: typeof RhColaboradoresRouteWithChildren
   RhConfiguracoesRoute: typeof RhConfiguracoesRoute
   RhDashboardRoute: typeof RhDashboardRoute
@@ -762,6 +801,7 @@ interface RhRouteChildren {
   RhOcorrenciasRoute: typeof RhOcorrenciasRoute
   RhOnboardingRoute: typeof RhOnboardingRoute
   RhOrganogramaRoute: typeof RhOrganogramaRoute
+  RhPdiRoute: typeof RhPdiRoute
   RhRecrutamentoRoute: typeof RhRecrutamentoRoute
   RhTreinamentosRoute: typeof RhTreinamentosRoute
   RhIndexRoute: typeof RhIndexRoute
@@ -772,6 +812,7 @@ const RhRouteChildren: RhRouteChildren = {
   RhBancoHorasRoute: RhBancoHorasRoute,
   RhBeneficiosRoute: RhBeneficiosRoute,
   RhCargosRoute: RhCargosRoute,
+  RhClimaRoute: RhClimaRoute,
   RhColaboradoresRoute: RhColaboradoresRouteWithChildren,
   RhConfiguracoesRoute: RhConfiguracoesRoute,
   RhDashboardRoute: RhDashboardRoute,
@@ -784,6 +825,7 @@ const RhRouteChildren: RhRouteChildren = {
   RhOcorrenciasRoute: RhOcorrenciasRoute,
   RhOnboardingRoute: RhOnboardingRoute,
   RhOrganogramaRoute: RhOrganogramaRoute,
+  RhPdiRoute: RhPdiRoute,
   RhRecrutamentoRoute: RhRecrutamentoRoute,
   RhTreinamentosRoute: RhTreinamentosRoute,
   RhIndexRoute: RhIndexRoute,
@@ -812,3 +854,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
