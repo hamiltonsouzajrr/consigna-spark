@@ -26,6 +26,7 @@ import { Route as CalculadoraAlRouteImport } from './routes/calculadora-al'
 import { Route as AlagoasRouteImport } from './routes/alagoas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RhIndexRouteImport } from './routes/rh.index'
+import { Route as RhDepartamentosRouteImport } from './routes/rh.departamentos'
 import { Route as RhDashboardRouteImport } from './routes/rh.dashboard'
 import { Route as RhColaboradoresRouteImport } from './routes/rh.colaboradores'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
@@ -115,6 +116,11 @@ const RhIndexRoute = RhIndexRouteImport.update({
   path: '/',
   getParentRoute: () => RhRoute,
 } as any)
+const RhDepartamentosRoute = RhDepartamentosRouteImport.update({
+  id: '/departamentos',
+  path: '/departamentos',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhDashboardRoute = RhDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -150,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/upload': typeof UploadRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/dashboard': typeof RhDashboardRoute
+  '/rh/departamentos': typeof RhDepartamentosRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
 }
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/upload': typeof UploadRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/dashboard': typeof RhDashboardRoute
+  '/rh/departamentos': typeof RhDepartamentosRoute
   '/rh': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
 }
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/upload': typeof UploadRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/dashboard': typeof RhDashboardRoute
+  '/rh/departamentos': typeof RhDepartamentosRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
 }
@@ -218,6 +227,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/rh/colaboradores'
     | '/rh/dashboard'
+    | '/rh/departamentos'
     | '/rh/'
     | '/rh/colaboradores/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -239,6 +249,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/rh/colaboradores'
     | '/rh/dashboard'
+    | '/rh/departamentos'
     | '/rh'
     | '/rh/colaboradores/$id'
   id:
@@ -261,6 +272,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/rh/colaboradores'
     | '/rh/dashboard'
+    | '/rh/departamentos'
     | '/rh/'
     | '/rh/colaboradores/$id'
   fileRoutesById: FileRoutesById
@@ -405,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhIndexRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/departamentos': {
+      id: '/rh/departamentos'
+      path: '/departamentos'
+      fullPath: '/rh/departamentos'
+      preLoaderRoute: typeof RhDepartamentosRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/dashboard': {
       id: '/rh/dashboard'
       path: '/dashboard'
@@ -444,12 +463,14 @@ const RhColaboradoresRouteWithChildren = RhColaboradoresRoute._addFileChildren(
 interface RhRouteChildren {
   RhColaboradoresRoute: typeof RhColaboradoresRouteWithChildren
   RhDashboardRoute: typeof RhDashboardRoute
+  RhDepartamentosRoute: typeof RhDepartamentosRoute
   RhIndexRoute: typeof RhIndexRoute
 }
 
 const RhRouteChildren: RhRouteChildren = {
   RhColaboradoresRoute: RhColaboradoresRouteWithChildren,
   RhDashboardRoute: RhDashboardRoute,
+  RhDepartamentosRoute: RhDepartamentosRoute,
   RhIndexRoute: RhIndexRoute,
 }
 
