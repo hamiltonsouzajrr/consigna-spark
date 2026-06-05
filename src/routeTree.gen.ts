@@ -36,6 +36,7 @@ import { Route as RhDocumentosRouteImport } from './routes/rh.documentos'
 import { Route as RhDesligamentosRouteImport } from './routes/rh.desligamentos'
 import { Route as RhDepartamentosRouteImport } from './routes/rh.departamentos'
 import { Route as RhDashboardRouteImport } from './routes/rh.dashboard'
+import { Route as RhConfiguracoesRouteImport } from './routes/rh.configuracoes'
 import { Route as RhColaboradoresRouteImport } from './routes/rh.colaboradores'
 import { Route as RhCargosRouteImport } from './routes/rh.cargos'
 import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
@@ -177,6 +178,11 @@ const RhDashboardRoute = RhDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => RhRoute,
 } as any)
+const RhConfiguracoesRoute = RhConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhColaboradoresRoute = RhColaboradoresRouteImport.update({
   id: '/colaboradores',
   path: '/colaboradores',
@@ -224,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/rh/banco-horas': typeof RhBancoHorasRoute
   '/rh/cargos': typeof RhCargosRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
+  '/rh/configuracoes': typeof RhConfiguracoesRoute
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/departamentos': typeof RhDepartamentosRoute
   '/rh/desligamentos': typeof RhDesligamentosRoute
@@ -257,6 +264,7 @@ export interface FileRoutesByTo {
   '/rh/banco-horas': typeof RhBancoHorasRoute
   '/rh/cargos': typeof RhCargosRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
+  '/rh/configuracoes': typeof RhConfiguracoesRoute
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/departamentos': typeof RhDepartamentosRoute
   '/rh/desligamentos': typeof RhDesligamentosRoute
@@ -292,6 +300,7 @@ export interface FileRoutesById {
   '/rh/banco-horas': typeof RhBancoHorasRoute
   '/rh/cargos': typeof RhCargosRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
+  '/rh/configuracoes': typeof RhConfiguracoesRoute
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/departamentos': typeof RhDepartamentosRoute
   '/rh/desligamentos': typeof RhDesligamentosRoute
@@ -328,6 +337,7 @@ export interface FileRouteTypes {
     | '/rh/banco-horas'
     | '/rh/cargos'
     | '/rh/colaboradores'
+    | '/rh/configuracoes'
     | '/rh/dashboard'
     | '/rh/departamentos'
     | '/rh/desligamentos'
@@ -361,6 +371,7 @@ export interface FileRouteTypes {
     | '/rh/banco-horas'
     | '/rh/cargos'
     | '/rh/colaboradores'
+    | '/rh/configuracoes'
     | '/rh/dashboard'
     | '/rh/departamentos'
     | '/rh/desligamentos'
@@ -395,6 +406,7 @@ export interface FileRouteTypes {
     | '/rh/banco-horas'
     | '/rh/cargos'
     | '/rh/colaboradores'
+    | '/rh/configuracoes'
     | '/rh/dashboard'
     | '/rh/departamentos'
     | '/rh/desligamentos'
@@ -619,6 +631,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhDashboardRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/configuracoes': {
+      id: '/rh/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/rh/configuracoes'
+      preLoaderRoute: typeof RhConfiguracoesRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/colaboradores': {
       id: '/rh/colaboradores'
       path: '/colaboradores'
@@ -674,6 +693,7 @@ interface RhRouteChildren {
   RhBancoHorasRoute: typeof RhBancoHorasRoute
   RhCargosRoute: typeof RhCargosRoute
   RhColaboradoresRoute: typeof RhColaboradoresRouteWithChildren
+  RhConfiguracoesRoute: typeof RhConfiguracoesRoute
   RhDashboardRoute: typeof RhDashboardRoute
   RhDepartamentosRoute: typeof RhDepartamentosRoute
   RhDesligamentosRoute: typeof RhDesligamentosRoute
@@ -692,6 +712,7 @@ const RhRouteChildren: RhRouteChildren = {
   RhBancoHorasRoute: RhBancoHorasRoute,
   RhCargosRoute: RhCargosRoute,
   RhColaboradoresRoute: RhColaboradoresRouteWithChildren,
+  RhConfiguracoesRoute: RhConfiguracoesRoute,
   RhDashboardRoute: RhDashboardRoute,
   RhDepartamentosRoute: RhDepartamentosRoute,
   RhDesligamentosRoute: RhDesligamentosRoute,
