@@ -41,6 +41,12 @@ const navSections: NavSection[] = [
       { to: "/limpeza", label: "Limpeza", icon: Trash2 },
     ],
   },
+  {
+    section: "Recursos Humanos",
+    items: [
+      { to: "/rh", label: "RH", icon: Users },
+    ],
+  },
 ];
 
 
