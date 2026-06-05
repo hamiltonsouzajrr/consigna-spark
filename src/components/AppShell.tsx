@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, FileText, QrCode, Menu } from "lucide-react";
+import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, FileText, QrCode, Menu, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +39,12 @@ const navSections: NavSection[] = [
       { to: "/upload", label: "Importar", icon: Upload },
       { to: "/consultas", label: "Consultas", icon: List },
       { to: "/limpeza", label: "Limpeza", icon: Trash2 },
+    ],
+  },
+  {
+    section: "Recursos Humanos",
+    items: [
+      { to: "/rh", label: "RH", icon: Users },
     ],
   },
 ];

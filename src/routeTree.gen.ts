@@ -14,6 +14,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SimulacaoAlagoasRouteImport } from './routes/simulacao-alagoas'
 import { Route as ServidoresSemAcessoRouteImport } from './routes/servidores-sem-acesso'
 import { Route as SafeConsigRouteImport } from './routes/safe-consig'
+import { Route as RhRouteImport } from './routes/rh'
 import { Route as QrcodesRouteImport } from './routes/qrcodes'
 import { Route as PesquisasRouteImport } from './routes/pesquisas'
 import { Route as LoginRouteImport } from './routes/login'
@@ -24,6 +25,23 @@ import { Route as ConsultasRouteImport } from './routes/consultas'
 import { Route as CalculadoraAlRouteImport } from './routes/calculadora-al'
 import { Route as AlagoasRouteImport } from './routes/alagoas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RhIndexRouteImport } from './routes/rh.index'
+import { Route as RhTreinamentosRouteImport } from './routes/rh.treinamentos'
+import { Route as RhRecrutamentoRouteImport } from './routes/rh.recrutamento'
+import { Route as RhOnboardingRouteImport } from './routes/rh.onboarding'
+import { Route as RhOcorrenciasRouteImport } from './routes/rh.ocorrencias'
+import { Route as RhFeriasRouteImport } from './routes/rh.ferias'
+import { Route as RhEquipamentosRouteImport } from './routes/rh.equipamentos'
+import { Route as RhDocumentosRouteImport } from './routes/rh.documentos'
+import { Route as RhDesligamentosRouteImport } from './routes/rh.desligamentos'
+import { Route as RhDepartamentosRouteImport } from './routes/rh.departamentos'
+import { Route as RhDashboardRouteImport } from './routes/rh.dashboard'
+import { Route as RhConfiguracoesRouteImport } from './routes/rh.configuracoes'
+import { Route as RhColaboradoresRouteImport } from './routes/rh.colaboradores'
+import { Route as RhCargosRouteImport } from './routes/rh.cargos'
+import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
+import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
+import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -48,6 +66,11 @@ const ServidoresSemAcessoRoute = ServidoresSemAcessoRouteImport.update({
 const SafeConsigRoute = SafeConsigRouteImport.update({
   id: '/safe-consig',
   path: '/safe-consig',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RhRoute = RhRouteImport.update({
+  id: '/rh',
+  path: '/rh',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QrcodesRoute = QrcodesRouteImport.update({
@@ -100,6 +123,91 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RhIndexRoute = RhIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhTreinamentosRoute = RhTreinamentosRouteImport.update({
+  id: '/treinamentos',
+  path: '/treinamentos',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhRecrutamentoRoute = RhRecrutamentoRouteImport.update({
+  id: '/recrutamento',
+  path: '/recrutamento',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhOnboardingRoute = RhOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhOcorrenciasRoute = RhOcorrenciasRouteImport.update({
+  id: '/ocorrencias',
+  path: '/ocorrencias',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhFeriasRoute = RhFeriasRouteImport.update({
+  id: '/ferias',
+  path: '/ferias',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhEquipamentosRoute = RhEquipamentosRouteImport.update({
+  id: '/equipamentos',
+  path: '/equipamentos',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhDocumentosRoute = RhDocumentosRouteImport.update({
+  id: '/documentos',
+  path: '/documentos',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhDesligamentosRoute = RhDesligamentosRouteImport.update({
+  id: '/desligamentos',
+  path: '/desligamentos',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhDepartamentosRoute = RhDepartamentosRouteImport.update({
+  id: '/departamentos',
+  path: '/departamentos',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhDashboardRoute = RhDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhConfiguracoesRoute = RhConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhColaboradoresRoute = RhColaboradoresRouteImport.update({
+  id: '/colaboradores',
+  path: '/colaboradores',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhCargosRoute = RhCargosRouteImport.update({
+  id: '/cargos',
+  path: '/cargos',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhBancoHorasRoute = RhBancoHorasRouteImport.update({
+  id: '/banco-horas',
+  path: '/banco-horas',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhAvaliacoesRoute = RhAvaliacoesRouteImport.update({
+  id: '/avaliacoes',
+  path: '/avaliacoes',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhColaboradoresIdRoute = RhColaboradoresIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => RhColaboradoresRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -112,11 +220,29 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
   '/qrcodes': typeof QrcodesRoute
+  '/rh': typeof RhRouteWithChildren
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/rh/avaliacoes': typeof RhAvaliacoesRoute
+  '/rh/banco-horas': typeof RhBancoHorasRoute
+  '/rh/cargos': typeof RhCargosRoute
+  '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
+  '/rh/configuracoes': typeof RhConfiguracoesRoute
+  '/rh/dashboard': typeof RhDashboardRoute
+  '/rh/departamentos': typeof RhDepartamentosRoute
+  '/rh/desligamentos': typeof RhDesligamentosRoute
+  '/rh/documentos': typeof RhDocumentosRoute
+  '/rh/equipamentos': typeof RhEquipamentosRoute
+  '/rh/ferias': typeof RhFeriasRoute
+  '/rh/ocorrencias': typeof RhOcorrenciasRoute
+  '/rh/onboarding': typeof RhOnboardingRoute
+  '/rh/recrutamento': typeof RhRecrutamentoRoute
+  '/rh/treinamentos': typeof RhTreinamentosRoute
+  '/rh/': typeof RhIndexRoute
+  '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -134,6 +260,23 @@ export interface FileRoutesByTo {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/rh/avaliacoes': typeof RhAvaliacoesRoute
+  '/rh/banco-horas': typeof RhBancoHorasRoute
+  '/rh/cargos': typeof RhCargosRoute
+  '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
+  '/rh/configuracoes': typeof RhConfiguracoesRoute
+  '/rh/dashboard': typeof RhDashboardRoute
+  '/rh/departamentos': typeof RhDepartamentosRoute
+  '/rh/desligamentos': typeof RhDesligamentosRoute
+  '/rh/documentos': typeof RhDocumentosRoute
+  '/rh/equipamentos': typeof RhEquipamentosRoute
+  '/rh/ferias': typeof RhFeriasRoute
+  '/rh/ocorrencias': typeof RhOcorrenciasRoute
+  '/rh/onboarding': typeof RhOnboardingRoute
+  '/rh/recrutamento': typeof RhRecrutamentoRoute
+  '/rh/treinamentos': typeof RhTreinamentosRoute
+  '/rh': typeof RhIndexRoute
+  '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -147,11 +290,29 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
   '/qrcodes': typeof QrcodesRoute
+  '/rh': typeof RhRouteWithChildren
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/rh/avaliacoes': typeof RhAvaliacoesRoute
+  '/rh/banco-horas': typeof RhBancoHorasRoute
+  '/rh/cargos': typeof RhCargosRoute
+  '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
+  '/rh/configuracoes': typeof RhConfiguracoesRoute
+  '/rh/dashboard': typeof RhDashboardRoute
+  '/rh/departamentos': typeof RhDepartamentosRoute
+  '/rh/desligamentos': typeof RhDesligamentosRoute
+  '/rh/documentos': typeof RhDocumentosRoute
+  '/rh/equipamentos': typeof RhEquipamentosRoute
+  '/rh/ferias': typeof RhFeriasRoute
+  '/rh/ocorrencias': typeof RhOcorrenciasRoute
+  '/rh/onboarding': typeof RhOnboardingRoute
+  '/rh/recrutamento': typeof RhRecrutamentoRoute
+  '/rh/treinamentos': typeof RhTreinamentosRoute
+  '/rh/': typeof RhIndexRoute
+  '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -166,11 +327,29 @@ export interface FileRouteTypes {
     | '/login'
     | '/pesquisas'
     | '/qrcodes'
+    | '/rh'
     | '/safe-consig'
     | '/servidores-sem-acesso'
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/rh/avaliacoes'
+    | '/rh/banco-horas'
+    | '/rh/cargos'
+    | '/rh/colaboradores'
+    | '/rh/configuracoes'
+    | '/rh/dashboard'
+    | '/rh/departamentos'
+    | '/rh/desligamentos'
+    | '/rh/documentos'
+    | '/rh/equipamentos'
+    | '/rh/ferias'
+    | '/rh/ocorrencias'
+    | '/rh/onboarding'
+    | '/rh/recrutamento'
+    | '/rh/treinamentos'
+    | '/rh/'
+    | '/rh/colaboradores/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -188,6 +367,23 @@ export interface FileRouteTypes {
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/rh/avaliacoes'
+    | '/rh/banco-horas'
+    | '/rh/cargos'
+    | '/rh/colaboradores'
+    | '/rh/configuracoes'
+    | '/rh/dashboard'
+    | '/rh/departamentos'
+    | '/rh/desligamentos'
+    | '/rh/documentos'
+    | '/rh/equipamentos'
+    | '/rh/ferias'
+    | '/rh/ocorrencias'
+    | '/rh/onboarding'
+    | '/rh/recrutamento'
+    | '/rh/treinamentos'
+    | '/rh'
+    | '/rh/colaboradores/$id'
   id:
     | '__root__'
     | '/'
@@ -200,11 +396,29 @@ export interface FileRouteTypes {
     | '/login'
     | '/pesquisas'
     | '/qrcodes'
+    | '/rh'
     | '/safe-consig'
     | '/servidores-sem-acesso'
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/rh/avaliacoes'
+    | '/rh/banco-horas'
+    | '/rh/cargos'
+    | '/rh/colaboradores'
+    | '/rh/configuracoes'
+    | '/rh/dashboard'
+    | '/rh/departamentos'
+    | '/rh/desligamentos'
+    | '/rh/documentos'
+    | '/rh/equipamentos'
+    | '/rh/ferias'
+    | '/rh/ocorrencias'
+    | '/rh/onboarding'
+    | '/rh/recrutamento'
+    | '/rh/treinamentos'
+    | '/rh/'
+    | '/rh/colaboradores/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -218,6 +432,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PesquisasRoute: typeof PesquisasRoute
   QrcodesRoute: typeof QrcodesRoute
+  RhRoute: typeof RhRouteWithChildren
   SafeConsigRoute: typeof SafeConsigRoute
   ServidoresSemAcessoRoute: typeof ServidoresSemAcessoRoute
   SimulacaoAlagoasRoute: typeof SimulacaoAlagoasRoute
@@ -260,6 +475,13 @@ declare module '@tanstack/react-router' {
       path: '/safe-consig'
       fullPath: '/safe-consig'
       preLoaderRoute: typeof SafeConsigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rh': {
+      id: '/rh'
+      path: '/rh'
+      fullPath: '/rh'
+      preLoaderRoute: typeof RhRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qrcodes': {
@@ -332,8 +554,179 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rh/': {
+      id: '/rh/'
+      path: '/'
+      fullPath: '/rh/'
+      preLoaderRoute: typeof RhIndexRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/treinamentos': {
+      id: '/rh/treinamentos'
+      path: '/treinamentos'
+      fullPath: '/rh/treinamentos'
+      preLoaderRoute: typeof RhTreinamentosRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/recrutamento': {
+      id: '/rh/recrutamento'
+      path: '/recrutamento'
+      fullPath: '/rh/recrutamento'
+      preLoaderRoute: typeof RhRecrutamentoRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/onboarding': {
+      id: '/rh/onboarding'
+      path: '/onboarding'
+      fullPath: '/rh/onboarding'
+      preLoaderRoute: typeof RhOnboardingRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/ocorrencias': {
+      id: '/rh/ocorrencias'
+      path: '/ocorrencias'
+      fullPath: '/rh/ocorrencias'
+      preLoaderRoute: typeof RhOcorrenciasRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/ferias': {
+      id: '/rh/ferias'
+      path: '/ferias'
+      fullPath: '/rh/ferias'
+      preLoaderRoute: typeof RhFeriasRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/equipamentos': {
+      id: '/rh/equipamentos'
+      path: '/equipamentos'
+      fullPath: '/rh/equipamentos'
+      preLoaderRoute: typeof RhEquipamentosRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/documentos': {
+      id: '/rh/documentos'
+      path: '/documentos'
+      fullPath: '/rh/documentos'
+      preLoaderRoute: typeof RhDocumentosRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/desligamentos': {
+      id: '/rh/desligamentos'
+      path: '/desligamentos'
+      fullPath: '/rh/desligamentos'
+      preLoaderRoute: typeof RhDesligamentosRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/departamentos': {
+      id: '/rh/departamentos'
+      path: '/departamentos'
+      fullPath: '/rh/departamentos'
+      preLoaderRoute: typeof RhDepartamentosRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/dashboard': {
+      id: '/rh/dashboard'
+      path: '/dashboard'
+      fullPath: '/rh/dashboard'
+      preLoaderRoute: typeof RhDashboardRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/configuracoes': {
+      id: '/rh/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/rh/configuracoes'
+      preLoaderRoute: typeof RhConfiguracoesRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/colaboradores': {
+      id: '/rh/colaboradores'
+      path: '/colaboradores'
+      fullPath: '/rh/colaboradores'
+      preLoaderRoute: typeof RhColaboradoresRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/cargos': {
+      id: '/rh/cargos'
+      path: '/cargos'
+      fullPath: '/rh/cargos'
+      preLoaderRoute: typeof RhCargosRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/banco-horas': {
+      id: '/rh/banco-horas'
+      path: '/banco-horas'
+      fullPath: '/rh/banco-horas'
+      preLoaderRoute: typeof RhBancoHorasRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/avaliacoes': {
+      id: '/rh/avaliacoes'
+      path: '/avaliacoes'
+      fullPath: '/rh/avaliacoes'
+      preLoaderRoute: typeof RhAvaliacoesRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/colaboradores/$id': {
+      id: '/rh/colaboradores/$id'
+      path: '/$id'
+      fullPath: '/rh/colaboradores/$id'
+      preLoaderRoute: typeof RhColaboradoresIdRouteImport
+      parentRoute: typeof RhColaboradoresRoute
+    }
   }
 }
+
+interface RhColaboradoresRouteChildren {
+  RhColaboradoresIdRoute: typeof RhColaboradoresIdRoute
+}
+
+const RhColaboradoresRouteChildren: RhColaboradoresRouteChildren = {
+  RhColaboradoresIdRoute: RhColaboradoresIdRoute,
+}
+
+const RhColaboradoresRouteWithChildren = RhColaboradoresRoute._addFileChildren(
+  RhColaboradoresRouteChildren,
+)
+
+interface RhRouteChildren {
+  RhAvaliacoesRoute: typeof RhAvaliacoesRoute
+  RhBancoHorasRoute: typeof RhBancoHorasRoute
+  RhCargosRoute: typeof RhCargosRoute
+  RhColaboradoresRoute: typeof RhColaboradoresRouteWithChildren
+  RhConfiguracoesRoute: typeof RhConfiguracoesRoute
+  RhDashboardRoute: typeof RhDashboardRoute
+  RhDepartamentosRoute: typeof RhDepartamentosRoute
+  RhDesligamentosRoute: typeof RhDesligamentosRoute
+  RhDocumentosRoute: typeof RhDocumentosRoute
+  RhEquipamentosRoute: typeof RhEquipamentosRoute
+  RhFeriasRoute: typeof RhFeriasRoute
+  RhOcorrenciasRoute: typeof RhOcorrenciasRoute
+  RhOnboardingRoute: typeof RhOnboardingRoute
+  RhRecrutamentoRoute: typeof RhRecrutamentoRoute
+  RhTreinamentosRoute: typeof RhTreinamentosRoute
+  RhIndexRoute: typeof RhIndexRoute
+}
+
+const RhRouteChildren: RhRouteChildren = {
+  RhAvaliacoesRoute: RhAvaliacoesRoute,
+  RhBancoHorasRoute: RhBancoHorasRoute,
+  RhCargosRoute: RhCargosRoute,
+  RhColaboradoresRoute: RhColaboradoresRouteWithChildren,
+  RhConfiguracoesRoute: RhConfiguracoesRoute,
+  RhDashboardRoute: RhDashboardRoute,
+  RhDepartamentosRoute: RhDepartamentosRoute,
+  RhDesligamentosRoute: RhDesligamentosRoute,
+  RhDocumentosRoute: RhDocumentosRoute,
+  RhEquipamentosRoute: RhEquipamentosRoute,
+  RhFeriasRoute: RhFeriasRoute,
+  RhOcorrenciasRoute: RhOcorrenciasRoute,
+  RhOnboardingRoute: RhOnboardingRoute,
+  RhRecrutamentoRoute: RhRecrutamentoRoute,
+  RhTreinamentosRoute: RhTreinamentosRoute,
+  RhIndexRoute: RhIndexRoute,
+}
+
+const RhRouteWithChildren = RhRoute._addFileChildren(RhRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -346,6 +739,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PesquisasRoute: PesquisasRoute,
   QrcodesRoute: QrcodesRoute,
+  RhRoute: RhRouteWithChildren,
   SafeConsigRoute: SafeConsigRoute,
   ServidoresSemAcessoRoute: ServidoresSemAcessoRoute,
   SimulacaoAlagoasRoute: SimulacaoAlagoasRoute,
