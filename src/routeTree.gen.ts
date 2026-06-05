@@ -28,6 +28,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as RhIndexRouteImport } from './routes/rh.index'
 import { Route as RhTreinamentosRouteImport } from './routes/rh.treinamentos'
 import { Route as RhRecrutamentoRouteImport } from './routes/rh.recrutamento'
+import { Route as RhPeopleAnalyticsRouteImport } from './routes/rh.people-analytics'
 import { Route as RhPdiRouteImport } from './routes/rh.pdi'
 import { Route as RhOrganogramaRouteImport } from './routes/rh.organograma'
 import { Route as RhOnboardingRouteImport } from './routes/rh.onboarding'
@@ -141,6 +142,11 @@ const RhTreinamentosRoute = RhTreinamentosRouteImport.update({
 const RhRecrutamentoRoute = RhRecrutamentoRouteImport.update({
   id: '/recrutamento',
   path: '/recrutamento',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhPeopleAnalyticsRoute = RhPeopleAnalyticsRouteImport.update({
+  id: '/people-analytics',
+  path: '/people-analytics',
   getParentRoute: () => RhRoute,
 } as any)
 const RhPdiRoute = RhPdiRouteImport.update({
@@ -274,6 +280,7 @@ export interface FileRoutesByFullPath {
   '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/organograma': typeof RhOrganogramaRoute
   '/rh/pdi': typeof RhPdiRoute
+  '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/': typeof RhIndexRoute
@@ -313,6 +320,7 @@ export interface FileRoutesByTo {
   '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/organograma': typeof RhOrganogramaRoute
   '/rh/pdi': typeof RhPdiRoute
+  '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh': typeof RhIndexRoute
@@ -354,6 +362,7 @@ export interface FileRoutesById {
   '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/organograma': typeof RhOrganogramaRoute
   '/rh/pdi': typeof RhPdiRoute
+  '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/': typeof RhIndexRoute
@@ -396,6 +405,7 @@ export interface FileRouteTypes {
     | '/rh/onboarding'
     | '/rh/organograma'
     | '/rh/pdi'
+    | '/rh/people-analytics'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh/'
@@ -435,6 +445,7 @@ export interface FileRouteTypes {
     | '/rh/onboarding'
     | '/rh/organograma'
     | '/rh/pdi'
+    | '/rh/people-analytics'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh'
@@ -475,6 +486,7 @@ export interface FileRouteTypes {
     | '/rh/onboarding'
     | '/rh/organograma'
     | '/rh/pdi'
+    | '/rh/people-analytics'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh/'
@@ -633,6 +645,13 @@ declare module '@tanstack/react-router' {
       path: '/recrutamento'
       fullPath: '/rh/recrutamento'
       preLoaderRoute: typeof RhRecrutamentoRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/people-analytics': {
+      id: '/rh/people-analytics'
+      path: '/people-analytics'
+      fullPath: '/rh/people-analytics'
+      preLoaderRoute: typeof RhPeopleAnalyticsRouteImport
       parentRoute: typeof RhRoute
     }
     '/rh/pdi': {
@@ -802,6 +821,7 @@ interface RhRouteChildren {
   RhOnboardingRoute: typeof RhOnboardingRoute
   RhOrganogramaRoute: typeof RhOrganogramaRoute
   RhPdiRoute: typeof RhPdiRoute
+  RhPeopleAnalyticsRoute: typeof RhPeopleAnalyticsRoute
   RhRecrutamentoRoute: typeof RhRecrutamentoRoute
   RhTreinamentosRoute: typeof RhTreinamentosRoute
   RhIndexRoute: typeof RhIndexRoute
@@ -826,6 +846,7 @@ const RhRouteChildren: RhRouteChildren = {
   RhOnboardingRoute: RhOnboardingRoute,
   RhOrganogramaRoute: RhOrganogramaRoute,
   RhPdiRoute: RhPdiRoute,
+  RhPeopleAnalyticsRoute: RhPeopleAnalyticsRoute,
   RhRecrutamentoRoute: RhRecrutamentoRoute,
   RhTreinamentosRoute: RhTreinamentosRoute,
   RhIndexRoute: RhIndexRoute,
