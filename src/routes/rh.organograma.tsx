@@ -52,14 +52,14 @@ function Organograma() {
           .org-children > li { padding-top: 1.75rem; }
           .org-children > li::before {
             content: ""; position: absolute; top: 0; left: 50%;
-            height: 1.75rem; border-left: 2px solid hsl(var(--border));
+            height: 1.75rem; border-left: 2px solid var(--border);
           }
           .org-children::before {
             content: ""; display: block; height: 0;
           }
           .org-children > li::after {
             content: ""; position: absolute; top: 0; left: 0; right: 0;
-            border-top: 2px solid hsl(var(--border));
+            border-top: 2px solid var(--border);
           }
           .org-children > li:first-child::after { left: 50%; }
           .org-children > li:last-child::after { right: 50%; }
