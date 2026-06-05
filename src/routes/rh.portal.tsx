@@ -46,7 +46,7 @@ function Portal() {
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <RhStatCard label="Saldo de férias" value="12 dias" icon={Plane} tone="sky" />
         <RhStatCard label="Banco de horas" value="+8h" icon={Clock} tone="emerald" />
-        <RhStatCard label="Salário" value={formatCurrency(me.salario)} icon={ReceiptText} tone="violet" />
+        <RhStatCard label="Salário" value={brl(me.salario)} icon={ReceiptText} tone="violet" />
         <RhStatCard label="Benefícios" value={3} icon={HeartHandshake} tone="amber" />
       </div>
 
