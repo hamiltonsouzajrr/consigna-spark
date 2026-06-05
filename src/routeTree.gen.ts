@@ -14,6 +14,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SimulacaoAlagoasRouteImport } from './routes/simulacao-alagoas'
 import { Route as ServidoresSemAcessoRouteImport } from './routes/servidores-sem-acesso'
 import { Route as SafeConsigRouteImport } from './routes/safe-consig'
+import { Route as RhRouteImport } from './routes/rh'
 import { Route as QrcodesRouteImport } from './routes/qrcodes'
 import { Route as PesquisasRouteImport } from './routes/pesquisas'
 import { Route as LoginRouteImport } from './routes/login'
@@ -48,6 +49,11 @@ const ServidoresSemAcessoRoute = ServidoresSemAcessoRouteImport.update({
 const SafeConsigRoute = SafeConsigRouteImport.update({
   id: '/safe-consig',
   path: '/safe-consig',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RhRoute = RhRouteImport.update({
+  id: '/rh',
+  path: '/rh',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QrcodesRoute = QrcodesRouteImport.update({
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
   '/qrcodes': typeof QrcodesRoute
+  '/rh': typeof RhRoute
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
   '/qrcodes': typeof QrcodesRoute
+  '/rh': typeof RhRoute
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
   '/qrcodes': typeof QrcodesRoute
+  '/rh': typeof RhRoute
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/pesquisas'
     | '/qrcodes'
+    | '/rh'
     | '/safe-consig'
     | '/servidores-sem-acesso'
     | '/simulacao-alagoas'
@@ -183,6 +193,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/pesquisas'
     | '/qrcodes'
+    | '/rh'
     | '/safe-consig'
     | '/servidores-sem-acesso'
     | '/simulacao-alagoas'
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/pesquisas'
     | '/qrcodes'
+    | '/rh'
     | '/safe-consig'
     | '/servidores-sem-acesso'
     | '/simulacao-alagoas'
@@ -218,6 +230,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PesquisasRoute: typeof PesquisasRoute
   QrcodesRoute: typeof QrcodesRoute
+  RhRoute: typeof RhRoute
   SafeConsigRoute: typeof SafeConsigRoute
   ServidoresSemAcessoRoute: typeof ServidoresSemAcessoRoute
   SimulacaoAlagoasRoute: typeof SimulacaoAlagoasRoute
@@ -260,6 +273,13 @@ declare module '@tanstack/react-router' {
       path: '/safe-consig'
       fullPath: '/safe-consig'
       preLoaderRoute: typeof SafeConsigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rh': {
+      id: '/rh'
+      path: '/rh'
+      fullPath: '/rh'
+      preLoaderRoute: typeof RhRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qrcodes': {
@@ -346,6 +366,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PesquisasRoute: PesquisasRoute,
   QrcodesRoute: QrcodesRoute,
+  RhRoute: RhRoute,
   SafeConsigRoute: SafeConsigRoute,
   ServidoresSemAcessoRoute: ServidoresSemAcessoRoute,
   SimulacaoAlagoasRoute: SimulacaoAlagoasRoute,
@@ -355,3 +376,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
