@@ -69,7 +69,7 @@ function KpiDetailPage() {
           <Tabs
             value={periodo}
             onValueChange={(v) =>
-              navigate({ search: (prev) => ({ ...prev, periodo: v as PeriodKey }) })
+              navigate({ search: { periodo: v as PeriodKey } })
             }
           >
             <TabsList>
