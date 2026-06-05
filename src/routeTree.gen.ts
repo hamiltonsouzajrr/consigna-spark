@@ -55,6 +55,8 @@ import { Route as RhBeneficiosRouteImport } from './routes/rh.beneficios'
 import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
 import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
 import { Route as RhAuditoriaRouteImport } from './routes/rh.auditoria'
+import { Route as RhPortalIndexRouteImport } from './routes/rh.portal.index'
+import { Route as RhPortalKpiRouteImport } from './routes/rh.portal.$kpi'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
 
 const UploadRoute = UploadRouteImport.update({
@@ -287,6 +289,16 @@ const RhAuditoriaRoute = RhAuditoriaRouteImport.update({
   path: '/auditoria',
   getParentRoute: () => RhRoute,
 } as any)
+const RhPortalIndexRoute = RhPortalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RhPortalRoute,
+} as any)
+const RhPortalKpiRoute = RhPortalKpiRouteImport.update({
+  id: '/$kpi',
+  path: '/$kpi',
+  getParentRoute: () => RhPortalRoute,
+} as any)
 const RhColaboradoresIdRoute = RhColaboradoresIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -333,7 +345,7 @@ export interface FileRoutesByFullPath {
   '/rh/organograma': typeof RhOrganogramaRoute
   '/rh/pdi': typeof RhPdiRoute
   '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
-  '/rh/portal': typeof RhPortalRoute
+  '/rh/portal': typeof RhPortalRouteWithChildren
   '/rh/ranking': typeof RhRankingRoute
   '/rh/reconhecimentos': typeof RhReconhecimentosRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
@@ -341,6 +353,8 @@ export interface FileRoutesByFullPath {
   '/rh/turnover': typeof RhTurnoverRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
+  '/rh/portal/$kpi': typeof RhPortalKpiRoute
+  '/rh/portal/': typeof RhPortalIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -381,7 +395,6 @@ export interface FileRoutesByTo {
   '/rh/organograma': typeof RhOrganogramaRoute
   '/rh/pdi': typeof RhPdiRoute
   '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
-  '/rh/portal': typeof RhPortalRoute
   '/rh/ranking': typeof RhRankingRoute
   '/rh/reconhecimentos': typeof RhReconhecimentosRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
@@ -389,6 +402,8 @@ export interface FileRoutesByTo {
   '/rh/turnover': typeof RhTurnoverRoute
   '/rh': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
+  '/rh/portal/$kpi': typeof RhPortalKpiRoute
+  '/rh/portal': typeof RhPortalIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -431,7 +446,7 @@ export interface FileRoutesById {
   '/rh/organograma': typeof RhOrganogramaRoute
   '/rh/pdi': typeof RhPdiRoute
   '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
-  '/rh/portal': typeof RhPortalRoute
+  '/rh/portal': typeof RhPortalRouteWithChildren
   '/rh/ranking': typeof RhRankingRoute
   '/rh/reconhecimentos': typeof RhReconhecimentosRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
@@ -439,6 +454,8 @@ export interface FileRoutesById {
   '/rh/turnover': typeof RhTurnoverRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
+  '/rh/portal/$kpi': typeof RhPortalKpiRoute
+  '/rh/portal/': typeof RhPortalIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -490,6 +507,8 @@ export interface FileRouteTypes {
     | '/rh/turnover'
     | '/rh/'
     | '/rh/colaboradores/$id'
+    | '/rh/portal/$kpi'
+    | '/rh/portal/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -530,7 +549,6 @@ export interface FileRouteTypes {
     | '/rh/organograma'
     | '/rh/pdi'
     | '/rh/people-analytics'
-    | '/rh/portal'
     | '/rh/ranking'
     | '/rh/reconhecimentos'
     | '/rh/recrutamento'
@@ -538,6 +556,8 @@ export interface FileRouteTypes {
     | '/rh/turnover'
     | '/rh'
     | '/rh/colaboradores/$id'
+    | '/rh/portal/$kpi'
+    | '/rh/portal'
   id:
     | '__root__'
     | '/'
@@ -587,6 +607,8 @@ export interface FileRouteTypes {
     | '/rh/turnover'
     | '/rh/'
     | '/rh/colaboradores/$id'
+    | '/rh/portal/$kpi'
+    | '/rh/portal/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -932,6 +954,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhAuditoriaRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/portal/': {
+      id: '/rh/portal/'
+      path: '/'
+      fullPath: '/rh/portal/'
+      preLoaderRoute: typeof RhPortalIndexRouteImport
+      parentRoute: typeof RhPortalRoute
+    }
+    '/rh/portal/$kpi': {
+      id: '/rh/portal/$kpi'
+      path: '/$kpi'
+      fullPath: '/rh/portal/$kpi'
+      preLoaderRoute: typeof RhPortalKpiRouteImport
+      parentRoute: typeof RhPortalRoute
+    }
     '/rh/colaboradores/$id': {
       id: '/rh/colaboradores/$id'
       path: '/$id'
@@ -952,6 +988,20 @@ const RhColaboradoresRouteChildren: RhColaboradoresRouteChildren = {
 
 const RhColaboradoresRouteWithChildren = RhColaboradoresRoute._addFileChildren(
   RhColaboradoresRouteChildren,
+)
+
+interface RhPortalRouteChildren {
+  RhPortalKpiRoute: typeof RhPortalKpiRoute
+  RhPortalIndexRoute: typeof RhPortalIndexRoute
+}
+
+const RhPortalRouteChildren: RhPortalRouteChildren = {
+  RhPortalKpiRoute: RhPortalKpiRoute,
+  RhPortalIndexRoute: RhPortalIndexRoute,
+}
+
+const RhPortalRouteWithChildren = RhPortalRoute._addFileChildren(
+  RhPortalRouteChildren,
 )
 
 interface RhRouteChildren {
@@ -978,7 +1028,7 @@ interface RhRouteChildren {
   RhOrganogramaRoute: typeof RhOrganogramaRoute
   RhPdiRoute: typeof RhPdiRoute
   RhPeopleAnalyticsRoute: typeof RhPeopleAnalyticsRoute
-  RhPortalRoute: typeof RhPortalRoute
+  RhPortalRoute: typeof RhPortalRouteWithChildren
   RhRankingRoute: typeof RhRankingRoute
   RhReconhecimentosRoute: typeof RhReconhecimentosRoute
   RhRecrutamentoRoute: typeof RhRecrutamentoRoute
@@ -1011,7 +1061,7 @@ const RhRouteChildren: RhRouteChildren = {
   RhOrganogramaRoute: RhOrganogramaRoute,
   RhPdiRoute: RhPdiRoute,
   RhPeopleAnalyticsRoute: RhPeopleAnalyticsRoute,
-  RhPortalRoute: RhPortalRoute,
+  RhPortalRoute: RhPortalRouteWithChildren,
   RhRankingRoute: RhRankingRoute,
   RhReconhecimentosRoute: RhReconhecimentosRoute,
   RhRecrutamentoRoute: RhRecrutamentoRoute,
