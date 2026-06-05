@@ -28,6 +28,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as RhIndexRouteImport } from './routes/rh.index'
 import { Route as RhTreinamentosRouteImport } from './routes/rh.treinamentos'
 import { Route as RhFeriasRouteImport } from './routes/rh.ferias'
+import { Route as RhEquipamentosRouteImport } from './routes/rh.equipamentos'
 import { Route as RhDocumentosRouteImport } from './routes/rh.documentos'
 import { Route as RhDepartamentosRouteImport } from './routes/rh.departamentos'
 import { Route as RhDashboardRouteImport } from './routes/rh.dashboard'
@@ -131,6 +132,11 @@ const RhFeriasRoute = RhFeriasRouteImport.update({
   path: '/ferias',
   getParentRoute: () => RhRoute,
 } as any)
+const RhEquipamentosRoute = RhEquipamentosRouteImport.update({
+  id: '/equipamentos',
+  path: '/equipamentos',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhDocumentosRoute = RhDocumentosRouteImport.update({
   id: '/documentos',
   path: '/documentos',
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/departamentos': typeof RhDepartamentosRoute
   '/rh/documentos': typeof RhDocumentosRoute
+  '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/': typeof RhIndexRoute
@@ -217,6 +224,7 @@ export interface FileRoutesByTo {
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/departamentos': typeof RhDepartamentosRoute
   '/rh/documentos': typeof RhDocumentosRoute
+  '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh': typeof RhIndexRoute
@@ -246,6 +254,7 @@ export interface FileRoutesById {
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/departamentos': typeof RhDepartamentosRoute
   '/rh/documentos': typeof RhDocumentosRoute
+  '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/': typeof RhIndexRoute
@@ -276,6 +285,7 @@ export interface FileRouteTypes {
     | '/rh/dashboard'
     | '/rh/departamentos'
     | '/rh/documentos'
+    | '/rh/equipamentos'
     | '/rh/ferias'
     | '/rh/treinamentos'
     | '/rh/'
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/rh/dashboard'
     | '/rh/departamentos'
     | '/rh/documentos'
+    | '/rh/equipamentos'
     | '/rh/ferias'
     | '/rh/treinamentos'
     | '/rh'
@@ -331,6 +342,7 @@ export interface FileRouteTypes {
     | '/rh/dashboard'
     | '/rh/departamentos'
     | '/rh/documentos'
+    | '/rh/equipamentos'
     | '/rh/ferias'
     | '/rh/treinamentos'
     | '/rh/'
@@ -491,6 +503,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhFeriasRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/equipamentos': {
+      id: '/rh/equipamentos'
+      path: '/equipamentos'
+      fullPath: '/rh/equipamentos'
+      preLoaderRoute: typeof RhEquipamentosRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/documentos': {
       id: '/rh/documentos'
       path: '/documentos'
@@ -562,6 +581,7 @@ interface RhRouteChildren {
   RhDashboardRoute: typeof RhDashboardRoute
   RhDepartamentosRoute: typeof RhDepartamentosRoute
   RhDocumentosRoute: typeof RhDocumentosRoute
+  RhEquipamentosRoute: typeof RhEquipamentosRoute
   RhFeriasRoute: typeof RhFeriasRoute
   RhTreinamentosRoute: typeof RhTreinamentosRoute
   RhIndexRoute: typeof RhIndexRoute
@@ -574,6 +594,7 @@ const RhRouteChildren: RhRouteChildren = {
   RhDashboardRoute: RhDashboardRoute,
   RhDepartamentosRoute: RhDepartamentosRoute,
   RhDocumentosRoute: RhDocumentosRoute,
+  RhEquipamentosRoute: RhEquipamentosRoute,
   RhFeriasRoute: RhFeriasRoute,
   RhTreinamentosRoute: RhTreinamentosRoute,
   RhIndexRoute: RhIndexRoute,
