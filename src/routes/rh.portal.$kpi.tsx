@@ -1,7 +1,5 @@
 import { createFileRoute, Link, useNavigate, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { zodValidator, fallback } from "@tanstack/zod-adapter";
-import { z } from "zod";
 import { ArrowLeft } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -26,12 +24,15 @@ import {
   type PeriodKey,
 } from "@/lib/rh/portal";
 
-const searchSchema = z.object({
-  periodo: fallback(z.enum(["3m", "6m", "12m"]), "6m").default("6m"),
-});
+type PortalKpiSearch = { periodo: PeriodKey };
 
 export const Route = createFileRoute("/rh/portal/$kpi")({
-  validateSearch: zodValidator(searchSchema),
+  validateSearch: (search: Record<string, unknown>): PortalKpiSearch => {
+    const periodo = search.periodo;
+    return {
+      periodo: periodo === "3m" || periodo === "12m" ? periodo : "6m",
+    };
+  },
   beforeLoad: ({ params }) => {
     if (!KPI_KEYS.includes(params.kpi as KpiKey)) throw notFound();
   },

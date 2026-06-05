@@ -56,6 +56,7 @@ import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
 import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
 import { Route as RhAuditoriaRouteImport } from './routes/rh.auditoria'
 import { Route as RhPortalIndexRouteImport } from './routes/rh.portal.index'
+import { Route as RhPortalKpiRouteImport } from './routes/rh.portal.$kpi'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
 
 const UploadRoute = UploadRouteImport.update({
@@ -293,6 +294,11 @@ const RhPortalIndexRoute = RhPortalIndexRouteImport.update({
   path: '/',
   getParentRoute: () => RhPortalRoute,
 } as any)
+const RhPortalKpiRoute = RhPortalKpiRouteImport.update({
+  id: '/$kpi',
+  path: '/$kpi',
+  getParentRoute: () => RhPortalRoute,
+} as any)
 const RhColaboradoresIdRoute = RhColaboradoresIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -347,6 +353,7 @@ export interface FileRoutesByFullPath {
   '/rh/turnover': typeof RhTurnoverRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
+  '/rh/portal/$kpi': typeof RhPortalKpiRoute
   '/rh/portal/': typeof RhPortalIndexRoute
 }
 export interface FileRoutesByTo {
@@ -395,6 +402,7 @@ export interface FileRoutesByTo {
   '/rh/turnover': typeof RhTurnoverRoute
   '/rh': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
+  '/rh/portal/$kpi': typeof RhPortalKpiRoute
   '/rh/portal': typeof RhPortalIndexRoute
 }
 export interface FileRoutesById {
@@ -446,6 +454,7 @@ export interface FileRoutesById {
   '/rh/turnover': typeof RhTurnoverRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
+  '/rh/portal/$kpi': typeof RhPortalKpiRoute
   '/rh/portal/': typeof RhPortalIndexRoute
 }
 export interface FileRouteTypes {
@@ -498,6 +507,7 @@ export interface FileRouteTypes {
     | '/rh/turnover'
     | '/rh/'
     | '/rh/colaboradores/$id'
+    | '/rh/portal/$kpi'
     | '/rh/portal/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -546,6 +556,7 @@ export interface FileRouteTypes {
     | '/rh/turnover'
     | '/rh'
     | '/rh/colaboradores/$id'
+    | '/rh/portal/$kpi'
     | '/rh/portal'
   id:
     | '__root__'
@@ -596,6 +607,7 @@ export interface FileRouteTypes {
     | '/rh/turnover'
     | '/rh/'
     | '/rh/colaboradores/$id'
+    | '/rh/portal/$kpi'
     | '/rh/portal/'
   fileRoutesById: FileRoutesById
 }
@@ -949,6 +961,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhPortalIndexRouteImport
       parentRoute: typeof RhPortalRoute
     }
+    '/rh/portal/$kpi': {
+      id: '/rh/portal/$kpi'
+      path: '/$kpi'
+      fullPath: '/rh/portal/$kpi'
+      preLoaderRoute: typeof RhPortalKpiRouteImport
+      parentRoute: typeof RhPortalRoute
+    }
     '/rh/colaboradores/$id': {
       id: '/rh/colaboradores/$id'
       path: '/$id'
@@ -972,10 +991,12 @@ const RhColaboradoresRouteWithChildren = RhColaboradoresRoute._addFileChildren(
 )
 
 interface RhPortalRouteChildren {
+  RhPortalKpiRoute: typeof RhPortalKpiRoute
   RhPortalIndexRoute: typeof RhPortalIndexRoute
 }
 
 const RhPortalRouteChildren: RhPortalRouteChildren = {
+  RhPortalKpiRoute: RhPortalKpiRoute,
   RhPortalIndexRoute: RhPortalIndexRoute,
 }
 
