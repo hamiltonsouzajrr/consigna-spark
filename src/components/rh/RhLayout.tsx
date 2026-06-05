@@ -3,7 +3,9 @@ import type { ReactNode } from "react";
 import {
   LayoutDashboard, Users, Building2, BriefcaseBusiness, Plane, Clock,
   FileText, GraduationCap, Laptop, Star, AlertTriangle, UserSearch,
-  ClipboardCheck, UserMinus, Settings,
+  ClipboardCheck, UserMinus, Settings, Network, ReceiptText, HeartHandshake,
+  Target, Gauge, Brain, TrendingDown, Trophy, IdCard, MessagesSquare, Bot,
+  Goal, Award, ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -11,20 +13,35 @@ import { Badge } from "@/components/ui/badge";
 export const rhNav = [
   { to: "/rh/dashboard", label: "Dashboard RH", icon: LayoutDashboard },
   { to: "/rh/colaboradores", label: "Colaboradores", icon: Users },
+  { to: "/rh/organograma", label: "Organograma", icon: Network },
   { to: "/rh/departamentos", label: "Departamentos", icon: Building2 },
   { to: "/rh/cargos", label: "Cargos", icon: BriefcaseBusiness },
   { to: "/rh/ferias", label: "Férias e Licenças", icon: Plane },
   { to: "/rh/banco-horas", label: "Banco de Horas", icon: Clock },
+  { to: "/rh/holerites", label: "Holerites", icon: ReceiptText },
+  { to: "/rh/beneficios", label: "Benefícios", icon: HeartHandshake },
   { to: "/rh/documentos", label: "Documentos", icon: FileText },
-  { to: "/rh/treinamentos", label: "Treinamentos", icon: GraduationCap },
   { to: "/rh/equipamentos", label: "Equipamentos", icon: Laptop },
+  { to: "/rh/treinamentos", label: "Treinamentos", icon: GraduationCap },
   { to: "/rh/avaliacoes", label: "Avaliações de Desempenho", icon: Star },
+  { to: "/rh/pdi", label: "PDI", icon: Target },
+  { to: "/rh/clima", label: "Clima Organizacional", icon: Gauge },
+  { to: "/rh/people-analytics", label: "People Analytics", icon: Brain },
+  { to: "/rh/turnover", label: "Predição de Turnover", icon: TrendingDown },
+  { to: "/rh/ranking", label: "Ranking", icon: Trophy },
+  { to: "/rh/portal", label: "Portal do Colaborador", icon: IdCard },
+  { to: "/rh/chat", label: "Chat Interno", icon: MessagesSquare },
+  { to: "/rh/chatbot", label: "Chatbot RH", icon: Bot },
+  { to: "/rh/okrs", label: "OKRs", icon: Goal },
+  { to: "/rh/reconhecimentos", label: "Reconhecimentos", icon: Award },
   { to: "/rh/ocorrencias", label: "Ocorrências", icon: AlertTriangle },
   { to: "/rh/recrutamento", label: "Recrutamento", icon: UserSearch },
   { to: "/rh/onboarding", label: "Onboarding", icon: ClipboardCheck },
   { to: "/rh/desligamentos", label: "Desligamentos", icon: UserMinus },
+  { to: "/rh/auditoria", label: "Auditoria", icon: ScrollText },
   { to: "/rh/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
+
 
 export function RhLayout({ children }: { children: ReactNode }) {
   const loc = useLocation();
