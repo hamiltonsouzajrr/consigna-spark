@@ -27,6 +27,7 @@ import { Route as AlagoasRouteImport } from './routes/alagoas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RhIndexRouteImport } from './routes/rh.index'
 import { Route as RhTreinamentosRouteImport } from './routes/rh.treinamentos'
+import { Route as RhOcorrenciasRouteImport } from './routes/rh.ocorrencias'
 import { Route as RhFeriasRouteImport } from './routes/rh.ferias'
 import { Route as RhEquipamentosRouteImport } from './routes/rh.equipamentos'
 import { Route as RhDocumentosRouteImport } from './routes/rh.documentos'
@@ -128,6 +129,11 @@ const RhTreinamentosRoute = RhTreinamentosRouteImport.update({
   path: '/treinamentos',
   getParentRoute: () => RhRoute,
 } as any)
+const RhOcorrenciasRoute = RhOcorrenciasRouteImport.update({
+  id: '/ocorrencias',
+  path: '/ocorrencias',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhFeriasRoute = RhFeriasRouteImport.update({
   id: '/ferias',
   path: '/ferias',
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/rh/documentos': typeof RhDocumentosRoute
   '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
+  '/rh/ocorrencias': typeof RhOcorrenciasRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
@@ -234,6 +241,7 @@ export interface FileRoutesByTo {
   '/rh/documentos': typeof RhDocumentosRoute
   '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
+  '/rh/ocorrencias': typeof RhOcorrenciasRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
@@ -265,6 +273,7 @@ export interface FileRoutesById {
   '/rh/documentos': typeof RhDocumentosRoute
   '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
+  '/rh/ocorrencias': typeof RhOcorrenciasRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
@@ -297,6 +306,7 @@ export interface FileRouteTypes {
     | '/rh/documentos'
     | '/rh/equipamentos'
     | '/rh/ferias'
+    | '/rh/ocorrencias'
     | '/rh/treinamentos'
     | '/rh/'
     | '/rh/colaboradores/$id'
@@ -326,6 +336,7 @@ export interface FileRouteTypes {
     | '/rh/documentos'
     | '/rh/equipamentos'
     | '/rh/ferias'
+    | '/rh/ocorrencias'
     | '/rh/treinamentos'
     | '/rh'
     | '/rh/colaboradores/$id'
@@ -356,6 +367,7 @@ export interface FileRouteTypes {
     | '/rh/documentos'
     | '/rh/equipamentos'
     | '/rh/ferias'
+    | '/rh/ocorrencias'
     | '/rh/treinamentos'
     | '/rh/'
     | '/rh/colaboradores/$id'
@@ -508,6 +520,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhTreinamentosRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/ocorrencias': {
+      id: '/rh/ocorrencias'
+      path: '/ocorrencias'
+      fullPath: '/rh/ocorrencias'
+      preLoaderRoute: typeof RhOcorrenciasRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/ferias': {
       id: '/rh/ferias'
       path: '/ferias'
@@ -603,6 +622,7 @@ interface RhRouteChildren {
   RhDocumentosRoute: typeof RhDocumentosRoute
   RhEquipamentosRoute: typeof RhEquipamentosRoute
   RhFeriasRoute: typeof RhFeriasRoute
+  RhOcorrenciasRoute: typeof RhOcorrenciasRoute
   RhTreinamentosRoute: typeof RhTreinamentosRoute
   RhIndexRoute: typeof RhIndexRoute
 }
@@ -617,40 +637,9 @@ const RhRouteChildren: RhRouteChildren = {
   RhDocumentosRoute: RhDocumentosRoute,
   RhEquipamentosRoute: RhEquipamentosRoute,
   RhFeriasRoute: RhFeriasRoute,
+  RhOcorrenciasRoute: RhOcorrenciasRoute,
   RhTreinamentosRoute: RhTreinamentosRoute,
   RhIndexRoute: RhIndexRoute,
 }
 
-const RhRouteWithChildren = RhRoute._addFileChildren(RhRouteChildren)
-
-const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AlagoasRoute: AlagoasRoute,
-  CalculadoraAlRoute: CalculadoraAlRoute,
-  ConsultasRoute: ConsultasRoute,
-  ContratoRoute: ContratoRoute,
-  DashboardRoute: DashboardRoute,
-  LimpezaRoute: LimpezaRoute,
-  LoginRoute: LoginRoute,
-  PesquisasRoute: PesquisasRoute,
-  QrcodesRoute: QrcodesRoute,
-  RhRoute: RhRouteWithChildren,
-  SafeConsigRoute: SafeConsigRoute,
-  ServidoresSemAcessoRoute: ServidoresSemAcessoRoute,
-  SimulacaoAlagoasRoute: SimulacaoAlagoasRoute,
-  SitemapDotxmlRoute: SitemapDotxmlRoute,
-  UploadRoute: UploadRoute,
-}
-export const routeTree = rootRouteImport
-  ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
+const RhRouteWithChildren = RhRoute._addFileChildren(RhR
