@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate, notFound } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -51,8 +52,27 @@ function KpiDetailPage() {
   const { kpi } = Route.useParams();
   const { periodo } = Route.useSearch();
   const navigate = useNavigate({ from: "/rh/portal/$kpi" });
+  const queryClient = useQueryClient();
 
-  const { data } = useSuspenseQuery(kpiDetailQueryOptions(kpi as KpiKey, periodo));
+  const { data, isPlaceholderData, isLoading } = useQuery({
+    ...kpiDetailQueryOptions(kpi as KpiKey, periodo),
+    // Keep the previous period's data on screen while the new one loads,
+    // so switching 3/6/12 months refetches smoothly without a blank flash.
+    placeholderData: keepPreviousData,
+  });
+
+  // Warm the cache for the other periods so subsequent switches are instant.
+  useEffect(() => {
+    for (const p of PERIODS) {
+      if (p.value === periodo) continue;
+      queryClient.prefetchQuery(kpiDetailQueryOptions(kpi as KpiKey, p.value));
+    }
+  }, [kpi, periodo, queryClient]);
+
+  if (isLoading || !data) {
+    return <div className="p-6 text-sm text-muted-foreground">Carregando indicador…</div>;
+  }
+
 
   return (
     <div>
@@ -81,7 +101,12 @@ function KpiDetailPage() {
         }
       />
 
+      <div
+        aria-busy={isPlaceholderData}
+        className={isPlaceholderData ? "opacity-60 transition-opacity" : "transition-opacity"}
+      >
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
+
         {data.resumo.map((r) => (
           <Card key={r.label} className="p-5">
             <p className="text-sm text-muted-foreground">{r.label}</p>
@@ -145,6 +170,8 @@ function KpiDetailPage() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
+
   );
 }

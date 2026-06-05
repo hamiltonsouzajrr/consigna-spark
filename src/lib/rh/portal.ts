@@ -255,6 +255,9 @@ export const kpiDetailQueryOptions = (key: KpiKey, period: PeriodKey, colaborado
   queryOptions({
     queryKey: ["rh", "portal", "kpi", colaboradorId ?? "me", key, period],
     queryFn: () => fetchKpiDetail(key, period, colaboradorId),
-    staleTime: 30_000,
+    // Cache each (kpi, period) combo: stays fresh for 5 min, kept in memory
+    // for 30 min so re-selecting a period is instant from cache.
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
   });
 
