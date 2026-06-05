@@ -28,6 +28,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as RhIndexRouteImport } from './routes/rh.index'
 import { Route as RhTreinamentosRouteImport } from './routes/rh.treinamentos'
 import { Route as RhRecrutamentoRouteImport } from './routes/rh.recrutamento'
+import { Route as RhOnboardingRouteImport } from './routes/rh.onboarding'
 import { Route as RhOcorrenciasRouteImport } from './routes/rh.ocorrencias'
 import { Route as RhFeriasRouteImport } from './routes/rh.ferias'
 import { Route as RhEquipamentosRouteImport } from './routes/rh.equipamentos'
@@ -135,6 +136,11 @@ const RhRecrutamentoRoute = RhRecrutamentoRouteImport.update({
   path: '/recrutamento',
   getParentRoute: () => RhRoute,
 } as any)
+const RhOnboardingRoute = RhOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => RhRoute,
+} as any)
 const RhOcorrenciasRoute = RhOcorrenciasRouteImport.update({
   id: '/ocorrencias',
   path: '/ocorrencias',
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
   '/rh/ocorrencias': typeof RhOcorrenciasRoute
+  '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/': typeof RhIndexRoute
@@ -249,6 +256,7 @@ export interface FileRoutesByTo {
   '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
   '/rh/ocorrencias': typeof RhOcorrenciasRoute
+  '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh': typeof RhIndexRoute
@@ -282,6 +290,7 @@ export interface FileRoutesById {
   '/rh/equipamentos': typeof RhEquipamentosRoute
   '/rh/ferias': typeof RhFeriasRoute
   '/rh/ocorrencias': typeof RhOcorrenciasRoute
+  '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/': typeof RhIndexRoute
@@ -316,6 +325,7 @@ export interface FileRouteTypes {
     | '/rh/equipamentos'
     | '/rh/ferias'
     | '/rh/ocorrencias'
+    | '/rh/onboarding'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh/'
@@ -347,6 +357,7 @@ export interface FileRouteTypes {
     | '/rh/equipamentos'
     | '/rh/ferias'
     | '/rh/ocorrencias'
+    | '/rh/onboarding'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh'
@@ -379,6 +390,7 @@ export interface FileRouteTypes {
     | '/rh/equipamentos'
     | '/rh/ferias'
     | '/rh/ocorrencias'
+    | '/rh/onboarding'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh/'
@@ -539,6 +551,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhRecrutamentoRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/onboarding': {
+      id: '/rh/onboarding'
+      path: '/onboarding'
+      fullPath: '/rh/onboarding'
+      preLoaderRoute: typeof RhOnboardingRouteImport
+      parentRoute: typeof RhRoute
+    }
     '/rh/ocorrencias': {
       id: '/rh/ocorrencias'
       path: '/ocorrencias'
@@ -642,6 +661,7 @@ interface RhRouteChildren {
   RhEquipamentosRoute: typeof RhEquipamentosRoute
   RhFeriasRoute: typeof RhFeriasRoute
   RhOcorrenciasRoute: typeof RhOcorrenciasRoute
+  RhOnboardingRoute: typeof RhOnboardingRoute
   RhRecrutamentoRoute: typeof RhRecrutamentoRoute
   RhTreinamentosRoute: typeof RhTreinamentosRoute
   RhIndexRoute: typeof RhIndexRoute
@@ -658,6 +678,7 @@ const RhRouteChildren: RhRouteChildren = {
   RhEquipamentosRoute: RhEquipamentosRoute,
   RhFeriasRoute: RhFeriasRoute,
   RhOcorrenciasRoute: RhOcorrenciasRoute,
+  RhOnboardingRoute: RhOnboardingRoute,
   RhRecrutamentoRoute: RhRecrutamentoRoute,
   RhTreinamentosRoute: RhTreinamentosRoute,
   RhIndexRoute: RhIndexRoute,
