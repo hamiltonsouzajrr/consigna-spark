@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   Plane,
   FileText,
@@ -22,24 +23,23 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { RhPageHeader } from "@/components/rh/RhLayout";
 import { RhStatCard } from "@/components/rh/RhStatCard";
-import {
-  colaboradores,
-  formatDate,
-  brl,
-  ferias,
-  treinamentos,
-  documentos,
-} from "@/lib/rh/mock";
+import { formatDate, brl } from "@/lib/rh/mock";
+import { portalQueryOptions } from "@/lib/rh/portal";
 
 export const Route = createFileRoute("/rh/portal")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(portalQueryOptions()),
   component: Portal,
+  errorComponent: ({ error }) => (
+    <div role="alert" className="p-6 text-sm text-destructive">{error.message}</div>
+  ),
+  notFoundComponent: () => <div className="p-6 text-sm">Colaborador não encontrado.</div>,
 });
 
 const atalhos = [
-  { label: "Solicitar Férias", icon: Plane, tone: "sky" as const },
-  { label: "Enviar Documento", icon: FileText, tone: "violet" as const },
-  { label: "Ver Holerite", icon: ReceiptText, tone: "emerald" as const },
-  { label: "Meus Treinamentos", icon: GraduationCap, tone: "amber" as const },
+  { label: "Solicitar Férias", icon: Plane },
+  { label: "Enviar Documento", icon: FileText },
+  { label: "Ver Holerite", icon: ReceiptText },
+  { label: "Meus Treinamentos", icon: GraduationCap },
 ];
 
 const avisos = [
@@ -49,17 +49,8 @@ const avisos = [
 ];
 
 function Portal() {
-  const me = colaboradores[0];
-
-  const meusTreinamentos = treinamentos.filter((t) => t.colaborador === me.nome);
-  const treinosConcluidos = meusTreinamentos.filter((t) => t.status === "Concluído").length;
-  const progressoTreinos = meusTreinamentos.length
-    ? Math.round((treinosConcluidos / meusTreinamentos.length) * 100)
-    : 0;
-
-  const minhasSolicitacoes = ferias.filter((f) => f.colaborador === me.nome);
-  const proximasFerias = ferias.find((f) => f.status === "Aprovado" && f.tipo === "Férias");
-  const meusDocs = documentos.filter((d) => d.colaborador === me.nome);
+  const { data } = useSuspenseQuery(portalQueryOptions());
+  const me = data.colaborador;
 
   return (
     <div>
@@ -84,10 +75,10 @@ function Portal() {
       </Card>
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <RhStatCard label="Saldo de férias" value="12 dias" icon={Plane} tone="sky" hint="Período aquisitivo atual" />
-        <RhStatCard label="Banco de horas" value="+8h" icon={Clock} tone="emerald" hint="Atualizado hoje" />
-        <RhStatCard label="Salário" value={brl(me.salario)} icon={ReceiptText} tone="violet" hint="Bruto mensal" />
-        <RhStatCard label="Benefícios" value={3} icon={HeartHandshake} tone="amber" hint="Ativos" />
+        <RhStatCard label="Saldo de férias" value={`${data.saldoFerias} dias`} icon={Plane} tone="sky" hint="Período aquisitivo atual" />
+        <RhStatCard label="Banco de horas" value={`${data.bancoHoras >= 0 ? "+" : ""}${data.bancoHoras}h`} icon={Clock} tone="emerald" hint="Atualizado hoje" />
+        <RhStatCard label="Salário" value={brl(data.salario)} icon={ReceiptText} tone="violet" hint="Bruto mensal" />
+        <RhStatCard label="Benefícios" value={data.beneficiosAtivos} icon={HeartHandshake} tone="amber" hint="Ativos" />
       </div>
 
       <div className="mb-6 grid gap-4 lg:grid-cols-3">
@@ -140,11 +131,11 @@ function Portal() {
             <CardTitle className="text-base">Próximas férias</CardTitle>
           </CardHeader>
           <CardContent>
-            {proximasFerias ? (
+            {data.proximasFerias ? (
               <div className="space-y-2">
-                <p className="text-2xl font-bold">{proximasFerias.dias} dias</p>
+                <p className="text-2xl font-bold">{data.proximasFerias.dias} dias</p>
                 <p className="text-sm text-muted-foreground">
-                  {formatDate(proximasFerias.inicio)} → {formatDate(proximasFerias.fim)}
+                  {formatDate(data.proximasFerias.inicio)} → {formatDate(data.proximasFerias.fim)}
                 </p>
                 <Badge variant="secondary" className="border-0 bg-emerald-100 text-emerald-700">
                   <CheckCircle2 className="mr-1 h-3 w-3" /> Aprovado
@@ -164,11 +155,11 @@ function Portal() {
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Progresso</span>
-              <span className="font-semibold">{progressoTreinos}%</span>
+              <span className="font-semibold">{data.treinamentos.progresso}%</span>
             </div>
-            <Progress value={progressoTreinos} />
+            <Progress value={data.treinamentos.progresso} />
             <p className="text-xs text-muted-foreground">
-              {treinosConcluidos} de {meusTreinamentos.length || 0} concluídos
+              {data.treinamentos.concluidos} de {data.treinamentos.total} concluídos
             </p>
           </CardContent>
         </Card>
@@ -179,8 +170,8 @@ function Portal() {
             <CardTitle className="text-base">Minhas solicitações</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {minhasSolicitacoes.length ? (
-              minhasSolicitacoes.map((s) => (
+            {data.solicitacoes.length ? (
+              data.solicitacoes.map((s) => (
                 <div key={s.id} className="flex items-center justify-between border-b pb-2 text-sm last:border-0 last:pb-0">
                   <span>{s.tipo}</span>
                   <Badge
@@ -200,7 +191,7 @@ function Portal() {
             ) : (
               <p className="text-sm text-muted-foreground">Sem solicitações no momento.</p>
             )}
-            <p className="pt-1 text-xs text-muted-foreground">{meusDocs.length} documento(s) no seu perfil</p>
+            <p className="pt-1 text-xs text-muted-foreground">{data.documentos} documento(s) no seu perfil</p>
           </CardContent>
         </Card>
       </div>
