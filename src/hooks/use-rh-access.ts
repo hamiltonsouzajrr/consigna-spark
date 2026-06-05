@@ -35,7 +35,7 @@ export function useRhAccess() {
     isAdmin,
     granted,
     canAccess,
-    isLoading: query.isLoading,
+    isLoading: authLoading || (!!user && query.isLoading),
     alwaysAllowed: ALWAYS_ALLOWED,
   };
 }
