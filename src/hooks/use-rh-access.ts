@@ -9,7 +9,7 @@ import { getMyRhAccess } from "@/lib/rh/access.functions";
 const ALWAYS_ALLOWED = new Set<string>(["/rh", "/rh/dashboard", "/rh/portal"]);
 
 export function useRhAccess() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const fetchAccess = useServerFn(getMyRhAccess);
 
   const query = useQuery({
