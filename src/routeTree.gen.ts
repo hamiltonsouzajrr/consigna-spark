@@ -27,6 +27,7 @@ import { Route as AlagoasRouteImport } from './routes/alagoas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RhIndexRouteImport } from './routes/rh.index'
 import { Route as RhDashboardRouteImport } from './routes/rh.dashboard'
+import { Route as RhColaboradoresRouteImport } from './routes/rh.colaboradores'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -118,6 +119,11 @@ const RhDashboardRoute = RhDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => RhRoute,
 } as any)
+const RhColaboradoresRoute = RhColaboradoresRouteImport.update({
+  id: '/colaboradores',
+  path: '/colaboradores',
+  getParentRoute: () => RhRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/rh/colaboradores': typeof RhColaboradoresRoute
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/': typeof RhIndexRoute
 }
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/rh/colaboradores': typeof RhColaboradoresRoute
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh': typeof RhIndexRoute
 }
@@ -176,6 +184,7 @@ export interface FileRoutesById {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/rh/colaboradores': typeof RhColaboradoresRoute
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/': typeof RhIndexRoute
 }
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/rh/colaboradores'
     | '/rh/dashboard'
     | '/rh/'
   fileRoutesByTo: FileRoutesByTo
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/rh/colaboradores'
     | '/rh/dashboard'
     | '/rh'
   id:
@@ -237,6 +248,7 @@ export interface FileRouteTypes {
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/rh/colaboradores'
     | '/rh/dashboard'
     | '/rh/'
   fileRoutesById: FileRoutesById
@@ -388,15 +400,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhDashboardRouteImport
       parentRoute: typeof RhRoute
     }
+    '/rh/colaboradores': {
+      id: '/rh/colaboradores'
+      path: '/colaboradores'
+      fullPath: '/rh/colaboradores'
+      preLoaderRoute: typeof RhColaboradoresRouteImport
+      parentRoute: typeof RhRoute
+    }
   }
 }
 
 interface RhRouteChildren {
+  RhColaboradoresRoute: typeof RhColaboradoresRoute
   RhDashboardRoute: typeof RhDashboardRoute
   RhIndexRoute: typeof RhIndexRoute
 }
 
 const RhRouteChildren: RhRouteChildren = {
+  RhColaboradoresRoute: RhColaboradoresRoute,
   RhDashboardRoute: RhDashboardRoute,
   RhIndexRoute: RhIndexRoute,
 }
@@ -424,3 +445,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
