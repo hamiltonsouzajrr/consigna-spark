@@ -31,6 +31,7 @@ import { Route as RhTreinamentosRouteImport } from './routes/rh.treinamentos'
 import { Route as RhRecrutamentoRouteImport } from './routes/rh.recrutamento'
 import { Route as RhReconhecimentosRouteImport } from './routes/rh.reconhecimentos'
 import { Route as RhRankingRouteImport } from './routes/rh.ranking'
+import { Route as RhPortalRouteImport } from './routes/rh.portal'
 import { Route as RhPeopleAnalyticsRouteImport } from './routes/rh.people-analytics'
 import { Route as RhPdiRouteImport } from './routes/rh.pdi'
 import { Route as RhOrganogramaRouteImport } from './routes/rh.organograma'
@@ -164,6 +165,11 @@ const RhReconhecimentosRoute = RhReconhecimentosRouteImport.update({
 const RhRankingRoute = RhRankingRouteImport.update({
   id: '/ranking',
   path: '/ranking',
+  getParentRoute: () => RhRoute,
+} as any)
+const RhPortalRoute = RhPortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => RhRoute,
 } as any)
 const RhPeopleAnalyticsRoute = RhPeopleAnalyticsRouteImport.update({
@@ -327,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/rh/organograma': typeof RhOrganogramaRoute
   '/rh/pdi': typeof RhPdiRoute
   '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
+  '/rh/portal': typeof RhPortalRoute
   '/rh/ranking': typeof RhRankingRoute
   '/rh/reconhecimentos': typeof RhReconhecimentosRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
@@ -374,6 +381,7 @@ export interface FileRoutesByTo {
   '/rh/organograma': typeof RhOrganogramaRoute
   '/rh/pdi': typeof RhPdiRoute
   '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
+  '/rh/portal': typeof RhPortalRoute
   '/rh/ranking': typeof RhRankingRoute
   '/rh/reconhecimentos': typeof RhReconhecimentosRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
@@ -423,6 +431,7 @@ export interface FileRoutesById {
   '/rh/organograma': typeof RhOrganogramaRoute
   '/rh/pdi': typeof RhPdiRoute
   '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
+  '/rh/portal': typeof RhPortalRoute
   '/rh/ranking': typeof RhRankingRoute
   '/rh/reconhecimentos': typeof RhReconhecimentosRoute
   '/rh/recrutamento': typeof RhRecrutamentoRoute
@@ -473,6 +482,7 @@ export interface FileRouteTypes {
     | '/rh/organograma'
     | '/rh/pdi'
     | '/rh/people-analytics'
+    | '/rh/portal'
     | '/rh/ranking'
     | '/rh/reconhecimentos'
     | '/rh/recrutamento'
@@ -520,6 +530,7 @@ export interface FileRouteTypes {
     | '/rh/organograma'
     | '/rh/pdi'
     | '/rh/people-analytics'
+    | '/rh/portal'
     | '/rh/ranking'
     | '/rh/reconhecimentos'
     | '/rh/recrutamento'
@@ -568,6 +579,7 @@ export interface FileRouteTypes {
     | '/rh/organograma'
     | '/rh/pdi'
     | '/rh/people-analytics'
+    | '/rh/portal'
     | '/rh/ranking'
     | '/rh/reconhecimentos'
     | '/rh/recrutamento'
@@ -750,6 +762,13 @@ declare module '@tanstack/react-router' {
       path: '/ranking'
       fullPath: '/rh/ranking'
       preLoaderRoute: typeof RhRankingRouteImport
+      parentRoute: typeof RhRoute
+    }
+    '/rh/portal': {
+      id: '/rh/portal'
+      path: '/portal'
+      fullPath: '/rh/portal'
+      preLoaderRoute: typeof RhPortalRouteImport
       parentRoute: typeof RhRoute
     }
     '/rh/people-analytics': {
@@ -959,6 +978,7 @@ interface RhRouteChildren {
   RhOrganogramaRoute: typeof RhOrganogramaRoute
   RhPdiRoute: typeof RhPdiRoute
   RhPeopleAnalyticsRoute: typeof RhPeopleAnalyticsRoute
+  RhPortalRoute: typeof RhPortalRoute
   RhRankingRoute: typeof RhRankingRoute
   RhReconhecimentosRoute: typeof RhReconhecimentosRoute
   RhRecrutamentoRoute: typeof RhRecrutamentoRoute
@@ -991,6 +1011,7 @@ const RhRouteChildren: RhRouteChildren = {
   RhOrganogramaRoute: RhOrganogramaRoute,
   RhPdiRoute: RhPdiRoute,
   RhPeopleAnalyticsRoute: RhPeopleAnalyticsRoute,
+  RhPortalRoute: RhPortalRoute,
   RhRankingRoute: RhRankingRoute,
   RhReconhecimentosRoute: RhReconhecimentosRoute,
   RhRecrutamentoRoute: RhRecrutamentoRoute,
@@ -1022,3 +1043,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
