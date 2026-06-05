@@ -170,6 +170,8 @@ function KpiDetailPage() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
+
   );
 }
