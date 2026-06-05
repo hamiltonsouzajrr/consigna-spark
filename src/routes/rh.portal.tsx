@@ -27,12 +27,7 @@ import { formatDate, brl } from "@/lib/rh/mock";
 import { portalQueryOptions } from "@/lib/rh/portal";
 
 export const Route = createFileRoute("/rh/portal")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(portalQueryOptions()),
   component: Portal,
-  errorComponent: ({ error }) => (
-    <div role="alert" className="p-6 text-sm text-destructive">{error.message}</div>
-  ),
-  notFoundComponent: () => <div className="p-6 text-sm">Colaborador não encontrado.</div>,
 });
 
 const atalhos = [
