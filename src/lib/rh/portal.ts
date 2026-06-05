@@ -238,9 +238,17 @@ export function computeKpiDetail(key: KpiKey, period: PeriodKey, colaboradorId?:
 }
 
 export async function fetchKpiDetail(key: KpiKey, period: PeriodKey, colaboradorId?: string): Promise<KpiDetail> {
-  // TODO(supabase): replace with a createServerFn reading the employee's
-  // vacation/timebank/payroll/benefit records scoped to auth.uid().
-  return computeKpiDetail(key, period, colaboradorId);
+  // Reads real metrics/history from Supabase via a server function. Falls back
+  // to the deterministic mock computation if the backend call fails (e.g. empty
+  // tables in a fresh environment) so the detail screen never blanks out.
+  const { fetchKpiDetailFromDb } = await import("./portal.functions");
+  try {
+    return await fetchKpiDetailFromDb({
+      data: { kpi: key, period, employeeId: colaboradorId },
+    });
+  } catch {
+    return computeKpiDetail(key, period, colaboradorId);
+  }
 }
 
 export const kpiDetailQueryOptions = (key: KpiKey, period: PeriodKey, colaboradorId?: string) =>
