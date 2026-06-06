@@ -86,10 +86,10 @@ export function RhLayout({ children }: { children: ReactNode }) {
                 key={n.to}
                 to={n.to}
                 className={cn(
-                  "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition",
+                  "flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
                   active
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ? "bg-gradient-to-r from-primary to-blue-500 text-primary-foreground shadow-sm shadow-primary/25"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground active:scale-[0.98]",
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
