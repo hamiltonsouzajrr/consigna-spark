@@ -41,6 +41,8 @@ function AcessosPage() {
   const queryClient = useQueryClient();
   const fetchUsers = useServerFn(listRhUsers);
   const saveAccess = useServerFn(setRhUserAccess);
+  const fetchEmployees = useServerFn(listRhEmployees);
+  const linkEmployee = useServerFn(linkEmployeeUser);
 
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -52,6 +54,13 @@ function AcessosPage() {
     enabled: isAdmin,
   });
 
+  const employeesQuery = useQuery({
+    queryKey: ["rh", "admin", "employees"],
+    queryFn: () => fetchEmployees(),
+    enabled: isAdmin,
+  });
+
+  const employees = employeesQuery.data ?? [];
   const users = usersQuery.data ?? [];
   const selected = useMemo(
     () => users.find((u) => u.id === selectedId) ?? null,
@@ -71,6 +80,17 @@ function AcessosPage() {
       queryClient.invalidateQueries({ queryKey: ["rh", "my-access"] });
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao salvar."),
+  });
+
+  const linkMutation = useMutation({
+    mutationFn: (vars: { userId: string; employeeId: string | null }) =>
+      linkEmployee({ data: vars }),
+    onSuccess: () => {
+      toast.success("Colaborador vinculado.");
+      queryClient.invalidateQueries({ queryKey: ["rh", "admin", "users"] });
+      queryClient.invalidateQueries({ queryKey: ["rh", "admin", "employees"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao vincular."),
   });
 
   if (accessLoading) {
