@@ -10,6 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useRhAccess } from "@/hooks/use-rh-access";
+import { NotificationBell } from "@/components/rh/NotificationBell";
 
 export const rhNav = [
   { to: "/rh/dashboard", label: "Dashboard RH", icon: LayoutDashboard },
