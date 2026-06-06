@@ -100,6 +100,9 @@ export function RhLayout({ children }: { children: ReactNode }) {
         </nav>
       </aside>
       <div className="min-w-0 flex-1">
+        <div className="mb-4 flex justify-end">
+          <NotificationBell />
+        </div>
         {denied ? (
           <div className="flex flex-col items-center justify-center gap-3 rounded-xl border bg-card py-20 text-center">
             <Lock className="h-10 w-10 text-muted-foreground" />
@@ -112,6 +115,7 @@ export function RhLayout({ children }: { children: ReactNode }) {
           children
         )}
       </div>
+
     </div>
   );
 }
