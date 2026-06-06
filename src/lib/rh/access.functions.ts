@@ -1,7 +1,10 @@
 // Server functions for managing per-tab RH access.
 // - getMyRhAccess: returns the current user's allowed RH tabs (admins get all).
-// - listRhUsers: admin-only; lists registered users and their granted tabs.
-// - setRhUserAccess: admin-only; replaces the set of tabs granted to a user.
+// - listRhUsers: admin-only; lists registered users, their granted tabs and linked collaborator.
+// - setRhUserAccess: admin-only; replaces the set of tabs granted to a user (+ notifies them).
+// - listRhEmployees: admin-only; lists collaborators for linking.
+// - linkEmployeeUser: admin-only; links/unlinks a collaborator to a user account.
+// - getMyNotifications / markNotificationsRead: in-app notification bell.
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -37,7 +40,20 @@ export const getMyRhAccess = createServerFn({ method: "GET" })
     return { isAdmin: false, tabs: (data ?? []).map((r) => r.tab_key as string) };
   });
 
-export type RhUserAccess = { id: string; email: string; tabs: string[] };
+export type RhEmployee = {
+  id: string;
+  full_name: string;
+  job_title: string | null;
+  department: string | null;
+  user_id: string | null;
+};
+
+export type RhUserAccess = {
+  id: string;
+  email: string;
+  tabs: string[];
+  employee: { id: string; full_name: string } | null;
+};
 
 export const listRhUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -58,6 +74,10 @@ export const listRhUsers = createServerFn({ method: "GET" })
       .select("user_id, tab_key");
     if (grantsErr) throw new Error(grantsErr.message);
 
+    const { data: emps } = await supabaseAdmin
+      .from("rh_employees")
+      .select("id, full_name, user_id");
+
     const byUser = new Map<string, string[]>();
     for (const g of grants ?? []) {
       const list = byUser.get(g.user_id as string) ?? [];
@@ -65,11 +85,66 @@ export const listRhUsers = createServerFn({ method: "GET" })
       byUser.set(g.user_id as string, list);
     }
 
+    const empByUser = new Map<string, { id: string; full_name: string }>();
+    for (const e of (emps ?? []) as any[]) {
+      if (e.user_id) empByUser.set(e.user_id as string, { id: e.id, full_name: e.full_name });
+    }
+
     return usersData.users.map((u) => ({
       id: u.id,
       email: u.email ?? "(sem e-mail)",
       tabs: byUser.get(u.id) ?? [],
+      employee: empByUser.get(u.id) ?? null,
     }));
+  });
+
+export const listRhEmployees = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<RhEmployee[]> => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("rh_employees")
+      .select("id, full_name, job_title, department, user_id")
+      .order("full_name");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as any as RhEmployee[];
+  });
+
+export const linkEmployeeUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        employeeId: z.string().uuid().nullable(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Clear any previous collaborator linked to this user (1:1 link).
+    const { error: clearErr } = await supabaseAdmin
+      .from("rh_employees")
+      .update({ user_id: null } as any)
+      .eq("user_id", data.userId);
+    if (clearErr) throw new Error(clearErr.message);
+
+    if (data.employeeId) {
+      const { error } = await supabaseAdmin
+        .from("rh_employees")
+        .update({ user_id: data.userId } as any)
+        .eq("id", data.employeeId);
+      if (error) throw new Error(error.message);
+    }
+
+    return { ok: true };
   });
 
 export const setRhUserAccess = createServerFn({ method: "POST" })
@@ -101,5 +176,51 @@ export const setRhUserAccess = createServerFn({ method: "POST" })
       if (insErr) throw new Error(insErr.message);
     }
 
+    // Notify the affected user (in-app bell).
+    await supabaseAdmin.from("rh_notifications").insert({
+      user_id: data.userId,
+      title: "Seus acessos ao RH foram atualizados",
+      body:
+        data.tabs.length > 0
+          ? `Você tem acesso a ${data.tabs.length} ${data.tabs.length === 1 ? "aba" : "abas"} do RH.`
+          : "Seu acesso às abas do RH foi removido.",
+    } as any);
+
+    return { ok: true };
+  });
+
+export type RhNotification = {
+  id: string;
+  title: string;
+  body: string | null;
+  read: boolean;
+  created_at: string;
+};
+
+export const getMyNotifications = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<RhNotification[]> => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("rh_notifications")
+      .select("id, title, body, read, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (error) throw new Error(error.message);
+    return (data ?? []) as any as RhNotification[];
+  });
+
+export const markNotificationsRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ ids: z.array(z.string().uuid()).max(100).optional() }).parse(data ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    let q = supabase.from("rh_notifications").update({ read: true } as any).eq("user_id", userId);
+    if (data.ids && data.ids.length) q = q.in("id", data.ids);
+    const { error } = await q;
+    if (error) throw new Error(error.message);
     return { ok: true };
   });

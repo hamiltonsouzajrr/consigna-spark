@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Search, ShieldCheck, Save, Loader2, UserCog } from "lucide-react";
+import { Search, ShieldCheck, Save, Loader2, UserCog, IdCard } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,9 +12,22 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RhPageHeader, rhNav } from "@/components/rh/RhLayout";
 import { useRhAccess } from "@/hooks/use-rh-access";
-import { listRhUsers, setRhUserAccess, type RhUserAccess } from "@/lib/rh/access.functions";
+import {
+  listRhUsers,
+  setRhUserAccess,
+  listRhEmployees,
+  linkEmployeeUser,
+  type RhUserAccess,
+} from "@/lib/rh/access.functions";
 
 export const Route = createFileRoute("/rh/acessos")({
   component: AcessosPage,
@@ -28,6 +41,8 @@ function AcessosPage() {
   const queryClient = useQueryClient();
   const fetchUsers = useServerFn(listRhUsers);
   const saveAccess = useServerFn(setRhUserAccess);
+  const fetchEmployees = useServerFn(listRhEmployees);
+  const linkEmployee = useServerFn(linkEmployeeUser);
 
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -39,6 +54,13 @@ function AcessosPage() {
     enabled: isAdmin,
   });
 
+  const employeesQuery = useQuery({
+    queryKey: ["rh", "admin", "employees"],
+    queryFn: () => fetchEmployees(),
+    enabled: isAdmin,
+  });
+
+  const employees = employeesQuery.data ?? [];
   const users = usersQuery.data ?? [];
   const selected = useMemo(
     () => users.find((u) => u.id === selectedId) ?? null,
@@ -58,6 +80,17 @@ function AcessosPage() {
       queryClient.invalidateQueries({ queryKey: ["rh", "my-access"] });
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao salvar."),
+  });
+
+  const linkMutation = useMutation({
+    mutationFn: (vars: { userId: string; employeeId: string | null }) =>
+      linkEmployee({ data: vars }),
+    onSuccess: () => {
+      toast.success("Colaborador vinculado.");
+      queryClient.invalidateQueries({ queryKey: ["rh", "admin", "users"] });
+      queryClient.invalidateQueries({ queryKey: ["rh", "admin", "employees"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao vincular."),
   });
 
   if (accessLoading) {
@@ -136,11 +169,19 @@ function AcessosPage() {
                           : "hover:bg-muted"
                       }`}
                     >
-                      <span className="min-w-0 flex-1 truncate">{u.email}</span>
+                      <span className="min-w-0 flex-1 truncate">
+                        {u.employee ? u.employee.full_name : u.email}
+                        {u.employee && (
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {u.email}
+                          </span>
+                        )}
+                      </span>
                       <Badge variant="secondary" className="shrink-0">
                         {u.tabs.length}
                       </Badge>
                     </button>
+
                   ))
                 ) : (
                   <p className="px-3 py-6 text-center text-sm text-muted-foreground">
@@ -167,6 +208,43 @@ function AcessosPage() {
               </p>
             ) : (
               <>
+                <div className="mb-4 rounded-lg border bg-muted/30 p-3">
+                  <label className="flex items-center gap-2 text-sm font-medium">
+                    <IdCard className="h-4 w-4 text-muted-foreground" />
+                    Colaborador vinculado
+                  </label>
+                  <p className="mb-2 mt-1 text-xs text-muted-foreground">
+                    Vincule este acesso a um colaborador cadastrado.
+                  </p>
+                  <Select
+                    value={selected.employee?.id ?? "none"}
+                    disabled={linkMutation.isPending}
+                    onValueChange={(v) =>
+                      linkMutation.mutate({
+                        userId: selected.id,
+                        employeeId: v === "none" ? null : v,
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar colaborador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem vínculo</SelectItem>
+                      {employees.map((e) => (
+                        <SelectItem
+                          key={e.id}
+                          value={e.id}
+                          disabled={!!e.user_id && e.user_id !== selected.id}
+                        >
+                          {e.full_name}
+                          {e.job_title ? ` — ${e.job_title}` : ""}
+                          {e.user_id && e.user_id !== selected.id ? " (já vinculado)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <Button
                     size="sm"
@@ -183,6 +261,7 @@ function AcessosPage() {
                   </span>
                 </div>
                 <Separator className="mb-4" />
+
                 <div className="grid gap-2 sm:grid-cols-2">
                   {GRANTABLE.map((n) => {
                     const Icon = n.icon;
