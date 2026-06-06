@@ -303,6 +303,7 @@ export type Database = {
           job_title: string | null
           salary: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -312,6 +313,7 @@ export type Database = {
           job_title?: string | null
           salary?: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -321,6 +323,7 @@ export type Database = {
           job_title?: string | null
           salary?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -361,6 +364,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rh_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          read: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          read?: boolean
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          read?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       rh_tab_access: {
         Row: {
