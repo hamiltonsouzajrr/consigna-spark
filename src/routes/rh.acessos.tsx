@@ -169,11 +169,19 @@ function AcessosPage() {
                           : "hover:bg-muted"
                       }`}
                     >
-                      <span className="min-w-0 flex-1 truncate">{u.email}</span>
+                      <span className="min-w-0 flex-1 truncate">
+                        {u.employee ? u.employee.full_name : u.email}
+                        {u.employee && (
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {u.email}
+                          </span>
+                        )}
+                      </span>
                       <Badge variant="secondary" className="shrink-0">
                         {u.tabs.length}
                       </Badge>
                     </button>
+
                   ))
                 ) : (
                   <p className="px-3 py-6 text-center text-sm text-muted-foreground">
