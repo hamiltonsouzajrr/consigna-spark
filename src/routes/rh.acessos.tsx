@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Search, ShieldCheck, Save, Loader2, UserCog } from "lucide-react";
+import { Search, ShieldCheck, Save, Loader2, UserCog, IdCard } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,9 +12,22 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RhPageHeader, rhNav } from "@/components/rh/RhLayout";
 import { useRhAccess } from "@/hooks/use-rh-access";
-import { listRhUsers, setRhUserAccess, type RhUserAccess } from "@/lib/rh/access.functions";
+import {
+  listRhUsers,
+  setRhUserAccess,
+  listRhEmployees,
+  linkEmployeeUser,
+  type RhUserAccess,
+} from "@/lib/rh/access.functions";
 
 export const Route = createFileRoute("/rh/acessos")({
   component: AcessosPage,
