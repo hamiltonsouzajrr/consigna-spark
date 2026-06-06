@@ -208,6 +208,43 @@ function AcessosPage() {
               </p>
             ) : (
               <>
+                <div className="mb-4 rounded-lg border bg-muted/30 p-3">
+                  <label className="flex items-center gap-2 text-sm font-medium">
+                    <IdCard className="h-4 w-4 text-muted-foreground" />
+                    Colaborador vinculado
+                  </label>
+                  <p className="mb-2 mt-1 text-xs text-muted-foreground">
+                    Vincule este acesso a um colaborador cadastrado.
+                  </p>
+                  <Select
+                    value={selected.employee?.id ?? "none"}
+                    disabled={linkMutation.isPending}
+                    onValueChange={(v) =>
+                      linkMutation.mutate({
+                        userId: selected.id,
+                        employeeId: v === "none" ? null : v,
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar colaborador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem vínculo</SelectItem>
+                      {employees.map((e) => (
+                        <SelectItem
+                          key={e.id}
+                          value={e.id}
+                          disabled={!!e.user_id && e.user_id !== selected.id}
+                        >
+                          {e.full_name}
+                          {e.job_title ? ` — ${e.job_title}` : ""}
+                          {e.user_id && e.user_id !== selected.id ? " (já vinculado)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <Button
                     size="sm"
@@ -224,6 +261,7 @@ function AcessosPage() {
                   </span>
                 </div>
                 <Separator className="mb-4" />
+
                 <div className="grid gap-2 sm:grid-cols-2">
                   {GRANTABLE.map((n) => {
                     const Icon = n.icon;
