@@ -137,6 +137,63 @@ export const verifyWaAccount = createServerFn({ method: "POST" })
     return result;
   });
 
+// Reads the live webhook/subscription status of an account from the Graph API.
+export const getWaWebhookStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: account, error } = await supabase
+      .from("wa_accounts")
+      .select("id, phone_number_id, business_account_id, access_token")
+      .eq("id", data.id)
+      .single();
+    if (error || !account) throw new Error("Conta não encontrada.");
+
+    const status: {
+      businessAccountId: string | null;
+      hasBusinessId: boolean;
+      subscribed: boolean;
+      subscribedFields: string[];
+      reason: string | null;
+    } = {
+      businessAccountId: account.business_account_id ?? null,
+      hasBusinessId: !!account.business_account_id,
+      subscribed: false,
+      subscribedFields: [],
+      reason: null,
+    };
+
+    if (!account.business_account_id) {
+      status.reason =
+        "Business Account ID não informado — necessário para a assinatura do webhook.";
+      return status;
+    }
+
+    const res = await fetch(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${account.business_account_id}/subscribed_apps`,
+      { headers: { Authorization: `Bearer ${account.access_token}` } },
+    );
+    const json: any = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      status.reason =
+        json?.error?.message ?? `Erro ao consultar a assinatura (HTTP ${res.status}).`;
+      return status;
+    }
+
+    const apps = Array.isArray(json?.data) ? json.data : [];
+    status.subscribed = apps.length > 0;
+    if (status.subscribed) {
+      const fields = apps[0]?.subscribed_fields ?? apps[0]?.whatsapp_business_api_data?.subscribed_fields;
+      if (Array.isArray(fields)) status.subscribedFields = fields;
+    } else {
+      status.reason = "Nenhum app assinado a este WABA. Clique em Verificar para configurar.";
+    }
+    return status;
+  });
+
+
+
 
 export const updateWaAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
