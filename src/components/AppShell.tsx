@@ -47,6 +47,12 @@ const navSections: NavSection[] = [
       { to: "/rh", label: "RH", icon: Users },
     ],
   },
+  {
+    section: "Atendimento",
+    items: [
+      { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
+    ],
+  },
 ];
 
 
