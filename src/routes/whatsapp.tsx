@@ -13,6 +13,10 @@ import {
   Power,
   ExternalLink,
   CheckCircle2,
+  Wifi,
+  WifiOff,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
