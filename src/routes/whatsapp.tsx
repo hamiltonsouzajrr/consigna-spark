@@ -390,7 +390,18 @@ function AccountsDialog({ accounts, triggerLabel }: { accounts: any[]; triggerLa
                     {a.display_phone || a.phone_number_id}
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1 text-xs"
+                    disabled={verifyingId === a.id}
+                    onClick={() => runVerify(a.id)}
+                    title="Validar credenciais e configurar o webhook"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {verifyingId === a.id ? "Validando..." : "Verificar"}
+                  </Button>
                   <div className="flex items-center gap-1.5">
                     <Power className="h-3.5 w-3.5 text-muted-foreground" />
                     <Switch
