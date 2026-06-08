@@ -310,6 +310,10 @@ function AccountsDialog({ accounts, triggerLabel }: { accounts: any[]; triggerLa
   });
   const [saving, setSaving] = useState(false);
 
+  const webhookUrl =
+    (typeof window !== "undefined" ? window.location.origin : "https://consigna-spark.lovable.app") +
+    "/api/public/whatsapp/webhook";
+
   const refresh = () => qc.invalidateQueries({ queryKey: ["wa-accounts"] });
 
   const handleAdd = async () => {
