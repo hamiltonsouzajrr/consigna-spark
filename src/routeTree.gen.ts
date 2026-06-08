@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WhatsappRouteImport } from './routes/whatsapp'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SimulacaoAlagoasRouteImport } from './routes/simulacao-alagoas'
@@ -61,6 +62,11 @@ import { Route as RhPortalKpiRouteImport } from './routes/rh.portal.$kpi'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp.webhook'
 
+const WhatsappRoute = WhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
   path: '/upload',
@@ -335,6 +341,7 @@ export interface FileRoutesByFullPath {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/whatsapp': typeof WhatsappRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -387,6 +394,7 @@ export interface FileRoutesByTo {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/whatsapp': typeof WhatsappRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -440,6 +448,7 @@ export interface FileRoutesById {
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/whatsapp': typeof WhatsappRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -495,6 +504,7 @@ export interface FileRouteTypes {
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/whatsapp'
     | '/rh/acessos'
     | '/rh/auditoria'
     | '/rh/avaliacoes'
@@ -547,6 +557,7 @@ export interface FileRouteTypes {
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/whatsapp'
     | '/rh/acessos'
     | '/rh/auditoria'
     | '/rh/avaliacoes'
@@ -599,6 +610,7 @@ export interface FileRouteTypes {
     | '/simulacao-alagoas'
     | '/sitemap.xml'
     | '/upload'
+    | '/whatsapp'
     | '/rh/acessos'
     | '/rh/auditoria'
     | '/rh/avaliacoes'
@@ -653,11 +665,19 @@ export interface RootRouteChildren {
   SimulacaoAlagoasRoute: typeof SimulacaoAlagoasRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadRoute: typeof UploadRoute
+  WhatsappRoute: typeof WhatsappRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/whatsapp': {
+      id: '/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof WhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/upload': {
       id: '/upload'
       path: '/upload'
@@ -1131,6 +1151,7 @@ const rootRouteChildren: RootRouteChildren = {
   SimulacaoAlagoasRoute: SimulacaoAlagoasRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadRoute: UploadRoute,
+  WhatsappRoute: WhatsappRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport
