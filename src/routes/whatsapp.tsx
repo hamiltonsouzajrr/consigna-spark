@@ -46,6 +46,7 @@ import {
   addWaAccount,
   deleteWaAccount,
   updateWaAccount,
+  verifyWaAccount,
   listConversations,
   listMessages,
   sendWaMessage,
