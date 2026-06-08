@@ -333,6 +333,7 @@ function AccountsDialog({ accounts, triggerLabel }: { accounts: any[]; triggerLa
         );
       }
       refresh();
+      qc.invalidateQueries({ queryKey: ["wa-webhook-status", id] });
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao validar a conta.");
     } finally {
