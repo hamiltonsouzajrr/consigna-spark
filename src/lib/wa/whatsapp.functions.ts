@@ -74,7 +74,12 @@ export const updateWaAccount = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      name?: string;
+      display_phone?: string;
+      active?: boolean;
+      access_token?: string;
+    } = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.display_phone !== undefined) patch.display_phone = data.display_phone;
     if (data.active !== undefined) patch.active = data.active;

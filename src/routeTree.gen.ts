@@ -59,6 +59,7 @@ import { Route as RhAcessosRouteImport } from './routes/rh.acessos'
 import { Route as RhPortalIndexRouteImport } from './routes/rh.portal.index'
 import { Route as RhPortalKpiRouteImport } from './routes/rh.portal.$kpi'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
+import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp.webhook'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -310,6 +311,12 @@ const RhColaboradoresIdRoute = RhColaboradoresIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => RhColaboradoresRoute,
 } as any)
+const ApiPublicWhatsappWebhookRoute =
+  ApiPublicWhatsappWebhookRouteImport.update({
+    id: '/api/public/whatsapp/webhook',
+    path: '/api/public/whatsapp/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -362,6 +369,7 @@ export interface FileRoutesByFullPath {
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof RhPortalKpiRoute
   '/rh/portal/': typeof RhPortalIndexRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -412,6 +420,7 @@ export interface FileRoutesByTo {
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof RhPortalKpiRoute
   '/rh/portal': typeof RhPortalIndexRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -465,6 +474,7 @@ export interface FileRoutesById {
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof RhPortalKpiRoute
   '/rh/portal/': typeof RhPortalIndexRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -519,6 +529,7 @@ export interface FileRouteTypes {
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
     | '/rh/portal/'
+    | '/api/public/whatsapp/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -569,6 +580,7 @@ export interface FileRouteTypes {
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
     | '/rh/portal'
+    | '/api/public/whatsapp/webhook'
   id:
     | '__root__'
     | '/'
@@ -621,6 +633,7 @@ export interface FileRouteTypes {
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
     | '/rh/portal/'
+    | '/api/public/whatsapp/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -640,6 +653,7 @@ export interface RootRouteChildren {
   SimulacaoAlagoasRoute: typeof SimulacaoAlagoasRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadRoute: typeof UploadRoute
+  ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -994,6 +1008,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhColaboradoresIdRouteImport
       parentRoute: typeof RhColaboradoresRoute
     }
+    '/api/public/whatsapp/webhook': {
+      id: '/api/public/whatsapp/webhook'
+      path: '/api/public/whatsapp/webhook'
+      fullPath: '/api/public/whatsapp/webhook'
+      preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1110,6 +1131,7 @@ const rootRouteChildren: RootRouteChildren = {
   SimulacaoAlagoasRoute: SimulacaoAlagoasRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadRoute: UploadRoute,
+  ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
