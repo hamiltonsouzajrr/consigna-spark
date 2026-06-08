@@ -592,8 +592,9 @@ function AccountsDialog({ accounts, triggerLabel }: { accounts: any[]; triggerLa
                 <div className="w-full space-y-1.5">
                   <p className="text-sm font-medium">Configure o Webhook (receber mensagens)</p>
                   <p className="text-xs text-muted-foreground">
-                    Em <strong>WhatsApp → Configuração</strong>, cole a URL abaixo, use o <em>token de verificação</em> e assine o campo <strong>messages</strong>.
+                    Em <strong>WhatsApp → Configuração</strong>, cole a <strong>URL de callback</strong> e o <strong>token de verificação</strong> abaixo, depois assine o campo <strong>messages</strong>.
                   </p>
+                  <p className="text-[11px] font-medium text-muted-foreground">URL de callback</p>
                   <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-2 py-1.5">
                     <code className="flex-1 truncate text-[11px]">{webhookUrl}</code>
                     <Button
@@ -604,6 +605,25 @@ function AccountsDialog({ accounts, triggerLabel }: { accounts: any[]; triggerLa
                       onClick={() => {
                         navigator.clipboard.writeText(webhookUrl);
                         toast.success("URL copiada.");
+                      }}
+                    >
+                      Copiar
+                    </Button>
+                  </div>
+                  <p className="text-[11px] font-medium text-muted-foreground">Token de verificação</p>
+                  <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-2 py-1.5">
+                    <code className="flex-1 truncate text-[11px]">
+                      {verifyToken || "••••••••"}
+                    </code>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      disabled={!verifyToken}
+                      onClick={() => {
+                        navigator.clipboard.writeText(verifyToken);
+                        toast.success("Token copiado.");
                       }}
                     >
                       Copiar
