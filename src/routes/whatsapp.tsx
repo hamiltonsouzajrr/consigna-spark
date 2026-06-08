@@ -390,29 +390,124 @@ function AccountsDialog({ accounts, triggerLabel }: { accounts: any[]; triggerLa
           </div>
         )}
 
-        <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
-          <p className="text-sm font-medium">Nova conta</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label className="text-xs">Nome / Identificação</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Comercial AL" />
+        <div className="space-y-4 rounded-lg border bg-muted/20 p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium">Conectar novo número</p>
+            <a
+              href="https://developers.facebook.com/apps/"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:underline"
+            >
+              Abrir Meta for Developers <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+
+          <ol className="space-y-3">
+            <li className="rounded-md border bg-card p-3">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-bold text-white">1</span>
+                <div className="space-y-1.5">
+                  <p className="text-sm font-medium">Crie um app e ative o WhatsApp</p>
+                  <p className="text-xs text-muted-foreground">
+                    No painel da Meta, crie um app do tipo <strong>Empresa</strong> e adicione o produto <strong>WhatsApp</strong>.
+                  </p>
+                  <a
+                    href="https://developers.facebook.com/apps/creation/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:underline"
+                  >
+                    Criar app <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+            </li>
+            <li className="rounded-md border bg-card p-3">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-bold text-white">2</span>
+                <div className="space-y-1.5">
+                  <p className="text-sm font-medium">Copie o Phone Number ID e o Token</p>
+                  <p className="text-xs text-muted-foreground">
+                    Em <strong>WhatsApp → Configuração da API</strong>, copie o <strong>Phone Number ID</strong>. Para envios contínuos,
+                    gere um <strong>token permanente</strong> em um usuário do sistema (Business Settings).
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <a
+                      href="https://developers.facebook.com/apps/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:underline"
+                    >
+                      Configuração da API <ExternalLink className="h-3 w-3" />
+                    </a>
+                    <a
+                      href="https://business.facebook.com/settings/system-users"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:underline"
+                    >
+                      Gerar token permanente <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </li>
+            <li className="rounded-md border bg-card p-3">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-bold text-white">3</span>
+                <div className="w-full space-y-1.5">
+                  <p className="text-sm font-medium">Configure o Webhook (receber mensagens)</p>
+                  <p className="text-xs text-muted-foreground">
+                    Em <strong>WhatsApp → Configuração</strong>, cole a URL abaixo, use o <em>token de verificação</em> e assine o campo <strong>messages</strong>.
+                  </p>
+                  <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-2 py-1.5">
+                    <code className="flex-1 truncate text-[11px]">{webhookUrl}</code>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => {
+                        navigator.clipboard.writeText(webhookUrl);
+                        toast.success("URL copiada.");
+                      }}
+                    >
+                      Copiar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </li>
+          </ol>
+
+          <div className="space-y-3 border-t pt-4">
+            <p className="text-sm font-medium">Preencha com os dados copiados</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Nome / Identificação</Label>
+                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Comercial AL" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Número exibido</Label>
+                <Input value={form.display_phone} onChange={(e) => setForm({ ...form, display_phone: e.target.value })} placeholder="+55 82 9...." />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Phone Number ID</Label>
+                <Input value={form.phone_number_id} onChange={(e) => setForm({ ...form, phone_number_id: e.target.value })} placeholder="1234567890" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Business Account ID</Label>
+                <Input value={form.business_account_id} onChange={(e) => setForm({ ...form, business_account_id: e.target.value })} placeholder="opcional" />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <Label className="text-xs">Token de acesso (permanente)</Label>
+                <Input type="password" value={form.access_token} onChange={(e) => setForm({ ...form, access_token: e.target.value })} placeholder="EAAG..." />
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Número exibido</Label>
-              <Input value={form.display_phone} onChange={(e) => setForm({ ...form, display_phone: e.target.value })} placeholder="+55 82 9...." />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Phone Number ID</Label>
-              <Input value={form.phone_number_id} onChange={(e) => setForm({ ...form, phone_number_id: e.target.value })} placeholder="1234567890" />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Business Account ID</Label>
-              <Input value={form.business_account_id} onChange={(e) => setForm({ ...form, business_account_id: e.target.value })} placeholder="opcional" />
-            </div>
-            <div className="space-y-1 sm:col-span-2">
-              <Label className="text-xs">Token de acesso (permanente)</Label>
-              <Input type="password" value={form.access_token} onChange={(e) => setForm({ ...form, access_token: e.target.value })} placeholder="EAAG..." />
-            </div>
+            <p className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              <CheckCircle2 className="h-3 w-3 text-emerald-600" /> As credenciais são armazenadas com segurança no servidor.
+            </p>
           </div>
         </div>
 
