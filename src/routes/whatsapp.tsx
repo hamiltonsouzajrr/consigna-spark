@@ -427,9 +427,15 @@ function AccountsDialog({ accounts, triggerLabel }: { accounts: any[]; triggerLa
   const [saving, setSaving] = useState(false);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
+  const webhookConfigFn = useServerFn(getWaWebhookConfig);
+  const { data: webhookConfig } = useQuery({
+    queryKey: ["wa-webhook-config"],
+    queryFn: () => webhookConfigFn(),
+    staleTime: 5 * 60 * 1000,
+  });
   const webhookUrl =
-    (typeof window !== "undefined" ? window.location.origin : "https://consigna-spark.lovable.app") +
-    "/api/public/whatsapp/webhook";
+    webhookConfig?.webhookUrl ?? "https://consigna-spark.lovable.app/api/public/whatsapp/webhook";
+  const verifyToken = webhookConfig?.verifyToken ?? "";
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["wa-accounts"] });
 
