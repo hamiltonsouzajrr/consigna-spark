@@ -361,7 +361,7 @@ function AccountRow({
             className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
             title="Atualizar status"
           >
-            <RefreshCw className={cn("h-3 w-3", statusQ.isფetching && "animate-spin")} />
+            <RefreshCw className={cn("h-3 w-3", statusQ.isFetching && "animate-spin")} />
             Atualizar
           </button>
         </div>
