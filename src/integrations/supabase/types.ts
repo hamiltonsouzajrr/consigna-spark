@@ -505,6 +505,134 @@ export type Database = {
         }
         Relationships: []
       }
+      wa_accounts: {
+        Row: {
+          access_token: string
+          active: boolean
+          business_account_id: string | null
+          created_at: string
+          display_phone: string | null
+          id: string
+          name: string
+          phone_number_id: string
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          active?: boolean
+          business_account_id?: string | null
+          created_at?: string
+          display_phone?: string | null
+          id?: string
+          name: string
+          phone_number_id: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          active?: boolean
+          business_account_id?: string | null
+          created_at?: string
+          display_phone?: string | null
+          id?: string
+          name?: string
+          phone_number_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wa_contacts: {
+        Row: {
+          account_id: string
+          created_at: string
+          id: string
+          last_message_at: string | null
+          name: string | null
+          unread_count: number
+          updated_at: string
+          wa_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          name?: string | null
+          unread_count?: number
+          updated_at?: string
+          wa_id: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          name?: string | null
+          unread_count?: number
+          updated_at?: string
+          wa_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_contacts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "wa_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_messages: {
+        Row: {
+          account_id: string
+          body: string | null
+          contact_id: string
+          created_at: string
+          direction: string
+          id: string
+          sender_name: string | null
+          status: string
+          wa_message_id: string | null
+        }
+        Insert: {
+          account_id: string
+          body?: string | null
+          contact_id: string
+          created_at?: string
+          direction: string
+          id?: string
+          sender_name?: string | null
+          status?: string
+          wa_message_id?: string | null
+        }
+        Update: {
+          account_id?: string
+          body?: string | null
+          contact_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          sender_name?: string | null
+          status?: string
+          wa_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_messages_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "wa_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wa_messages_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "wa_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

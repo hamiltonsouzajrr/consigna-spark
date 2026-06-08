@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, FileText, QrCode, Menu, Users } from "lucide-react";
+import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, FileText, QrCode, Menu, Users, MessageCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +45,12 @@ const navSections: NavSection[] = [
     section: "Recursos Humanos",
     items: [
       { to: "/rh", label: "RH", icon: Users },
+    ],
+  },
+  {
+    section: "Atendimento",
+    items: [
+      { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
     ],
   },
 ];
