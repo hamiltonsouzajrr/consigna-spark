@@ -137,6 +137,29 @@ export const verifyWaAccount = createServerFn({ method: "POST" })
     return result;
   });
 
+// Returns the public webhook config Meta needs: the stable callback URL and the
+// verification token. The URL always points to the published domain so it stays
+// valid regardless of whether the user is on the preview or production build.
+export const getWaWebhookConfig = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { getRequestHost } = await import("@tanstack/react-start/server");
+    let host: string | null = null;
+    try {
+      host = getRequestHost();
+    } catch {
+      host = null;
+    }
+    // Prefer the stable published domain; fall back to the request host.
+    const isPreview = !host || host.includes("preview") || host.includes("lovableproject");
+    const origin = isPreview ? "https://consigna-spark.lovable.app" : `https://${host}`;
+    return {
+      webhookUrl: `${origin}/api/public/whatsapp/webhook`,
+      verifyToken: process.env.WHATSAPP_VERIFY_TOKEN ?? "",
+      subscribeField: "messages",
+    };
+  });
+
 // Reads the live webhook/subscription status of an account from the Graph API.
 export const getWaWebhookStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
