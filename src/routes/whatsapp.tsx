@@ -52,6 +52,7 @@ import {
   updateWaAccount,
   verifyWaAccount,
   getWaWebhookStatus,
+  getWaWebhookConfig,
   listConversations,
   listMessages,
   sendWaMessage,
