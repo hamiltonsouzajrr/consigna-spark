@@ -301,6 +301,7 @@ function AccountsDialog({ accounts, triggerLabel }: { accounts: any[]; triggerLa
   const add = useServerFn(addWaAccount);
   const del = useServerFn(deleteWaAccount);
   const upd = useServerFn(updateWaAccount);
+  const verify = useServerFn(verifyWaAccount);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -310,12 +311,34 @@ function AccountsDialog({ accounts, triggerLabel }: { accounts: any[]; triggerLa
     access_token: "",
   });
   const [saving, setSaving] = useState(false);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
   const webhookUrl =
     (typeof window !== "undefined" ? window.location.origin : "https://consigna-spark.lovable.app") +
     "/api/public/whatsapp/webhook";
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["wa-accounts"] });
+
+  const runVerify = async (id: string) => {
+    setVerifyingId(id);
+    try {
+      const r: any = await verify({ data: { id } });
+      if (r.webhookConfigured) {
+        toast.success(
+          `Conexão validada${r.displayPhone ? ` (${r.displayPhone})` : ""}. Webhook configurado automaticamente.`,
+        );
+      } else if (r.tokenValid) {
+        toast.warning(
+          `Token válido${r.displayPhone ? ` (${r.displayPhone})` : ""}, mas o webhook não foi configurado: ${r.warnings?.[0] ?? "verifique o Business Account ID."}`,
+        );
+      }
+      refresh();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao validar a conta.");
+    } finally {
+      setVerifyingId(null);
+    }
+  };
 
   const handleAdd = async () => {
     if (!form.name || !form.phone_number_id || !form.access_token) {
@@ -324,10 +347,11 @@ function AccountsDialog({ accounts, triggerLabel }: { accounts: any[]; triggerLa
     }
     setSaving(true);
     try {
-      await add({ data: form });
-      toast.success("Conta adicionada.");
+      const res: any = await add({ data: form });
+      toast.success("Conta adicionada. Validando conexão...");
       setForm({ name: "", phone_number_id: "", business_account_id: "", display_phone: "", access_token: "" });
       refresh();
+      if (res?.id) await runVerify(res.id);
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao adicionar conta.");
     } finally {
