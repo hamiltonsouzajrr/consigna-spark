@@ -48,16 +48,95 @@ export const addWaAccount = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("wa_accounts").insert({
-      name: data.name,
-      phone_number_id: data.phone_number_id,
-      business_account_id: data.business_account_id || null,
-      display_phone: data.display_phone || null,
-      access_token: data.access_token,
-    });
+    const { data: inserted, error } = await supabase
+      .from("wa_accounts")
+      .insert({
+        name: data.name,
+        phone_number_id: data.phone_number_id,
+        business_account_id: data.business_account_id || null,
+        display_phone: data.display_phone || null,
+        access_token: data.access_token,
+      })
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
-    return { ok: true };
+    return { ok: true, id: inserted?.id as string };
   });
+
+// Validates the account credentials against the Graph API and configures the
+// webhook automatically by subscribing the app to the WhatsApp Business Account.
+export const verifyWaAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: account, error } = await supabase
+      .from("wa_accounts")
+      .select("id, phone_number_id, business_account_id, access_token")
+      .eq("id", data.id)
+      .single();
+    if (error || !account) throw new Error("Conta não encontrada.");
+
+    const result: {
+      tokenValid: boolean;
+      displayPhone: string | null;
+      verifiedName: string | null;
+      webhookConfigured: boolean;
+      warnings: string[];
+    } = {
+      tokenValid: false,
+      displayPhone: null,
+      verifiedName: null,
+      webhookConfigured: false,
+      warnings: [],
+    };
+
+    // 1) Validate token + Phone Number ID by reading the phone number info.
+    const infoRes = await fetch(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${account.phone_number_id}?fields=display_phone_number,verified_name`,
+      { headers: { Authorization: `Bearer ${account.access_token}` } },
+    );
+    const info: any = await infoRes.json().catch(() => ({}));
+    if (!infoRes.ok) {
+      throw new Error(
+        info?.error?.message ?? "Token inválido ou Phone Number ID incorreto.",
+      );
+    }
+    result.tokenValid = true;
+    result.displayPhone = info?.display_phone_number ?? null;
+    result.verifiedName = info?.verified_name ?? null;
+
+    // 2) Configure webhook: subscribe the app to the WhatsApp Business Account.
+    if (account.business_account_id) {
+      const subRes = await fetch(
+        `https://graph.facebook.com/${GRAPH_VERSION}/${account.business_account_id}/subscribed_apps`,
+        { method: "POST", headers: { Authorization: `Bearer ${account.access_token}` } },
+      );
+      const sub: any = await subRes.json().catch(() => ({}));
+      if (subRes.ok && sub?.success) {
+        result.webhookConfigured = true;
+      } else {
+        result.warnings.push(
+          sub?.error?.message ??
+            "Não foi possível assinar o app ao WABA automaticamente. Verifique as permissões do token (whatsapp_business_management).",
+        );
+      }
+    } else {
+      result.warnings.push(
+        "Informe o Business Account ID para configurar o webhook automaticamente.",
+      );
+    }
+
+    // Persist any info we discovered.
+    const patch: { display_phone?: string } = {};
+    if (result.displayPhone) patch.display_phone = result.displayPhone;
+    if (Object.keys(patch).length > 0) {
+      await supabase.from("wa_accounts").update(patch).eq("id", account.id);
+    }
+
+    return result;
+  });
+
 
 export const updateWaAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
