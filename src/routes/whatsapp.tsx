@@ -11,6 +11,8 @@ import {
   Search,
   Trash2,
   Power,
+  ExternalLink,
+  CheckCircle2,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
