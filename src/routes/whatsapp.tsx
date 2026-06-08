@@ -13,6 +13,10 @@ import {
   Power,
   ExternalLink,
   CheckCircle2,
+  Wifi,
+  WifiOff,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
@@ -47,6 +51,7 @@ import {
   deleteWaAccount,
   updateWaAccount,
   verifyWaAccount,
+  getWaWebhookStatus,
   listConversations,
   listMessages,
   sendWaMessage,
@@ -296,6 +301,114 @@ function WhatsAppPage() {
   );
 }
 
+function AccountRow({
+  account,
+  verifying,
+  onVerify,
+  onToggle,
+  onDelete,
+}: {
+  account: any;
+  verifying: boolean;
+  onVerify: () => void;
+  onToggle: (v: boolean) => void | Promise<void>;
+  onDelete: () => void | Promise<void>;
+}) {
+  const fetchStatus = useServerFn(getWaWebhookStatus);
+  const statusQ = useQuery({
+    queryKey: ["wa-webhook-status", account.id],
+    queryFn: () => fetchStatus({ data: { id: account.id } }),
+  });
+  const s: any = statusQ.data;
+
+  return (
+    <div className="rounded-lg border p-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{account.name}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {account.display_phone || account.phone_number_id}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1 text-xs"
+            disabled={verifying}
+            onClick={onVerify}
+            title="Validar credenciais e configurar o webhook"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            {verifying ? "Validando..." : "Verificar"}
+          </Button>
+          <div className="flex items-center gap-1.5">
+            <Power className="h-3.5 w-3.5 text-muted-foreground" />
+            <Switch checked={account.active} onCheckedChange={onToggle} />
+          </div>
+          <Button variant="ghost" size="icon" className="text-destructive" onClick={onDelete}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="mt-3 space-y-1.5 rounded-md border bg-muted/30 p-2.5 text-xs">
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-medium text-muted-foreground">Status do webhook</span>
+          <button
+            type="button"
+            onClick={() => statusQ.refetch()}
+            className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+            title="Atualizar status"
+          >
+            <RefreshCw className={cn("h-3 w-3", statusQ.isFetching && "animate-spin")} />
+            Atualizar
+          </button>
+        </div>
+
+        {statusQ.isLoading ? (
+          <p className="text-muted-foreground">Consultando...</p>
+        ) : statusQ.isError ? (
+          <p className="inline-flex items-center gap-1 text-destructive">
+            <AlertTriangle className="h-3.5 w-3.5" /> Falha ao consultar o status.
+          </p>
+        ) : (
+          <>
+            <div className="flex items-center gap-1.5">
+              {s?.subscribed ? (
+                <span className="inline-flex items-center gap-1 font-medium text-emerald-600">
+                  <Wifi className="h-3.5 w-3.5" /> Assinatura ativa
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 font-medium text-amber-600">
+                  <WifiOff className="h-3.5 w-3.5" /> Sem assinatura
+                </span>
+              )}
+            </div>
+            <p className="text-muted-foreground">
+              Business Account ID:{" "}
+              <span className="font-mono">
+                {s?.businessAccountId || "não informado"}
+              </span>
+            </p>
+            {s?.subscribed && s?.subscribedFields?.length > 0 && (
+              <p className="text-muted-foreground">
+                Campos: <span className="font-mono">{s.subscribedFields.join(", ")}</span>
+              </p>
+            )}
+            {s?.reason && (
+              <p className="inline-flex items-start gap-1 text-amber-600">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {s.reason}
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 function AccountsDialog({ accounts, triggerLabel }: { accounts: any[]; triggerLabel?: string }) {
   const qc = useQueryClient();
   const add = useServerFn(addWaAccount);
@@ -333,6 +446,7 @@ function AccountsDialog({ accounts, triggerLabel }: { accounts: any[]; triggerLa
         );
       }
       refresh();
+      qc.invalidateQueries({ queryKey: ["wa-webhook-status", id] });
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao validar a conta.");
     } finally {
@@ -383,49 +497,21 @@ function AccountsDialog({ accounts, triggerLabel }: { accounts: any[]; triggerLa
         {accounts.length > 0 && (
           <div className="space-y-2">
             {accounts.map((a) => (
-              <div key={a.id} className="flex items-center justify-between rounded-lg border p-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{a.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {a.display_phone || a.phone_number_id}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 gap-1 text-xs"
-                    disabled={verifyingId === a.id}
-                    onClick={() => runVerify(a.id)}
-                    title="Validar credenciais e configurar o webhook"
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    {verifyingId === a.id ? "Validando..." : "Verificar"}
-                  </Button>
-                  <div className="flex items-center gap-1.5">
-                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                    <Switch
-                      checked={a.active}
-                      onCheckedChange={async (v) => {
-                        await upd({ data: { id: a.id, active: v } });
-                        refresh();
-                      }}
-                    />
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive"
-                    onClick={async () => {
-                      if (!confirm(`Remover a conta "${a.name}"? Todo o histórico será apagado.`)) return;
-                      await del({ data: { id: a.id } });
-                      refresh();
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              <AccountRow
+                key={a.id}
+                account={a}
+                verifying={verifyingId === a.id}
+                onVerify={() => runVerify(a.id)}
+                onToggle={async (v) => {
+                  await upd({ data: { id: a.id, active: v } });
+                  refresh();
+                }}
+                onDelete={async () => {
+                  if (!confirm(`Remover a conta "${a.name}"? Todo o histórico será apagado.`)) return;
+                  await del({ data: { id: a.id } });
+                  refresh();
+                }}
+              />
             ))}
           </div>
         )}
