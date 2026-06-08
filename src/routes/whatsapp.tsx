@@ -383,49 +383,21 @@ function AccountsDialog({ accounts, triggerLabel }: { accounts: any[]; triggerLa
         {accounts.length > 0 && (
           <div className="space-y-2">
             {accounts.map((a) => (
-              <div key={a.id} className="flex items-center justify-between rounded-lg border p-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{a.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {a.display_phone || a.phone_number_id}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 gap-1 text-xs"
-                    disabled={verifyingId === a.id}
-                    onClick={() => runVerify(a.id)}
-                    title="Validar credenciais e configurar o webhook"
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    {verifyingId === a.id ? "Validando..." : "Verificar"}
-                  </Button>
-                  <div className="flex items-center gap-1.5">
-                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                    <Switch
-                      checked={a.active}
-                      onCheckedChange={async (v) => {
-                        await upd({ data: { id: a.id, active: v } });
-                        refresh();
-                      }}
-                    />
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive"
-                    onClick={async () => {
-                      if (!confirm(`Remover a conta "${a.name}"? Todo o histórico será apagado.`)) return;
-                      await del({ data: { id: a.id } });
-                      refresh();
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              <AccountRow
+                key={a.id}
+                account={a}
+                verifying={verifyingId === a.id}
+                onVerify={() => runVerify(a.id)}
+                onToggle={async (v) => {
+                  await upd({ data: { id: a.id, active: v } });
+                  refresh();
+                }}
+                onDelete={async () => {
+                  if (!confirm(`Remover a conta "${a.name}"? Todo o histórico será apagado.`)) return;
+                  await del({ data: { id: a.id } });
+                  refresh();
+                }}
+              />
             ))}
           </div>
         )}
