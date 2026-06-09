@@ -32,7 +32,7 @@ function GuestPage() {
   };
 
   if (info.isLoading) return <Center><Loader2 className="h-6 w-6 animate-spin" /></Center>;
-  if (!info.data?.ok) return <Center><p className="text-muted-foreground">Link inválido ou expirado.</p></Center>;
+  if (info.isError || !info.data?.ok) return <Center><p className="text-muted-foreground">Link inválido ou expirado.</p></Center>;
 
   return (
     <div className="min-h-screen bg-background">
