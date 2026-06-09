@@ -38,8 +38,6 @@ export const rhNav = [
   { to: "/rh/recrutamento", label: "Recrutamento", icon: UserSearch },
   { to: "/rh/onboarding", label: "Onboarding", icon: ClipboardCheck },
   { to: "/rh/desligamentos", label: "Desligamentos", icon: UserMinus },
-  
-  { to: "/rh/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
 
 // Admin-only entries (appended for admins, hidden from everyone else).
