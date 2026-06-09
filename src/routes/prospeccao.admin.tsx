@@ -248,6 +248,17 @@ function Page() {
     } catch (e: any) { toast.error(e?.message ?? "Falha ao atribuir."); }
   };
 
+  const removeBatch = async (batch: string | null, label: string, total: number) => {
+    if (!confirm(`Excluir a importação "${label}" e seus ${total} lead(s)? Esta ação não pode ser desfeita.`)) return;
+    setBusy(true);
+    try {
+      const r = await deleteBatch({ data: { batch } });
+      toast.success(`${r.deleted} lead(s) excluído(s).`);
+      await loadLeads(); statsQ.refetch(); batchesQ.refetch();
+    } catch (e: any) { toast.error(e?.message ?? "Falha ao excluir importação."); }
+    setBusy(false);
+  };
+
   const stats = statsQ.data;
 
   return (
