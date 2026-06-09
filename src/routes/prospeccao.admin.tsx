@@ -94,7 +94,9 @@ function Page() {
   const fetchStats = useServerFn(getAdminStats);
 
   const [leads, setLeads] = useState<LeadRow[]>([]);
-  const [parsed, setParsed] = useState<ParsedLead[]>([]);
+  const [rawRecords, setRawRecords] = useState<Record<string, unknown>[]>([]);
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [phoneCol, setPhoneCol] = useState<string>("__auto__");
   const [fileName, setFileName] = useState("");
   const [uploadConsultant, setUploadConsultant] = useState<string>("none");
   const [dedup, setDedup] = useState(true);
