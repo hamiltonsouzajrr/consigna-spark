@@ -186,6 +186,95 @@ export type Database = {
           },
         ]
       }
+      legal_approvals: {
+        Row: {
+          aceite_registrado_at: string | null
+          audio_path: string | null
+          banco: string | null
+          cliente_aceite: boolean | null
+          consultant_email: string | null
+          consultant_id: string | null
+          cpf: string | null
+          created_at: string
+          created_by: string | null
+          duracao_segundos: number | null
+          file_hash: string | null
+          gravado_em: string | null
+          id: string
+          lead_id: string | null
+          nome_completo: string
+          resumo: string | null
+          status: string
+          tipo_operacao: string | null
+          token: string
+          transcricao: string | null
+          updated_at: string
+          valor_parcela: number | null
+          valor_solicitado: number | null
+          video_path: string | null
+        }
+        Insert: {
+          aceite_registrado_at?: string | null
+          audio_path?: string | null
+          banco?: string | null
+          cliente_aceite?: boolean | null
+          consultant_email?: string | null
+          consultant_id?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          duracao_segundos?: number | null
+          file_hash?: string | null
+          gravado_em?: string | null
+          id?: string
+          lead_id?: string | null
+          nome_completo: string
+          resumo?: string | null
+          status?: string
+          tipo_operacao?: string | null
+          token: string
+          transcricao?: string | null
+          updated_at?: string
+          valor_parcela?: number | null
+          valor_solicitado?: number | null
+          video_path?: string | null
+        }
+        Update: {
+          aceite_registrado_at?: string | null
+          audio_path?: string | null
+          banco?: string | null
+          cliente_aceite?: boolean | null
+          consultant_email?: string | null
+          consultant_id?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          duracao_segundos?: number | null
+          file_hash?: string | null
+          gravado_em?: string | null
+          id?: string
+          lead_id?: string | null
+          nome_completo?: string
+          resumo?: string | null
+          status?: string
+          tipo_operacao?: string | null
+          token?: string
+          transcricao?: string | null
+          updated_at?: string
+          valor_parcela?: number | null
+          valor_solicitado?: number | null
+          video_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_approvals_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pesquisas: {
         Row: {
           created_at: string
