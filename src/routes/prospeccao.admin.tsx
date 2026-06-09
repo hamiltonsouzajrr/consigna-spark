@@ -283,6 +283,40 @@ function Page() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* WhatsApp source column + validation */}
+              <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-2">
+                <Label className="text-xs flex items-center gap-1.5 font-medium">
+                  <MessageCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Coluna de origem do WhatsApp
+                </Label>
+                <Select value={phoneCol} onValueChange={setPhoneCol}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__auto__">Automático (CEL/TELEFONE/WhatsApp)</SelectItem>
+                    {headers.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-emerald-700 dark:text-emerald-300">
+                    {importMeta.comWhats} com WhatsApp válido
+                  </span>
+                  {importMeta.invalidos > 0 && (
+                    <span className="rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-amber-700 dark:text-amber-300">
+                      {importMeta.invalidos} número(s) inválido(s)
+                    </span>
+                  )}
+                  {importMeta.semTelefone > 0 && (
+                    <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-muted-foreground">
+                      {importMeta.semTelefone} sem telefone
+                    </span>
+                  )}
+                </div>
+                {importMeta.comWhats === 0 && importMeta.total > 0 && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    Nenhum número válido detectado nesta coluna — selecione a coluna correta acima.
+                  </p>
+                )}
               {importDist === "manual" ? (
                 <div>
                   <Label className="text-xs">Atribuir a</Label>
