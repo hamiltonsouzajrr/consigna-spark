@@ -38,7 +38,7 @@ const leadInput = z.object({
   cpf: z.string().trim().max(20).optional().nullable(),
   cidade: z.string().trim().max(120).optional().nullable(),
   origem: z.string().trim().max(60).optional().nullable(),
-  orcamento: z.number().nonnegative().max(1_000_000_000).optional().nullable(),
+  orcamento: z.number().nonnegative().max(1_000_000_000_000).optional().nullable(),
   urgencia: z.enum(["alta", "media", "baixa"]).optional().nullable(),
   consultant_id: z.string().uuid().optional().nullable(),
 });
