@@ -22,6 +22,8 @@ import {
 } from "@/lib/prospeccao/constants";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { aiLeadAssist } from "@/lib/prospeccao/prospeccao.functions";
+import { CentralAprovacao } from "@/components/legal/CentralAprovacao";
+import { useRhAccess } from "@/hooks/use-rh-access";
 
 export const Route = createFileRoute("/prospeccao/$leadId")({
   head: () => ({ meta: [{ title: "Lead — Prospecção" }, { name: "robots", content: "noindex,nofollow" }] }),
@@ -44,6 +46,7 @@ function fmt(iso: string | null) {
 
 function Page() {
   const { user, loading } = useAuth();
+  const { isAdmin } = useRhAccess();
   const { leadId } = useParams({ from: "/prospeccao/$leadId" });
   const runAi = useServerFn(aiLeadAssist);
 
@@ -318,6 +321,8 @@ function Page() {
               ))}
             </ol>
           </Card>
+
+          {isAdmin && <CentralAprovacao lead={{ id: lead.id, nome: lead.nome, cpf: lead.cpf }} />}
         </div>
       </div>
     </AppShell>
