@@ -44,6 +44,8 @@ function Page() {
   const [parsed, setParsed] = useState<ParsedLead[]>([]);
   const [fileName, setFileName] = useState("");
   const [uploadConsultant, setUploadConsultant] = useState<string>("none");
+  const [dedup, setDedup] = useState(true);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [busy, setBusy] = useState(false);
 
   // manual lead
