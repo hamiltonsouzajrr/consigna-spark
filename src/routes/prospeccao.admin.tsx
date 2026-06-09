@@ -122,8 +122,11 @@ function Page() {
 
   const confirmImport = async () => {
     if (!parsed.length) return;
+    const auto = importDist !== "manual";
+    // When auto-distributing, import unassigned and balance afterwards.
+    const cid = auto ? null : (uploadConsultant === "none" ? null : uploadConsultant);
+    if (auto && selectedConsultants.size === 0) { toast.error("Selecione ao menos uma consultora para distribuição."); return; }
     setBusy(true);
-    const cid = uploadConsultant === "none" ? null : uploadConsultant;
     const chunkSize = 2000;
     const total = parsed.length;
     setProgress({ done: 0, total });
@@ -135,11 +138,40 @@ function Page() {
         inserted += r.inserted; skipped += r.skipped ?? 0;
         setProgress({ done: Math.min(i + chunkSize, total), total });
       }
-      toast.success(`${inserted} lead(s) importados${skipped ? ` · ${skipped} duplicado(s) ignorado(s)` : ""}.`);
+      let distMsg = "";
+      if (auto && inserted > 0) {
+        const d = await distributeLeads({ data: { consultantIds: [...selectedConsultants], mode: importDist as any } });
+        distMsg = ` · ${d.assigned} distribuído(s) entre ${Object.keys(d.perConsultant).length} consultora(s)`;
+      }
+      toast.success(`${inserted} lead(s) importados${skipped ? ` · ${skipped} duplicado(s) ignorado(s)` : ""}${distMsg}.`);
       setParsed([]); setFileName("");
       await loadLeads(); statsQ.refetch();
     } catch (e: any) { toast.error(e?.message ?? "Falha ao importar."); }
     setProgress(null);
+    setBusy(false);
+  };
+
+  const runDistribute = async () => {
+    if (selectedConsultants.size === 0) { toast.error("Selecione ao menos uma consultora."); return; }
+    setBusy(true);
+    try {
+      const d = await distributeLeads({ data: { consultantIds: [...selectedConsultants], mode: distMode } });
+      if (d.assigned === 0) toast.info("Nenhum lead não atribuído para distribuir.");
+      else toast.success(`${d.assigned} lead(s) distribuído(s) entre ${Object.keys(d.perConsultant).length} consultora(s).`);
+      await loadLeads(); statsQ.refetch();
+    } catch (e: any) { toast.error(e?.message ?? "Falha ao distribuir."); }
+    setBusy(false);
+  };
+
+  const runRecycle = async () => {
+    if (selectedConsultants.size === 0) { toast.error("Selecione ao menos uma consultora."); return; }
+    setBusy(true);
+    try {
+      const d = await recycleLeads({ data: { consultantIds: [...selectedConsultants], idleDays, mode: recycleMode } });
+      if (d.recycled === 0) toast.info(`Nenhum lead parado há ${idleDays}+ dia(s) para reciclar.`);
+      else toast.success(`${d.recycled} lead(s) reciclado(s) para ${Object.keys(d.perConsultant).length} consultora(s).`);
+      await loadLeads(); statsQ.refetch();
+    } catch (e: any) { toast.error(e?.message ?? "Falha ao reciclar."); }
     setBusy(false);
   };
 
