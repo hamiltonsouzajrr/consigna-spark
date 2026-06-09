@@ -46,6 +46,7 @@ const navSections: NavSection[] = [
   {
     section: "Aracaju",
     items: [
+      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
       { to: "/upload", label: "Importações", icon: Upload, adminOnly: true },
       { to: "/consultas", label: "Consultas", icon: List, adminOnly: true },
       { to: "/limpeza", label: "Limpeza", icon: Trash2, adminOnly: true },
