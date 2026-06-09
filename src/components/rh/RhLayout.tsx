@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Building2, BriefcaseBusiness, Plane, Clock,
   FileText, GraduationCap, Laptop, Star, AlertTriangle, UserSearch,
   ClipboardCheck, UserMinus, Settings, Network, ReceiptText, HeartHandshake,
-  Target, Gauge, Brain, TrendingDown, Trophy, IdCard,
+  Target, Gauge, TrendingDown, Trophy, IdCard,
   Goal, Award, ScrollText, ShieldCheck, Lock, LineChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
