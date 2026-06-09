@@ -15,7 +15,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -27,7 +27,7 @@ import { ReconhecimentosPopup } from "@/components/rh/ReconhecimentosPopup";
 import { formatDate } from "@/lib/rh/mock";
 import {
   getReconhecimentos, saveReconhecimento, deleteReconhecimento,
-  TIPOS, type Reconhecimento,
+  TIPOS, CATEGORIAS_RECONHECIMENTO, PERIODICIDADES, type Reconhecimento,
 } from "@/lib/rh/reconhecimentos.functions";
 
 export const Route = createFileRoute("/rh/reconhecimentos")({
@@ -41,14 +41,18 @@ const tipoCor: Record<string, string> = {
   "Destaque do mês": "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
 };
 
+const periodicidadeLabel: Record<string, string> = {
+  pontual: "Pontual", diario: "Diário", semanal: "Semanal", mensal: "Mensal",
+};
+
 type FormState = {
-  de: string; para: string; tipo: string; mensagem: string;
+  de: string; para: string; tipo: string; periodicidade: string; mensagem: string;
   data: string; periodo_inicio: string; periodo_fim: string; popup: boolean;
 };
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const emptyForm = (): FormState => ({
-  de: "", para: "", tipo: TIPOS[0], mensagem: "",
+  de: "", para: "", tipo: TIPOS[0], periodicidade: "pontual", mensagem: "",
   data: todayStr(), periodo_inicio: "", periodo_fim: "", popup: true,
 });
 
@@ -74,7 +78,7 @@ function Reconhecimentos() {
   const openEdit = (r: Reconhecimento) => {
     setEditingId(r.id);
     setForm({
-      de: r.de, para: r.para, tipo: r.tipo, mensagem: r.mensagem,
+      de: r.de, para: r.para, tipo: r.tipo, periodicidade: r.periodicidade ?? "pontual", mensagem: r.mensagem,
       data: r.data, periodo_inicio: r.periodo_inicio ?? "", periodo_fim: r.periodo_fim ?? "", popup: r.popup,
     });
     setOpen(true);
@@ -98,7 +102,7 @@ function Reconhecimentos() {
       return toast.error("O fim do período deve ser após o início.");
     mSave.mutate({
       ...(editingId ? { id: editingId } : {}),
-      de: form.de, para: form.para, tipo: form.tipo, mensagem: form.mensagem,
+      de: form.de, para: form.para, tipo: form.tipo, periodicidade: form.periodicidade, mensagem: form.mensagem,
       data: form.data,
       periodo_inicio: form.periodo_inicio || null,
       periodo_fim: form.periodo_fim || null,
@@ -152,9 +156,14 @@ function Reconhecimentos() {
                       </div>
                     )}
                   </div>
-                  <Badge variant="secondary" className={`mt-2 border-0 ${tipoCor[r.tipo] ?? "bg-muted text-muted-foreground"}`}>
-                    {r.tipo}
-                  </Badge>
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <Badge variant="secondary" className={`border-0 ${tipoCor[r.tipo] ?? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"}`}>
+                      {r.tipo}
+                    </Badge>
+                    {r.periodicidade && r.periodicidade !== "pontual" && (
+                      <Badge variant="outline" className="text-xs">{periodicidadeLabel[r.periodicidade]}</Badge>
+                    )}
+                  </div>
                   <p className="mt-2 text-sm text-muted-foreground">{r.mensagem}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span>{formatDate(r.data)}</span>
@@ -184,7 +193,21 @@ function Reconhecimentos() {
               <Label>Tipo</Label>
               <Select value={form.tipo} onValueChange={(v) => setForm((f) => ({ ...f, tipo: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{TIPOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                <SelectContent className="max-h-72">
+                  {CATEGORIAS_RECONHECIMENTO.map((cat) => (
+                    <SelectGroup key={cat.categoria}>
+                      <SelectLabel>{cat.categoria}</SelectLabel>
+                      {cat.titulos.map((t) => <SelectItem key={`${cat.categoria}-${t}`} value={t}>{t}</SelectItem>)}
+                    </SelectGroup>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Periodicidade</Label>
+              <Select value={form.periodicidade} onValueChange={(v) => setForm((f) => ({ ...f, periodicidade: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PERIODICIDADES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2"><Label>Mensagem</Label><Textarea value={form.mensagem} onChange={(e) => setForm((f) => ({ ...f, mensagem: e.target.value }))} /></div>
