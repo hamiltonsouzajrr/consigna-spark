@@ -28,7 +28,7 @@ export const rhNav = [
   { to: "/rh/avaliacoes", label: "Avaliações de Desempenho", icon: Star },
   { to: "/rh/pdi", label: "PDI", icon: Target },
   { to: "/rh/clima", label: "Clima Organizacional", icon: Gauge },
-  { to: "/rh/people-analytics", label: "People Analytics", icon: Brain },
+  
   { to: "/rh/turnover", label: "Predição de Turnover", icon: TrendingDown },
   { to: "/rh/ranking", label: "Ranking", icon: Trophy },
   { to: "/rh/portal", label: "Portal do Colaborador", icon: IdCard },
