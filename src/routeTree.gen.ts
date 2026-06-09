@@ -50,8 +50,6 @@ import { Route as RhDashboardRouteImport } from './routes/rh.dashboard'
 import { Route as RhConfiguracoesRouteImport } from './routes/rh.configuracoes'
 import { Route as RhColaboradoresRouteImport } from './routes/rh.colaboradores'
 import { Route as RhClimaRouteImport } from './routes/rh.clima'
-import { Route as RhChatbotRouteImport } from './routes/rh.chatbot'
-import { Route as RhChatRouteImport } from './routes/rh.chat'
 import { Route as RhCargosRouteImport } from './routes/rh.cargos'
 import { Route as RhBeneficiosRouteImport } from './routes/rh.beneficios'
 import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
@@ -270,16 +268,6 @@ const RhClimaRoute = RhClimaRouteImport.update({
   path: '/clima',
   getParentRoute: () => RhRoute,
 } as any)
-const RhChatbotRoute = RhChatbotRouteImport.update({
-  id: '/chatbot',
-  path: '/chatbot',
-  getParentRoute: () => RhRoute,
-} as any)
-const RhChatRoute = RhChatRouteImport.update({
-  id: '/chat',
-  path: '/chat',
-  getParentRoute: () => RhRoute,
-} as any)
 const RhCargosRoute = RhCargosRouteImport.update({
   id: '/cargos',
   path: '/cargos',
@@ -368,8 +356,6 @@ export interface FileRoutesByFullPath {
   '/rh/banco-horas': typeof RhBancoHorasRoute
   '/rh/beneficios': typeof RhBeneficiosRoute
   '/rh/cargos': typeof RhCargosRoute
-  '/rh/chat': typeof RhChatRoute
-  '/rh/chatbot': typeof RhChatbotRoute
   '/rh/clima': typeof RhClimaRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/configuracoes': typeof RhConfiguracoesRoute
@@ -424,8 +410,6 @@ export interface FileRoutesByTo {
   '/rh/banco-horas': typeof RhBancoHorasRoute
   '/rh/beneficios': typeof RhBeneficiosRoute
   '/rh/cargos': typeof RhCargosRoute
-  '/rh/chat': typeof RhChatRoute
-  '/rh/chatbot': typeof RhChatbotRoute
   '/rh/clima': typeof RhClimaRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/configuracoes': typeof RhConfiguracoesRoute
@@ -481,8 +465,6 @@ export interface FileRoutesById {
   '/rh/banco-horas': typeof RhBancoHorasRoute
   '/rh/beneficios': typeof RhBeneficiosRoute
   '/rh/cargos': typeof RhCargosRoute
-  '/rh/chat': typeof RhChatRoute
-  '/rh/chatbot': typeof RhChatbotRoute
   '/rh/clima': typeof RhClimaRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
   '/rh/configuracoes': typeof RhConfiguracoesRoute
@@ -540,8 +522,6 @@ export interface FileRouteTypes {
     | '/rh/banco-horas'
     | '/rh/beneficios'
     | '/rh/cargos'
-    | '/rh/chat'
-    | '/rh/chatbot'
     | '/rh/clima'
     | '/rh/colaboradores'
     | '/rh/configuracoes'
@@ -596,8 +576,6 @@ export interface FileRouteTypes {
     | '/rh/banco-horas'
     | '/rh/beneficios'
     | '/rh/cargos'
-    | '/rh/chat'
-    | '/rh/chatbot'
     | '/rh/clima'
     | '/rh/colaboradores'
     | '/rh/configuracoes'
@@ -652,8 +630,6 @@ export interface FileRouteTypes {
     | '/rh/banco-horas'
     | '/rh/beneficios'
     | '/rh/cargos'
-    | '/rh/chat'
-    | '/rh/chatbot'
     | '/rh/clima'
     | '/rh/colaboradores'
     | '/rh/configuracoes'
@@ -997,20 +973,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhClimaRouteImport
       parentRoute: typeof RhRoute
     }
-    '/rh/chatbot': {
-      id: '/rh/chatbot'
-      path: '/chatbot'
-      fullPath: '/rh/chatbot'
-      preLoaderRoute: typeof RhChatbotRouteImport
-      parentRoute: typeof RhRoute
-    }
-    '/rh/chat': {
-      id: '/rh/chat'
-      path: '/chat'
-      fullPath: '/rh/chat'
-      preLoaderRoute: typeof RhChatRouteImport
-      parentRoute: typeof RhRoute
-    }
     '/rh/cargos': {
       id: '/rh/cargos'
       path: '/cargos'
@@ -1131,8 +1093,6 @@ interface RhRouteChildren {
   RhBancoHorasRoute: typeof RhBancoHorasRoute
   RhBeneficiosRoute: typeof RhBeneficiosRoute
   RhCargosRoute: typeof RhCargosRoute
-  RhChatRoute: typeof RhChatRoute
-  RhChatbotRoute: typeof RhChatbotRoute
   RhClimaRoute: typeof RhClimaRoute
   RhColaboradoresRoute: typeof RhColaboradoresRouteWithChildren
   RhConfiguracoesRoute: typeof RhConfiguracoesRoute
@@ -1165,8 +1125,6 @@ const RhRouteChildren: RhRouteChildren = {
   RhBancoHorasRoute: RhBancoHorasRoute,
   RhBeneficiosRoute: RhBeneficiosRoute,
   RhCargosRoute: RhCargosRoute,
-  RhChatRoute: RhChatRoute,
-  RhChatbotRoute: RhChatbotRoute,
   RhClimaRoute: RhClimaRoute,
   RhColaboradoresRoute: RhColaboradoresRouteWithChildren,
   RhConfiguracoesRoute: RhConfiguracoesRoute,
@@ -1220,13 +1178,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

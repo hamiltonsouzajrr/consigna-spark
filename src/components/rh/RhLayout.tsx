@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Building2, BriefcaseBusiness, Plane, Clock,
   FileText, GraduationCap, Laptop, Star, AlertTriangle, UserSearch,
   ClipboardCheck, UserMinus, Settings, Network, ReceiptText, HeartHandshake,
-  Target, Gauge, Brain, TrendingDown, Trophy, IdCard, MessagesSquare, Bot,
+  Target, Gauge, Brain, TrendingDown, Trophy, IdCard,
   Goal, Award, ScrollText, ShieldCheck, Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,8 +32,6 @@ export const rhNav = [
   { to: "/rh/turnover", label: "Predição de Turnover", icon: TrendingDown },
   { to: "/rh/ranking", label: "Ranking", icon: Trophy },
   { to: "/rh/portal", label: "Portal do Colaborador", icon: IdCard },
-  { to: "/rh/chat", label: "Chat Interno", icon: MessagesSquare },
-  { to: "/rh/chatbot", label: "Chatbot RH", icon: Bot },
   { to: "/rh/okrs", label: "OKRs", icon: Goal },
   { to: "/rh/reconhecimentos", label: "Reconhecimentos", icon: Award },
   { to: "/rh/ocorrencias", label: "Ocorrências", icon: AlertTriangle },
