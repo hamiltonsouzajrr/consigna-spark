@@ -1,21 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { producaoConsultoraQueryOptions, formatMes } from "@/lib/rh/producao";
 import {
-  Plane,
-  FileText,
-  ReceiptText,
-  GraduationCap,
-  HeartHandshake,
-  Clock,
-  CalendarDays,
-  Bell,
-  CheckCircle2,
-  AlertTriangle,
-  Megaphone,
-  Cake,
-  TrendingUp,
-  ChevronRight,
+  Plane, FileText, ReceiptText, GraduationCap, HeartHandshake, Clock,
+  CalendarDays, Bell, CheckCircle2, TrendingUp, ChevronRight,
+  Plus, Pencil, Trash2, Settings2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,28 +14,34 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { RhPageHeader } from "@/components/rh/RhLayout";
 import { formatDate, brl } from "@/lib/rh/mock";
 import { portalQueryOptions, type KpiKey } from "@/lib/rh/portal";
+import {
+  getPortalContent, saveAviso, deleteAviso, saveAtalho, deleteAtalho, saveKpis,
+  type Aviso, type Atalho, type PortalKpis,
+} from "@/lib/rh/portal-admin.functions";
+import {
+  PORTAL_ICON_NAMES, PORTAL_TONES, portalIcon, toneClass,
+} from "@/lib/rh/portal-icons";
 
 export const Route = createFileRoute("/rh/portal/")({
   component: PortalIndex,
 });
-
-const atalhos = [
-  { label: "Solicitar Férias", icon: Plane },
-  { label: "Enviar Documento", icon: FileText },
-  { label: "Ver Holerite", icon: ReceiptText },
-  { label: "Meus Treinamentos", icon: GraduationCap },
-];
-
-const avisos = [
-  { id: 1, icon: Megaphone, titulo: "Reunião geral de resultados", quando: "Hoje, 16h", tone: "text-sky-600" },
-  { id: 2, icon: Cake, titulo: "Aniversariantes do mês", quando: "Junho", tone: "text-rose-600" },
-  { id: 3, icon: AlertTriangle, titulo: "Atualize seu ASO", quando: "Vence em 15 dias", tone: "text-amber-600" },
-];
 
 const tones: Record<string, string> = {
   sky: "bg-sky-500/15 text-sky-600 dark:text-sky-400",
@@ -53,20 +50,8 @@ const tones: Record<string, string> = {
   amber: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
 };
 
-function KpiLink({
-  kpi,
-  label,
-  value,
-  hint,
-  icon: Icon,
-  tone,
-}: {
-  kpi: KpiKey;
-  label: string;
-  value: string | number;
-  hint: string;
-  icon: LucideIcon;
-  tone: keyof typeof tones;
+function KpiLink({ kpi, label, value, hint, icon: Icon, tone }: {
+  kpi: KpiKey; label: string; value: string | number; hint: string; icon: LucideIcon; tone: keyof typeof tones;
 }) {
   return (
     <Link to="/rh/portal/$kpi" params={{ kpi }} className="group">
@@ -89,13 +74,73 @@ function KpiLink({
   );
 }
 
+const emptyAviso = { titulo: "", quando: "", tone: "sky", icon: "Megaphone", sort: 0 };
+const emptyAtalho = { label: "", icon: "FileText", sort: 0 };
+
 function PortalIndex() {
+  const qc = useQueryClient();
   const { data } = useSuspenseQuery(portalQueryOptions());
   const me = data.colaborador;
 
+  const fetchContent = useServerFn(getPortalContent);
+  const { data: content } = useQuery({
+    queryKey: ["rh", "portal-content"],
+    queryFn: () => fetchContent(),
+  });
+  const isAdmin = content?.isAdmin ?? false;
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["rh", "portal-content"] });
+
+  // KPI values: usa config do banco se existir, senão o mock.
+  const k = content?.kpis;
+  const saldoFerias = k ? k.saldo_ferias : data.saldoFerias;
+  const bancoHoras = k ? k.banco_horas : data.bancoHoras;
+  const salario = k ? Number(k.salario) : data.salario;
+  const beneficios = k ? k.beneficios : data.beneficiosAtivos;
+  const treinTotal = k && k.trein_total > 0 ? k.trein_total : data.treinamentos.total;
+  const treinConcl = k && k.trein_total > 0 ? k.trein_concluidos : data.treinamentos.concluidos;
+  const treinProg = treinTotal > 0 ? Math.round((treinConcl / treinTotal) * 100) : 0;
+
+  // --- Mutations
+  const saveAvisoFn = useServerFn(saveAviso);
+  const delAvisoFn = useServerFn(deleteAviso);
+  const saveAtalhoFn = useServerFn(saveAtalho);
+  const delAtalhoFn = useServerFn(deleteAtalho);
+  const saveKpisFn = useServerFn(saveKpis);
+
+  const mSaveAviso = useMutation({ mutationFn: (d: any) => saveAvisoFn({ data: d }), onSuccess: () => { toast.success("Aviso salvo."); invalidate(); }, onError: (e: any) => toast.error(e?.message) });
+  const mDelAviso = useMutation({ mutationFn: (id: string) => delAvisoFn({ data: { id } }), onSuccess: () => { toast.success("Aviso removido."); invalidate(); }, onError: (e: any) => toast.error(e?.message) });
+  const mSaveAtalho = useMutation({ mutationFn: (d: any) => saveAtalhoFn({ data: d }), onSuccess: () => { toast.success("Atalho salvo."); invalidate(); }, onError: (e: any) => toast.error(e?.message) });
+  const mDelAtalho = useMutation({ mutationFn: (id: string) => delAtalhoFn({ data: { id } }), onSuccess: () => { toast.success("Atalho removido."); invalidate(); }, onError: (e: any) => toast.error(e?.message) });
+  const mSaveKpis = useMutation({ mutationFn: (d: any) => saveKpisFn({ data: d }), onSuccess: () => { toast.success("KPIs atualizados."); invalidate(); }, onError: (e: any) => toast.error(e?.message) });
+
+  // --- Dialog states
+  const [avisoOpen, setAvisoOpen] = useState(false);
+  const [avisoForm, setAvisoForm] = useState<any>(emptyAviso);
+  const [atalhoOpen, setAtalhoOpen] = useState(false);
+  const [atalhoForm, setAtalhoForm] = useState<any>(emptyAtalho);
+  const [kpisOpen, setKpisOpen] = useState(false);
+  const [kpisForm, setKpisForm] = useState<any>(null);
+
+  const openAviso = (a?: Aviso) => { setAvisoForm(a ? { ...a, quando: a.quando ?? "" } : emptyAviso); setAvisoOpen(true); };
+  const openAtalho = (a?: Atalho) => { setAtalhoForm(a ?? emptyAtalho); setAtalhoOpen(true); };
+  const openKpis = () => {
+    setKpisForm({
+      saldo_ferias: saldoFerias, banco_horas: bancoHoras, salario,
+      beneficios, trein_total: treinTotal, trein_concluidos: treinConcl,
+    });
+    setKpisOpen(true);
+  };
+
+  const atalhos = content?.atalhos ?? [];
+  const avisos = content?.avisos ?? [];
+
   return (
     <div>
-      <RhPageHeader title="Portal do Colaborador" description="Autoatendimento e informações pessoais." />
+      <RhPageHeader
+        title="Portal do Colaborador"
+        description="Autoatendimento e informações pessoais."
+        actions={isAdmin ? <Button size="sm" variant="outline" onClick={openKpis}><Settings2 className="mr-2 h-4 w-4" /> Editar KPIs</Button> : null}
+      />
 
       <Card className="mb-6">
         <CardContent className="flex flex-col items-center gap-4 p-6 sm:flex-row sm:items-center">
@@ -116,48 +161,79 @@ function PortalIndex() {
       </Card>
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KpiLink kpi="ferias" label="Saldo de férias" value={`${data.saldoFerias} dias`} icon={Plane} tone="sky" hint="Ver detalhes" />
-        <KpiLink kpi="banco-horas" label="Banco de horas" value={`${data.bancoHoras >= 0 ? "+" : ""}${data.bancoHoras}h`} icon={Clock} tone="emerald" hint="Ver detalhes" />
-        <KpiLink kpi="salario" label="Salário" value={brl(data.salario)} icon={ReceiptText} tone="violet" hint="Ver detalhes" />
-        <KpiLink kpi="beneficios" label="Benefícios" value={data.beneficiosAtivos} icon={HeartHandshake} tone="amber" hint="Ver detalhes" />
+        <KpiLink kpi="ferias" label="Saldo de férias" value={`${saldoFerias} dias`} icon={Plane} tone="sky" hint="Ver detalhes" />
+        <KpiLink kpi="banco-horas" label="Banco de horas" value={`${bancoHoras >= 0 ? "+" : ""}${bancoHoras}h`} icon={Clock} tone="emerald" hint="Ver detalhes" />
+        <KpiLink kpi="salario" label="Salário" value={brl(salario)} icon={ReceiptText} tone="violet" hint="Ver detalhes" />
+        <KpiLink kpi="beneficios" label="Benefícios" value={beneficios} icon={HeartHandshake} tone="amber" hint="Ver detalhes" />
       </div>
 
       <div className="mb-6 grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader className="pb-3"><CardTitle className="text-base">Atalhos</CardTitle></CardHeader>
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-base">Atalhos</CardTitle>
+            {isAdmin && <Button size="sm" variant="ghost" onClick={() => openAtalho()}><Plus className="mr-1 h-4 w-4" /> Adicionar</Button>}
+          </CardHeader>
           <CardContent className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {atalhos.length === 0 && <p className="col-span-full text-sm text-muted-foreground">Nenhum atalho configurado.</p>}
             {atalhos.map((a) => {
-              const Icon = a.icon;
+              const Icon = portalIcon(a.icon);
               return (
-                <Button
-                  key={a.label}
-                  variant="outline"
-                  className="h-auto flex-col gap-2 py-4"
-                  onClick={() => toast.info(`${a.label} (demonstração)`)}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span className="text-xs">{a.label}</span>
-                </Button>
+                <div key={a.id} className="relative">
+                  <Button variant="outline" className="h-auto w-full flex-col gap-2 py-4" onClick={() => toast.info(`${a.label} (demonstração)`)}>
+                    <Icon className="h-5 w-5" />
+                    <span className="text-xs">{a.label}</span>
+                  </Button>
+                  {isAdmin && (
+                    <div className="absolute right-1 top-1 flex gap-0.5">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openAtalho(a)}><Pencil className="h-3 w-3" /></Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => mDelAtalho.mutate(a.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3 flex flex-row items-center gap-2">
-            <Bell className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base">Avisos</CardTitle>
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Bell className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-base">Avisos</CardTitle>
+            </div>
+            {isAdmin && <Button size="sm" variant="ghost" onClick={() => openAviso()}><Plus className="mr-1 h-4 w-4" /> Adicionar</Button>}
           </CardHeader>
           <CardContent className="space-y-3">
+            {avisos.length === 0 && <p className="text-sm text-muted-foreground">Nenhum aviso publicado.</p>}
             {avisos.map((a) => {
-              const Icon = a.icon;
+              const Icon = portalIcon(a.icon);
               return (
                 <div key={a.id} className="flex items-start gap-3 border-b pb-3 last:border-0 last:pb-0">
-                  <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${a.tone}`} />
-                  <div className="min-w-0">
+                  <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${toneClass(a.tone)}`} />
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium leading-tight">{a.titulo}</p>
-                    <p className="text-xs text-muted-foreground">{a.quando}</p>
+                    {a.quando && <p className="text-xs text-muted-foreground">{a.quando}</p>}
                   </div>
+                  {isAdmin && (
+                    <div className="flex gap-0.5">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openAviso(a)}><Pencil className="h-3 w-3" /></Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-6 w-6"><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir aviso?</AlertDialogTitle>
+                            <AlertDialogDescription>"{a.titulo}" será removido do portal.</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => mDelAviso.mutate(a.id)}>Excluir</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -196,12 +272,10 @@ function PortalIndex() {
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Progresso</span>
-              <span className="font-semibold">{data.treinamentos.progresso}%</span>
+              <span className="font-semibold">{treinProg}%</span>
             </div>
-            <Progress value={data.treinamentos.progresso} />
-            <p className="text-xs text-muted-foreground">
-              {data.treinamentos.concluidos} de {data.treinamentos.total} concluídos
-            </p>
+            <Progress value={treinProg} />
+            <p className="text-xs text-muted-foreground">{treinConcl} de {treinTotal} concluídos</p>
           </CardContent>
         </Card>
 
@@ -215,16 +289,10 @@ function PortalIndex() {
               data.solicitacoes.map((s) => (
                 <div key={s.id} className="flex items-center justify-between border-b pb-2 text-sm last:border-0 last:pb-0">
                   <span>{s.tipo}</span>
-                  <Badge
-                    variant="secondary"
-                    className={
-                      s.status === "Aprovado"
-                        ? "border-0 bg-emerald-100 text-emerald-700"
-                        : s.status === "Pendente"
-                        ? "border-0 bg-amber-100 text-amber-700"
-                        : "border-0 bg-rose-100 text-rose-700"
-                    }
-                  >
+                  <Badge variant="secondary" className={
+                    s.status === "Aprovado" ? "border-0 bg-emerald-100 text-emerald-700"
+                      : s.status === "Pendente" ? "border-0 bg-amber-100 text-amber-700"
+                      : "border-0 bg-rose-100 text-rose-700"}>
                     {s.status}
                   </Badge>
                 </div>
@@ -238,6 +306,79 @@ function PortalIndex() {
       </div>
 
       <MinhaProducao consultora={me.nome} />
+
+      {/* ---- Dialog Aviso ---- */}
+      <Dialog open={avisoOpen} onOpenChange={setAvisoOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{avisoForm.id ? "Editar aviso" : "Novo aviso"}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2"><Label>Título</Label><Input value={avisoForm.titulo} onChange={(e) => setAvisoForm((f: any) => ({ ...f, titulo: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>Quando</Label><Input value={avisoForm.quando} onChange={(e) => setAvisoForm((f: any) => ({ ...f, quando: e.target.value }))} placeholder="Ex.: Hoje, 16h" /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Cor</Label>
+                <Select value={avisoForm.tone} onValueChange={(v) => setAvisoForm((f: any) => ({ ...f, tone: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{PORTAL_TONES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Ícone</Label>
+                <Select value={avisoForm.icon} onValueChange={(v) => setAvisoForm((f: any) => ({ ...f, icon: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{PORTAL_ICON_NAMES.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAvisoOpen(false)}>Cancelar</Button>
+            <Button onClick={() => { if (!avisoForm.titulo.trim()) return toast.error("Informe o título."); mSaveAviso.mutate({ ...avisoForm, quando: avisoForm.quando || null }); setAvisoOpen(false); }}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ---- Dialog Atalho ---- */}
+      <Dialog open={atalhoOpen} onOpenChange={setAtalhoOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{atalhoForm.id ? "Editar atalho" : "Novo atalho"}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2"><Label>Rótulo</Label><Input value={atalhoForm.label} onChange={(e) => setAtalhoForm((f: any) => ({ ...f, label: e.target.value }))} /></div>
+            <div className="space-y-2">
+              <Label>Ícone</Label>
+              <Select value={atalhoForm.icon} onValueChange={(v) => setAtalhoForm((f: any) => ({ ...f, icon: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PORTAL_ICON_NAMES.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAtalhoOpen(false)}>Cancelar</Button>
+            <Button onClick={() => { if (!atalhoForm.label.trim()) return toast.error("Informe o rótulo."); mSaveAtalho.mutate(atalhoForm); setAtalhoOpen(false); }}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ---- Dialog KPIs ---- */}
+      <Dialog open={kpisOpen} onOpenChange={setKpisOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar KPIs do portal</DialogTitle></DialogHeader>
+          {kpisForm && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Saldo de férias (dias)</Label><Input type="number" value={kpisForm.saldo_ferias} onChange={(e) => setKpisForm((f: any) => ({ ...f, saldo_ferias: Number(e.target.value) }))} /></div>
+              <div className="space-y-2"><Label>Banco de horas (h)</Label><Input type="number" value={kpisForm.banco_horas} onChange={(e) => setKpisForm((f: any) => ({ ...f, banco_horas: Number(e.target.value) }))} /></div>
+              <div className="space-y-2"><Label>Salário (R$)</Label><Input type="number" value={kpisForm.salario} onChange={(e) => setKpisForm((f: any) => ({ ...f, salario: Number(e.target.value) }))} /></div>
+              <div className="space-y-2"><Label>Benefícios ativos</Label><Input type="number" value={kpisForm.beneficios} onChange={(e) => setKpisForm((f: any) => ({ ...f, beneficios: Number(e.target.value) }))} /></div>
+              <div className="space-y-2"><Label>Treinamentos (total)</Label><Input type="number" value={kpisForm.trein_total} onChange={(e) => setKpisForm((f: any) => ({ ...f, trein_total: Number(e.target.value) }))} /></div>
+              <div className="space-y-2"><Label>Treinamentos concluídos</Label><Input type="number" value={kpisForm.trein_concluidos} onChange={(e) => setKpisForm((f: any) => ({ ...f, trein_concluidos: Number(e.target.value) }))} /></div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setKpisOpen(false)}>Cancelar</Button>
+            <Button onClick={() => { mSaveKpis.mutate(kpisForm); setKpisOpen(false); }}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -282,4 +423,3 @@ function MinhaProducao({ consultora }: { consultora: string }) {
     </Card>
   );
 }
-

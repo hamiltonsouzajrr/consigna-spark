@@ -668,6 +668,102 @@ export type Database = {
         }
         Relationships: []
       }
+      rh_portal_atalhos: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          label: string
+          sort: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string
+          id?: string
+          label: string
+          sort?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          label?: string
+          sort?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rh_portal_avisos: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          quando: string | null
+          sort: number
+          titulo: string
+          tone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string
+          id?: string
+          quando?: string | null
+          sort?: number
+          titulo: string
+          tone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          quando?: string | null
+          sort?: number
+          titulo?: string
+          tone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rh_portal_kpis: {
+        Row: {
+          banco_horas: number
+          beneficios: number
+          created_at: string
+          id: string
+          salario: number
+          saldo_ferias: number
+          trein_concluidos: number
+          trein_total: number
+          updated_at: string
+        }
+        Insert: {
+          banco_horas?: number
+          beneficios?: number
+          created_at?: string
+          id?: string
+          salario?: number
+          saldo_ferias?: number
+          trein_concluidos?: number
+          trein_total?: number
+          updated_at?: string
+        }
+        Update: {
+          banco_horas?: number
+          beneficios?: number
+          created_at?: string
+          id?: string
+          salario?: number
+          saldo_ferias?: number
+          trein_concluidos?: number
+          trein_total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rh_producao: {
         Row: {
           consultora: string
