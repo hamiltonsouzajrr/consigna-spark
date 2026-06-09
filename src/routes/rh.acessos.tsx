@@ -224,7 +224,13 @@ function AcessosPage() {
         {/* Users list */}
         <Card className="h-fit">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Usuários</CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-base">Usuários</CardTitle>
+              <Button size="sm" onClick={openCreate}>
+                <Plus className="mr-1 h-4 w-4" />
+                Novo
+              </Button>
+            </div>
             <div className="relative mt-2">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
