@@ -20,7 +20,7 @@ import * as XLSX from "xlsx";
 import { ArrowLeft, UploadCloud, Trophy, AlertTriangle, Ghost, UserPlus, Shuffle, RefreshCw, MessageCircle } from "lucide-react";
 import {
   getProspectConsultants, adminCreateLeads, adminAssignLeads, getAdminStats,
-  adminDistributeLeads, adminRecycleLeads,
+  adminDistributeLeads, adminRecycleLeads, adminListImportBatches, adminDeleteImportBatch,
 } from "@/lib/prospeccao/prospeccao.functions";
 import { STATUS_LABEL, STATUS_TONE, normalizeWhatsappNumber, type LeadStatus } from "@/lib/prospeccao/constants";
 
