@@ -109,46 +109,62 @@ function ProducaoAdmin() {
     <div>
       <RhPageHeader
         title="Produção"
-        description="Lance a produção mensal — atualiza automaticamente o ranking e o painel de cada consultora."
-        actions={<ImportProducaoDialog defaultMes={mes} userId={user?.id} />}
+        description={
+          isAdmin
+            ? "Lance a produção mensal — atualiza automaticamente o ranking e o painel de cada consultora."
+            : "Acompanhe a produção mensal lançada/importada no sistema."
+        }
+        actions={isAdmin ? <ImportProducaoDialog defaultMes={mes} userId={user?.id} /> : undefined}
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <CardHeader className="pb-3"><CardTitle className="text-base">Novo lançamento</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Mês de referência</Label>
-              <Input type="month" value={mes} onChange={(e) => setMes(e.target.value || mesAtual())} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Consultora</Label>
-              <Select value={consultora} onValueChange={setConsultora}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  {colaboradores.map((c) => (
-                    <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {consultoraDep && <p className="text-xs text-muted-foreground">{consultoraDep}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label>Valor produzido (R$)</Label>
-              <Input inputMode="decimal" placeholder="0,00" value={valor} onChange={(e) => setValor(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Contratos</Label>
-              <Input inputMode="numeric" placeholder="0" value={contratos} onChange={(e) => setContratos(e.target.value)} />
-            </div>
-            <Button onClick={onSave} disabled={saving} className="w-full">
-              <Save className="mr-2 h-4 w-4" /> {saving ? "Salvando…" : "Salvar produção"}
-            </Button>
-          </CardContent>
-        </Card>
+      <div className={isAdmin ? "grid gap-4 lg:grid-cols-3" : "grid gap-4"}>
+        {isAdmin && (
+          <Card className="lg:col-span-1">
+            <CardHeader className="pb-3"><CardTitle className="text-base">Novo lançamento</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>Mês de referência</Label>
+                <Input type="month" value={mes} onChange={(e) => setMes(e.target.value || mesAtual())} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Consultora</Label>
+                <Select value={consultora} onValueChange={setConsultora}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {colaboradores.map((c) => (
+                      <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {consultoraDep && <p className="text-xs text-muted-foreground">{consultoraDep}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label>Valor produzido (R$)</Label>
+                <Input inputMode="decimal" placeholder="0,00" value={valor} onChange={(e) => setValor(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Contratos</Label>
+                <Input inputMode="numeric" placeholder="0" value={contratos} onChange={(e) => setContratos(e.target.value)} />
+              </div>
+              <Button onClick={onSave} disabled={saving} className="w-full">
+                <Save className="mr-2 h-4 w-4" /> {saving ? "Salvando…" : "Salvar produção"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-2"><CardTitle className="text-base">Lançamentos de {formatMes(mes)}</CardTitle></CardHeader>
+        <Card className={isAdmin ? "lg:col-span-2" : ""}>
+          <CardHeader className="flex flex-row items-center justify-between gap-3 pb-2">
+            <CardTitle className="text-base">Lançamentos de {formatMes(mes)}</CardTitle>
+            {!isAdmin && (
+              <Input
+                type="month"
+                className="w-40"
+                value={mes}
+                onChange={(e) => setMes(e.target.value || mesAtual())}
+              />
+            )}
+          </CardHeader>
           <CardContent className="space-y-2">
             {(lista ?? []).length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">Nenhum lançamento neste mês.</p>
@@ -163,12 +179,16 @@ function ProducaoAdmin() {
                     <FileText className="mr-1 h-3 w-3" /> {r.contratos}
                   </Badge>
                   <span className="font-semibold tabular-nums">{brl(r.valor)}</span>
-                  <Button variant="ghost" size="sm" onClick={() => onEdit(r.consultora, r.valor, r.contratos)}>
-                    Editar
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => onDelete(r.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  {isAdmin && (
+                    <>
+                      <Button variant="ghost" size="sm" onClick={() => onEdit(r.consultora, r.valor, r.contratos)}>
+                        Editar
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => onDelete(r.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               ))
             )}
