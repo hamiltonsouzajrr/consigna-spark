@@ -252,10 +252,13 @@ export function ImportProducaoDialog({
                 </Badge>
               )}
             </div>
-            <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border p-2">
-              {rows.map((r) => (
+            <p className="text-xs text-muted-foreground">
+              Confira e selecione a consultora responsável por cada linha antes de importar.
+            </p>
+            <div className="max-h-72 space-y-1 overflow-y-auto rounded-lg border p-2">
+              {rows.map((r, i) => (
                 <div
-                  key={r.linha}
+                  key={i}
                   className={`flex items-center gap-2 rounded-md p-1.5 text-sm ${
                     r.erros.length ? "bg-rose-50 dark:bg-rose-500/10" : ""
                   }`}
@@ -263,11 +266,20 @@ export function ImportProducaoDialog({
                   <span className="w-8 shrink-0 text-center text-xs text-muted-foreground">
                     {r.linha}
                   </span>
-                  <span className="min-w-0 flex-1 truncate">{r.consultora || "—"}</span>
-                  <span className="hidden tabular-nums sm:inline">
+                  <Select value={r.consultora || undefined} onValueChange={(v) => onChangeConsultora(i, v)}>
+                    <SelectTrigger className="h-8 min-w-0 flex-1">
+                      <SelectValue placeholder="Selecionar consultora" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {colaboradores.map((c) => (
+                        <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="hidden w-24 text-right tabular-nums sm:inline">
                     {isNaN(r.valor) ? "—" : brl(r.valor)}
                   </span>
-                  <span className="w-12 text-right text-xs text-muted-foreground">
+                  <span className="w-12 shrink-0 text-right text-xs text-muted-foreground">
                     {isNaN(r.contratos) ? "—" : `${r.contratos}c`}
                   </span>
                   {r.erros.length > 0 && (
@@ -276,6 +288,7 @@ export function ImportProducaoDialog({
                 </div>
               ))}
             </div>
+
           </>
         )}
 
