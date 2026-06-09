@@ -146,7 +146,7 @@ export const getReconhecimentos = createServerFn({ method: "GET" })
     const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
     const { data, error } = await supabase
       .from("rh_reconhecimentos")
-      .select("id, de, para, tipo, mensagem, data, periodo_inicio, periodo_fim, popup")
+      .select("id, de, para, tipo, periodicidade, mensagem, data, periodo_inicio, periodo_fim, popup")
       .order("data", { ascending: false });
     if (error) throw new Error(error.message);
     return { isAdmin: !!isAdmin, items: (data ?? []) as Reconhecimento[] };
@@ -156,7 +156,8 @@ const schema = z.object({
   id: z.string().uuid().optional(),
   de: z.string().min(1).max(120),
   para: z.string().min(1).max(120),
-  tipo: z.string().min(1).max(60),
+  tipo: z.string().min(1).max(80),
+  periodicidade: z.enum(["pontual", "diario", "semanal", "mensal"]).optional(),
   mensagem: z.string().min(1).max(600),
   data: z.string().min(1),
   periodo_inicio: z.string().nullable().optional(),
@@ -173,6 +174,7 @@ export const saveReconhecimento = createServerFn({ method: "POST" })
       de: data.de,
       para: data.para,
       tipo: data.tipo,
+      periodicidade: data.periodicidade ?? "pontual",
       mensagem: data.mensagem,
       data: data.data,
       periodo_inicio: data.periodo_inicio || null,
