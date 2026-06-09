@@ -119,6 +119,8 @@ function Page() {
   const consultants = consultantsQ.data ?? [];
   const emailById = useMemo(() => new Map(consultants.map((c) => [c.id, c.email])), [consultants]);
 
+  const { leads: parsed, meta: importMeta } = useMemo(() => buildParsed(rawRecords, phoneCol), [rawRecords, phoneCol]);
+
   // Default: all consultants selected for distribution/recycle once loaded.
   useEffect(() => {
     if (consultants.length && selectedConsultants.size === 0) {
