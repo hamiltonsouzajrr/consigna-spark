@@ -317,6 +317,8 @@ function Page() {
                     Nenhum número válido detectado nesta coluna — selecione a coluna correta acima.
                   </p>
                 )}
+              </div>
+
               {importDist === "manual" ? (
                 <div>
                   <Label className="text-xs">Atribuir a</Label>
