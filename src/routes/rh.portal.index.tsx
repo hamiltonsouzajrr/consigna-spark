@@ -180,6 +180,7 @@ function PortalIndex() {
 
   return (
     <div>
+      <ReconhecimentosPopup />
       <RhPageHeader
         title="Portal do Colaborador"
         description="Autoatendimento e informações pessoais."
