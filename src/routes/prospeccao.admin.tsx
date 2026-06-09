@@ -227,15 +227,33 @@ function Page() {
           {parsed.length > 0 && (
             <div className="mt-3 space-y-2">
               <div>
-                <Label className="text-xs">Atribuir a</Label>
-                <Select value={uploadConsultant} onValueChange={setUploadConsultant}>
+                <Label className="text-xs">Distribuição</Label>
+                <Select value={importDist} onValueChange={setImportDist}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Não atribuir agora</SelectItem>
-                    {consultants.map((c) => <SelectItem key={c.id} value={c.id}>{c.email}</SelectItem>)}
+                    <SelectItem value="manual">Manual (um responsável)</SelectItem>
+                    <SelectItem value="round_robin">Automática — round-robin</SelectItem>
+                    <SelectItem value="score">Automática — por score</SelectItem>
+                    <SelectItem value="city">Automática — por cidade</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              {importDist === "manual" ? (
+                <div>
+                  <Label className="text-xs">Atribuir a</Label>
+                  <Select value={uploadConsultant} onValueChange={setUploadConsultant}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Não atribuir agora</SelectItem>
+                      {consultants.map((c) => <SelectItem key={c.id} value={c.id}>{c.email}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <p className="rounded-md bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+                  Será dividido entre as <strong>{selectedConsultants.size}</strong> consultora(s) marcadas no card "Distribuir &amp; reciclar". Cada lead vai para apenas uma pessoa.
+                </p>
+              )}
               <div className="flex items-center gap-2">
                 <input id="dedup" type="checkbox" checked={dedup} onChange={(e) => setDedup(e.target.checked)} className="h-4 w-4 accent-primary" />
                 <Label htmlFor="dedup" className="text-xs cursor-pointer">Ignorar duplicados (por CPF/telefone)</Label>
