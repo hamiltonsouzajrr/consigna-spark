@@ -57,8 +57,14 @@ import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
 import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
 import { Route as RhAuditoriaRouteImport } from './routes/rh.auditoria'
 import { Route as RhAcessosRouteImport } from './routes/rh.acessos'
+import { Route as ProspeccaoRecentesRouteImport } from './routes/prospeccao.recentes'
+import { Route as ProspeccaoFollowupsRouteImport } from './routes/prospeccao.followups'
 import { Route as ProspeccaoAdminRouteImport } from './routes/prospeccao.admin'
 import { Route as ProspeccaoLeadIdRouteImport } from './routes/prospeccao.$leadId'
+import { Route as ProducaoMeuDiaRouteImport } from './routes/producao.meu-dia'
+import { Route as ProducaoMetasRouteImport } from './routes/producao.metas'
+import { Route as PosVendaFeedbacksRouteImport } from './routes/pos-venda.feedbacks'
+import { Route as PosVendaAvaliacoesRouteImport } from './routes/pos-venda.avaliacoes'
 import { Route as RhPortalIndexRouteImport } from './routes/rh.portal.index'
 import { Route as RhPortalKpiRouteImport } from './routes/rh.portal.$kpi'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
@@ -304,6 +310,16 @@ const RhAcessosRoute = RhAcessosRouteImport.update({
   path: '/acessos',
   getParentRoute: () => RhRoute,
 } as any)
+const ProspeccaoRecentesRoute = ProspeccaoRecentesRouteImport.update({
+  id: '/prospeccao/recentes',
+  path: '/prospeccao/recentes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProspeccaoFollowupsRoute = ProspeccaoFollowupsRouteImport.update({
+  id: '/prospeccao/followups',
+  path: '/prospeccao/followups',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProspeccaoAdminRoute = ProspeccaoAdminRouteImport.update({
   id: '/prospeccao/admin',
   path: '/prospeccao/admin',
@@ -312,6 +328,26 @@ const ProspeccaoAdminRoute = ProspeccaoAdminRouteImport.update({
 const ProspeccaoLeadIdRoute = ProspeccaoLeadIdRouteImport.update({
   id: '/prospeccao/$leadId',
   path: '/prospeccao/$leadId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProducaoMeuDiaRoute = ProducaoMeuDiaRouteImport.update({
+  id: '/producao/meu-dia',
+  path: '/producao/meu-dia',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProducaoMetasRoute = ProducaoMetasRouteImport.update({
+  id: '/producao/metas',
+  path: '/producao/metas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PosVendaFeedbacksRoute = PosVendaFeedbacksRouteImport.update({
+  id: '/pos-venda/feedbacks',
+  path: '/pos-venda/feedbacks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PosVendaAvaliacoesRoute = PosVendaAvaliacoesRouteImport.update({
+  id: '/pos-venda/avaliacoes',
+  path: '/pos-venda/avaliacoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RhPortalIndexRoute = RhPortalIndexRouteImport.update({
@@ -354,8 +390,14 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/pos-venda/avaliacoes': typeof PosVendaAvaliacoesRoute
+  '/pos-venda/feedbacks': typeof PosVendaFeedbacksRoute
+  '/producao/metas': typeof ProducaoMetasRoute
+  '/producao/meu-dia': typeof ProducaoMeuDiaRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof ProspeccaoAdminRoute
+  '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
+  '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -409,8 +451,14 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/pos-venda/avaliacoes': typeof PosVendaAvaliacoesRoute
+  '/pos-venda/feedbacks': typeof PosVendaFeedbacksRoute
+  '/producao/metas': typeof ProducaoMetasRoute
+  '/producao/meu-dia': typeof ProducaoMeuDiaRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof ProspeccaoAdminRoute
+  '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
+  '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -465,8 +513,14 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/pos-venda/avaliacoes': typeof PosVendaAvaliacoesRoute
+  '/pos-venda/feedbacks': typeof PosVendaFeedbacksRoute
+  '/producao/metas': typeof ProducaoMetasRoute
+  '/producao/meu-dia': typeof ProducaoMeuDiaRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof ProspeccaoAdminRoute
+  '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
+  '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -523,8 +577,14 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/pos-venda/avaliacoes'
+    | '/pos-venda/feedbacks'
+    | '/producao/metas'
+    | '/producao/meu-dia'
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
+    | '/prospeccao/followups'
+    | '/prospeccao/recentes'
     | '/rh/acessos'
     | '/rh/auditoria'
     | '/rh/avaliacoes'
@@ -578,8 +638,14 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/pos-venda/avaliacoes'
+    | '/pos-venda/feedbacks'
+    | '/producao/metas'
+    | '/producao/meu-dia'
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
+    | '/prospeccao/followups'
+    | '/prospeccao/recentes'
     | '/rh/acessos'
     | '/rh/auditoria'
     | '/rh/avaliacoes'
@@ -633,8 +699,14 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/pos-venda/avaliacoes'
+    | '/pos-venda/feedbacks'
+    | '/producao/metas'
+    | '/producao/meu-dia'
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
+    | '/prospeccao/followups'
+    | '/prospeccao/recentes'
     | '/rh/acessos'
     | '/rh/auditoria'
     | '/rh/avaliacoes'
@@ -690,8 +762,14 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadRoute: typeof UploadRoute
   WhatsappRoute: typeof WhatsappRoute
+  PosVendaAvaliacoesRoute: typeof PosVendaAvaliacoesRoute
+  PosVendaFeedbacksRoute: typeof PosVendaFeedbacksRoute
+  ProducaoMetasRoute: typeof ProducaoMetasRoute
+  ProducaoMeuDiaRoute: typeof ProducaoMeuDiaRoute
   ProspeccaoLeadIdRoute: typeof ProspeccaoLeadIdRoute
   ProspeccaoAdminRoute: typeof ProspeccaoAdminRoute
+  ProspeccaoFollowupsRoute: typeof ProspeccaoFollowupsRoute
+  ProspeccaoRecentesRoute: typeof ProspeccaoRecentesRoute
   ProspeccaoIndexRoute: typeof ProspeccaoIndexRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
@@ -1034,6 +1112,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhAcessosRouteImport
       parentRoute: typeof RhRoute
     }
+    '/prospeccao/recentes': {
+      id: '/prospeccao/recentes'
+      path: '/prospeccao/recentes'
+      fullPath: '/prospeccao/recentes'
+      preLoaderRoute: typeof ProspeccaoRecentesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prospeccao/followups': {
+      id: '/prospeccao/followups'
+      path: '/prospeccao/followups'
+      fullPath: '/prospeccao/followups'
+      preLoaderRoute: typeof ProspeccaoFollowupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/prospeccao/admin': {
       id: '/prospeccao/admin'
       path: '/prospeccao/admin'
@@ -1046,6 +1138,34 @@ declare module '@tanstack/react-router' {
       path: '/prospeccao/$leadId'
       fullPath: '/prospeccao/$leadId'
       preLoaderRoute: typeof ProspeccaoLeadIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/producao/meu-dia': {
+      id: '/producao/meu-dia'
+      path: '/producao/meu-dia'
+      fullPath: '/producao/meu-dia'
+      preLoaderRoute: typeof ProducaoMeuDiaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/producao/metas': {
+      id: '/producao/metas'
+      path: '/producao/metas'
+      fullPath: '/producao/metas'
+      preLoaderRoute: typeof ProducaoMetasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pos-venda/feedbacks': {
+      id: '/pos-venda/feedbacks'
+      path: '/pos-venda/feedbacks'
+      fullPath: '/pos-venda/feedbacks'
+      preLoaderRoute: typeof PosVendaFeedbacksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pos-venda/avaliacoes': {
+      id: '/pos-venda/avaliacoes'
+      path: '/pos-venda/avaliacoes'
+      fullPath: '/pos-venda/avaliacoes'
+      preLoaderRoute: typeof PosVendaAvaliacoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rh/portal/': {
@@ -1191,8 +1311,14 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadRoute: UploadRoute,
   WhatsappRoute: WhatsappRoute,
+  PosVendaAvaliacoesRoute: PosVendaAvaliacoesRoute,
+  PosVendaFeedbacksRoute: PosVendaFeedbacksRoute,
+  ProducaoMetasRoute: ProducaoMetasRoute,
+  ProducaoMeuDiaRoute: ProducaoMeuDiaRoute,
   ProspeccaoLeadIdRoute: ProspeccaoLeadIdRoute,
   ProspeccaoAdminRoute: ProspeccaoAdminRoute,
+  ProspeccaoFollowupsRoute: ProspeccaoFollowupsRoute,
+  ProspeccaoRecentesRoute: ProspeccaoRecentesRoute,
   ProspeccaoIndexRoute: ProspeccaoIndexRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
