@@ -31,7 +31,7 @@ export const Route = createFileRoute("/prospeccao/admin")({
 });
 
 type LeadRow = { id: string; nome: string; cidade: string | null; origem: string | null; status: LeadStatus; score: number; consultant_id: string | null; created_at: string };
-type ParsedLead = { nome: string; telefone?: string; cpf?: string; cidade?: string; origem?: string; orcamento?: number; urgencia?: "alta" | "media" | "baixa" };
+type ParsedLead = { nome: string; telefone?: string; telefones?: string[]; cpf?: string; cidade?: string; origem?: string; orcamento?: number; urgencia?: "alta" | "media" | "baixa" };
 type ImportMeta = { total: number; comWhats: number; invalidos: number; semTelefone: number; phoneCol: string | null };
 
 const PHONE_ALIASES = ["telefone", "celular", "whatsapp", "cel1", "cel2", "cel", "fone", "contato", "numero", "número"];
