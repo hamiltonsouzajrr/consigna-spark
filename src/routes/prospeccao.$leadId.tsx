@@ -46,6 +46,7 @@ function fmt(iso: string | null) {
 
 function Page() {
   const { user, loading } = useAuth();
+  const { isAdmin } = useRhAccess();
   const { leadId } = useParams({ from: "/prospeccao/$leadId" });
   const runAi = useServerFn(aiLeadAssist);
 
