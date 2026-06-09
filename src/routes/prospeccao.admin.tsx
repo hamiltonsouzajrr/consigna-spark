@@ -181,10 +181,25 @@ function Page() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full" disabled={busy} onClick={confirmImport}>Importar {parsed.length} lead(s)</Button>
+              <div className="flex items-center gap-2">
+                <input id="dedup" type="checkbox" checked={dedup} onChange={(e) => setDedup(e.target.checked)} className="h-4 w-4 accent-primary" />
+                <Label htmlFor="dedup" className="text-xs cursor-pointer">Ignorar duplicados (por CPF/telefone)</Label>
+              </div>
+              {progress && (
+                <div className="space-y-1">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-full bg-primary transition-all" style={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Importando {progress.done} de {progress.total}…</p>
+                </div>
+              )}
+              <Button className="w-full" disabled={busy} onClick={confirmImport}>
+                {busy ? "Importando…" : `Importar ${parsed.length} lead(s)`}
+              </Button>
             </div>
           )}
         </Card>
+
 
         {/* Manual */}
         <Card className="p-5">
