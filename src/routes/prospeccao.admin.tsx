@@ -179,10 +179,11 @@ function Page() {
     const total = parsed.length;
     setProgress({ done: 0, total });
     let inserted = 0, skipped = 0, updated = 0;
+    const batch = fileName ? `${fileName} · ${new Date().toLocaleString("pt-BR")}` : null;
     try {
       for (let i = 0; i < total; i += chunkSize) {
         const slice = parsed.slice(i, i + chunkSize);
-        const r = await createLeads({ data: { leads: slice.map((p) => ({ ...p, consultant_id: cid })), dedup, update: updateExisting } });
+        const r = await createLeads({ data: { leads: slice.map((p) => ({ ...p, consultant_id: cid })), dedup, update: updateExisting, batch } });
         inserted += r.inserted; skipped += r.skipped ?? 0; updated += r.updated ?? 0;
         setProgress({ done: Math.min(i + chunkSize, total), total });
       }
@@ -193,7 +194,7 @@ function Page() {
       }
       toast.success(`${inserted} novo(s)${updated ? ` · ${updated} atualizado(s)` : ""}${skipped ? ` · ${skipped} ignorado(s)` : ""}${distMsg}.`);
       setRawRecords([]); setHeaders([]); setPhoneCol("__auto__"); setFileName("");
-      await loadLeads(); statsQ.refetch();
+      await loadLeads(); statsQ.refetch(); batchesQ.refetch();
     } catch (e: any) { toast.error(e?.message ?? "Falha ao importar."); }
     setProgress(null);
     setBusy(false);
