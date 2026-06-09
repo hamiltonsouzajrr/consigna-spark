@@ -20,6 +20,7 @@ import {
   PLAYBOOK, scoreTone, scoreLabel, URGENCIA_LABEL, whatsappLink,
   type LeadStatus, type SlaStatus, type EventKind,
 } from "@/lib/prospeccao/constants";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { aiLeadAssist } from "@/lib/prospeccao/prospeccao.functions";
 
 export const Route = createFileRoute("/prospeccao/$leadId")({

@@ -16,6 +16,7 @@ import {
   STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, scoreTone, scoreLabel, whatsappLink,
   type LeadStatus, type SlaStatus,
 } from "@/lib/prospeccao/constants";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 
 export const Route = createFileRoute("/prospeccao/")({
   head: () => ({
