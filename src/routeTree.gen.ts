@@ -27,6 +27,7 @@ import { Route as CalculadoraAlRouteImport } from './routes/calculadora-al'
 import { Route as AlagoasRouteImport } from './routes/alagoas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RhIndexRouteImport } from './routes/rh.index'
+import { Route as ProspeccaoIndexRouteImport } from './routes/prospeccao.index'
 import { Route as RhTurnoverRouteImport } from './routes/rh.turnover'
 import { Route as RhTreinamentosRouteImport } from './routes/rh.treinamentos'
 import { Route as RhRecrutamentoRouteImport } from './routes/rh.recrutamento'
@@ -57,6 +58,8 @@ import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
 import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
 import { Route as RhAuditoriaRouteImport } from './routes/rh.auditoria'
 import { Route as RhAcessosRouteImport } from './routes/rh.acessos'
+import { Route as ProspeccaoAdminRouteImport } from './routes/prospeccao.admin'
+import { Route as ProspeccaoLeadIdRouteImport } from './routes/prospeccao.$leadId'
 import { Route as RhPortalIndexRouteImport } from './routes/rh.portal.index'
 import { Route as RhPortalKpiRouteImport } from './routes/rh.portal.$kpi'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
@@ -151,6 +154,11 @@ const RhIndexRoute = RhIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => RhRoute,
+} as any)
+const ProspeccaoIndexRoute = ProspeccaoIndexRouteImport.update({
+  id: '/prospeccao/',
+  path: '/prospeccao/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RhTurnoverRoute = RhTurnoverRouteImport.update({
   id: '/turnover',
@@ -302,6 +310,16 @@ const RhAcessosRoute = RhAcessosRouteImport.update({
   path: '/acessos',
   getParentRoute: () => RhRoute,
 } as any)
+const ProspeccaoAdminRoute = ProspeccaoAdminRouteImport.update({
+  id: '/prospeccao/admin',
+  path: '/prospeccao/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProspeccaoLeadIdRoute = ProspeccaoLeadIdRouteImport.update({
+  id: '/prospeccao/$leadId',
+  path: '/prospeccao/$leadId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RhPortalIndexRoute = RhPortalIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -342,6 +360,8 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
+  '/prospeccao/admin': typeof ProspeccaoAdminRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -372,6 +392,7 @@ export interface FileRoutesByFullPath {
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/turnover': typeof RhTurnoverRoute
+  '/prospeccao/': typeof ProspeccaoIndexRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof RhPortalKpiRoute
@@ -395,6 +416,8 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
+  '/prospeccao/admin': typeof ProspeccaoAdminRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -424,6 +447,7 @@ export interface FileRoutesByTo {
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/turnover': typeof RhTurnoverRoute
+  '/prospeccao': typeof ProspeccaoIndexRoute
   '/rh': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof RhPortalKpiRoute
@@ -449,6 +473,8 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
+  '/prospeccao/admin': typeof ProspeccaoAdminRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -479,6 +505,7 @@ export interface FileRoutesById {
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/turnover': typeof RhTurnoverRoute
+  '/prospeccao/': typeof ProspeccaoIndexRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof RhPortalKpiRoute
@@ -505,6 +532,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/prospeccao/$leadId'
+    | '/prospeccao/admin'
     | '/rh/acessos'
     | '/rh/auditoria'
     | '/rh/avaliacoes'
@@ -535,6 +564,7 @@ export interface FileRouteTypes {
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh/turnover'
+    | '/prospeccao/'
     | '/rh/'
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
@@ -558,6 +588,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/prospeccao/$leadId'
+    | '/prospeccao/admin'
     | '/rh/acessos'
     | '/rh/auditoria'
     | '/rh/avaliacoes'
@@ -587,6 +619,7 @@ export interface FileRouteTypes {
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh/turnover'
+    | '/prospeccao'
     | '/rh'
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
@@ -611,6 +644,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/prospeccao/$leadId'
+    | '/prospeccao/admin'
     | '/rh/acessos'
     | '/rh/auditoria'
     | '/rh/avaliacoes'
@@ -641,6 +676,7 @@ export interface FileRouteTypes {
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh/turnover'
+    | '/prospeccao/'
     | '/rh/'
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
@@ -666,6 +702,9 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadRoute: typeof UploadRoute
   WhatsappRoute: typeof WhatsappRoute
+  ProspeccaoLeadIdRoute: typeof ProspeccaoLeadIdRoute
+  ProspeccaoAdminRoute: typeof ProspeccaoAdminRoute
+  ProspeccaoIndexRoute: typeof ProspeccaoIndexRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
@@ -796,6 +835,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rh/'
       preLoaderRoute: typeof RhIndexRouteImport
       parentRoute: typeof RhRoute
+    }
+    '/prospeccao/': {
+      id: '/prospeccao/'
+      path: '/prospeccao'
+      fullPath: '/prospeccao/'
+      preLoaderRoute: typeof ProspeccaoIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/rh/turnover': {
       id: '/rh/turnover'
@@ -1007,6 +1053,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhAcessosRouteImport
       parentRoute: typeof RhRoute
     }
+    '/prospeccao/admin': {
+      id: '/prospeccao/admin'
+      path: '/prospeccao/admin'
+      fullPath: '/prospeccao/admin'
+      preLoaderRoute: typeof ProspeccaoAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prospeccao/$leadId': {
+      id: '/prospeccao/$leadId'
+      path: '/prospeccao/$leadId'
+      fullPath: '/prospeccao/$leadId'
+      preLoaderRoute: typeof ProspeccaoLeadIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rh/portal/': {
       id: '/rh/portal/'
       path: '/'
@@ -1152,18 +1212,11 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadRoute: UploadRoute,
   WhatsappRoute: WhatsappRoute,
+  ProspeccaoLeadIdRoute: ProspeccaoLeadIdRoute,
+  ProspeccaoAdminRoute: ProspeccaoAdminRoute,
+  ProspeccaoIndexRoute: ProspeccaoIndexRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

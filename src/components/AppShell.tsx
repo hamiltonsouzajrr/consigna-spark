@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, FileText, QrCode, Menu, Users, MessageCircle } from "lucide-react";
+import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, FileText, QrCode, Menu, Users, MessageCircle, Target } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,7 @@ const navSections: NavSection[] = [
   {
     section: "Prospecção",
     items: [
+      { to: "/prospeccao", label: "CRM / Prospecção", full: "CRM DE PROSPECÇÃO - FILA, SCORE E FOLLOW-UP", icon: Target },
       { to: "/pesquisas", label: "Pesquisas", icon: Search },
       { to: "/safe-consig", label: "Verificar SafeConsig", icon: ShieldCheck },
       { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: TrendingUp, badge: true },
