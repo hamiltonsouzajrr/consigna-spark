@@ -48,6 +48,7 @@ function Page() {
   const [fileName, setFileName] = useState("");
   const [uploadConsultant, setUploadConsultant] = useState<string>("none");
   const [dedup, setDedup] = useState(true);
+  const [updateExisting, setUpdateExisting] = useState(true);
   const [importDist, setImportDist] = useState<string>("manual");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [busy, setBusy] = useState(false);
