@@ -25,6 +25,7 @@ const navSections: NavSection[] = [
   {
     section: "Prospecção",
     items: [
+      { to: "/prospeccao", label: "CRM / Prospecção", full: "CRM DE PROSPECÇÃO - FILA, SCORE E FOLLOW-UP", icon: Target },
       { to: "/pesquisas", label: "Pesquisas", icon: Search },
       { to: "/safe-consig", label: "Verificar SafeConsig", icon: ShieldCheck },
       { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: TrendingUp, badge: true },
