@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import {
   LayoutDashboard, Users, Building2, BriefcaseBusiness, Plane, Clock,
   FileText, GraduationCap, Laptop, Star, AlertTriangle, UserSearch,
-  ClipboardCheck, UserMinus, Settings, Network, ReceiptText, HeartHandshake,
+  ClipboardCheck, UserMinus, Network, ReceiptText, HeartHandshake,
   Target, Gauge, TrendingDown, Trophy, IdCard,
   Goal, Award, ShieldCheck, Lock, LineChart,
 } from "lucide-react";
