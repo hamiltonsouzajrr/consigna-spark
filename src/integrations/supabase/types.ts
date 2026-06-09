@@ -110,6 +110,82 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_events: {
+        Row: {
+          body: string | null
+          consultant_id: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["prospect_event_kind"]
+          lead_id: string
+          meta: Json | null
+        }
+        Insert: {
+          body?: string | null
+          consultant_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["prospect_event_kind"]
+          lead_id: string
+          meta?: Json | null
+        }
+        Update: {
+          body?: string | null
+          consultant_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["prospect_event_kind"]
+          lead_id?: string
+          meta?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_tasks: {
+        Row: {
+          consultant_id: string | null
+          created_at: string
+          due_at: string
+          id: string
+          lead_id: string
+          status: Database["public"]["Enums"]["prospect_task_status"]
+          title: string
+        }
+        Insert: {
+          consultant_id?: string | null
+          created_at?: string
+          due_at: string
+          id?: string
+          lead_id: string
+          status?: Database["public"]["Enums"]["prospect_task_status"]
+          title: string
+        }
+        Update: {
+          consultant_id?: string | null
+          created_at?: string
+          due_at?: string
+          id?: string
+          lead_id?: string
+          status?: Database["public"]["Enums"]["prospect_task_status"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_tasks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pesquisas: {
         Row: {
           created_at: string
@@ -253,6 +329,81 @@ export type Database = {
           total?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      prospect_leads: {
+        Row: {
+          cidade: string | null
+          consultant_id: string | null
+          cpf: string | null
+          created_at: string
+          created_by: string | null
+          first_response_at: string | null
+          id: string
+          last_contact_at: string | null
+          loss_reason: string | null
+          next_follow_up_at: string | null
+          nome: string
+          notes: string | null
+          orcamento: number | null
+          origem: string | null
+          quality_score: number
+          respondeu_whatsapp: boolean
+          score: number
+          sla_status: Database["public"]["Enums"]["prospect_sla_status"]
+          status: Database["public"]["Enums"]["prospect_status"]
+          telefone: string | null
+          updated_at: string
+          urgencia: string | null
+        }
+        Insert: {
+          cidade?: string | null
+          consultant_id?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          first_response_at?: string | null
+          id?: string
+          last_contact_at?: string | null
+          loss_reason?: string | null
+          next_follow_up_at?: string | null
+          nome: string
+          notes?: string | null
+          orcamento?: number | null
+          origem?: string | null
+          quality_score?: number
+          respondeu_whatsapp?: boolean
+          score?: number
+          sla_status?: Database["public"]["Enums"]["prospect_sla_status"]
+          status?: Database["public"]["Enums"]["prospect_status"]
+          telefone?: string | null
+          updated_at?: string
+          urgencia?: string | null
+        }
+        Update: {
+          cidade?: string | null
+          consultant_id?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          first_response_at?: string | null
+          id?: string
+          last_contact_at?: string | null
+          loss_reason?: string | null
+          next_follow_up_at?: string | null
+          nome?: string
+          notes?: string | null
+          orcamento?: number | null
+          origem?: string | null
+          quality_score?: number
+          respondeu_whatsapp?: boolean
+          score?: number
+          sla_status?: Database["public"]["Enums"]["prospect_sla_status"]
+          status?: Database["public"]["Enums"]["prospect_status"]
+          telefone?: string | null
+          updated_at?: string
+          urgencia?: string | null
         }
         Relationships: []
       }
@@ -653,6 +804,16 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       consulta_status: "pendente" | "processando" | "concluido" | "erro"
+      prospect_event_kind:
+        | "ligacao"
+        | "whatsapp"
+        | "nota"
+        | "status"
+        | "followup"
+        | "sistema"
+      prospect_sla_status: "ok" | "atencao" | "atrasado"
+      prospect_status: "novo" | "qualificado" | "proposta" | "ganho" | "perdido"
+      prospect_task_status: "pending" | "done" | "canceled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -782,6 +943,17 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       consulta_status: ["pendente", "processando", "concluido", "erro"],
+      prospect_event_kind: [
+        "ligacao",
+        "whatsapp",
+        "nota",
+        "status",
+        "followup",
+        "sistema",
+      ],
+      prospect_sla_status: ["ok", "atencao", "atrasado"],
+      prospect_status: ["novo", "qualificado", "proposta", "ganho", "perdido"],
+      prospect_task_status: ["pending", "done", "canceled"],
     },
   },
 } as const
