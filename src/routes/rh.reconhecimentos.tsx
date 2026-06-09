@@ -27,7 +27,7 @@ import { ReconhecimentosPopup } from "@/components/rh/ReconhecimentosPopup";
 import { formatDate } from "@/lib/rh/mock";
 import {
   getReconhecimentos, saveReconhecimento, deleteReconhecimento,
-  TIPOS, type Reconhecimento,
+  TIPOS, CATEGORIAS_RECONHECIMENTO, PERIODICIDADES, type Reconhecimento,
 } from "@/lib/rh/reconhecimentos.functions";
 
 export const Route = createFileRoute("/rh/reconhecimentos")({
