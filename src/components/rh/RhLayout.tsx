@@ -44,11 +44,12 @@ export const rhNav = [
 
 // Admin-only entries (appended for admins, hidden from everyone else).
 export const rhAdminNav = [
+  { to: "/rh/producao", label: "Produção", icon: LineChart },
   { to: "/rh/acessos", label: "Acessos", icon: ShieldCheck },
 ] as const;
 
 // Tabs only admins may open even if granted elsewhere.
-const ADMIN_ONLY = new Set<string>(["/rh/configuracoes", "/rh/acessos"]);
+const ADMIN_ONLY = new Set<string>(["/rh/configuracoes", "/rh/acessos", "/rh/producao"]);
 
 export function RhLayout({ children }: { children: ReactNode }) {
   const loc = useLocation();
