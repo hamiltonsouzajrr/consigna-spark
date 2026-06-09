@@ -141,6 +141,146 @@ export const adminAssignLeads = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Helper: apply leadId -> consultantId assignments in chunked updates.
+async function applyAssignments(
+  supabaseAdmin: any,
+  assignment: Map<string, string>,
+): Promise<Record<string, number>> {
+  const byCons = new Map<string, string[]>();
+  for (const [leadId, cons] of assignment) {
+    if (!byCons.has(cons)) byCons.set(cons, []);
+    byCons.get(cons)!.push(leadId);
+  }
+  const perConsultant: Record<string, number> = {};
+  for (const [cons, leadIds] of byCons) {
+    for (let i = 0; i < leadIds.length; i += 500) {
+      const chunk = leadIds.slice(i, i + 500);
+      const { error } = await supabaseAdmin
+        .from("prospect_leads")
+        .update({ consultant_id: cons } as any)
+        .in("id", chunk);
+      if (error) throw new Error(error.message);
+    }
+    perConsultant[cons] = leadIds.length;
+  }
+  return perConsultant;
+}
+
+// Distribute UNASSIGNED open leads across consultants. Each lead goes to exactly one.
+export const adminDistributeLeads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        consultantIds: z.array(z.string().uuid()).min(1).max(100),
+        mode: z.enum(["round_robin", "score", "city"]),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ assigned: number; perConsultant: Record<string, number> }> => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: leads, error } = await supabaseAdmin
+      .from("prospect_leads")
+      .select("id,cidade,score")
+      .is("consultant_id", null)
+      .not("status", "in", "(ganho,perdido)");
+    if (error) throw new Error(error.message);
+    if (!leads?.length) return { assigned: 0, perConsultant: {} };
+
+    const ids = data.consultantIds;
+    const assignment = new Map<string, string>();
+
+    if (data.mode === "city") {
+      const cityMap = new Map<string, any[]>();
+      for (const l of leads) {
+        const c = (l.cidade || "—").toLowerCase().trim();
+        if (!cityMap.has(c)) cityMap.set(c, []);
+        cityMap.get(c)!.push(l);
+      }
+      const cities = [...cityMap.entries()].sort((a, b) => b[1].length - a[1].length);
+      let ci = 0;
+      for (const [, arr] of cities) {
+        const cons = ids[ci % ids.length];
+        ci++;
+        for (const l of arr) assignment.set(l.id, cons);
+      }
+    } else {
+      const ordered = [...leads];
+      if (data.mode === "score") ordered.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+      ordered.forEach((l, i) => assignment.set(l.id, ids[i % ids.length]));
+    }
+
+    const perConsultant = await applyAssignments(supabaseAdmin, assignment);
+    return { assigned: assignment.size, perConsultant };
+  });
+
+// Recycle stale leads (assigned but neglected) to the least-loaded consultants.
+export const adminRecycleLeads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        consultantIds: z.array(z.string().uuid()).min(1).max(100),
+        idleDays: z.number().min(1).max(60),
+        mode: z.enum(["round_robin", "score"]).optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ recycled: number; perConsultant: Record<string, number> }> => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const cutoff = new Date(Date.now() - data.idleDays * 86400000).toISOString();
+
+    // Open leads, assigned to someone, created before cutoff and never (or long) contacted.
+    const { data: rows, error } = await supabaseAdmin
+      .from("prospect_leads")
+      .select("id,score,consultant_id,last_contact_at,created_at")
+      .not("status", "in", "(ganho,perdido)")
+      .not("consultant_id", "is", null)
+      .lt("created_at", cutoff);
+    if (error) throw new Error(error.message);
+    const stale = (rows ?? []).filter(
+      (r: any) => !r.last_contact_at || r.last_contact_at < cutoff,
+    );
+    if (!stale.length) return { recycled: 0, perConsultant: {} };
+
+    // Current open-lead load per candidate consultant.
+    const { data: loadRows } = await supabaseAdmin
+      .from("prospect_leads")
+      .select("consultant_id")
+      .not("status", "in", "(ganho,perdido)")
+      .in("consultant_id", data.consultantIds);
+    const load: Record<string, number> = {};
+    data.consultantIds.forEach((id) => (load[id] = 0));
+    (loadRows ?? []).forEach((r: any) => {
+      if (r.consultant_id in load) load[r.consultant_id]++;
+    });
+
+    const ordered = [...stale];
+    if (data.mode === "score") ordered.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+
+    const assignment = new Map<string, string>();
+    for (const l of ordered) {
+      let cands = data.consultantIds.filter((id) => id !== l.consultant_id);
+      if (!cands.length) cands = [...data.consultantIds];
+      cands.sort((a, b) => load[a] - load[b]);
+      const pick = cands[0];
+      // Skip if the only candidate is the current owner (nothing to recycle).
+      if (pick === l.consultant_id) continue;
+      assignment.set(l.id, pick);
+      load[pick]++;
+    }
+    if (!assignment.size) return { recycled: 0, perConsultant: {} };
+
+    const perConsultant = await applyAssignments(supabaseAdmin, assignment);
+    return { recycled: assignment.size, perConsultant };
+  });
+
 export type AdminStats = {
   totalLeads: number;
   semTratativa: number;
