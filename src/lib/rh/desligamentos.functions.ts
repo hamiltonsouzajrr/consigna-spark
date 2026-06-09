@@ -106,7 +106,7 @@ export const saveDesligamento = createServerFn({ method: "POST" })
         .select("historico")
         .eq("id", data.id)
         .maybeSingle();
-      const historico: HistoricoEntry[] = Array.isArray(prev?.historico) ? prev!.historico : [];
+      const historico: HistoricoEntry[] = Array.isArray(prev?.historico) ? (prev!.historico as unknown as HistoricoEntry[]) : [];
       historico.push({ acao: "Editado", por: userId, em: nowIso });
       const { error } = await supabase
         .from("rh_desligamentos")
