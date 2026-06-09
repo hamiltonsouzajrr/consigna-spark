@@ -100,13 +100,23 @@ function Page() {
   const confirmImport = async () => {
     if (!parsed.length) return;
     setBusy(true);
+    const cid = uploadConsultant === "none" ? null : uploadConsultant;
+    const chunkSize = 2000;
+    const total = parsed.length;
+    setProgress({ done: 0, total });
+    let inserted = 0, skipped = 0;
     try {
-      const cid = uploadConsultant === "none" ? null : uploadConsultant;
-      const r = await createLeads({ data: { leads: parsed.map((p) => ({ ...p, consultant_id: cid })) } });
-      toast.success(`${r.inserted} lead(s) importados.`);
+      for (let i = 0; i < total; i += chunkSize) {
+        const slice = parsed.slice(i, i + chunkSize);
+        const r = await createLeads({ data: { leads: slice.map((p) => ({ ...p, consultant_id: cid })), dedup } });
+        inserted += r.inserted; skipped += r.skipped ?? 0;
+        setProgress({ done: Math.min(i + chunkSize, total), total });
+      }
+      toast.success(`${inserted} lead(s) importados${skipped ? ` · ${skipped} duplicado(s) ignorado(s)` : ""}.`);
       setParsed([]); setFileName("");
       await loadLeads(); statsQ.refetch();
     } catch (e: any) { toast.error(e?.message ?? "Falha ao importar."); }
+    setProgress(null);
     setBusy(false);
   };
 
