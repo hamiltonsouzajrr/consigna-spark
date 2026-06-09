@@ -207,13 +207,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <div className="border-t border-white/10 p-3">
-          <p className="overflow-hidden whitespace-nowrap px-3 pb-2 text-xs text-white/60 opacity-0 transition-opacity duration-200 group-hover/side:opacity-100">{user?.email}</p>
+          <p className="overflow-hidden whitespace-nowrap px-3 pb-2 text-xs text-white/60 opacity-0 transition-opacity duration-300 ease-in-out group-hover/side:opacity-100 group-hover/side:delay-150">{user?.email}</p>
           <Button
             variant="ghost"
             className="w-full justify-start gap-2 text-white/90 hover:bg-white/10 hover:text-white"
             onClick={async () => { await signOut(); nav2({ to: "/login" }); }}
           >
-            <LogOut className="h-4 w-4 shrink-0" /> <span className="opacity-0 transition-opacity duration-200 group-hover/side:opacity-100">Sair</span>
+            <LogOut className="h-4 w-4 shrink-0" /> <span className="whitespace-nowrap opacity-0 transition-opacity duration-300 ease-in-out group-hover/side:opacity-100 group-hover/side:delay-150">Sair</span>
           </Button>
         </div>
       </aside>
