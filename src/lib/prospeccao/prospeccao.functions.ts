@@ -35,6 +35,7 @@ export const getProspectConsultants = createServerFn({ method: "GET" })
 const leadInput = z.object({
   nome: z.string().trim().min(1).max(200),
   telefone: z.string().trim().max(40).optional().nullable(),
+  telefones: z.array(z.string().trim().max(40)).max(20).optional().nullable(),
   cpf: z.string().trim().max(20).optional().nullable(),
   cidade: z.string().trim().max(120).optional().nullable(),
   origem: z.string().trim().max(60).optional().nullable(),
@@ -66,6 +67,7 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
     let rows = data.leads.map((l) => ({
       nome: l.nome,
       telefone: l.telefone || null,
+      telefones: (l.telefones && l.telefones.length ? l.telefones : (l.telefone ? [l.telefone] : [])),
       cpf: l.cpf || null,
       cidade: l.cidade || null,
       origem: l.origem || "planilha",
