@@ -98,11 +98,14 @@ function Page() {
         const get = (n: string) => (keys[n] ? String(r[keys[n]] ?? "").trim() : "");
         const nome = get("nome");
         if (!nome) continue;
-        const orc = get("orcamento") || get("orçamento") || get("margem");
+        const orc = get("orcamento") || get("orçamento") || get("margem") || get("renda");
         const urg = (get("urgencia") || get("urgência")).toLowerCase();
         out.push({
           nome,
-          telefone: get("telefone") || get("celular") || get("whatsapp") || undefined,
+          telefone:
+            get("telefone") || get("celular") || get("whatsapp") ||
+            get("cel1") || get("cel2") || get("cel") || get("fone") ||
+            get("contato") || get("numero") || get("número") || undefined,
           cpf: get("cpf") || undefined,
           cidade: get("cidade") || undefined,
           origem: get("origem") || "planilha",
