@@ -10,10 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RhStatCard } from "@/components/rh/RhStatCard";
 import {
-  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, MapPin,
+  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, MapPin, MessageCircle,
 } from "lucide-react";
 import {
-  STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, scoreTone, scoreLabel,
+  STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, scoreTone, scoreLabel, whatsappLink,
   type LeadStatus, type SlaStatus,
 } from "@/lib/prospeccao/constants";
 
@@ -168,6 +168,16 @@ function Page() {
                   <span>Follow-up: {fmtWhen(l.next_follow_up_at)}</span>
                 </div>
               </div>
+              {whatsappLink(l.telefone) && (
+                <button
+                  type="button"
+                  title="Abrir no WhatsApp"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(whatsappLink(l.telefone)!, "_blank", "noopener,noreferrer"); }}
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600 transition hover:bg-emerald-500/25 dark:text-emerald-400"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                </button>
+              )}
               <Badge variant="outline" className={SLA_TONE[l.sla_status]}>{SLA_LABEL[l.sla_status]}</Badge>
               <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
             </Card>

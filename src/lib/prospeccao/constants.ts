@@ -116,3 +116,23 @@ export function scoreLabel(score: number): string {
   if (score >= 40) return "Morno";
   return "Frio";
 }
+
+// Normalize a Brazilian phone number into the digits wa.me expects (with 55 country code).
+export function normalizeWhatsappNumber(phone?: string | null): string | null {
+  if (!phone) return null;
+  let d = phone.replace(/\D/g, "");
+  if (!d) return null;
+  // Drop a leading trunk zero if present (e.g. 082...).
+  if (d.length > 11 && d.startsWith("0")) d = d.replace(/^0+/, "");
+  // Add Brazil country code when it looks like a local number (10-11 digits).
+  if (d.length === 10 || d.length === 11) d = `55${d}`;
+  return d.length >= 12 ? d : null;
+}
+
+export function whatsappLink(phone?: string | null, message?: string): string | null {
+  const num = normalizeWhatsappNumber(phone);
+  if (!num) return null;
+  const base = `https://wa.me/${num}`;
+  return message ? `${base}?text=${encodeURIComponent(message)}` : base;
+}
+
