@@ -418,6 +418,103 @@ function AcessosPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Create / edit user dialog */}
+      <Dialog open={!!userDialog} onOpenChange={(o) => !o && setUserDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {userDialog?.mode === "create" ? "Novo usuário" : "Editar usuário"}
+            </DialogTitle>
+            <DialogDescription>
+              {userDialog?.mode === "create"
+                ? "Crie um acesso de login para o RH."
+                : "Atualize o e-mail, a senha ou o papel deste usuário."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="user-email">E-mail</Label>
+              <Input
+                id="user-email"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                placeholder="usuario@empresa.com"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="user-pass">
+                Senha {userDialog?.mode === "edit" && "(deixe em branco para manter)"}
+              </Label>
+              <Input
+                id="user-pass"
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                placeholder="Mínimo 6 caracteres"
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <Label htmlFor="user-admin">Administrador</Label>
+                <p className="text-xs text-muted-foreground">
+                  Acesso total a todas as abas do RH.
+                </p>
+              </div>
+              <Switch
+                id="user-admin"
+                checked={form.isAdmin}
+                onCheckedChange={(v) => setForm((f) => ({ ...f, isAdmin: v }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUserDialog(null)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={
+                saveUserMutation.isPending ||
+                !form.email ||
+                (userDialog?.mode === "create" && form.password.length < 6)
+              }
+              onClick={() => saveUserMutation.mutate()}
+            >
+              {saveUserMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {userDialog?.mode === "create" ? "Criar" : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete user confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação remove permanentemente o acesso de{" "}
+              <strong>{deleteTarget?.email}</strong>, incluindo vínculos e permissões. Não
+              pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteTarget && deleteUserMutation.mutate(deleteTarget.id)}
+            >
+              {deleteUserMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
