@@ -31,7 +31,7 @@ export const Route = createFileRoute("/prospeccao/admin")({
 });
 
 type LeadRow = { id: string; nome: string; cidade: string | null; origem: string | null; status: LeadStatus; score: number; consultant_id: string | null; created_at: string };
-type ParsedLead = { nome: string; telefone?: string; cpf?: string; cidade?: string; origem?: string; orcamento?: number; urgencia?: "alta" | "media" | "baixa" };
+type ParsedLead = { nome: string; telefone?: string; telefones?: string[]; cpf?: string; cidade?: string; origem?: string; orcamento?: number; urgencia?: "alta" | "media" | "baixa" };
 type ImportMeta = { total: number; comWhats: number; invalidos: number; semTelefone: number; phoneCol: string | null };
 
 const PHONE_ALIASES = ["telefone", "celular", "whatsapp", "cel1", "cel2", "cel", "fone", "contato", "numero", "número"];
@@ -59,19 +59,35 @@ function buildParsed(records: Record<string, unknown>[], phoneCol: string): { le
     const orc = get("orcamento") || get("orçamento") || get("margem") || get("renda");
     const urg = (get("urgencia") || get("urgência")).toLowerCase();
 
-    let telRaw = "";
+    // Collect every phone-like column on this row, plus the chosen/auto column.
+    const phoneVals: string[] = [];
+    const pushPhone = (v: string) => {
+      const t = (v ?? "").trim();
+      if (!t) return;
+      // A cell may contain several numbers separated by / , ; or "e".
+      for (const part of t.split(/[\/,;]|\se\s/)) {
+        const p = part.trim();
+        if (p && !phoneVals.includes(p)) phoneVals.push(p);
+      }
+    };
     if (phoneCol && phoneCol !== "__auto__") {
-      telRaw = r[phoneCol] != null ? String(r[phoneCol]).trim() : "";
-    } else {
-      telRaw = get("telefone") || get("celular") || get("whatsapp") || get("cel1") || get("cel2") || get("cel") || get("fone") || get("contato") || get("numero") || get("número");
+      pushPhone(r[phoneCol] != null ? String(r[phoneCol]) : "");
     }
-    if (!telRaw) semTelefone++;
-    else if (normalizeWhatsappNumber(telRaw)) comWhats++;
+    // Always sweep all known phone aliases so secondary numbers are captured too.
+    for (const a of PHONE_ALIASES) pushPhone(get(a));
+    for (const k of Object.keys(keys)) {
+      if (/cel|tel|whats|fone|contato/.test(k)) pushPhone(get(k));
+    }
+
+    const telRaw = phoneVals[0] ?? "";
+    if (!phoneVals.length) semTelefone++;
+    else if (phoneVals.some((p) => normalizeWhatsappNumber(p))) comWhats++;
     else invalidos++;
 
     out.push({
       nome,
       telefone: telRaw || undefined,
+      telefones: phoneVals.length ? phoneVals : undefined,
       cpf: get("cpf") || undefined,
       cidade: get("cidade") || undefined,
       origem: get("origem") || "planilha",
