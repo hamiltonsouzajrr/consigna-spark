@@ -20,6 +20,7 @@ import {
   PLAYBOOK, scoreTone, scoreLabel, URGENCIA_LABEL, whatsappLink,
   type LeadStatus, type SlaStatus, type EventKind,
 } from "@/lib/prospeccao/constants";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { aiLeadAssist } from "@/lib/prospeccao/prospeccao.functions";
 
 export const Route = createFileRoute("/prospeccao/$leadId")({
@@ -189,7 +190,7 @@ function Page() {
                       title="Abrir no WhatsApp"
                       className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600 transition hover:bg-emerald-500/25 dark:text-emerald-400"
                     >
-                      <MessageCircle className="h-4 w-4" />
+                      <WhatsAppIcon className="h-4 w-4" />
                     </a>
                   )}
                 </dd>

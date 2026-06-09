@@ -16,6 +16,7 @@ import {
   STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, scoreTone, scoreLabel, whatsappLink,
   type LeadStatus, type SlaStatus,
 } from "@/lib/prospeccao/constants";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 
 export const Route = createFileRoute("/prospeccao/")({
   head: () => ({
@@ -175,7 +176,7 @@ function Page() {
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(whatsappLink(l.telefone)!, "_blank", "noopener,noreferrer"); }}
                   className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600 transition hover:bg-emerald-500/25 dark:text-emerald-400"
                 >
-                  <MessageCircle className="h-4 w-4" />
+                  <WhatsAppIcon className="h-4 w-4" />
                 </button>
               )}
               <Badge variant="outline" className={SLA_TONE[l.sla_status]}>{SLA_LABEL[l.sla_status]}</Badge>
