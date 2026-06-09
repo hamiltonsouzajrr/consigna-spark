@@ -609,6 +609,66 @@ function Page() {
           </Table>
         </div>
       </Card>
+      {/* System access management */}
+      <Card className="mt-6 p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="flex items-center gap-2 text-sm font-semibold"><ShieldCheck className="h-4 w-4 text-primary" /> Acessos do sistema</p>
+          <Button variant="ghost" size="sm" onClick={() => usersQ.refetch()} disabled={usersQ.isFetching}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${usersQ.isFetching ? "animate-spin" : ""}`} /> Atualizar
+          </Button>
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">Gerencie quem é administrador e remova usuários do sistema. Ao excluir um usuário, seus leads voltam para o pool.</p>
+        {usersQ.isLoading ? (
+          <p className="text-sm text-muted-foreground">Carregando usuários…</p>
+        ) : (usersQ.data?.length ?? 0) === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum usuário encontrado.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Usuário</TableHead>
+                  <TableHead>Perfil</TableHead>
+                  <TableHead className="text-right">Leads</TableHead>
+                  <TableHead>Último acesso</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {usersQ.data!.map((u) => (
+                  <TableRow key={u.id}>
+                    <TableCell className="max-w-[260px] truncate font-medium">{u.email}{u.id === user.id && <span className="ml-1 text-xs text-muted-foreground">(você)</span>}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={u.isAdmin ? "border-primary/40 text-primary" : "text-muted-foreground"}>
+                        {u.isAdmin ? "Administrador" : "Consultora"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{u.leadCount}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString("pt-BR") : "—"}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        {u.isAdmin ? (
+                          <Button variant="ghost" size="sm" disabled={busy || u.id === user.id} onClick={() => toggleAdmin(u.id, false, u.email)}>
+                            <ShieldOff className="mr-1 h-4 w-4" /> Remover admin
+                          </Button>
+                        ) : (
+                          <Button variant="ghost" size="sm" disabled={busy} onClick={() => toggleAdmin(u.id, true, u.email)}>
+                            <ShieldCheck className="mr-1 h-4 w-4" /> Tornar admin
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" disabled={busy || u.id === user.id} onClick={() => removeUser(u.id, u.email, u.leadCount)}>
+                          <UserX className="mr-1 h-4 w-4" /> Excluir
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </Card>
+
       <div className="sr-only">{emailById.size}</div>
     </AppShell>
   );
