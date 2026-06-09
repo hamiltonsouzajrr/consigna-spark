@@ -105,7 +105,10 @@ function ProdutoCard({ p }: { p: Produto }) {
             <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
               {p.tipo === "principal" ? "Margem Principal" : p.tipo === "cartao_credito" ? "Cartão Crédito" : "Cartão Benefício"}
             </p>
-            <p className="text-base font-semibold">{p.nome}</p>
+            <p className="flex items-center gap-1 text-base font-semibold">
+              {p.nome}
+              {p.highlight && <Star className="h-4 w-4 fill-current text-yellow-400" />}
+            </p>
           </div>
         </div>
         {p.prazo && (
