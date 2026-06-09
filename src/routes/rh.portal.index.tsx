@@ -92,6 +92,48 @@ function PortalIndex() {
   const isAdmin = content?.isAdmin ?? false;
   const invalidate = () => qc.invalidateQueries({ queryKey: ["rh", "portal-content"] });
 
+  // --- Profile photo (self-service for the consultant)
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const savePhotoFn = useServerFn(saveProfilePhoto);
+  const delPhotoFn = useServerFn(deleteProfilePhoto);
+
+  const uploadPhoto = async (file: File) => {
+    if (file.size > 5 * 1024 * 1024) return toast.error("A imagem deve ter no máximo 5MB.");
+    setPhotoBusy(true);
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) throw new Error("Sessão expirada. Entre novamente.");
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${uid}/avatar-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("portal-avatars")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      await savePhotoFn({ data: { foto_path: path } });
+      toast.success("Foto atualizada.");
+      invalidate();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível enviar a foto.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  const removePhoto = async () => {
+    setPhotoBusy(true);
+    try {
+      await delPhotoFn();
+      toast.success("Foto removida.");
+      invalidate();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível remover a foto.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
   // KPI values: usa config do banco se existir, senão o mock.
   const k = content?.kpis;
   const saldoFerias = k ? k.saldo_ferias : data.saldoFerias;
