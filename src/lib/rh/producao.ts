@@ -90,6 +90,26 @@ export async function upsertProducao(input: ProducaoInput, userId?: string): Pro
   if (error) throw error;
 }
 
+/** Insere/atualiza vários lançamentos de uma vez (importação de planilha). */
+export async function upsertProducaoBatch(
+  inputs: ProducaoInput[],
+  userId?: string,
+): Promise<void> {
+  if (!inputs.length) return;
+  const { error } = await supabase.from("rh_producao").upsert(
+    inputs.map((input) => ({
+      consultora: input.consultora,
+      departamento: input.departamento ?? null,
+      mes: input.mes,
+      valor: input.valor,
+      contratos: input.contratos,
+      created_by: userId ?? null,
+    })),
+    { onConflict: "consultora,mes" },
+  );
+  if (error) throw error;
+}
+
 export async function deleteProducao(id: string): Promise<void> {
   const { error } = await supabase.from("rh_producao").delete().eq("id", id);
   if (error) throw error;

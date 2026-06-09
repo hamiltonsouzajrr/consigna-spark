@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Save, FileText, Lock } from "lucide-react";
 import { RhPageHeader } from "@/components/rh/RhLayout";
+import { ImportProducaoDialog } from "@/components/rh/ImportProducaoDialog";
 import { useRhAccess } from "@/hooks/use-rh-access";
 import { useAuth } from "@/lib/auth";
 import { brl, colaboradores } from "@/lib/rh/mock";
@@ -108,6 +109,7 @@ function ProducaoAdmin() {
       <RhPageHeader
         title="Produção"
         description="Lance a produção mensal — atualiza automaticamente o ranking e o painel de cada consultora."
+        actions={<ImportProducaoDialog defaultMes={mes} userId={user?.id} />}
       />
 
       <div className="grid gap-4 lg:grid-cols-3">
