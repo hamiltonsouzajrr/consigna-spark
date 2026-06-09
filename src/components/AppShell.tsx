@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, FileText, QrCode, Menu, Users, MessageCircle, Target } from "lucide-react";
+import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, Flame, CalendarClock, Home, Trophy, Star, MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +10,8 @@ import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
 import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
 import type { ReactNode } from "react";
 
-type NavItem = { to: string; label: string; full?: string; icon: typeof Calculator; badge?: boolean };
+type BadgeKind = "leads" | "followups";
+type NavItem = { to: string; label: string; full?: string; icon: typeof Calculator; badge?: BadgeKind; exact?: boolean };
 type NavSection = { section: string; items: NavItem[] };
 
 const navSections: NavSection[] = [
@@ -25,32 +26,38 @@ const navSections: NavSection[] = [
   {
     section: "Prospecção",
     items: [
-      { to: "/prospeccao", label: "CRM / Prospecção", full: "CRM DE PROSPECÇÃO - FILA, SCORE E FOLLOW-UP", icon: Target },
+      { to: "/prospeccao", label: "CRM", full: "CRM DE PROSPECÇÃO - FILA, SCORE E FOLLOW-UP", icon: Phone, exact: true },
       { to: "/pesquisas", label: "Pesquisas", icon: Search },
-      { to: "/safe-consig", label: "Verificar SafeConsig", icon: ShieldCheck },
-      { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: TrendingUp, badge: true },
-      { to: "/contrato", label: "Gerar Contrato", icon: FileText },
-      { to: "/qrcodes", label: "QR Codes Avaliação", icon: QrCode },
+      { to: "/safe-consig", label: "SafeConsig", icon: ShieldCheck },
+      { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: Users, badge: "leads" },
+      { to: "/prospeccao/recentes", label: "Recentes Prospectados", icon: Flame },
+      { to: "/prospeccao/followups", label: "Follow-ups", icon: CalendarClock, badge: "followups" },
     ],
   },
   {
-    section: "Processamento",
+    section: "Produção",
     items: [
-      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { to: "/upload", label: "Importar", icon: Upload },
+      { to: "/producao/meu-dia", label: "Meu Dia", icon: Home },
+      { to: "/upload", label: "Importações", icon: Upload },
       { to: "/consultas", label: "Consultas", icon: List },
       { to: "/limpeza", label: "Limpeza", icon: Trash2 },
+      { to: "/rh/ranking", label: "Ranking", icon: Trophy },
+      { to: "/producao/metas", label: "Metas", icon: Target },
     ],
   },
   {
-    section: "Recursos Humanos",
+    section: "Pós-venda",
     items: [
+      { to: "/pos-venda/avaliacoes", label: "Avaliações", icon: Star },
+      { to: "/qrcodes", label: "QR Codes", icon: QrCode },
+      { to: "/pos-venda/feedbacks", label: "Feedbacks", icon: MessageSquare },
+    ],
+  },
+  {
+    section: "Painel",
+    items: [
+      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
       { to: "/rh", label: "RH", icon: Users },
-    ],
-  },
-  {
-    section: "Atendimento",
-    items: [
       { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
     ],
   },
@@ -76,6 +83,37 @@ function useLeadsCount(enabled: boolean) {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "safeconsig_leads" },
+        () => load(),
+      )
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(ch);
+    };
+  }, [enabled]);
+  return count;
+}
+
+function useFollowupsCount(enabled: boolean) {
+  const [count, setCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    let cancelled = false;
+    const load = async () => {
+      const { count, error } = await supabase
+        .from("prospect_leads")
+        .select("id", { count: "exact", head: true })
+        .not("next_follow_up_at", "is", null)
+        .lte("next_follow_up_at", new Date().toISOString())
+        .not("status", "in", "(ganho,perdido)");
+      if (!cancelled && !error) setCount(count ?? 0);
+    };
+    load();
+    const ch = supabase
+      .channel("prospect_leads_followups_count")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "prospect_leads" },
         () => load(),
       )
       .subscribe();
