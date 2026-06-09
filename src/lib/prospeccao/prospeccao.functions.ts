@@ -50,10 +50,11 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
       .object({
         leads: z.array(leadInput).min(1).max(2000),
         dedup: z.boolean().optional(),
+        update: z.boolean().optional(),
       })
       .parse(data),
   )
-  .handler(async ({ context, data }): Promise<{ inserted: number; skipped: number }> => {
+  .handler(async ({ context, data }): Promise<{ inserted: number; skipped: number; updated: number }> => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
 
@@ -73,6 +74,7 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
     }));
 
     let skipped = 0;
+    let updated = 0;
     if (data.dedup) {
       // Dedup within the batch (by normalized CPF, then telefone)
       const seen = new Set<string>();
@@ -84,24 +86,50 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
         return true;
       });
 
-      // Dedup against existing leads in the database
+      // Find existing leads by CPF so we can update or skip them.
       const cpfs = rows.map((r) => r.cpf).filter(Boolean) as string[];
       const tels = rows.map((r) => r.telefone).filter(Boolean) as string[];
-      const existingCpf = new Set<string>();
+      const existingByCpf = new Map<string, any>();
       const existingTel = new Set<string>();
       if (cpfs.length) {
-        const { data: ex } = await supabaseAdmin.from("prospect_leads").select("cpf").in("cpf", cpfs);
-        (ex ?? []).forEach((e: any) => e.cpf && existingCpf.add(norm(e.cpf)));
+        const { data: ex } = await supabaseAdmin
+          .from("prospect_leads")
+          .select("id,cpf,telefone,cidade,orcamento")
+          .in("cpf", cpfs);
+        (ex ?? []).forEach((e: any) => { if (e.cpf) existingByCpf.set(norm(e.cpf), e); });
       }
       if (tels.length) {
         const { data: ex } = await supabaseAdmin.from("prospect_leads").select("telefone").in("telefone", tels);
         (ex ?? []).forEach((e: any) => e.telefone && existingTel.add(norm(e.telefone)));
       }
-      rows = rows.filter((r) => {
+
+      const remaining: typeof rows = [];
+      for (const r of rows) {
         const c = norm(r.cpf), t = norm(r.telefone);
-        if ((c && existingCpf.has(c)) || (t && existingTel.has(t))) { skipped++; return false; }
-        return true;
-      });
+        const existing = c ? existingByCpf.get(c) : undefined;
+        if (existing) {
+          if (data.update) {
+            // Backfill empty fields on the existing lead.
+            const patch: Record<string, unknown> = {};
+            if (r.telefone && !existing.telefone) patch.telefone = r.telefone;
+            if (r.cidade && !existing.cidade) patch.cidade = r.cidade;
+            if (r.orcamento != null && existing.orcamento == null) patch.orcamento = r.orcamento;
+            if (Object.keys(patch).length) {
+              const { error } = await supabaseAdmin.from("prospect_leads").update(patch as any).eq("id", existing.id);
+              if (error) throw new Error(error.message);
+              updated++;
+            } else {
+              skipped++;
+            }
+          } else {
+            skipped++;
+          }
+          continue;
+        }
+        if (t && existingTel.has(t)) { skipped++; continue; }
+        remaining.push(r);
+      }
+      rows = remaining;
     }
 
     let inserted = 0;
@@ -115,8 +143,9 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       inserted += count ?? chunk.length;
     }
-    return { inserted, skipped };
+    return { inserted, skipped, updated };
   });
+
 
 export const adminAssignLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

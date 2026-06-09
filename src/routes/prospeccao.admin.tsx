@@ -48,6 +48,7 @@ function Page() {
   const [fileName, setFileName] = useState("");
   const [uploadConsultant, setUploadConsultant] = useState<string>("none");
   const [dedup, setDedup] = useState(true);
+  const [updateExisting, setUpdateExisting] = useState(true);
   const [importDist, setImportDist] = useState<string>("manual");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -98,11 +99,14 @@ function Page() {
         const get = (n: string) => (keys[n] ? String(r[keys[n]] ?? "").trim() : "");
         const nome = get("nome");
         if (!nome) continue;
-        const orc = get("orcamento") || get("orçamento") || get("margem");
+        const orc = get("orcamento") || get("orçamento") || get("margem") || get("renda");
         const urg = (get("urgencia") || get("urgência")).toLowerCase();
         out.push({
           nome,
-          telefone: get("telefone") || get("celular") || get("whatsapp") || undefined,
+          telefone:
+            get("telefone") || get("celular") || get("whatsapp") ||
+            get("cel1") || get("cel2") || get("cel") || get("fone") ||
+            get("contato") || get("numero") || get("número") || undefined,
           cpf: get("cpf") || undefined,
           cidade: get("cidade") || undefined,
           origem: get("origem") || "planilha",
@@ -130,12 +134,12 @@ function Page() {
     const chunkSize = 2000;
     const total = parsed.length;
     setProgress({ done: 0, total });
-    let inserted = 0, skipped = 0;
+    let inserted = 0, skipped = 0, updated = 0;
     try {
       for (let i = 0; i < total; i += chunkSize) {
         const slice = parsed.slice(i, i + chunkSize);
-        const r = await createLeads({ data: { leads: slice.map((p) => ({ ...p, consultant_id: cid })), dedup } });
-        inserted += r.inserted; skipped += r.skipped ?? 0;
+        const r = await createLeads({ data: { leads: slice.map((p) => ({ ...p, consultant_id: cid })), dedup, update: updateExisting } });
+        inserted += r.inserted; skipped += r.skipped ?? 0; updated += r.updated ?? 0;
         setProgress({ done: Math.min(i + chunkSize, total), total });
       }
       let distMsg = "";
@@ -143,7 +147,7 @@ function Page() {
         const d = await distributeLeads({ data: { consultantIds: [...selectedConsultants], mode: importDist as any } });
         distMsg = ` · ${d.assigned} distribuído(s) entre ${Object.keys(d.perConsultant).length} consultora(s)`;
       }
-      toast.success(`${inserted} lead(s) importados${skipped ? ` · ${skipped} duplicado(s) ignorado(s)` : ""}${distMsg}.`);
+      toast.success(`${inserted} novo(s)${updated ? ` · ${updated} atualizado(s)` : ""}${skipped ? ` · ${skipped} ignorado(s)` : ""}${distMsg}.`);
       setParsed([]); setFileName("");
       await loadLeads(); statsQ.refetch();
     } catch (e: any) { toast.error(e?.message ?? "Falha ao importar."); }
@@ -257,6 +261,10 @@ function Page() {
               <div className="flex items-center gap-2">
                 <input id="dedup" type="checkbox" checked={dedup} onChange={(e) => setDedup(e.target.checked)} className="h-4 w-4 accent-primary" />
                 <Label htmlFor="dedup" className="text-xs cursor-pointer">Ignorar duplicados (por CPF/telefone)</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input id="updateExisting" type="checkbox" checked={updateExisting} onChange={(e) => setUpdateExisting(e.target.checked)} className="h-4 w-4 accent-primary" />
+                <Label htmlFor="updateExisting" className="text-xs cursor-pointer">Atualizar leads existentes (preenche telefone/cidade/orçamento vazios)</Label>
               </div>
               {progress && (
                 <div className="space-y-1">
