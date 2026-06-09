@@ -163,7 +163,7 @@ function PortalIndex() {
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiLink kpi="ferias" label="Saldo de férias" value={`${saldoFerias} dias`} icon={Plane} tone="sky" hint="Ver detalhes" />
         <KpiLink kpi="banco-horas" label="Banco de horas" value={`${bancoHoras >= 0 ? "+" : ""}${bancoHoras}h`} icon={Clock} tone="emerald" hint="Ver detalhes" />
-        <KpiLink kpi="salario" label="Salário" value={brl(salario)} icon={ReceiptText} tone="violet" hint="Ver detalhes" />
+        <KpiLink kpi="salario" label="Premiação de campanha" value={brl(salario)} icon={ReceiptText} tone="violet" hint="Ver detalhes" />
         <KpiLink kpi="beneficios" label="Benefícios" value={beneficios} icon={HeartHandshake} tone="amber" hint="Ver detalhes" />
       </div>
 
@@ -367,7 +367,7 @@ function PortalIndex() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Saldo de férias (dias)</Label><Input type="number" value={kpisForm.saldo_ferias} onChange={(e) => setKpisForm((f: any) => ({ ...f, saldo_ferias: Number(e.target.value) }))} /></div>
               <div className="space-y-2"><Label>Banco de horas (h)</Label><Input type="number" value={kpisForm.banco_horas} onChange={(e) => setKpisForm((f: any) => ({ ...f, banco_horas: Number(e.target.value) }))} /></div>
-              <div className="space-y-2"><Label>Salário (R$)</Label><Input type="number" value={kpisForm.salario} onChange={(e) => setKpisForm((f: any) => ({ ...f, salario: Number(e.target.value) }))} /></div>
+              <div className="space-y-2"><Label>Premiação de campanha (R$)</Label><Input type="number" value={kpisForm.salario} onChange={(e) => setKpisForm((f: any) => ({ ...f, salario: Number(e.target.value) }))} /></div>
               <div className="space-y-2"><Label>Benefícios ativos</Label><Input type="number" value={kpisForm.beneficios} onChange={(e) => setKpisForm((f: any) => ({ ...f, beneficios: Number(e.target.value) }))} /></div>
               <div className="space-y-2"><Label>Treinamentos (total)</Label><Input type="number" value={kpisForm.trein_total} onChange={(e) => setKpisForm((f: any) => ({ ...f, trein_total: Number(e.target.value) }))} /></div>
               <div className="space-y-2"><Label>Treinamentos concluídos</Label><Input type="number" value={kpisForm.trein_concluidos} onChange={(e) => setKpisForm((f: any) => ({ ...f, trein_concluidos: Number(e.target.value) }))} /></div>
