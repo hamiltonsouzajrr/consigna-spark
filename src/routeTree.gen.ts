@@ -47,7 +47,6 @@ import { Route as RhDocumentosRouteImport } from './routes/rh.documentos'
 import { Route as RhDesligamentosRouteImport } from './routes/rh.desligamentos'
 import { Route as RhDepartamentosRouteImport } from './routes/rh.departamentos'
 import { Route as RhDashboardRouteImport } from './routes/rh.dashboard'
-import { Route as RhConfiguracoesRouteImport } from './routes/rh.configuracoes'
 import { Route as RhColaboradoresRouteImport } from './routes/rh.colaboradores'
 import { Route as RhClimaRouteImport } from './routes/rh.clima'
 import { Route as RhCargosRouteImport } from './routes/rh.cargos'
@@ -257,11 +256,6 @@ const RhDashboardRoute = RhDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => RhRoute,
 } as any)
-const RhConfiguracoesRoute = RhConfiguracoesRouteImport.update({
-  id: '/configuracoes',
-  path: '/configuracoes',
-  getParentRoute: () => RhRoute,
-} as any)
 const RhColaboradoresRoute = RhColaboradoresRouteImport.update({
   id: '/colaboradores',
   path: '/colaboradores',
@@ -386,7 +380,6 @@ export interface FileRoutesByFullPath {
   '/rh/cargos': typeof RhCargosRoute
   '/rh/clima': typeof RhClimaRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
-  '/rh/configuracoes': typeof RhConfiguracoesRoute
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/departamentos': typeof RhDepartamentosRoute
   '/rh/desligamentos': typeof RhDesligamentosRoute
@@ -444,7 +437,6 @@ export interface FileRoutesByTo {
   '/rh/cargos': typeof RhCargosRoute
   '/rh/clima': typeof RhClimaRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
-  '/rh/configuracoes': typeof RhConfiguracoesRoute
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/departamentos': typeof RhDepartamentosRoute
   '/rh/desligamentos': typeof RhDesligamentosRoute
@@ -503,7 +495,6 @@ export interface FileRoutesById {
   '/rh/cargos': typeof RhCargosRoute
   '/rh/clima': typeof RhClimaRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
-  '/rh/configuracoes': typeof RhConfiguracoesRoute
   '/rh/dashboard': typeof RhDashboardRoute
   '/rh/departamentos': typeof RhDepartamentosRoute
   '/rh/desligamentos': typeof RhDesligamentosRoute
@@ -564,7 +555,6 @@ export interface FileRouteTypes {
     | '/rh/cargos'
     | '/rh/clima'
     | '/rh/colaboradores'
-    | '/rh/configuracoes'
     | '/rh/dashboard'
     | '/rh/departamentos'
     | '/rh/desligamentos'
@@ -622,7 +612,6 @@ export interface FileRouteTypes {
     | '/rh/cargos'
     | '/rh/clima'
     | '/rh/colaboradores'
-    | '/rh/configuracoes'
     | '/rh/dashboard'
     | '/rh/departamentos'
     | '/rh/desligamentos'
@@ -680,7 +669,6 @@ export interface FileRouteTypes {
     | '/rh/cargos'
     | '/rh/clima'
     | '/rh/colaboradores'
-    | '/rh/configuracoes'
     | '/rh/dashboard'
     | '/rh/departamentos'
     | '/rh/desligamentos'
@@ -1006,13 +994,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhDashboardRouteImport
       parentRoute: typeof RhRoute
     }
-    '/rh/configuracoes': {
-      id: '/rh/configuracoes'
-      path: '/configuracoes'
-      fullPath: '/rh/configuracoes'
-      preLoaderRoute: typeof RhConfiguracoesRouteImport
-      parentRoute: typeof RhRoute
-    }
     '/rh/colaboradores': {
       id: '/rh/colaboradores'
       path: '/colaboradores'
@@ -1175,7 +1156,6 @@ interface RhRouteChildren {
   RhCargosRoute: typeof RhCargosRoute
   RhClimaRoute: typeof RhClimaRoute
   RhColaboradoresRoute: typeof RhColaboradoresRouteWithChildren
-  RhConfiguracoesRoute: typeof RhConfiguracoesRoute
   RhDashboardRoute: typeof RhDashboardRoute
   RhDepartamentosRoute: typeof RhDepartamentosRoute
   RhDesligamentosRoute: typeof RhDesligamentosRoute
@@ -1205,7 +1185,6 @@ const RhRouteChildren: RhRouteChildren = {
   RhCargosRoute: RhCargosRoute,
   RhClimaRoute: RhClimaRoute,
   RhColaboradoresRoute: RhColaboradoresRouteWithChildren,
-  RhConfiguracoesRoute: RhConfiguracoesRoute,
   RhDashboardRoute: RhDashboardRoute,
   RhDepartamentosRoute: RhDepartamentosRoute,
   RhDesligamentosRoute: RhDesligamentosRoute,
@@ -1262,3 +1241,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
