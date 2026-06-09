@@ -193,7 +193,21 @@ function Reconhecimentos() {
               <Label>Tipo</Label>
               <Select value={form.tipo} onValueChange={(v) => setForm((f) => ({ ...f, tipo: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{TIPOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                <SelectContent className="max-h-72">
+                  {CATEGORIAS_RECONHECIMENTO.map((cat) => (
+                    <SelectGroup key={cat.categoria}>
+                      <SelectLabel>{cat.categoria}</SelectLabel>
+                      {cat.titulos.map((t) => <SelectItem key={`${cat.categoria}-${t}`} value={t}>{t}</SelectItem>)}
+                    </SelectGroup>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Periodicidade</Label>
+              <Select value={form.periodicidade} onValueChange={(v) => setForm((f) => ({ ...f, periodicidade: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PERIODICIDADES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2"><Label>Mensagem</Label><Textarea value={form.mensagem} onChange={(e) => setForm((f) => ({ ...f, mensagem: e.target.value }))} /></div>
