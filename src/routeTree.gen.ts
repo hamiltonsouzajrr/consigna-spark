@@ -58,6 +58,7 @@ import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
 import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
 import { Route as RhAuditoriaRouteImport } from './routes/rh.auditoria'
 import { Route as RhAcessosRouteImport } from './routes/rh.acessos'
+import { Route as ProspeccaoAdminRouteImport } from './routes/prospeccao.admin'
 import { Route as ProspeccaoLeadIdRouteImport } from './routes/prospeccao.$leadId'
 import { Route as RhPortalIndexRouteImport } from './routes/rh.portal.index'
 import { Route as RhPortalKpiRouteImport } from './routes/rh.portal.$kpi'
@@ -309,6 +310,11 @@ const RhAcessosRoute = RhAcessosRouteImport.update({
   path: '/acessos',
   getParentRoute: () => RhRoute,
 } as any)
+const ProspeccaoAdminRoute = ProspeccaoAdminRouteImport.update({
+  id: '/prospeccao/admin',
+  path: '/prospeccao/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProspeccaoLeadIdRoute = ProspeccaoLeadIdRouteImport.update({
   id: '/prospeccao/$leadId',
   path: '/prospeccao/$leadId',
@@ -355,6 +361,7 @@ export interface FileRoutesByFullPath {
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
+  '/prospeccao/admin': typeof ProspeccaoAdminRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -410,6 +417,7 @@ export interface FileRoutesByTo {
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
+  '/prospeccao/admin': typeof ProspeccaoAdminRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -466,6 +474,7 @@ export interface FileRoutesById {
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
+  '/prospeccao/admin': typeof ProspeccaoAdminRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -524,6 +533,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/whatsapp'
     | '/prospeccao/$leadId'
+    | '/prospeccao/admin'
     | '/rh/acessos'
     | '/rh/auditoria'
     | '/rh/avaliacoes'
@@ -579,6 +589,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/whatsapp'
     | '/prospeccao/$leadId'
+    | '/prospeccao/admin'
     | '/rh/acessos'
     | '/rh/auditoria'
     | '/rh/avaliacoes'
@@ -634,6 +645,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/whatsapp'
     | '/prospeccao/$leadId'
+    | '/prospeccao/admin'
     | '/rh/acessos'
     | '/rh/auditoria'
     | '/rh/avaliacoes'
@@ -691,6 +703,7 @@ export interface RootRouteChildren {
   UploadRoute: typeof UploadRoute
   WhatsappRoute: typeof WhatsappRoute
   ProspeccaoLeadIdRoute: typeof ProspeccaoLeadIdRoute
+  ProspeccaoAdminRoute: typeof ProspeccaoAdminRoute
   ProspeccaoIndexRoute: typeof ProspeccaoIndexRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
@@ -1040,6 +1053,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhAcessosRouteImport
       parentRoute: typeof RhRoute
     }
+    '/prospeccao/admin': {
+      id: '/prospeccao/admin'
+      path: '/prospeccao/admin'
+      fullPath: '/prospeccao/admin'
+      preLoaderRoute: typeof ProspeccaoAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/prospeccao/$leadId': {
       id: '/prospeccao/$leadId'
       path: '/prospeccao/$leadId'
@@ -1193,6 +1213,7 @@ const rootRouteChildren: RootRouteChildren = {
   UploadRoute: UploadRoute,
   WhatsappRoute: WhatsappRoute,
   ProspeccaoLeadIdRoute: ProspeccaoLeadIdRoute,
+  ProspeccaoAdminRoute: ProspeccaoAdminRoute,
   ProspeccaoIndexRoute: ProspeccaoIndexRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
