@@ -188,7 +188,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {navSections.map((sec, idx) => (
+          {sections.map((sec, idx) => (
             <div key={sec.section} className="space-y-1">
               <p className={`px-3 pb-1 text-xs uppercase tracking-wider text-muted-foreground ${idx === 0 ? "pt-1" : "pt-4"}`}>
                 {sec.section}
@@ -236,7 +236,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </SheetTitle>
               </SheetHeader>
               <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-                {navSections.map((sec, idx) => (
+                {sections.map((sec, idx) => (
                   <div key={sec.section} className="space-y-1">
                     <p className={`px-3 pb-1 text-xs uppercase tracking-wider text-muted-foreground ${idx === 0 ? "pt-1" : "pt-4"}`}>
                       {sec.section}
