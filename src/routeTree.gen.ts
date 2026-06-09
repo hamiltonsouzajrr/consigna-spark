@@ -57,6 +57,8 @@ import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
 import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
 import { Route as RhAuditoriaRouteImport } from './routes/rh.auditoria'
 import { Route as RhAcessosRouteImport } from './routes/rh.acessos'
+import { Route as ProspeccaoRecentesRouteImport } from './routes/prospeccao.recentes'
+import { Route as ProspeccaoFollowupsRouteImport } from './routes/prospeccao.followups'
 import { Route as ProspeccaoAdminRouteImport } from './routes/prospeccao.admin'
 import { Route as ProspeccaoLeadIdRouteImport } from './routes/prospeccao.$leadId'
 import { Route as RhPortalIndexRouteImport } from './routes/rh.portal.index'
@@ -304,6 +306,16 @@ const RhAcessosRoute = RhAcessosRouteImport.update({
   path: '/acessos',
   getParentRoute: () => RhRoute,
 } as any)
+const ProspeccaoRecentesRoute = ProspeccaoRecentesRouteImport.update({
+  id: '/prospeccao/recentes',
+  path: '/prospeccao/recentes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProspeccaoFollowupsRoute = ProspeccaoFollowupsRouteImport.update({
+  id: '/prospeccao/followups',
+  path: '/prospeccao/followups',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProspeccaoAdminRoute = ProspeccaoAdminRouteImport.update({
   id: '/prospeccao/admin',
   path: '/prospeccao/admin',
@@ -356,6 +368,8 @@ export interface FileRoutesByFullPath {
   '/whatsapp': typeof WhatsappRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof ProspeccaoAdminRoute
+  '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
+  '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -411,6 +425,8 @@ export interface FileRoutesByTo {
   '/whatsapp': typeof WhatsappRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof ProspeccaoAdminRoute
+  '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
+  '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -467,6 +483,8 @@ export interface FileRoutesById {
   '/whatsapp': typeof WhatsappRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof ProspeccaoAdminRoute
+  '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
+  '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -525,6 +543,8 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
+    | '/prospeccao/followups'
+    | '/prospeccao/recentes'
     | '/rh/acessos'
     | '/rh/auditoria'
     | '/rh/avaliacoes'
@@ -580,6 +600,8 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
+    | '/prospeccao/followups'
+    | '/prospeccao/recentes'
     | '/rh/acessos'
     | '/rh/auditoria'
     | '/rh/avaliacoes'
@@ -635,6 +657,8 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
+    | '/prospeccao/followups'
+    | '/prospeccao/recentes'
     | '/rh/acessos'
     | '/rh/auditoria'
     | '/rh/avaliacoes'
@@ -692,6 +716,8 @@ export interface RootRouteChildren {
   WhatsappRoute: typeof WhatsappRoute
   ProspeccaoLeadIdRoute: typeof ProspeccaoLeadIdRoute
   ProspeccaoAdminRoute: typeof ProspeccaoAdminRoute
+  ProspeccaoFollowupsRoute: typeof ProspeccaoFollowupsRoute
+  ProspeccaoRecentesRoute: typeof ProspeccaoRecentesRoute
   ProspeccaoIndexRoute: typeof ProspeccaoIndexRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
@@ -1034,6 +1060,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhAcessosRouteImport
       parentRoute: typeof RhRoute
     }
+    '/prospeccao/recentes': {
+      id: '/prospeccao/recentes'
+      path: '/prospeccao/recentes'
+      fullPath: '/prospeccao/recentes'
+      preLoaderRoute: typeof ProspeccaoRecentesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prospeccao/followups': {
+      id: '/prospeccao/followups'
+      path: '/prospeccao/followups'
+      fullPath: '/prospeccao/followups'
+      preLoaderRoute: typeof ProspeccaoFollowupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/prospeccao/admin': {
       id: '/prospeccao/admin'
       path: '/prospeccao/admin'
@@ -1193,6 +1233,8 @@ const rootRouteChildren: RootRouteChildren = {
   WhatsappRoute: WhatsappRoute,
   ProspeccaoLeadIdRoute: ProspeccaoLeadIdRoute,
   ProspeccaoAdminRoute: ProspeccaoAdminRoute,
+  ProspeccaoFollowupsRoute: ProspeccaoFollowupsRoute,
+  ProspeccaoRecentesRoute: ProspeccaoRecentesRoute,
   ProspeccaoIndexRoute: ProspeccaoIndexRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
