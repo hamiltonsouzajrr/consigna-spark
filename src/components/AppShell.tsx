@@ -222,10 +222,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="flex-1 overflow-x-hidden print:overflow-visible">
         {/* Top header bar (Bitrix-style) */}
         <header className="topbar-bg hidden items-center gap-4 px-6 py-2.5 text-white md:flex print:!hidden">
-          <div className="flex items-center gap-2 pr-2 text-lg font-semibold">
-            <BadgeDollarSign className="h-5 w-5" />
-            <span>Positive</span>
-          </div>
           <div className="ml-auto flex items-center gap-4">
             <div className="flex items-center gap-2 tabular-nums">
               <Clock className="h-4 w-4 text-white/70" />
