@@ -262,6 +262,10 @@ function Page() {
                 <input id="dedup" type="checkbox" checked={dedup} onChange={(e) => setDedup(e.target.checked)} className="h-4 w-4 accent-primary" />
                 <Label htmlFor="dedup" className="text-xs cursor-pointer">Ignorar duplicados (por CPF/telefone)</Label>
               </div>
+              <div className="flex items-center gap-2">
+                <input id="updateExisting" type="checkbox" checked={updateExisting} onChange={(e) => setUpdateExisting(e.target.checked)} className="h-4 w-4 accent-primary" />
+                <Label htmlFor="updateExisting" className="text-xs cursor-pointer">Atualizar leads existentes (preenche telefone/cidade/orçamento vazios)</Label>
+              </div>
               {progress && (
                 <div className="space-y-1">
                   <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
