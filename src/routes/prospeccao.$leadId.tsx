@@ -29,7 +29,7 @@ export const Route = createFileRoute("/prospeccao/$leadId")({
 });
 
 type Lead = {
-  id: string; nome: string; telefone: string | null; cpf: string | null; cidade: string | null;
+  id: string; nome: string; telefone: string | null; telefones: string[] | null; cpf: string | null; cidade: string | null;
   origem: string | null; orcamento: number | null; urgencia: string | null; status: LeadStatus;
   score: number; sla_status: SlaStatus; loss_reason: string | null; notes: string | null;
   next_follow_up_at: string | null; last_contact_at: string | null; first_response_at: string | null;
