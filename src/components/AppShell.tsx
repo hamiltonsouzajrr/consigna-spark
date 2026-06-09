@@ -173,35 +173,35 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="flex min-h-screen bg-background print:block print:min-h-0">
+    <div className="flex min-h-screen app-bg print:block print:min-h-0 print:bg-none">
       <HorariosOuroDialog />
       <HorariosOuroReminder />
-      <aside className="hidden w-64 shrink-0 border-r bg-sidebar md:flex md:flex-col print:!hidden">
+      <aside className="hidden w-64 shrink-0 sidebar-bg text-sidebar-foreground md:flex md:flex-col print:!hidden">
 
-        <div className="flex items-center gap-2 px-6 py-5 border-b">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <div className="flex items-center gap-2 px-6 py-5 border-b border-white/10">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white">
             <BadgeDollarSign className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-sm font-semibold leading-tight">Grupo Positive</p>
-            <p className="text-xs text-muted-foreground">Consultas e simulação</p>
+            <p className="text-sm font-semibold leading-tight text-white">Grupo Positive</p>
+            <p className="text-xs text-white/60">Consultas e simulação</p>
           </div>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {sections.map((sec, idx) => (
             <div key={sec.section} className="space-y-1">
-              <p className={`px-3 pb-1 text-xs uppercase tracking-wider text-muted-foreground ${idx === 0 ? "pt-1" : "pt-4"}`}>
+              <p className={`px-3 pb-1 text-xs uppercase tracking-wider text-white/45 ${idx === 0 ? "pt-1" : "pt-4"}`}>
                 {sec.section}
               </p>
               {sec.items.map((n) => renderItem(n))}
             </div>
           ))}
         </nav>
-        <div className="border-t p-3">
-          <p className="px-3 pb-2 text-xs text-muted-foreground truncate">{user?.email}</p>
+        <div className="border-t border-white/10 p-3">
+          <p className="px-3 pb-2 text-xs text-white/60 truncate">{user?.email}</p>
           <Button
             variant="ghost"
-            className="w-full justify-start gap-2"
+            className="w-full justify-start gap-2 text-white/90 hover:bg-white/10 hover:text-white"
             onClick={async () => { await signOut(); nav2({ to: "/login" }); }}
           >
             <LogOut className="h-4 w-4" /> Sair
@@ -209,47 +209,65 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
       <main className="flex-1 overflow-x-hidden print:overflow-visible">
-        <div className="md:hidden flex items-center justify-between border-b bg-card px-4 py-3 print:!hidden">
+        {/* Top header bar (Bitrix-style) */}
+        <header className="topbar-bg hidden items-center gap-3 px-6 py-3 text-white md:flex print:!hidden">
+          <div className="relative max-w-md flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
+            <input
+              type="search"
+              placeholder="Pesquisar..."
+              className="w-full rounded-lg border border-white/15 bg-white/10 py-2 pl-9 pr-3 text-sm text-white placeholder:text-white/55 focus:bg-white/15 focus:outline-none"
+            />
+          </div>
+          <div className="ml-auto flex items-center gap-3">
+            <span className="hidden text-sm text-white/85 lg:inline">{user?.email}</span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-sm font-semibold text-white">
+              {(user?.email ?? "?").charAt(0).toUpperCase()}
+            </div>
+          </div>
+        </header>
+
+        <div className="md:hidden flex items-center justify-between topbar-bg px-4 py-3 text-white print:!hidden">
           <div className="flex items-center gap-2">
-            <BadgeDollarSign className="h-5 w-5 text-primary" />
+            <BadgeDollarSign className="h-5 w-5 text-white" />
             <span className="font-semibold">Grupo Positive</span>
           </div>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
+              <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/10">
                 <Menu className="h-5 w-5" />
                 {((leadsCount ?? 0) > 0 || (followupsCount ?? 0) > 0) && (
                   <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-orange-500" />
                 )}
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-72 bg-sidebar p-0">
-              <SheetHeader className="border-b px-6 py-5 text-left">
+            <SheetContent side="left" className="w-72 sidebar-bg border-0 p-0 text-sidebar-foreground">
+              <SheetHeader className="border-b border-white/10 px-6 py-5 text-left">
                 <SheetTitle className="flex items-center gap-2">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white">
                     <BadgeDollarSign className="h-5 w-5" />
                   </span>
                   <span>
-                    <span className="block text-sm font-semibold leading-tight">Grupo Positive</span>
-                    <span className="block text-xs font-normal text-muted-foreground">Consultas e simulação</span>
+                    <span className="block text-sm font-semibold leading-tight text-white">Grupo Positive</span>
+                    <span className="block text-xs font-normal text-white/60">Consultas e simulação</span>
                   </span>
                 </SheetTitle>
               </SheetHeader>
               <nav className="flex-1 space-y-1 overflow-y-auto p-3">
                 {sections.map((sec, idx) => (
                   <div key={sec.section} className="space-y-1">
-                    <p className={`px-3 pb-1 text-xs uppercase tracking-wider text-muted-foreground ${idx === 0 ? "pt-1" : "pt-4"}`}>
+                    <p className={`px-3 pb-1 text-xs uppercase tracking-wider text-white/45 ${idx === 0 ? "pt-1" : "pt-4"}`}>
                       {sec.section}
                     </p>
                     {sec.items.map((n) => renderItem(n, () => setMobileOpen(false)))}
                   </div>
                 ))}
               </nav>
-              <div className="border-t p-3">
-                <p className="px-3 pb-2 text-xs text-muted-foreground truncate">{user?.email}</p>
+              <div className="border-t border-white/10 p-3">
+                <p className="px-3 pb-2 text-xs text-white/60 truncate">{user?.email}</p>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start gap-2"
+                  className="w-full justify-start gap-2 text-white/90 hover:bg-white/10 hover:text-white"
                   onClick={async () => { setMobileOpen(false); await signOut(); nav2({ to: "/login" }); }}
                 >
                   <LogOut className="h-4 w-4" /> Sair
@@ -258,7 +276,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             </SheetContent>
           </Sheet>
         </div>
-        <div className="mx-auto max-w-7xl p-4 md:p-8 print:max-w-none print:p-0">{children}</div>
+
+        <div className="p-3 md:p-5 print:p-0">
+          <div className="mx-auto max-w-7xl rounded-2xl bg-card p-4 shadow-xl ring-1 ring-black/5 md:p-8 print:max-w-none print:rounded-none print:bg-transparent print:p-0 print:shadow-none print:ring-0">
+            {children}
+          </div>
+        </div>
 
       </main>
     </div>
