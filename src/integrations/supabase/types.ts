@@ -540,6 +540,36 @@ export type Database = {
           },
         ]
       }
+      rh_clima_responses: {
+        Row: {
+          answers: Json
+          comment: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          answers?: Json
+          comment?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          answers?: Json
+          comment?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       rh_employees: {
         Row: {
           created_at: string
