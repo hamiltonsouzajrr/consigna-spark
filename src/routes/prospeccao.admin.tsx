@@ -66,6 +66,19 @@ function Page() {
   const consultants = consultantsQ.data ?? [];
   const emailById = useMemo(() => new Map(consultants.map((c) => [c.id, c.email])), [consultants]);
 
+  // Default: all consultants selected for distribution/recycle once loaded.
+  useEffect(() => {
+    if (consultants.length && selectedConsultants.size === 0) {
+      setSelectedConsultants(new Set(consultants.map((c) => c.id)));
+    }
+  }, [consultants]);
+  const toggleConsultant = (id: string) =>
+    setSelectedConsultants((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
   const loadLeads = async () => {
     const { data } = await supabase.from("prospect_leads").select("id,nome,cidade,origem,status,score,consultant_id,created_at").order("created_at", { ascending: false }).limit(1000);
     setLeads((data ?? []) as any);
