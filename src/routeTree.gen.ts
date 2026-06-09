@@ -63,6 +63,8 @@ import { Route as ProspeccaoAdminRouteImport } from './routes/prospeccao.admin'
 import { Route as ProspeccaoLeadIdRouteImport } from './routes/prospeccao.$leadId'
 import { Route as ProducaoMeuDiaRouteImport } from './routes/producao.meu-dia'
 import { Route as ProducaoMetasRouteImport } from './routes/producao.metas'
+import { Route as PosVendaFeedbacksRouteImport } from './routes/pos-venda.feedbacks'
+import { Route as PosVendaAvaliacoesRouteImport } from './routes/pos-venda.avaliacoes'
 import { Route as RhPortalIndexRouteImport } from './routes/rh.portal.index'
 import { Route as RhPortalKpiRouteImport } from './routes/rh.portal.$kpi'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
@@ -338,6 +340,16 @@ const ProducaoMetasRoute = ProducaoMetasRouteImport.update({
   path: '/producao/metas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PosVendaFeedbacksRoute = PosVendaFeedbacksRouteImport.update({
+  id: '/pos-venda/feedbacks',
+  path: '/pos-venda/feedbacks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PosVendaAvaliacoesRoute = PosVendaAvaliacoesRouteImport.update({
+  id: '/pos-venda/avaliacoes',
+  path: '/pos-venda/avaliacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RhPortalIndexRoute = RhPortalIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -378,6 +390,8 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/pos-venda/avaliacoes': typeof PosVendaAvaliacoesRoute
+  '/pos-venda/feedbacks': typeof PosVendaFeedbacksRoute
   '/producao/metas': typeof ProducaoMetasRoute
   '/producao/meu-dia': typeof ProducaoMeuDiaRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
@@ -437,6 +451,8 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/pos-venda/avaliacoes': typeof PosVendaAvaliacoesRoute
+  '/pos-venda/feedbacks': typeof PosVendaFeedbacksRoute
   '/producao/metas': typeof ProducaoMetasRoute
   '/producao/meu-dia': typeof ProducaoMeuDiaRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
@@ -497,6 +513,8 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/pos-venda/avaliacoes': typeof PosVendaAvaliacoesRoute
+  '/pos-venda/feedbacks': typeof PosVendaFeedbacksRoute
   '/producao/metas': typeof ProducaoMetasRoute
   '/producao/meu-dia': typeof ProducaoMeuDiaRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
@@ -559,6 +577,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/pos-venda/avaliacoes'
+    | '/pos-venda/feedbacks'
     | '/producao/metas'
     | '/producao/meu-dia'
     | '/prospeccao/$leadId'
@@ -618,6 +638,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/pos-venda/avaliacoes'
+    | '/pos-venda/feedbacks'
     | '/producao/metas'
     | '/producao/meu-dia'
     | '/prospeccao/$leadId'
@@ -677,6 +699,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/pos-venda/avaliacoes'
+    | '/pos-venda/feedbacks'
     | '/producao/metas'
     | '/producao/meu-dia'
     | '/prospeccao/$leadId'
@@ -738,6 +762,8 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadRoute: typeof UploadRoute
   WhatsappRoute: typeof WhatsappRoute
+  PosVendaAvaliacoesRoute: typeof PosVendaAvaliacoesRoute
+  PosVendaFeedbacksRoute: typeof PosVendaFeedbacksRoute
   ProducaoMetasRoute: typeof ProducaoMetasRoute
   ProducaoMeuDiaRoute: typeof ProducaoMeuDiaRoute
   ProspeccaoLeadIdRoute: typeof ProspeccaoLeadIdRoute
@@ -1128,6 +1154,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProducaoMetasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pos-venda/feedbacks': {
+      id: '/pos-venda/feedbacks'
+      path: '/pos-venda/feedbacks'
+      fullPath: '/pos-venda/feedbacks'
+      preLoaderRoute: typeof PosVendaFeedbacksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pos-venda/avaliacoes': {
+      id: '/pos-venda/avaliacoes'
+      path: '/pos-venda/avaliacoes'
+      fullPath: '/pos-venda/avaliacoes'
+      preLoaderRoute: typeof PosVendaAvaliacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rh/portal/': {
       id: '/rh/portal/'
       path: '/'
@@ -1271,6 +1311,8 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadRoute: UploadRoute,
   WhatsappRoute: WhatsappRoute,
+  PosVendaAvaliacoesRoute: PosVendaAvaliacoesRoute,
+  PosVendaFeedbacksRoute: PosVendaFeedbacksRoute,
   ProducaoMetasRoute: ProducaoMetasRoute,
   ProducaoMeuDiaRoute: ProducaoMeuDiaRoute,
   ProspeccaoLeadIdRoute: ProspeccaoLeadIdRoute,
@@ -1283,3 +1325,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
