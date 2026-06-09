@@ -78,7 +78,7 @@ function Reconhecimentos() {
   const openEdit = (r: Reconhecimento) => {
     setEditingId(r.id);
     setForm({
-      de: r.de, para: r.para, tipo: r.tipo, mensagem: r.mensagem,
+      de: r.de, para: r.para, tipo: r.tipo, periodicidade: r.periodicidade ?? "pontual", mensagem: r.mensagem,
       data: r.data, periodo_inicio: r.periodo_inicio ?? "", periodo_fim: r.periodo_fim ?? "", popup: r.popup,
     });
     setOpen(true);
