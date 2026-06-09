@@ -617,6 +617,66 @@ export type Database = {
         }
         Relationships: []
       }
+      rh_desligamentos: {
+        Row: {
+          alertas_futuros: string | null
+          cargo: string | null
+          colaborador: string
+          created_at: string
+          criado_por: string | null
+          data_admissao: string | null
+          data_desligamento: string
+          editado_por: string | null
+          historico: Json
+          id: string
+          motivo: string | null
+          motivo_detalhado: string
+          responsavel: string | null
+          setor: string | null
+          sinais_contratacao: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          alertas_futuros?: string | null
+          cargo?: string | null
+          colaborador: string
+          created_at?: string
+          criado_por?: string | null
+          data_admissao?: string | null
+          data_desligamento?: string
+          editado_por?: string | null
+          historico?: Json
+          id?: string
+          motivo?: string | null
+          motivo_detalhado: string
+          responsavel?: string | null
+          setor?: string | null
+          sinais_contratacao: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          alertas_futuros?: string | null
+          cargo?: string | null
+          colaborador?: string
+          created_at?: string
+          criado_por?: string | null
+          data_admissao?: string | null
+          data_desligamento?: string
+          editado_por?: string | null
+          historico?: Json
+          id?: string
+          motivo?: string | null
+          motivo_detalhado?: string
+          responsavel?: string | null
+          setor?: string | null
+          sinais_contratacao?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rh_employees: {
         Row: {
           created_at: string
