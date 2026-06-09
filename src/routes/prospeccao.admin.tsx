@@ -95,6 +95,9 @@ function Page() {
   const fetchStats = useServerFn(getAdminStats);
   const listBatches = useServerFn(adminListImportBatches);
   const deleteBatch = useServerFn(adminDeleteImportBatch);
+  const listSystemUsers = useServerFn(adminListSystemUsers);
+  const setUserRole = useServerFn(adminSetUserRole);
+  const deleteSystemUser = useServerFn(adminDeleteSystemUser);
 
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [rawRecords, setRawRecords] = useState<Record<string, unknown>[]>([]);
