@@ -20,7 +20,6 @@ import { Route as QrcodesRouteImport } from './routes/qrcodes'
 import { Route as PesquisasRouteImport } from './routes/pesquisas'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LimpezaRouteImport } from './routes/limpeza'
-import { Route as GravacoesJuridicasRouteImport } from './routes/gravacoes-juridicas'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContratoRouteImport } from './routes/contrato'
 import { Route as ConsultasRouteImport } from './routes/consultas'
@@ -125,11 +124,6 @@ const LoginRoute = LoginRouteImport.update({
 const LimpezaRoute = LimpezaRouteImport.update({
   id: '/limpeza',
   path: '/limpeza',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GravacoesJuridicasRoute = GravacoesJuridicasRouteImport.update({
-  id: '/gravacoes-juridicas',
-  path: '/gravacoes-juridicas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -391,7 +385,6 @@ export interface FileRoutesByFullPath {
   '/consultas': typeof ConsultasRoute
   '/contrato': typeof ContratoRoute
   '/dashboard': typeof DashboardRoute
-  '/gravacoes-juridicas': typeof GravacoesJuridicasRoute
   '/limpeza': typeof LimpezaRoute
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
@@ -455,7 +448,6 @@ export interface FileRoutesByTo {
   '/consultas': typeof ConsultasRoute
   '/contrato': typeof ContratoRoute
   '/dashboard': typeof DashboardRoute
-  '/gravacoes-juridicas': typeof GravacoesJuridicasRoute
   '/limpeza': typeof LimpezaRoute
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
@@ -518,7 +510,6 @@ export interface FileRoutesById {
   '/consultas': typeof ConsultasRoute
   '/contrato': typeof ContratoRoute
   '/dashboard': typeof DashboardRoute
-  '/gravacoes-juridicas': typeof GravacoesJuridicasRoute
   '/limpeza': typeof LimpezaRoute
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
@@ -584,7 +575,6 @@ export interface FileRouteTypes {
     | '/consultas'
     | '/contrato'
     | '/dashboard'
-    | '/gravacoes-juridicas'
     | '/limpeza'
     | '/login'
     | '/pesquisas'
@@ -648,7 +638,6 @@ export interface FileRouteTypes {
     | '/consultas'
     | '/contrato'
     | '/dashboard'
-    | '/gravacoes-juridicas'
     | '/limpeza'
     | '/login'
     | '/pesquisas'
@@ -710,7 +699,6 @@ export interface FileRouteTypes {
     | '/consultas'
     | '/contrato'
     | '/dashboard'
-    | '/gravacoes-juridicas'
     | '/limpeza'
     | '/login'
     | '/pesquisas'
@@ -775,7 +763,6 @@ export interface RootRouteChildren {
   ConsultasRoute: typeof ConsultasRoute
   ContratoRoute: typeof ContratoRoute
   DashboardRoute: typeof DashboardRoute
-  GravacoesJuridicasRoute: typeof GravacoesJuridicasRoute
   LimpezaRoute: typeof LimpezaRoute
   LoginRoute: typeof LoginRoute
   PesquisasRoute: typeof PesquisasRoute
@@ -877,13 +864,6 @@ declare module '@tanstack/react-router' {
       path: '/limpeza'
       fullPath: '/limpeza'
       preLoaderRoute: typeof LimpezaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/gravacoes-juridicas': {
-      id: '/gravacoes-juridicas'
-      path: '/gravacoes-juridicas'
-      fullPath: '/gravacoes-juridicas'
-      preLoaderRoute: typeof GravacoesJuridicasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -1340,7 +1320,6 @@ const rootRouteChildren: RootRouteChildren = {
   ConsultasRoute: ConsultasRoute,
   ContratoRoute: ContratoRoute,
   DashboardRoute: DashboardRoute,
-  GravacoesJuridicasRoute: GravacoesJuridicasRoute,
   LimpezaRoute: LimpezaRoute,
   LoginRoute: LoginRoute,
   PesquisasRoute: PesquisasRoute,
@@ -1367,3 +1346,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
