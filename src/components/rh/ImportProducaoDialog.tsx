@@ -19,7 +19,6 @@ import { Upload, FileSpreadsheet, AlertTriangle, CheckCircle2, Download } from "
 import { colaboradores, brl } from "@/lib/rh/mock";
 import {
   upsertProducaoBatch,
-  formatMes,
   mesAtual,
   type ProducaoInput,
 } from "@/lib/rh/producao";
