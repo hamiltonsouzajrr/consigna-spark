@@ -540,6 +540,53 @@ export type Database = {
           },
         ]
       }
+      rh_candidatos: {
+        Row: {
+          created_at: string
+          email: string | null
+          etapa: string
+          fit: number
+          id: string
+          nome: string
+          notas: string | null
+          telefone: string | null
+          updated_at: string
+          vaga_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          etapa?: string
+          fit?: number
+          id?: string
+          nome: string
+          notas?: string | null
+          telefone?: string | null
+          updated_at?: string
+          vaga_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          etapa?: string
+          fit?: number
+          id?: string
+          nome?: string
+          notas?: string | null
+          telefone?: string | null
+          updated_at?: string
+          vaga_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_candidatos_vaga_id_fkey"
+            columns: ["vaga_id"]
+            isOneToOne: false
+            referencedRelation: "rh_vagas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rh_clima_responses: {
         Row: {
           answers: Json
@@ -972,6 +1019,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rh_vagas: {
+        Row: {
+          created_at: string
+          departamento: string
+          id: string
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          departamento?: string
+          id?: string
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          departamento?: string
+          id?: string
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       safeconsig_leads: {
         Row: {
