@@ -61,6 +61,8 @@ import { Route as ProspeccaoRecentesRouteImport } from './routes/prospeccao.rece
 import { Route as ProspeccaoFollowupsRouteImport } from './routes/prospeccao.followups'
 import { Route as ProspeccaoAdminRouteImport } from './routes/prospeccao.admin'
 import { Route as ProspeccaoLeadIdRouteImport } from './routes/prospeccao.$leadId'
+import { Route as ProducaoMeuDiaRouteImport } from './routes/producao.meu-dia'
+import { Route as ProducaoMetasRouteImport } from './routes/producao.metas'
 import { Route as RhPortalIndexRouteImport } from './routes/rh.portal.index'
 import { Route as RhPortalKpiRouteImport } from './routes/rh.portal.$kpi'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
@@ -326,6 +328,16 @@ const ProspeccaoLeadIdRoute = ProspeccaoLeadIdRouteImport.update({
   path: '/prospeccao/$leadId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProducaoMeuDiaRoute = ProducaoMeuDiaRouteImport.update({
+  id: '/producao/meu-dia',
+  path: '/producao/meu-dia',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProducaoMetasRoute = ProducaoMetasRouteImport.update({
+  id: '/producao/metas',
+  path: '/producao/metas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RhPortalIndexRoute = RhPortalIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -366,6 +378,8 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/producao/metas': typeof ProducaoMetasRoute
+  '/producao/meu-dia': typeof ProducaoMeuDiaRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof ProspeccaoAdminRoute
   '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
@@ -423,6 +437,8 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/producao/metas': typeof ProducaoMetasRoute
+  '/producao/meu-dia': typeof ProducaoMeuDiaRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof ProspeccaoAdminRoute
   '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
@@ -481,6 +497,8 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/producao/metas': typeof ProducaoMetasRoute
+  '/producao/meu-dia': typeof ProducaoMeuDiaRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof ProspeccaoAdminRoute
   '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
@@ -541,6 +559,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/producao/metas'
+    | '/producao/meu-dia'
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
     | '/prospeccao/followups'
@@ -598,6 +618,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/producao/metas'
+    | '/producao/meu-dia'
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
     | '/prospeccao/followups'
@@ -655,6 +677,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/producao/metas'
+    | '/producao/meu-dia'
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
     | '/prospeccao/followups'
@@ -714,6 +738,8 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadRoute: typeof UploadRoute
   WhatsappRoute: typeof WhatsappRoute
+  ProducaoMetasRoute: typeof ProducaoMetasRoute
+  ProducaoMeuDiaRoute: typeof ProducaoMeuDiaRoute
   ProspeccaoLeadIdRoute: typeof ProspeccaoLeadIdRoute
   ProspeccaoAdminRoute: typeof ProspeccaoAdminRoute
   ProspeccaoFollowupsRoute: typeof ProspeccaoFollowupsRoute
@@ -1088,6 +1114,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProspeccaoLeadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/producao/meu-dia': {
+      id: '/producao/meu-dia'
+      path: '/producao/meu-dia'
+      fullPath: '/producao/meu-dia'
+      preLoaderRoute: typeof ProducaoMeuDiaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/producao/metas': {
+      id: '/producao/metas'
+      path: '/producao/metas'
+      fullPath: '/producao/metas'
+      preLoaderRoute: typeof ProducaoMetasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rh/portal/': {
       id: '/rh/portal/'
       path: '/'
@@ -1231,6 +1271,8 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadRoute: UploadRoute,
   WhatsappRoute: WhatsappRoute,
+  ProducaoMetasRoute: ProducaoMetasRoute,
+  ProducaoMeuDiaRoute: ProducaoMeuDiaRoute,
   ProspeccaoLeadIdRoute: ProspeccaoLeadIdRoute,
   ProspeccaoAdminRoute: ProspeccaoAdminRoute,
   ProspeccaoFollowupsRoute: ProspeccaoFollowupsRoute,
