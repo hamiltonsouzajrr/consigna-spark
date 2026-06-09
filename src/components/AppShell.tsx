@@ -129,6 +129,10 @@ function useFollowupsCount(enabled: boolean) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { signOut, user } = useAuth();
+  const { isAdmin } = useRhAccess();
+  const sections = navSections
+    .map((s) => ({ ...s, items: s.items.filter((n) => !n.adminOnly || isAdmin) }))
+    .filter((s) => s.items.length > 0);
   const nav2 = useNavigate();
   const loc = useLocation();
   const leadsCount = useLeadsCount(!!user);
