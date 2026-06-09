@@ -51,6 +51,7 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
         leads: z.array(leadInput).min(1).max(2000),
         dedup: z.boolean().optional(),
         update: z.boolean().optional(),
+        batch: z.string().trim().max(160).optional().nullable(),
       })
       .parse(data),
   )
