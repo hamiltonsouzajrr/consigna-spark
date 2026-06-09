@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, Flame, CalendarClock, Home, Trophy, Star, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, Flame, CalendarClock, Home, Trophy, Star, MessageSquare, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useRhAccess } from "@/hooks/use-rh-access";
@@ -126,8 +126,18 @@ function useFollowupsCount(enabled: boolean) {
   return count;
 }
 
+function useClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { signOut, user } = useAuth();
+  const now = useClock();
   const { isAdmin } = useRhAccess();
   const sections = navSections
     .map((s) => ({ ...s, items: s.items.filter((n) => !n.adminOnly || isAdmin) }))
@@ -209,19 +219,31 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
       <main className="flex-1 overflow-x-hidden print:overflow-visible">
         {/* Top header bar (Bitrix-style) */}
-        <header className="topbar-bg hidden items-center gap-3 px-6 py-3 text-white md:flex print:!hidden">
+        <header className="topbar-bg hidden items-center gap-4 px-6 py-2.5 text-white md:flex print:!hidden">
+          <div className="flex items-center gap-2 pr-2 text-lg font-semibold">
+            <BadgeDollarSign className="h-5 w-5" />
+            <span>Positive</span>
+          </div>
           <div className="relative max-w-md flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
             <input
               type="search"
-              placeholder="Pesquisar..."
+              placeholder="Procurar pessoas, documentos e mais..."
               className="w-full rounded-lg border border-white/15 bg-white/10 py-2 pl-9 pr-3 text-sm text-white placeholder:text-white/55 focus:bg-white/15 focus:outline-none"
             />
           </div>
-          <div className="ml-auto flex items-center gap-3">
-            <span className="hidden text-sm text-white/85 lg:inline">{user?.email}</span>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-sm font-semibold text-white">
-              {(user?.email ?? "?").charAt(0).toUpperCase()}
+          <div className="ml-auto flex items-center gap-4">
+            <div className="flex items-center gap-2 tabular-nums">
+              <Clock className="h-4 w-4 text-white/70" />
+              <span className="text-xl font-semibold leading-none">
+                {now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+            <div className="hidden items-center gap-2 lg:flex">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-sm font-semibold text-white">
+                {(user?.email ?? "?").charAt(0).toUpperCase()}
+              </div>
+              <span className="max-w-[160px] truncate text-sm text-white/90">{user?.email}</span>
             </div>
           </div>
         </header>
