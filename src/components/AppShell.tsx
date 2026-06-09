@@ -167,7 +167,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         }`}
       >
         <Icon className="h-4 w-4 shrink-0" />
-        <span className={`flex-1 truncate ${collapsible ? "opacity-0 transition-opacity duration-200 group-hover/side:opacity-100" : ""}`}>{n.label}</span>
+        <span className={`flex-1 truncate whitespace-nowrap text-sm leading-5 ${collapsible ? "opacity-0 transition-opacity duration-300 ease-in-out group-hover/side:opacity-100 group-hover/side:delay-150" : ""}`}>{n.label}</span>
         {n.badge && count !== null && count > 0 && (
           <Badge
             className={`h-5 min-w-5 justify-center border-0 px-1.5 text-xs ${
@@ -185,13 +185,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen app-bg print:block print:min-h-0 print:bg-none">
       <HorariosOuroDialog />
       <HorariosOuroReminder />
-      <aside className="group/side hidden w-16 shrink-0 overflow-hidden sidebar-bg text-sidebar-foreground transition-[width] duration-200 ease-in-out hover:w-64 md:flex md:flex-col print:!hidden">
+      <aside className="group/side hidden w-16 shrink-0 overflow-hidden sidebar-bg text-sidebar-foreground transition-[width] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:w-64 md:flex md:flex-col print:!hidden">
 
         <div className="flex items-center gap-2 px-4 py-5 border-b border-white/10">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white">
             <BadgeDollarSign className="h-5 w-5" />
           </div>
-          <div className="opacity-0 transition-opacity duration-200 group-hover/side:opacity-100">
+          <div className="opacity-0 transition-opacity duration-300 ease-in-out group-hover/side:opacity-100 group-hover/side:delay-150">
             <p className="whitespace-nowrap text-sm font-semibold leading-tight text-white">Grupo Positive</p>
             <p className="whitespace-nowrap text-xs text-white/60">Consultas e simulação</p>
           </div>
@@ -199,7 +199,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden p-3">
           {sections.map((sec, idx) => (
             <div key={sec.section} className="space-y-1">
-              <p className={`h-4 overflow-hidden whitespace-nowrap px-3 pb-1 text-xs uppercase tracking-wider text-white/45 opacity-0 transition-opacity duration-200 group-hover/side:opacity-100 ${idx === 0 ? "pt-1" : "pt-4"}`}>
+              <p className={`h-4 overflow-hidden whitespace-nowrap px-3 pb-1 text-[11px] uppercase tracking-wider text-white/45 opacity-0 transition-opacity duration-300 ease-in-out group-hover/side:opacity-100 group-hover/side:delay-150 ${idx === 0 ? "pt-1" : "pt-4"}`}>
                 {sec.section}
               </p>
               {sec.items.map((n) => renderItem(n, undefined, true))}
@@ -207,13 +207,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <div className="border-t border-white/10 p-3">
-          <p className="overflow-hidden whitespace-nowrap px-3 pb-2 text-xs text-white/60 opacity-0 transition-opacity duration-200 group-hover/side:opacity-100">{user?.email}</p>
+          <p className="overflow-hidden whitespace-nowrap px-3 pb-2 text-xs text-white/60 opacity-0 transition-opacity duration-300 ease-in-out group-hover/side:opacity-100 group-hover/side:delay-150">{user?.email}</p>
           <Button
             variant="ghost"
             className="w-full justify-start gap-2 text-white/90 hover:bg-white/10 hover:text-white"
             onClick={async () => { await signOut(); nav2({ to: "/login" }); }}
           >
-            <LogOut className="h-4 w-4 shrink-0" /> <span className="opacity-0 transition-opacity duration-200 group-hover/side:opacity-100">Sair</span>
+            <LogOut className="h-4 w-4 shrink-0" /> <span className="whitespace-nowrap opacity-0 transition-opacity duration-300 ease-in-out group-hover/side:opacity-100 group-hover/side:delay-150">Sair</span>
           </Button>
         </div>
       </aside>
