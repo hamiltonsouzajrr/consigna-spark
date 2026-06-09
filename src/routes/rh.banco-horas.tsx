@@ -87,9 +87,17 @@ function BancoHoras() {
                 <TableHead>Atraso</TableHead>
                 <TableHead>Falta</TableHead>
                 <TableHead>Saldo</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
+              {pontos.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={9} className="py-10 text-center text-sm text-muted-foreground">
+                    Nenhum registro de ponto.
+                  </TableCell>
+                </TableRow>
+              )}
               {pontos.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell className="font-medium">{p.colaborador}</TableCell>
@@ -101,6 +109,29 @@ function BancoHoras() {
                   <TableCell className="text-sm">{p.falta ? "Sim" : "—"}</TableCell>
                   <TableCell className={`text-sm font-medium ${p.saldo >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
                     {p.saldo.toFixed(1)}h
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-600 hover:text-rose-700">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir registro?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta ação removerá o registro de {p.colaborador} ({formatDate(p.data)}). Não é possível desfazer.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => remove(p.id, p.colaborador)}>Excluir</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
