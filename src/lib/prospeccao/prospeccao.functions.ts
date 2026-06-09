@@ -46,7 +46,7 @@ const leadInput = z.object({
 export const adminCreateLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({ leads: z.array(leadInput).min(1).max(5000) }).parse(data),
+    z.object({ leads: z.array(leadInput).min(1).max(50000) }).parse(data),
   )
   .handler(async ({ context, data }): Promise<{ inserted: number }> => {
     const { supabase, userId } = context;
@@ -64,11 +64,17 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
       consultant_id: l.consultant_id || null,
       created_by: userId,
     }));
-    const { error, count } = await supabaseAdmin
-      .from("prospect_leads")
-      .insert(rows as any, { count: "exact" });
-    if (error) throw new Error(error.message);
-    return { inserted: count ?? rows.length };
+    let inserted = 0;
+    const chunkSize = 1000;
+    for (let i = 0; i < rows.length; i += chunkSize) {
+      const chunk = rows.slice(i, i + chunkSize);
+      const { error, count } = await supabaseAdmin
+        .from("prospect_leads")
+        .insert(chunk as any, { count: "exact" });
+      if (error) throw new Error(error.message);
+      inserted += count ?? chunk.length;
+    }
+    return { inserted };
   });
 
 export const adminAssignLeads = createServerFn({ method: "POST" })
