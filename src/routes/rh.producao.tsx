@@ -91,14 +91,14 @@ function ProducaoAdmin() {
     return <p className="py-10 text-center text-sm text-muted-foreground">Carregando…</p>;
   }
 
-  if (!isAdmin) {
+  if (!canView) {
     return (
       <div>
         <RhPageHeader title="Produção" description="Lançamento de produção das consultoras." />
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
             <Lock className="h-8 w-8 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Acesso restrito a administradores.</p>
+            <p className="text-sm text-muted-foreground">Solicite ao administrador a liberação desta aba do RH.</p>
           </CardContent>
         </Card>
       </div>
