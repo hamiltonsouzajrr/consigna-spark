@@ -51,7 +51,7 @@ const navSections: NavSection[] = [
     items: [
       { to: "/pos-venda/avaliacoes", label: "Avaliações", icon: Star },
       { to: "/qrcodes", label: "QR Codes", icon: QrCode },
-      { to: "/pos-venda/feedbacks", label: "Feedbacks", icon: MessageSquare },
+      
     ],
   },
   {

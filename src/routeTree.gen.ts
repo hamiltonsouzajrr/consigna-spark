@@ -63,7 +63,6 @@ import { Route as ProspeccaoAdminRouteImport } from './routes/prospeccao.admin'
 import { Route as ProspeccaoLeadIdRouteImport } from './routes/prospeccao.$leadId'
 import { Route as ProducaoMeuDiaRouteImport } from './routes/producao.meu-dia'
 import { Route as ProducaoMetasRouteImport } from './routes/producao.metas'
-import { Route as PosVendaFeedbacksRouteImport } from './routes/pos-venda.feedbacks'
 import { Route as PosVendaAvaliacoesRouteImport } from './routes/pos-venda.avaliacoes'
 import { Route as AprovacaoTokenRouteImport } from './routes/aprovacao.$token'
 import { Route as RhPortalIndexRouteImport } from './routes/rh.portal.index'
@@ -341,11 +340,6 @@ const ProducaoMetasRoute = ProducaoMetasRouteImport.update({
   path: '/producao/metas',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PosVendaFeedbacksRoute = PosVendaFeedbacksRouteImport.update({
-  id: '/pos-venda/feedbacks',
-  path: '/pos-venda/feedbacks',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PosVendaAvaliacoesRoute = PosVendaAvaliacoesRouteImport.update({
   id: '/pos-venda/avaliacoes',
   path: '/pos-venda/avaliacoes',
@@ -398,7 +392,6 @@ export interface FileRoutesByFullPath {
   '/whatsapp': typeof WhatsappRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/pos-venda/avaliacoes': typeof PosVendaAvaliacoesRoute
-  '/pos-venda/feedbacks': typeof PosVendaFeedbacksRoute
   '/producao/metas': typeof ProducaoMetasRoute
   '/producao/meu-dia': typeof ProducaoMeuDiaRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
@@ -460,7 +453,6 @@ export interface FileRoutesByTo {
   '/whatsapp': typeof WhatsappRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/pos-venda/avaliacoes': typeof PosVendaAvaliacoesRoute
-  '/pos-venda/feedbacks': typeof PosVendaFeedbacksRoute
   '/producao/metas': typeof ProducaoMetasRoute
   '/producao/meu-dia': typeof ProducaoMeuDiaRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
@@ -523,7 +515,6 @@ export interface FileRoutesById {
   '/whatsapp': typeof WhatsappRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/pos-venda/avaliacoes': typeof PosVendaAvaliacoesRoute
-  '/pos-venda/feedbacks': typeof PosVendaFeedbacksRoute
   '/producao/metas': typeof ProducaoMetasRoute
   '/producao/meu-dia': typeof ProducaoMeuDiaRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
@@ -588,7 +579,6 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/aprovacao/$token'
     | '/pos-venda/avaliacoes'
-    | '/pos-venda/feedbacks'
     | '/producao/metas'
     | '/producao/meu-dia'
     | '/prospeccao/$leadId'
@@ -650,7 +640,6 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/aprovacao/$token'
     | '/pos-venda/avaliacoes'
-    | '/pos-venda/feedbacks'
     | '/producao/metas'
     | '/producao/meu-dia'
     | '/prospeccao/$leadId'
@@ -712,7 +701,6 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/aprovacao/$token'
     | '/pos-venda/avaliacoes'
-    | '/pos-venda/feedbacks'
     | '/producao/metas'
     | '/producao/meu-dia'
     | '/prospeccao/$leadId'
@@ -776,7 +764,6 @@ export interface RootRouteChildren {
   WhatsappRoute: typeof WhatsappRoute
   AprovacaoTokenRoute: typeof AprovacaoTokenRoute
   PosVendaAvaliacoesRoute: typeof PosVendaAvaliacoesRoute
-  PosVendaFeedbacksRoute: typeof PosVendaFeedbacksRoute
   ProducaoMetasRoute: typeof ProducaoMetasRoute
   ProducaoMeuDiaRoute: typeof ProducaoMeuDiaRoute
   ProspeccaoLeadIdRoute: typeof ProspeccaoLeadIdRoute
@@ -1167,13 +1154,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProducaoMetasRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pos-venda/feedbacks': {
-      id: '/pos-venda/feedbacks'
-      path: '/pos-venda/feedbacks'
-      fullPath: '/pos-venda/feedbacks'
-      preLoaderRoute: typeof PosVendaFeedbacksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/pos-venda/avaliacoes': {
       id: '/pos-venda/avaliacoes'
       path: '/pos-venda/avaliacoes'
@@ -1333,7 +1313,6 @@ const rootRouteChildren: RootRouteChildren = {
   WhatsappRoute: WhatsappRoute,
   AprovacaoTokenRoute: AprovacaoTokenRoute,
   PosVendaAvaliacoesRoute: PosVendaAvaliacoesRoute,
-  PosVendaFeedbacksRoute: PosVendaFeedbacksRoute,
   ProducaoMetasRoute: ProducaoMetasRoute,
   ProducaoMeuDiaRoute: ProducaoMeuDiaRoute,
   ProspeccaoLeadIdRoute: ProspeccaoLeadIdRoute,
