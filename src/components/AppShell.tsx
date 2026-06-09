@@ -226,14 +226,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             <BadgeDollarSign className="h-5 w-5" />
             <span>Positive</span>
           </div>
-          <div className="relative max-w-md flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
-            <input
-              type="search"
-              placeholder="Procurar pessoas, documentos e mais..."
-              className="w-full rounded-lg border border-white/15 bg-white/10 py-2 pl-9 pr-3 text-sm text-white placeholder:text-white/55 focus:bg-white/15 focus:outline-none"
-            />
-          </div>
           <div className="ml-auto flex items-center gap-4">
             <div className="flex items-center gap-2 tabular-nums">
               <Clock className="h-4 w-4 text-white/70" />
