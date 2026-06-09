@@ -59,6 +59,7 @@ const navSections: NavSection[] = [
       { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
       { to: "/rh", label: "RH", icon: Users },
       { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
+      { to: "/gravacoes-juridicas", label: "Gravações Jurídicas", icon: ShieldCheck, adminOnly: true },
     ],
   },
 ];
