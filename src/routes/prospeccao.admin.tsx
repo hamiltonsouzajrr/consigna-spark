@@ -44,6 +44,8 @@ function Page() {
   const [parsed, setParsed] = useState<ParsedLead[]>([]);
   const [fileName, setFileName] = useState("");
   const [uploadConsultant, setUploadConsultant] = useState<string>("none");
+  const [dedup, setDedup] = useState(true);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [busy, setBusy] = useState(false);
 
   // manual lead
@@ -98,13 +100,23 @@ function Page() {
   const confirmImport = async () => {
     if (!parsed.length) return;
     setBusy(true);
+    const cid = uploadConsultant === "none" ? null : uploadConsultant;
+    const chunkSize = 2000;
+    const total = parsed.length;
+    setProgress({ done: 0, total });
+    let inserted = 0, skipped = 0;
     try {
-      const cid = uploadConsultant === "none" ? null : uploadConsultant;
-      const r = await createLeads({ data: { leads: parsed.map((p) => ({ ...p, consultant_id: cid })) } });
-      toast.success(`${r.inserted} lead(s) importados.`);
+      for (let i = 0; i < total; i += chunkSize) {
+        const slice = parsed.slice(i, i + chunkSize);
+        const r = await createLeads({ data: { leads: slice.map((p) => ({ ...p, consultant_id: cid })), dedup } });
+        inserted += r.inserted; skipped += r.skipped ?? 0;
+        setProgress({ done: Math.min(i + chunkSize, total), total });
+      }
+      toast.success(`${inserted} lead(s) importados${skipped ? ` · ${skipped} duplicado(s) ignorado(s)` : ""}.`);
       setParsed([]); setFileName("");
       await loadLeads(); statsQ.refetch();
     } catch (e: any) { toast.error(e?.message ?? "Falha ao importar."); }
+    setProgress(null);
     setBusy(false);
   };
 
@@ -169,10 +181,25 @@ function Page() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full" disabled={busy} onClick={confirmImport}>Importar {parsed.length} lead(s)</Button>
+              <div className="flex items-center gap-2">
+                <input id="dedup" type="checkbox" checked={dedup} onChange={(e) => setDedup(e.target.checked)} className="h-4 w-4 accent-primary" />
+                <Label htmlFor="dedup" className="text-xs cursor-pointer">Ignorar duplicados (por CPF/telefone)</Label>
+              </div>
+              {progress && (
+                <div className="space-y-1">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-full bg-primary transition-all" style={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Importando {progress.done} de {progress.total}…</p>
+                </div>
+              )}
+              <Button className="w-full" disabled={busy} onClick={confirmImport}>
+                {busy ? "Importando…" : `Importar ${parsed.length} lead(s)`}
+              </Button>
             </div>
           )}
         </Card>
+
 
         {/* Manual */}
         <Card className="p-5">
