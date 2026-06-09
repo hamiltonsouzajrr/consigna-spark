@@ -347,7 +347,7 @@ function Page() {
               className="sm:max-w-[220px]"
             />
             
-            <Button onClick={processarManual} disabled={running || !manualCpf} variant="secondary">
+            <Button onClick={processarManual} disabled={running || !manualCpf} variant="secondary" className="text-white">
               {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
               Consultar CPF manual
             </Button>
