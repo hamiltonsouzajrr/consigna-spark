@@ -486,13 +486,13 @@ function Page() {
                 <button
                   type="button"
                   onClick={() => setShowLogs((v) => !v)}
-                  className="flex w-full items-center justify-between rounded border bg-muted/40 px-3 py-2 text-sm hover:bg-muted"
+                  className="flex w-full items-center justify-between rounded-md border bg-white px-3 py-2 text-sm font-semibold text-primary shadow-md transition hover:bg-white/90"
                 >
-                  <span className="flex items-center gap-2 font-medium">
+                  <span className="flex items-center gap-2 font-medium text-primary">
                     {showLogs ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     Logs em tempo real
                   </span>
-                  <span className="text-xs text-muted-foreground">{debugLogs.length} entrada(s)</span>
+                  <span className="text-xs text-primary/70">{debugLogs.length} entrada(s)</span>
                 </button>
                 {showLogs && (
                   <div className="mt-2 max-h-96 overflow-auto rounded-lg border bg-foreground/95 p-3 font-mono text-xs leading-relaxed text-background">
