@@ -11,7 +11,7 @@ import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
 import type { ReactNode } from "react";
 
 type BadgeKind = "leads" | "followups";
-type NavItem = { to: string; label: string; full?: string; icon: typeof Calculator; badge?: BadgeKind; exact?: boolean };
+type NavItem = { to: string; label: string; full?: string; icon: typeof Calculator; badge?: BadgeKind; exact?: boolean; adminOnly?: boolean };
 type NavSection = { section: string; items: NavItem[] };
 
 const navSections: NavSection[] = [
