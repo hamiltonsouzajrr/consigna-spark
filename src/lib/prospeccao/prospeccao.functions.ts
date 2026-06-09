@@ -451,3 +451,72 @@ ${timeline || "(sem interações registradas)"}`;
     const text = json?.choices?.[0]?.message?.content ?? "Sem resposta da IA.";
     return { text };
   });
+
+export type ImportBatch = {
+  batch: string | null;
+  label: string;
+  total: number;
+  assigned: number;
+  unassigned: number;
+  worked: number;
+  first_at: string;
+  last_at: string;
+};
+
+// List imported spreadsheets grouped by import_batch (admin-only).
+export const adminListImportBatches = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ImportBatch[]> => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const groups = new Map<string, ImportBatch>();
+    const pageSize = 1000;
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await supabaseAdmin
+        .from("prospect_leads")
+        .select("import_batch,consultant_id,status,created_at")
+        .range(from, from + pageSize - 1);
+      if (error) throw new Error(error.message);
+      if (!data || data.length === 0) break;
+      for (const r of data as any[]) {
+        const key = r.import_batch ?? "__none__";
+        let g = groups.get(key);
+        if (!g) {
+          g = {
+            batch: r.import_batch ?? null,
+            label: r.import_batch ?? "Importação inicial (sem rótulo)",
+            total: 0, assigned: 0, unassigned: 0, worked: 0,
+            first_at: r.created_at, last_at: r.created_at,
+          };
+          groups.set(key, g);
+        }
+        g.total++;
+        if (r.consultant_id) g.assigned++; else g.unassigned++;
+        if (r.status && r.status !== "novo") g.worked++;
+        if (r.created_at < g.first_at) g.first_at = r.created_at;
+        if (r.created_at > g.last_at) g.last_at = r.created_at;
+      }
+      if (data.length < pageSize) break;
+    }
+    return Array.from(groups.values()).sort((a, b) => (a.last_at < b.last_at ? 1 : -1));
+  });
+
+// Delete every lead from a given imported spreadsheet (admin-only).
+export const adminDeleteImportBatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ batch: z.string().max(160).nullable() }).parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ deleted: number }> => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const base = () => supabaseAdmin.from("prospect_leads").delete({ count: "exact" });
+    const q = data.batch === null ? base().is("import_batch", null) : base().eq("import_batch", data.batch);
+    const { error, count } = await q;
+    if (error) throw new Error(error.message);
+    return { deleted: count ?? 0 };
+  });
