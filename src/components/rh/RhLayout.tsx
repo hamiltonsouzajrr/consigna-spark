@@ -38,7 +38,7 @@ export const rhNav = [
   { to: "/rh/recrutamento", label: "Recrutamento", icon: UserSearch },
   { to: "/rh/onboarding", label: "Onboarding", icon: ClipboardCheck },
   { to: "/rh/desligamentos", label: "Desligamentos", icon: UserMinus },
-  { to: "/rh/auditoria", label: "Auditoria", icon: ScrollText },
+  
   { to: "/rh/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
 
