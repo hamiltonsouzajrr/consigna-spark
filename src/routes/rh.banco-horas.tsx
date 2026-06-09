@@ -1,11 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Clock, TrendingUp, TrendingDown } from "lucide-react";
+import { useState } from "react";
+import { Clock, TrendingUp, TrendingDown, Trash2 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import { RhPageHeader } from "@/components/rh/RhLayout";
 import { RhStatCard } from "@/components/rh/RhStatCard";
-import { pontos, formatDate } from "@/lib/rh/mock";
+import { pontos as pontosData, formatDate } from "@/lib/rh/mock";
 
 export const Route = createFileRoute("/rh/banco-horas")({
   component: BancoHoras,
@@ -21,10 +35,17 @@ const grafico = [
 ];
 
 function BancoHoras() {
+  const [pontos, setPontos] = useState(pontosData);
   const totalExtras = pontos.reduce((a, p) => a + p.extras, 0);
   const totalAtrasos = pontos.reduce((a, p) => a + p.atraso, 0);
   const faltas = pontos.filter((p) => p.falta).length;
   const saldo = pontos.reduce((a, p) => a + p.saldo, 0);
+
+  const remove = (id: string, nome: string) => {
+    setPontos((prev) => prev.filter((p) => p.id !== id));
+    toast.success(`Registro de ${nome} excluído`);
+  };
+
 
   return (
     <div>
@@ -66,9 +87,17 @@ function BancoHoras() {
                 <TableHead>Atraso</TableHead>
                 <TableHead>Falta</TableHead>
                 <TableHead>Saldo</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
+              {pontos.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={9} className="py-10 text-center text-sm text-muted-foreground">
+                    Nenhum registro de ponto.
+                  </TableCell>
+                </TableRow>
+              )}
               {pontos.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell className="font-medium">{p.colaborador}</TableCell>
@@ -80,6 +109,29 @@ function BancoHoras() {
                   <TableCell className="text-sm">{p.falta ? "Sim" : "—"}</TableCell>
                   <TableCell className={`text-sm font-medium ${p.saldo >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
                     {p.saldo.toFixed(1)}h
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-600 hover:text-rose-700">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir registro?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta ação removerá o registro de {p.colaborador} ({formatDate(p.data)}). Não é possível desfazer.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => remove(p.id, p.colaborador)}>Excluir</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
