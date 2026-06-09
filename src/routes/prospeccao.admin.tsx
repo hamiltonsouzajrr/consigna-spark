@@ -1,0 +1,272 @@
+import { createFileRoute, Navigate, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
+import { useRhAccess } from "@/hooks/use-rh-access";
+import { supabase } from "@/integrations/supabase/client";
+import { AppShell } from "@/components/AppShell";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RhStatCard } from "@/components/rh/RhStatCard";
+import { toast } from "sonner";
+import Papa from "papaparse";
+import * as XLSX from "xlsx";
+import { ArrowLeft, UploadCloud, Trophy, AlertTriangle, Ghost, UserPlus } from "lucide-react";
+import {
+  getProspectConsultants, adminCreateLeads, adminAssignLeads, getAdminStats,
+} from "@/lib/prospeccao/prospeccao.functions";
+import { STATUS_LABEL, STATUS_TONE, type LeadStatus } from "@/lib/prospeccao/constants";
+
+export const Route = createFileRoute("/prospeccao/admin")({
+  head: () => ({ meta: [{ title: "Painel admin — Prospecção" }, { name: "robots", content: "noindex,nofollow" }] }),
+  component: Page,
+});
+
+type LeadRow = { id: string; nome: string; cidade: string | null; origem: string | null; status: LeadStatus; score: number; consultant_id: string | null; created_at: string };
+type ParsedLead = { nome: string; telefone?: string; cpf?: string; cidade?: string; origem?: string; orcamento?: number; urgencia?: "alta" | "media" | "baixa" };
+
+function Page() {
+  const { user, loading } = useAuth();
+  const { isAdmin, isLoading: accessLoading } = useRhAccess();
+
+  const fetchConsultants = useServerFn(getProspectConsultants);
+  const createLeads = useServerFn(adminCreateLeads);
+  const assignLeads = useServerFn(adminAssignLeads);
+  const fetchStats = useServerFn(getAdminStats);
+
+  const [leads, setLeads] = useState<LeadRow[]>([]);
+  const [parsed, setParsed] = useState<ParsedLead[]>([]);
+  const [fileName, setFileName] = useState("");
+  const [uploadConsultant, setUploadConsultant] = useState<string>("none");
+  const [busy, setBusy] = useState(false);
+
+  // manual lead
+  const [m, setM] = useState({ nome: "", telefone: "", cidade: "", origem: "indicacao", orcamento: "", urgencia: "alta", consultant_id: "none" });
+
+  const consultantsQ = useQuery({ queryKey: ["prospect", "consultants"], queryFn: () => fetchConsultants(), enabled: !!user && isAdmin });
+  const statsQ = useQuery({ queryKey: ["prospect", "admin-stats"], queryFn: () => fetchStats(), enabled: !!user && isAdmin });
+  const consultants = consultantsQ.data ?? [];
+  const emailById = useMemo(() => new Map(consultants.map((c) => [c.id, c.email])), [consultants]);
+
+  const loadLeads = async () => {
+    const { data } = await supabase.from("prospect_leads").select("id,nome,cidade,origem,status,score,consultant_id,created_at").order("created_at", { ascending: false }).limit(1000);
+    setLeads((data ?? []) as any);
+  };
+  useEffect(() => { if (user && isAdmin) loadLeads(); }, [user, isAdmin]);
+
+  if (loading || accessLoading) return null;
+  if (!user) return <Navigate to="/login" />;
+  if (!isAdmin) return <Navigate to="/prospeccao" />;
+
+  const parseFile = async (file: File) => {
+    setFileName(file.name);
+    const map = (records: Record<string, unknown>[]) => {
+      const out: ParsedLead[] = [];
+      for (const r of records) {
+        const keys = Object.keys(r).reduce<Record<string, string>>((a, k) => { a[k.toLowerCase().trim()] = k; return a; }, {});
+        const get = (n: string) => (keys[n] ? String(r[keys[n]] ?? "").trim() : "");
+        const nome = get("nome");
+        if (!nome) continue;
+        const orc = get("orcamento") || get("orçamento") || get("margem");
+        const urg = (get("urgencia") || get("urgência")).toLowerCase();
+        out.push({
+          nome,
+          telefone: get("telefone") || get("celular") || get("whatsapp") || undefined,
+          cpf: get("cpf") || undefined,
+          cidade: get("cidade") || undefined,
+          origem: get("origem") || "planilha",
+          orcamento: orc ? Number(orc.replace(/[^\d.,-]/g, "").replace(/\./g, "").replace(",", ".")) || undefined : undefined,
+          urgencia: urg === "alta" || urg === "media" || urg === "média" || urg === "baixa" ? (urg === "média" ? "media" : (urg as any)) : undefined,
+        });
+      }
+      setParsed(out);
+      if (!out.length) toast.error("Nenhuma linha com coluna NOME encontrada.");
+      else toast.success(`${out.length} lead(s) prontos para importar.`);
+    };
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (ext === "csv") Papa.parse<Record<string, unknown>>(file, { header: true, skipEmptyLines: true, complete: (res) => map(res.data) });
+    else if (ext === "xlsx" || ext === "xls") { const wb = XLSX.read(await file.arrayBuffer()); map(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" })); }
+    else toast.error("Use CSV ou XLSX.");
+  };
+
+  const confirmImport = async () => {
+    if (!parsed.length) return;
+    setBusy(true);
+    try {
+      const cid = uploadConsultant === "none" ? null : uploadConsultant;
+      const r = await createLeads({ data: { leads: parsed.map((p) => ({ ...p, consultant_id: cid })) } });
+      toast.success(`${r.inserted} lead(s) importados.`);
+      setParsed([]); setFileName("");
+      await loadLeads(); statsQ.refetch();
+    } catch (e: any) { toast.error(e?.message ?? "Falha ao importar."); }
+    setBusy(false);
+  };
+
+  const createManual = async () => {
+    if (!m.nome.trim()) { toast.error("Informe o nome."); return; }
+    setBusy(true);
+    try {
+      await createLeads({ data: { leads: [{
+        nome: m.nome.trim(), telefone: m.telefone || null, cidade: m.cidade || null,
+        origem: m.origem, orcamento: m.orcamento ? Number(m.orcamento) : null,
+        urgencia: m.urgencia as any, consultant_id: m.consultant_id === "none" ? null : m.consultant_id,
+      }] } });
+      toast.success("Lead criado.");
+      setM({ nome: "", telefone: "", cidade: "", origem: "indicacao", orcamento: "", urgencia: "alta", consultant_id: "none" });
+      await loadLeads(); statsQ.refetch();
+    } catch (e: any) { toast.error(e?.message ?? "Falha ao criar lead."); }
+    setBusy(false);
+  };
+
+  const reassign = async (leadId: string, consultantId: string) => {
+    try {
+      await assignLeads({ data: { leadIds: [leadId], consultantId: consultantId === "none" ? null : consultantId } });
+      await loadLeads(); statsQ.refetch();
+      toast.success("Lead atribuído.");
+    } catch (e: any) { toast.error(e?.message ?? "Falha ao atribuir."); }
+  };
+
+  const stats = statsQ.data;
+
+  return (
+    <AppShell>
+      <Button asChild variant="ghost" size="sm" className="mb-4"><Link to="/prospeccao"><ArrowLeft className="mr-2 h-4 w-4" /> Voltar à fila</Link></Button>
+      <h1 className="mb-1 text-2xl font-bold">Painel admin — Prospecção</h1>
+      <p className="mb-6 text-sm text-muted-foreground">Importe planilhas, distribua leads e acompanhe os gargalos.</p>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <RhStatCard label="Total de leads" value={stats?.totalLeads ?? "—"} icon={Trophy} tone="sky" />
+        <RhStatCard label="Sem tratativa" value={stats?.semTratativa ?? "—"} icon={AlertTriangle} tone="amber" />
+        <RhStatCard label="Esquecidos (3+ dias)" value={stats?.esquecidos ?? "—"} icon={Ghost} tone="rose" />
+        <RhStatCard label="Consultoras ativas" value={stats?.ranking.filter((r) => r.consultantId).length ?? "—"} icon={UserPlus} tone="violet" />
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        {/* Upload */}
+        <Card className="p-5">
+          <p className="mb-3 text-sm font-semibold">Importar planilha</p>
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 text-center hover:bg-accent/50">
+            <UploadCloud className="h-8 w-8 text-muted-foreground" />
+            <span className="text-sm">Selecionar CSV/XLSX (colunas: Nome, Telefone, Cidade, Origem, Orçamento, Urgência)</span>
+            <Input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={(e) => e.target.files?.[0] && parseFile(e.target.files[0])} />
+            {fileName && <span className="text-xs text-primary">{fileName}</span>}
+          </label>
+          {parsed.length > 0 && (
+            <div className="mt-3 space-y-2">
+              <div>
+                <Label className="text-xs">Atribuir a</Label>
+                <Select value={uploadConsultant} onValueChange={setUploadConsultant}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Não atribuir agora</SelectItem>
+                    {consultants.map((c) => <SelectItem key={c.id} value={c.id}>{c.email}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button className="w-full" disabled={busy} onClick={confirmImport}>Importar {parsed.length} lead(s)</Button>
+            </div>
+          )}
+        </Card>
+
+        {/* Manual */}
+        <Card className="p-5">
+          <p className="mb-3 text-sm font-semibold">Novo lead (manual)</p>
+          <div className="grid grid-cols-2 gap-2">
+            <Input placeholder="Nome" value={m.nome} onChange={(e) => setM({ ...m, nome: e.target.value })} className="col-span-2" />
+            <Input placeholder="Telefone" value={m.telefone} onChange={(e) => setM({ ...m, telefone: e.target.value })} />
+            <Input placeholder="Cidade" value={m.cidade} onChange={(e) => setM({ ...m, cidade: e.target.value })} />
+            <Input placeholder="Orçamento" type="number" value={m.orcamento} onChange={(e) => setM({ ...m, orcamento: e.target.value })} />
+            <Select value={m.origem} onValueChange={(v) => setM({ ...m, origem: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["indicacao", "whatsapp", "site", "evento", "planilha"].map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={m.urgencia} onValueChange={(v) => setM({ ...m, urgencia: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{["alta", "media", "baixa"].map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+            </Select>
+            <Select value={m.consultant_id} onValueChange={(v) => setM({ ...m, consultant_id: v })}>
+              <SelectTrigger className="col-span-2"><SelectValue placeholder="Consultora" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Não atribuir</SelectItem>
+                {consultants.map((c) => <SelectItem key={c.id} value={c.id}>{c.email}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button className="mt-3 w-full" disabled={busy} onClick={createManual}>Criar lead</Button>
+        </Card>
+      </div>
+
+      {/* Ranking + origem */}
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <Card className="p-5">
+          <p className="mb-3 text-sm font-semibold flex items-center gap-2"><Trophy className="h-4 w-4" /> Ranking por consultora</p>
+          <Table>
+            <TableHeader><TableRow><TableHead>Consultora</TableHead><TableHead className="text-right">Leads</TableHead><TableHead className="text-right">Ganhos</TableHead><TableHead className="text-right">Conv.</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {(stats?.ranking ?? []).map((r) => (
+                <TableRow key={r.consultantId ?? "none"}>
+                  <TableCell className="max-w-[180px] truncate">{r.email}</TableCell>
+                  <TableCell className="text-right">{r.total}</TableCell>
+                  <TableCell className="text-right">{r.ganhos}</TableCell>
+                  <TableCell className="text-right">{r.conversao}%</TableCell>
+                </TableRow>
+              ))}
+              {!stats?.ranking.length && <TableRow><TableCell colSpan={4} className="text-center text-sm text-muted-foreground">Sem dados.</TableCell></TableRow>}
+            </TableBody>
+          </Table>
+        </Card>
+        <Card className="p-5">
+          <p className="mb-3 text-sm font-semibold">Origem com melhor conversão</p>
+          <Table>
+            <TableHeader><TableRow><TableHead>Origem</TableHead><TableHead className="text-right">Leads</TableHead><TableHead className="text-right">Conv.</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {(stats?.porOrigem ?? []).map((o) => (
+                <TableRow key={o.origem}><TableCell>{o.origem}</TableCell><TableCell className="text-right">{o.total}</TableCell><TableCell className="text-right">{o.conversao}%</TableCell></TableRow>
+              ))}
+              {!stats?.porOrigem.length && <TableRow><TableCell colSpan={3} className="text-center text-sm text-muted-foreground">Sem dados.</TableCell></TableRow>}
+            </TableBody>
+          </Table>
+        </Card>
+      </div>
+
+      {/* Leads + assignment */}
+      <Card className="mt-6 overflow-hidden">
+        <div className="border-b px-5 py-4"><p className="text-sm font-semibold">Leads ({leads.length}) — atribuição</p></div>
+        <div className="max-h-[520px] overflow-auto">
+          <Table>
+            <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Cidade</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Score</TableHead><TableHead>Consultora</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {leads.map((l) => (
+                <TableRow key={l.id}>
+                  <TableCell><Link to="/prospeccao/$leadId" params={{ leadId: l.id }} className="font-medium hover:underline">{l.nome}</Link></TableCell>
+                  <TableCell className="text-muted-foreground">{l.cidade ?? "—"}</TableCell>
+                  <TableCell><Badge variant="outline" className={STATUS_TONE[l.status]}>{STATUS_LABEL[l.status]}</Badge></TableCell>
+                  <TableCell className="text-right font-semibold">{l.score}</TableCell>
+                  <TableCell>
+                    <Select value={l.consultant_id ?? "none"} onValueChange={(v) => reassign(l.id, v)}>
+                      <SelectTrigger className="h-8 w-[200px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Não atribuído</SelectItem>
+                        {consultants.map((c) => <SelectItem key={c.id} value={c.id}>{c.email}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!leads.length && <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground">Nenhum lead ainda.</TableCell></TableRow>}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
+      <div className="sr-only">{emailById.size}</div>
+    </AppShell>
+  );
+}
