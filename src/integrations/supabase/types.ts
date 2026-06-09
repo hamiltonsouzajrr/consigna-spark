@@ -832,6 +832,7 @@ export type Database = {
           id: string
           mensagem: string
           para: string
+          periodicidade: string
           periodo_fim: string | null
           periodo_inicio: string | null
           popup: boolean
@@ -845,6 +846,7 @@ export type Database = {
           id?: string
           mensagem: string
           para: string
+          periodicidade?: string
           periodo_fim?: string | null
           periodo_inicio?: string | null
           popup?: boolean
@@ -858,6 +860,7 @@ export type Database = {
           id?: string
           mensagem?: string
           para?: string
+          periodicidade?: string
           periodo_fim?: string | null
           periodo_inicio?: string | null
           popup?: boolean

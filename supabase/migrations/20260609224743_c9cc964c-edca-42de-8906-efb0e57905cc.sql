@@ -1,0 +1,1 @@
+ALTER TABLE public.rh_reconhecimentos ADD COLUMN IF NOT EXISTS periodicidade text NOT NULL DEFAULT 'pontual';
