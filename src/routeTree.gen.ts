@@ -53,7 +53,6 @@ import { Route as RhClimaRouteImport } from './routes/rh.clima'
 import { Route as RhCargosRouteImport } from './routes/rh.cargos'
 import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
 import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
-import { Route as RhAuditoriaRouteImport } from './routes/rh.auditoria'
 import { Route as RhAcessosRouteImport } from './routes/rh.acessos'
 import { Route as ProspeccaoRecentesRouteImport } from './routes/prospeccao.recentes'
 import { Route as ProspeccaoFollowupsRouteImport } from './routes/prospeccao.followups'
@@ -288,11 +287,6 @@ const RhAvaliacoesRoute = RhAvaliacoesRouteImport.update({
   path: '/avaliacoes',
   getParentRoute: () => RhRoute,
 } as any)
-const RhAuditoriaRoute = RhAuditoriaRouteImport.update({
-  id: '/auditoria',
-  path: '/auditoria',
-  getParentRoute: () => RhRoute,
-} as any)
 const RhAcessosRoute = RhAcessosRouteImport.update({
   id: '/acessos',
   path: '/acessos',
@@ -387,7 +381,6 @@ export interface FileRoutesByFullPath {
   '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/rh/acessos': typeof RhAcessosRoute
-  '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
   '/rh/cargos': typeof RhCargosRoute
@@ -446,7 +439,6 @@ export interface FileRoutesByTo {
   '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/rh/acessos': typeof RhAcessosRoute
-  '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
   '/rh/cargos': typeof RhCargosRoute
@@ -506,7 +498,6 @@ export interface FileRoutesById {
   '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/rh/acessos': typeof RhAcessosRoute
-  '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
   '/rh/cargos': typeof RhCargosRoute
@@ -568,7 +559,6 @@ export interface FileRouteTypes {
     | '/prospeccao/followups'
     | '/prospeccao/recentes'
     | '/rh/acessos'
-    | '/rh/auditoria'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
     | '/rh/cargos'
@@ -627,7 +617,6 @@ export interface FileRouteTypes {
     | '/prospeccao/followups'
     | '/prospeccao/recentes'
     | '/rh/acessos'
-    | '/rh/auditoria'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
     | '/rh/cargos'
@@ -686,7 +675,6 @@ export interface FileRouteTypes {
     | '/prospeccao/followups'
     | '/prospeccao/recentes'
     | '/rh/acessos'
-    | '/rh/auditoria'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
     | '/rh/cargos'
@@ -1060,13 +1048,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhAvaliacoesRouteImport
       parentRoute: typeof RhRoute
     }
-    '/rh/auditoria': {
-      id: '/rh/auditoria'
-      path: '/auditoria'
-      fullPath: '/rh/auditoria'
-      preLoaderRoute: typeof RhAuditoriaRouteImport
-      parentRoute: typeof RhRoute
-    }
     '/rh/acessos': {
       id: '/rh/acessos'
       path: '/acessos'
@@ -1189,7 +1170,6 @@ const RhPortalRouteWithChildren = RhPortalRoute._addFileChildren(
 
 interface RhRouteChildren {
   RhAcessosRoute: typeof RhAcessosRoute
-  RhAuditoriaRoute: typeof RhAuditoriaRoute
   RhAvaliacoesRoute: typeof RhAvaliacoesRoute
   RhBancoHorasRoute: typeof RhBancoHorasRoute
   RhCargosRoute: typeof RhCargosRoute
@@ -1220,7 +1200,6 @@ interface RhRouteChildren {
 
 const RhRouteChildren: RhRouteChildren = {
   RhAcessosRoute: RhAcessosRoute,
-  RhAuditoriaRoute: RhAuditoriaRoute,
   RhAvaliacoesRoute: RhAvaliacoesRoute,
   RhBancoHorasRoute: RhBancoHorasRoute,
   RhCargosRoute: RhCargosRoute,
@@ -1283,3 +1262,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
