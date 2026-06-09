@@ -17,7 +17,7 @@ import { RhStatCard } from "@/components/rh/RhStatCard";
 import { toast } from "sonner";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { ArrowLeft, UploadCloud, Trophy, AlertTriangle, Ghost, UserPlus, Shuffle, RefreshCw, MessageCircle } from "lucide-react";
+import { ArrowLeft, UploadCloud, Trophy, AlertTriangle, Ghost, UserPlus, Shuffle, RefreshCw, MessageCircle, Trash2, FileSpreadsheet } from "lucide-react";
 import {
   getProspectConsultants, adminCreateLeads, adminAssignLeads, getAdminStats,
   adminDistributeLeads, adminRecycleLeads, adminListImportBatches, adminDeleteImportBatch,
