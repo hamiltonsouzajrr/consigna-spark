@@ -79,6 +79,13 @@ export const listRhUsers = createServerFn({ method: "GET" })
       .from("rh_employees")
       .select("id, full_name, user_id");
 
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id, role")
+      .eq("role", "admin");
+
+    const adminSet = new Set<string>((roles ?? []).map((r: any) => r.user_id as string));
+
     const byUser = new Map<string, string[]>();
     for (const g of grants ?? []) {
       const list = byUser.get(g.user_id as string) ?? [];
@@ -95,6 +102,7 @@ export const listRhUsers = createServerFn({ method: "GET" })
       id: u.id,
       email: u.email ?? "(sem e-mail)",
       tabs: byUser.get(u.id) ?? [],
+      isAdmin: adminSet.has(u.id),
       employee: empByUser.get(u.id) ?? null,
     }));
   });
