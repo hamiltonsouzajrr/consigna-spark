@@ -46,7 +46,7 @@ const leadInput = z.object({
 export const adminCreateLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({ leads: z.array(leadInput).min(1).max(5000) }).parse(data),
+    z.object({ leads: z.array(leadInput).min(1).max(50000) }).parse(data),
   )
   .handler(async ({ context, data }): Promise<{ inserted: number }> => {
     const { supabase, userId } = context;
