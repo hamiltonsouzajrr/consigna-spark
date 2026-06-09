@@ -130,7 +130,42 @@ export function AppShell({ children }: { children: ReactNode }) {
   const nav2 = useNavigate();
   const loc = useLocation();
   const leadsCount = useLeadsCount(!!user);
+  const followupsCount = useFollowupsCount(!!user);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const renderItem = (n: NavItem, onClick?: () => void) => {
+    const active = n.exact
+      ? loc.pathname === n.to
+      : loc.pathname === n.to || loc.pathname.startsWith(n.to + "/");
+    const Icon = n.icon;
+    const count = n.badge === "leads" ? leadsCount : n.badge === "followups" ? followupsCount : null;
+    const baseTone =
+      n.badge === "followups" ? "bg-orange-500 text-white hover:bg-orange-600" : "bg-emerald-600 text-white hover:bg-emerald-700";
+    return (
+      <Link
+        key={n.to}
+        to={n.to}
+        title={n.full ?? n.label}
+        onClick={onClick}
+        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
+          active ? "bg-primary text-primary-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent"
+        }`}
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="flex-1 truncate">{n.label}</span>
+        {n.badge && count !== null && count > 0 && (
+          <Badge
+            className={`h-5 min-w-5 justify-center border-0 px-1.5 text-xs ${
+              active ? "bg-white/20 text-white hover:bg-white/20" : baseTone
+            }`}
+          >
+            {count}
+          </Badge>
+        )}
+      </Link>
+    );
+  };
+
   return (
     <div className="flex min-h-screen bg-background print:block print:min-h-0">
       <HorariosOuroDialog />
@@ -146,42 +181,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             <p className="text-xs text-muted-foreground">Consultas e simulação</p>
           </div>
         </div>
-        <nav className="flex-1 space-y-1 p-3">
+        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {navSections.map((sec, idx) => (
             <div key={sec.section} className="space-y-1">
               <p className={`px-3 pb-1 text-xs uppercase tracking-wider text-muted-foreground ${idx === 0 ? "pt-1" : "pt-4"}`}>
                 {sec.section}
               </p>
-              {sec.items.map((n) => {
-                const active = loc.pathname.startsWith(n.to);
-                const Icon = n.icon;
-                return (
-                  <Link
-                    key={n.to}
-                    to={n.to}
-                    title={n.full ?? n.label}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
-                      active
-                        ? "bg-primary text-primary-foreground"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span className="flex-1 truncate">{n.label}</span>
-                    {n.badge && leadsCount !== null && leadsCount > 0 && (
-                      <Badge
-                        className={`h-5 min-w-5 justify-center border-0 px-1.5 text-xs ${
-                          active
-                            ? "bg-white/20 text-white hover:bg-white/20"
-                            : "bg-emerald-600 text-white hover:bg-emerald-700"
-                        }`}
-                      >
-                        {leadsCount}
-                      </Badge>
-                    )}
-                  </Link>
-                );
-              })}
+              {sec.items.map((n) => renderItem(n))}
             </div>
           ))}
         </nav>
@@ -206,8 +212,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
                 <Menu className="h-5 w-5" />
-                {leadsCount !== null && leadsCount > 0 && (
-                  <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-emerald-600" />
+                {((leadsCount ?? 0) > 0 || (followupsCount ?? 0) > 0) && (
+                  <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-orange-500" />
                 )}
               </Button>
             </SheetTrigger>
@@ -229,37 +235,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <p className={`px-3 pb-1 text-xs uppercase tracking-wider text-muted-foreground ${idx === 0 ? "pt-1" : "pt-4"}`}>
                       {sec.section}
                     </p>
-                    {sec.items.map((n) => {
-                      const active = loc.pathname.startsWith(n.to);
-                      const Icon = n.icon;
-                      return (
-                        <Link
-                          key={n.to}
-                          to={n.to}
-                          title={n.full ?? n.label}
-                          onClick={() => setMobileOpen(false)}
-                          className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
-                            active
-                              ? "bg-primary text-primary-foreground"
-                              : "text-sidebar-foreground hover:bg-sidebar-accent"
-                          }`}
-                        >
-                          <Icon className="h-4 w-4 shrink-0" />
-                          <span className="flex-1 truncate">{n.label}</span>
-                          {n.badge && leadsCount !== null && leadsCount > 0 && (
-                            <Badge
-                              className={`h-5 min-w-5 justify-center border-0 px-1.5 text-xs ${
-                                active
-                                  ? "bg-white/20 text-white hover:bg-white/20"
-                                  : "bg-emerald-600 text-white hover:bg-emerald-700"
-                              }`}
-                            >
-                              {leadsCount}
-                            </Badge>
-                          )}
-                        </Link>
-                      );
-                    })}
+                    {sec.items.map((n) => renderItem(n, () => setMobileOpen(false)))}
                   </div>
                 ))}
               </nav>
