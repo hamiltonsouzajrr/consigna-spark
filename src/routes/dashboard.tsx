@@ -290,6 +290,11 @@ function Page() {
         )}
       </div>
 
+      <div className="mb-6">
+        <ProducaoRanking title="Ranking de Produção" limit={10} />
+      </div>
+
+
       {isAdmin && (
         <>
           <div className="mb-3 mt-2">
