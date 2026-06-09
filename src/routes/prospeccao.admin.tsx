@@ -39,6 +39,8 @@ function Page() {
   const fetchConsultants = useServerFn(getProspectConsultants);
   const createLeads = useServerFn(adminCreateLeads);
   const assignLeads = useServerFn(adminAssignLeads);
+  const distributeLeads = useServerFn(adminDistributeLeads);
+  const recycleLeads = useServerFn(adminRecycleLeads);
   const fetchStats = useServerFn(getAdminStats);
 
   const [leads, setLeads] = useState<LeadRow[]>([]);
@@ -46,8 +48,15 @@ function Page() {
   const [fileName, setFileName] = useState("");
   const [uploadConsultant, setUploadConsultant] = useState<string>("none");
   const [dedup, setDedup] = useState(true);
+  const [importDist, setImportDist] = useState<string>("manual");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // distribution / recycle
+  const [selectedConsultants, setSelectedConsultants] = useState<Set<string>>(new Set());
+  const [distMode, setDistMode] = useState<"round_robin" | "score" | "city">("round_robin");
+  const [recycleMode, setRecycleMode] = useState<"round_robin" | "score">("score");
+  const [idleDays, setIdleDays] = useState(3);
 
   // manual lead
   const [m, setM] = useState({ nome: "", telefone: "", cidade: "", origem: "indicacao", orcamento: "", urgencia: "alta", consultant_id: "none" });
