@@ -41,14 +41,18 @@ const tipoCor: Record<string, string> = {
   "Destaque do mês": "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
 };
 
+const periodicidadeLabel: Record<string, string> = {
+  pontual: "Pontual", diario: "Diário", semanal: "Semanal", mensal: "Mensal",
+};
+
 type FormState = {
-  de: string; para: string; tipo: string; mensagem: string;
+  de: string; para: string; tipo: string; periodicidade: string; mensagem: string;
   data: string; periodo_inicio: string; periodo_fim: string; popup: boolean;
 };
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const emptyForm = (): FormState => ({
-  de: "", para: "", tipo: TIPOS[0], mensagem: "",
+  de: "", para: "", tipo: TIPOS[0], periodicidade: "pontual", mensagem: "",
   data: todayStr(), periodo_inicio: "", periodo_fim: "", popup: true,
 });
 
