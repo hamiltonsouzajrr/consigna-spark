@@ -214,7 +214,7 @@ function Page() {
                   );
                 });
               })()}
-              <Row k="Cidade" v={lead.cidade ?? "—"} />
+              <Row k="Município" v={lead.cidade ?? "—"} />
               <Row k="Origem" v={lead.origem ?? "—"} />
               <Row k="Orçamento" v={lead.orcamento != null ? lead.orcamento.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"} />
               <Row k="Urgência" v={URGENCIA_LABEL[lead.urgencia ?? "media"] ?? "—"} />
