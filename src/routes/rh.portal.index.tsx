@@ -144,10 +144,32 @@ function PortalIndex() {
 
       <Card className="mb-6">
         <CardContent className="flex flex-col items-center gap-4 p-6 sm:flex-row sm:items-center">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={me.foto} alt={me.nome} />
-            <AvatarFallback>{me.nome.slice(0, 2)}</AvatarFallback>
-          </Avatar>
+          <div className="group relative">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={content?.foto ?? me.foto} alt={me.nome} />
+              <AvatarFallback>{me.nome.slice(0, 2)}</AvatarFallback>
+            </Avatar>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={photoBusy}
+              className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-100"
+              aria-label="Alterar foto"
+            >
+              {photoBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) uploadPhoto(f);
+                e.target.value = "";
+              }}
+            />
+          </div>
           <div className="text-center sm:text-left">
             <h2 className="text-lg font-bold">{me.nome}</h2>
             <p className="text-sm text-muted-foreground">{me.cargo} · {me.departamento}</p>
@@ -155,6 +177,16 @@ function PortalIndex() {
               <Badge variant="outline">Matrícula {me.matricula}</Badge>
               <Badge variant="outline">Admissão {formatDate(me.admissao)}</Badge>
               <Badge variant="secondary" className="border-0 bg-emerald-100 text-emerald-700">{me.status}</Badge>
+            </div>
+            <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
+              <Button size="sm" variant="outline" disabled={photoBusy} onClick={() => fileInputRef.current?.click()}>
+                <Camera className="mr-2 h-4 w-4" /> {content?.foto ? "Trocar foto" : "Adicionar foto"}
+              </Button>
+              {content?.foto && (
+                <Button size="sm" variant="ghost" disabled={photoBusy} onClick={removePhoto}>
+                  <Trash2 className="mr-2 h-4 w-4 text-destructive" /> Remover
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
