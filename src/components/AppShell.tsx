@@ -126,8 +126,18 @@ function useFollowupsCount(enabled: boolean) {
   return count;
 }
 
+function useClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { signOut, user } = useAuth();
+  const now = useClock();
   const { isAdmin } = useRhAccess();
   const sections = navSections
     .map((s) => ({ ...s, items: s.items.filter((n) => !n.adminOnly || isAdmin) }))
