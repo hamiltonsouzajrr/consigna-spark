@@ -189,7 +189,7 @@ function Page() {
         distMsg = ` · ${d.assigned} distribuído(s) entre ${Object.keys(d.perConsultant).length} consultora(s)`;
       }
       toast.success(`${inserted} novo(s)${updated ? ` · ${updated} atualizado(s)` : ""}${skipped ? ` · ${skipped} ignorado(s)` : ""}${distMsg}.`);
-      setParsed([]); setFileName("");
+      setRawRecords([]); setHeaders([]); setPhoneCol("__auto__"); setFileName("");
       await loadLeads(); statsQ.refetch();
     } catch (e: any) { toast.error(e?.message ?? "Falha ao importar."); }
     setProgress(null);
