@@ -199,7 +199,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden p-3">
           {sections.map((sec, idx) => (
             <div key={sec.section} className="space-y-1">
-              <p className={`h-4 overflow-hidden whitespace-nowrap px-3 pb-1 text-[11px] uppercase tracking-wider text-white/45 opacity-0 transition-opacity duration-300 ease-in-out group-hover/side:opacity-100 group-hover/side:delay-150 ${idx === 0 ? "pt-1" : "pt-4"}`}>
+              <p className={`overflow-hidden whitespace-nowrap px-3 pb-1 text-[11px] uppercase tracking-wider text-white/45 opacity-0 transition-opacity duration-300 ease-in-out group-hover/side:opacity-100 group-hover/side:delay-150 ${idx === 0 ? "pt-1" : "pt-4"}`}>
                 {sec.section}
               </p>
               {sec.items.map((n) => renderItem(n, undefined, true))}
