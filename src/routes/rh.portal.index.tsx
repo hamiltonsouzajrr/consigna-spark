@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { RhPageHeader } from "@/components/rh/RhLayout";
 import { formatDate, brl } from "@/lib/rh/mock";
 import { ReconhecimentosPopup } from "@/components/rh/ReconhecimentosPopup";
+import { ElogiosPopup } from "@/components/rh/ElogiosPopup";
 import { portalQueryOptions, type KpiKey } from "@/lib/rh/portal";
 import {
   getPortalContent, saveAviso, deleteAviso, saveAtalho, deleteAtalho, saveKpis,
