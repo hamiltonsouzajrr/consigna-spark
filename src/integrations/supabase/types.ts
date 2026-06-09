@@ -341,6 +341,7 @@ export type Database = {
           created_by: string | null
           first_response_at: string | null
           id: string
+          import_batch: string | null
           last_contact_at: string | null
           loss_reason: string | null
           next_follow_up_at: string | null
@@ -365,6 +366,7 @@ export type Database = {
           created_by?: string | null
           first_response_at?: string | null
           id?: string
+          import_batch?: string | null
           last_contact_at?: string | null
           loss_reason?: string | null
           next_follow_up_at?: string | null
@@ -389,6 +391,7 @@ export type Database = {
           created_by?: string | null
           first_response_at?: string | null
           id?: string
+          import_batch?: string | null
           last_contact_at?: string | null
           loss_reason?: string | null
           next_follow_up_at?: string | null
