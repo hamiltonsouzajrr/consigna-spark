@@ -146,37 +146,24 @@ function Page() {
 
   const parseFile = async (file: File) => {
     setFileName(file.name);
-    const map = (records: Record<string, unknown>[]) => {
-      const out: ParsedLead[] = [];
-      for (const r of records) {
-        const keys = Object.keys(r).reduce<Record<string, string>>((a, k) => { a[k.toLowerCase().trim()] = k; return a; }, {});
-        const get = (n: string) => (keys[n] ? String(r[keys[n]] ?? "").trim() : "");
-        const nome = get("nome");
-        if (!nome) continue;
-        const orc = get("orcamento") || get("orçamento") || get("margem") || get("renda");
-        const urg = (get("urgencia") || get("urgência")).toLowerCase();
-        out.push({
-          nome,
-          telefone:
-            get("telefone") || get("celular") || get("whatsapp") ||
-            get("cel1") || get("cel2") || get("cel") || get("fone") ||
-            get("contato") || get("numero") || get("número") || undefined,
-          cpf: get("cpf") || undefined,
-          cidade: get("cidade") || undefined,
-          origem: get("origem") || "planilha",
-          orcamento: orc ? Number(orc.replace(/[^\d.,-]/g, "").replace(/\./g, "").replace(",", ".")) || undefined : undefined,
-          urgencia: urg === "alta" || urg === "media" || urg === "média" || urg === "baixa" ? (urg === "média" ? "media" : (urg as any)) : undefined,
-        });
-      }
-      setParsed(out);
-      if (!out.length) toast.error("Nenhuma linha com coluna NOME encontrada.");
-      else toast.success(`${out.length} lead(s) prontos para importar.`);
+    const apply = (records: Record<string, unknown>[]) => {
+      const hdrs = records.length ? Object.keys(records[0]) : [];
+      setHeaders(hdrs);
+      setPhoneCol(detectPhoneColumn(hdrs) ?? "__auto__");
+      setRawRecords(records);
+      const named = records.filter((r) => {
+        const k = Object.keys(r).find((x) => x.toLowerCase().trim() === "nome");
+        return k && String(r[k] ?? "").trim();
+      });
+      if (!named.length) toast.error("Nenhuma linha com coluna NOME encontrada.");
+      else toast.success(`${named.length} lead(s) prontos para importar.`);
     };
     const ext = file.name.split(".").pop()?.toLowerCase();
-    if (ext === "csv") Papa.parse<Record<string, unknown>>(file, { header: true, skipEmptyLines: true, complete: (res) => map(res.data) });
-    else if (ext === "xlsx" || ext === "xls") { const wb = XLSX.read(await file.arrayBuffer()); map(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" })); }
+    if (ext === "csv") Papa.parse<Record<string, unknown>>(file, { header: true, skipEmptyLines: true, complete: (res) => apply(res.data) });
+    else if (ext === "xlsx" || ext === "xls") { const wb = XLSX.read(await file.arrayBuffer()); apply(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" })); }
     else toast.error("Use CSV ou XLSX.");
   };
+
 
   const confirmImport = async () => {
     if (!parsed.length) return;
