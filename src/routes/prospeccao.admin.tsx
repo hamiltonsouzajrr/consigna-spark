@@ -264,6 +264,28 @@ function Page() {
     setBusy(false);
   };
 
+  const toggleAdmin = async (targetUserId: string, makeAdmin: boolean, email: string) => {
+    if (!confirm(`${makeAdmin ? "Conceder" : "Remover"} acesso de administrador para ${email}?`)) return;
+    setBusy(true);
+    try {
+      await setUserRole({ data: { targetUserId, makeAdmin } });
+      toast.success(makeAdmin ? "Acesso de admin concedido." : "Acesso de admin removido.");
+      usersQ.refetch();
+    } catch (e: any) { toast.error(e?.message ?? "Falha ao atualizar acesso."); }
+    setBusy(false);
+  };
+
+  const removeUser = async (targetUserId: string, email: string, leadCount: number) => {
+    if (!confirm(`Excluir o usuário ${email}? ${leadCount ? `Seus ${leadCount} lead(s) voltarão para o pool. ` : ""}Esta ação não pode ser desfeita.`)) return;
+    setBusy(true);
+    try {
+      await deleteSystemUser({ data: { targetUserId } });
+      toast.success("Usuário excluído.");
+      usersQ.refetch(); consultantsQ.refetch(); await loadLeads(); statsQ.refetch();
+    } catch (e: any) { toast.error(e?.message ?? "Falha ao excluir usuário."); }
+    setBusy(false);
+  };
+
   const stats = statsQ.data;
 
   return (
