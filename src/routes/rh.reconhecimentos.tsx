@@ -156,9 +156,14 @@ function Reconhecimentos() {
                       </div>
                     )}
                   </div>
-                  <Badge variant="secondary" className={`mt-2 border-0 ${tipoCor[r.tipo] ?? "bg-muted text-muted-foreground"}`}>
-                    {r.tipo}
-                  </Badge>
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <Badge variant="secondary" className={`border-0 ${tipoCor[r.tipo] ?? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"}`}>
+                      {r.tipo}
+                    </Badge>
+                    {r.periodicidade && r.periodicidade !== "pontual" && (
+                      <Badge variant="outline" className="text-xs">{periodicidadeLabel[r.periodicidade]}</Badge>
+                    )}
+                  </div>
                   <p className="mt-2 text-sm text-muted-foreground">{r.mensagem}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span>{formatDate(r.data)}</span>
