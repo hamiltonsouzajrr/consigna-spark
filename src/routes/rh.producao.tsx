@@ -27,7 +27,8 @@ export const Route = createFileRoute("/rh/producao")({
 });
 
 function ProducaoAdmin() {
-  const { isAdmin, isLoading } = useRhAccess();
+  const { isAdmin, canAccess, isLoading } = useRhAccess();
+  const canView = isAdmin || canAccess("/rh/producao");
   const { user } = useAuth();
   const qc = useQueryClient();
 
