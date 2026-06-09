@@ -318,6 +318,8 @@ function Page() {
               ))}
             </ol>
           </Card>
+
+          {isAdmin && <CentralAprovacao lead={{ id: lead.id, nome: lead.nome, cpf: lead.cpf }} />}
         </div>
       </div>
     </AppShell>
