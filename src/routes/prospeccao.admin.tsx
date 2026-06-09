@@ -17,9 +17,10 @@ import { RhStatCard } from "@/components/rh/RhStatCard";
 import { toast } from "sonner";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { ArrowLeft, UploadCloud, Trophy, AlertTriangle, Ghost, UserPlus } from "lucide-react";
+import { ArrowLeft, UploadCloud, Trophy, AlertTriangle, Ghost, UserPlus, Shuffle, RefreshCw } from "lucide-react";
 import {
   getProspectConsultants, adminCreateLeads, adminAssignLeads, getAdminStats,
+  adminDistributeLeads, adminRecycleLeads,
 } from "@/lib/prospeccao/prospeccao.functions";
 import { STATUS_LABEL, STATUS_TONE, type LeadStatus } from "@/lib/prospeccao/constants";
 
@@ -38,6 +39,8 @@ function Page() {
   const fetchConsultants = useServerFn(getProspectConsultants);
   const createLeads = useServerFn(adminCreateLeads);
   const assignLeads = useServerFn(adminAssignLeads);
+  const distributeLeads = useServerFn(adminDistributeLeads);
+  const recycleLeads = useServerFn(adminRecycleLeads);
   const fetchStats = useServerFn(getAdminStats);
 
   const [leads, setLeads] = useState<LeadRow[]>([]);
@@ -45,8 +48,15 @@ function Page() {
   const [fileName, setFileName] = useState("");
   const [uploadConsultant, setUploadConsultant] = useState<string>("none");
   const [dedup, setDedup] = useState(true);
+  const [importDist, setImportDist] = useState<string>("manual");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // distribution / recycle
+  const [selectedConsultants, setSelectedConsultants] = useState<Set<string>>(new Set());
+  const [distMode, setDistMode] = useState<"round_robin" | "score" | "city">("round_robin");
+  const [recycleMode, setRecycleMode] = useState<"round_robin" | "score">("score");
+  const [idleDays, setIdleDays] = useState(3);
 
   // manual lead
   const [m, setM] = useState({ nome: "", telefone: "", cidade: "", origem: "indicacao", orcamento: "", urgencia: "alta", consultant_id: "none" });
@@ -55,6 +65,19 @@ function Page() {
   const statsQ = useQuery({ queryKey: ["prospect", "admin-stats"], queryFn: () => fetchStats(), enabled: !!user && isAdmin });
   const consultants = consultantsQ.data ?? [];
   const emailById = useMemo(() => new Map(consultants.map((c) => [c.id, c.email])), [consultants]);
+
+  // Default: all consultants selected for distribution/recycle once loaded.
+  useEffect(() => {
+    if (consultants.length && selectedConsultants.size === 0) {
+      setSelectedConsultants(new Set(consultants.map((c) => c.id)));
+    }
+  }, [consultants]);
+  const toggleConsultant = (id: string) =>
+    setSelectedConsultants((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
 
   const loadLeads = async () => {
     const { data } = await supabase.from("prospect_leads").select("id,nome,cidade,origem,status,score,consultant_id,created_at").order("created_at", { ascending: false }).limit(1000);
@@ -99,8 +122,11 @@ function Page() {
 
   const confirmImport = async () => {
     if (!parsed.length) return;
+    const auto = importDist !== "manual";
+    // When auto-distributing, import unassigned and balance afterwards.
+    const cid = auto ? null : (uploadConsultant === "none" ? null : uploadConsultant);
+    if (auto && selectedConsultants.size === 0) { toast.error("Selecione ao menos uma consultora para distribuição."); return; }
     setBusy(true);
-    const cid = uploadConsultant === "none" ? null : uploadConsultant;
     const chunkSize = 2000;
     const total = parsed.length;
     setProgress({ done: 0, total });
@@ -112,11 +138,40 @@ function Page() {
         inserted += r.inserted; skipped += r.skipped ?? 0;
         setProgress({ done: Math.min(i + chunkSize, total), total });
       }
-      toast.success(`${inserted} lead(s) importados${skipped ? ` · ${skipped} duplicado(s) ignorado(s)` : ""}.`);
+      let distMsg = "";
+      if (auto && inserted > 0) {
+        const d = await distributeLeads({ data: { consultantIds: [...selectedConsultants], mode: importDist as any } });
+        distMsg = ` · ${d.assigned} distribuído(s) entre ${Object.keys(d.perConsultant).length} consultora(s)`;
+      }
+      toast.success(`${inserted} lead(s) importados${skipped ? ` · ${skipped} duplicado(s) ignorado(s)` : ""}${distMsg}.`);
       setParsed([]); setFileName("");
       await loadLeads(); statsQ.refetch();
     } catch (e: any) { toast.error(e?.message ?? "Falha ao importar."); }
     setProgress(null);
+    setBusy(false);
+  };
+
+  const runDistribute = async () => {
+    if (selectedConsultants.size === 0) { toast.error("Selecione ao menos uma consultora."); return; }
+    setBusy(true);
+    try {
+      const d = await distributeLeads({ data: { consultantIds: [...selectedConsultants], mode: distMode } });
+      if (d.assigned === 0) toast.info("Nenhum lead não atribuído para distribuir.");
+      else toast.success(`${d.assigned} lead(s) distribuído(s) entre ${Object.keys(d.perConsultant).length} consultora(s).`);
+      await loadLeads(); statsQ.refetch();
+    } catch (e: any) { toast.error(e?.message ?? "Falha ao distribuir."); }
+    setBusy(false);
+  };
+
+  const runRecycle = async () => {
+    if (selectedConsultants.size === 0) { toast.error("Selecione ao menos uma consultora."); return; }
+    setBusy(true);
+    try {
+      const d = await recycleLeads({ data: { consultantIds: [...selectedConsultants], idleDays, mode: recycleMode } });
+      if (d.recycled === 0) toast.info(`Nenhum lead parado há ${idleDays}+ dia(s) para reciclar.`);
+      else toast.success(`${d.recycled} lead(s) reciclado(s) para ${Object.keys(d.perConsultant).length} consultora(s).`);
+      await loadLeads(); statsQ.refetch();
+    } catch (e: any) { toast.error(e?.message ?? "Falha ao reciclar."); }
     setBusy(false);
   };
 
@@ -172,15 +227,33 @@ function Page() {
           {parsed.length > 0 && (
             <div className="mt-3 space-y-2">
               <div>
-                <Label className="text-xs">Atribuir a</Label>
-                <Select value={uploadConsultant} onValueChange={setUploadConsultant}>
+                <Label className="text-xs">Distribuição</Label>
+                <Select value={importDist} onValueChange={setImportDist}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Não atribuir agora</SelectItem>
-                    {consultants.map((c) => <SelectItem key={c.id} value={c.id}>{c.email}</SelectItem>)}
+                    <SelectItem value="manual">Manual (um responsável)</SelectItem>
+                    <SelectItem value="round_robin">Automática — round-robin</SelectItem>
+                    <SelectItem value="score">Automática — por score</SelectItem>
+                    <SelectItem value="city">Automática — por cidade</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              {importDist === "manual" ? (
+                <div>
+                  <Label className="text-xs">Atribuir a</Label>
+                  <Select value={uploadConsultant} onValueChange={setUploadConsultant}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Não atribuir agora</SelectItem>
+                      {consultants.map((c) => <SelectItem key={c.id} value={c.id}>{c.email}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <p className="rounded-md bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+                  Será dividido entre as <strong>{selectedConsultants.size}</strong> consultora(s) marcadas no card "Distribuir &amp; reciclar". Cada lead vai para apenas uma pessoa.
+                </p>
+              )}
               <div className="flex items-center gap-2">
                 <input id="dedup" type="checkbox" checked={dedup} onChange={(e) => setDedup(e.target.checked)} className="h-4 w-4 accent-primary" />
                 <Label htmlFor="dedup" className="text-xs cursor-pointer">Ignorar duplicados (por CPF/telefone)</Label>
@@ -230,6 +303,75 @@ function Page() {
           <Button className="mt-3 w-full" disabled={busy} onClick={createManual}>Criar lead</Button>
         </Card>
       </div>
+
+      {/* Distribuir & reciclar */}
+      <Card className="mt-6 p-5">
+        <p className="mb-1 text-sm font-semibold flex items-center gap-2"><Shuffle className="h-4 w-4" /> Distribuir &amp; reciclar leads</p>
+        <p className="mb-4 text-xs text-muted-foreground">Cada lead vai para apenas uma consultora. Marque quem deve participar do rodízio.</p>
+
+        <Label className="text-xs">Consultoras participantes</Label>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {consultants.map((c) => {
+            const on = selectedConsultants.has(c.id);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => toggleConsultant(c.id)}
+                className={`rounded-full border px-3 py-1 text-xs transition-colors ${on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-accent/50"}`}
+              >
+                {c.email}
+              </button>
+            );
+          })}
+          {!consultants.length && <span className="text-xs text-muted-foreground">Nenhuma consultora encontrada.</span>}
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          {/* Distribuir não atribuídos */}
+          <div className="rounded-lg border p-4">
+            <p className="mb-2 text-sm font-medium">Distribuir leads não atribuídos</p>
+            <Label className="text-xs">Critério</Label>
+            <Select value={distMode} onValueChange={(v) => setDistMode(v as any)}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="round_robin">Round-robin (rodízio igual)</SelectItem>
+                <SelectItem value="score">Por score (espalha os quentes)</SelectItem>
+                <SelectItem value="city">Por cidade (mesma cidade, mesma pessoa)</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button className="mt-3 w-full" variant="secondary" disabled={busy} onClick={runDistribute}>
+              <Shuffle className="mr-2 h-4 w-4" /> Distribuir agora
+            </Button>
+          </div>
+
+          {/* Reciclar parados */}
+          <div className="rounded-lg border p-4">
+            <p className="mb-2 text-sm font-medium">Reciclar leads parados</p>
+            <p className="mb-2 text-xs text-muted-foreground">Tira leads sem tratativa de quem não trabalhou e passa para quem tem menos fila.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs">Parados há (dias)</Label>
+                <Input type="number" min={1} max={60} value={idleDays} onChange={(e) => setIdleDays(Math.max(1, Math.min(60, Number(e.target.value) || 1)))} className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">Ordem</Label>
+                <Select value={recycleMode} onValueChange={(v) => setRecycleMode(v as any)}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="score">Por score</SelectItem>
+                    <SelectItem value="round_robin">Round-robin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Button className="mt-3 w-full" variant="secondary" disabled={busy} onClick={runRecycle}>
+              <RefreshCw className="mr-2 h-4 w-4" /> Reciclar agora
+            </Button>
+          </div>
+        </div>
+      </Card>
+
 
       {/* Ranking + origem */}
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
