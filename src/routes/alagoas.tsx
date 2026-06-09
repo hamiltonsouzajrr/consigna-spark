@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
-import { Sparkles, TrendingUp, CreditCard, Wallet, Building2 } from "lucide-react";
+import { Sparkles, TrendingUp, CreditCard, Wallet, Building2, Star } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 export const Route = createFileRoute("/alagoas")({
@@ -105,7 +105,10 @@ function ProdutoCard({ p }: { p: Produto }) {
             <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
               {p.tipo === "principal" ? "Margem Principal" : p.tipo === "cartao_credito" ? "Cartão Crédito" : "Cartão Benefício"}
             </p>
-            <p className="text-base font-semibold">{p.nome}</p>
+            <p className="flex items-center gap-1 text-base font-semibold">
+              {p.nome}
+              {p.highlight && <Star className="h-4 w-4 fill-current text-yellow-400" />}
+            </p>
           </div>
         </div>
         {p.prazo && (
