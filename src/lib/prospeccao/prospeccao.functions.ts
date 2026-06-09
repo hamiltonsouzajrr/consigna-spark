@@ -115,7 +115,7 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
             if (r.cidade && !existing.cidade) patch.cidade = r.cidade;
             if (r.orcamento != null && existing.orcamento == null) patch.orcamento = r.orcamento;
             if (Object.keys(patch).length) {
-              const { error } = await supabaseAdmin.from("prospect_leads").update(patch).eq("id", existing.id);
+              const { error } = await supabaseAdmin.from("prospect_leads").update(patch as any).eq("id", existing.id);
               if (error) throw new Error(error.message);
               updated++;
             } else {
