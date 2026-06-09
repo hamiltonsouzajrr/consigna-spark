@@ -32,8 +32,6 @@ export const rhNav = [
   { to: "/rh/turnover", label: "Predição de Turnover", icon: TrendingDown },
   { to: "/rh/ranking", label: "Ranking", icon: Trophy },
   { to: "/rh/portal", label: "Portal do Colaborador", icon: IdCard },
-  { to: "/rh/chat", label: "Chat Interno", icon: MessagesSquare },
-  { to: "/rh/chatbot", label: "Chatbot RH", icon: Bot },
   { to: "/rh/okrs", label: "OKRs", icon: Goal },
   { to: "/rh/reconhecimentos", label: "Reconhecimentos", icon: Award },
   { to: "/rh/ocorrencias", label: "Ocorrências", icon: AlertTriangle },
