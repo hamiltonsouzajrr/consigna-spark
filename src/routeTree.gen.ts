@@ -52,7 +52,6 @@ import { Route as RhConfiguracoesRouteImport } from './routes/rh.configuracoes'
 import { Route as RhColaboradoresRouteImport } from './routes/rh.colaboradores'
 import { Route as RhClimaRouteImport } from './routes/rh.clima'
 import { Route as RhCargosRouteImport } from './routes/rh.cargos'
-import { Route as RhBeneficiosRouteImport } from './routes/rh.beneficios'
 import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
 import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
 import { Route as RhAuditoriaRouteImport } from './routes/rh.auditoria'
@@ -285,11 +284,6 @@ const RhCargosRoute = RhCargosRouteImport.update({
   path: '/cargos',
   getParentRoute: () => RhRoute,
 } as any)
-const RhBeneficiosRoute = RhBeneficiosRouteImport.update({
-  id: '/beneficios',
-  path: '/beneficios',
-  getParentRoute: () => RhRoute,
-} as any)
 const RhBancoHorasRoute = RhBancoHorasRouteImport.update({
   id: '/banco-horas',
   path: '/banco-horas',
@@ -402,7 +396,6 @@ export interface FileRoutesByFullPath {
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
-  '/rh/beneficios': typeof RhBeneficiosRoute
   '/rh/cargos': typeof RhCargosRoute
   '/rh/clima': typeof RhClimaRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
@@ -463,7 +456,6 @@ export interface FileRoutesByTo {
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
-  '/rh/beneficios': typeof RhBeneficiosRoute
   '/rh/cargos': typeof RhCargosRoute
   '/rh/clima': typeof RhClimaRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
@@ -525,7 +517,6 @@ export interface FileRoutesById {
   '/rh/auditoria': typeof RhAuditoriaRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
-  '/rh/beneficios': typeof RhBeneficiosRoute
   '/rh/cargos': typeof RhCargosRoute
   '/rh/clima': typeof RhClimaRoute
   '/rh/colaboradores': typeof RhColaboradoresRouteWithChildren
@@ -589,7 +580,6 @@ export interface FileRouteTypes {
     | '/rh/auditoria'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
-    | '/rh/beneficios'
     | '/rh/cargos'
     | '/rh/clima'
     | '/rh/colaboradores'
@@ -650,7 +640,6 @@ export interface FileRouteTypes {
     | '/rh/auditoria'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
-    | '/rh/beneficios'
     | '/rh/cargos'
     | '/rh/clima'
     | '/rh/colaboradores'
@@ -711,7 +700,6 @@ export interface FileRouteTypes {
     | '/rh/auditoria'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
-    | '/rh/beneficios'
     | '/rh/cargos'
     | '/rh/clima'
     | '/rh/colaboradores'
@@ -1077,13 +1065,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhCargosRouteImport
       parentRoute: typeof RhRoute
     }
-    '/rh/beneficios': {
-      id: '/rh/beneficios'
-      path: '/beneficios'
-      fullPath: '/rh/beneficios'
-      preLoaderRoute: typeof RhBeneficiosRouteImport
-      parentRoute: typeof RhRoute
-    }
     '/rh/banco-horas': {
       id: '/rh/banco-horas'
       path: '/banco-horas'
@@ -1230,7 +1211,6 @@ interface RhRouteChildren {
   RhAuditoriaRoute: typeof RhAuditoriaRoute
   RhAvaliacoesRoute: typeof RhAvaliacoesRoute
   RhBancoHorasRoute: typeof RhBancoHorasRoute
-  RhBeneficiosRoute: typeof RhBeneficiosRoute
   RhCargosRoute: typeof RhCargosRoute
   RhClimaRoute: typeof RhClimaRoute
   RhColaboradoresRoute: typeof RhColaboradoresRouteWithChildren
@@ -1263,7 +1243,6 @@ const RhRouteChildren: RhRouteChildren = {
   RhAuditoriaRoute: RhAuditoriaRoute,
   RhAvaliacoesRoute: RhAvaliacoesRoute,
   RhBancoHorasRoute: RhBancoHorasRoute,
-  RhBeneficiosRoute: RhBeneficiosRoute,
   RhCargosRoute: RhCargosRoute,
   RhClimaRoute: RhClimaRoute,
   RhColaboradoresRoute: RhColaboradoresRouteWithChildren,
