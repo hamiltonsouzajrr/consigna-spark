@@ -177,7 +177,23 @@ function Page() {
               </div>
             </div>
             <dl className="mt-4 space-y-1.5 text-sm">
-              <Row k="Telefone" v={lead.telefone ?? "—"} />
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-muted-foreground">Telefone</dt>
+                <dd className="flex items-center gap-2 text-right font-medium">
+                  <span>{lead.telefone ?? "—"}</span>
+                  {whatsappLink(lead.telefone, `Olá ${lead.nome.split(" ")[0]}, tudo bem?`) && (
+                    <a
+                      href={whatsappLink(lead.telefone, `Olá ${lead.nome.split(" ")[0]}, tudo bem?`)!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Abrir no WhatsApp"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600 transition hover:bg-emerald-500/25 dark:text-emerald-400"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                    </a>
+                  )}
+                </dd>
+              </div>
               <Row k="Cidade" v={lead.cidade ?? "—"} />
               <Row k="Origem" v={lead.origem ?? "—"} />
               <Row k="Orçamento" v={lead.orcamento != null ? lead.orcamento.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"} />
