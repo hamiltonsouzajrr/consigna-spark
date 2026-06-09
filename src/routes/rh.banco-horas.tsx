@@ -1,11 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Clock, TrendingUp, TrendingDown } from "lucide-react";
+import { useState } from "react";
+import { Clock, TrendingUp, TrendingDown, Trash2 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import { RhPageHeader } from "@/components/rh/RhLayout";
 import { RhStatCard } from "@/components/rh/RhStatCard";
-import { pontos, formatDate } from "@/lib/rh/mock";
+import { pontos as pontosData, formatDate } from "@/lib/rh/mock";
 
 export const Route = createFileRoute("/rh/banco-horas")({
   component: BancoHoras,
@@ -21,10 +35,17 @@ const grafico = [
 ];
 
 function BancoHoras() {
+  const [pontos, setPontos] = useState(pontosData);
   const totalExtras = pontos.reduce((a, p) => a + p.extras, 0);
   const totalAtrasos = pontos.reduce((a, p) => a + p.atraso, 0);
   const faltas = pontos.filter((p) => p.falta).length;
   const saldo = pontos.reduce((a, p) => a + p.saldo, 0);
+
+  const remove = (id: string, nome: string) => {
+    setPontos((prev) => prev.filter((p) => p.id !== id));
+    toast.success(`Registro de ${nome} excluído`);
+  };
+
 
   return (
     <div>
