@@ -89,7 +89,7 @@
   --gradient-premium: linear-gradient(135deg, oklch(0.58 0.2 252) 0%, oklch(0.54 0.2 252) 100%);
   --gradient-subtle: linear-gradient(160deg, oklch(1 0 0) 0%, oklch(0.98 0.001 286) 100%);
   /* Bitrix24-style app background + sidebar gradients */
-  --gradient-app: linear-gradient(135deg, oklch(0.5 0.16 262) 0%, oklch(0.58 0.15 252) 45%, oklch(0.66 0.13 240) 100%);
+  --gradient-app: linear-gradient(180deg, #bfe6f3 0%, #d3edf5 40%, #e6f4f5 70%, #f1f7f6 100%);
   --gradient-sidebar: linear-gradient(180deg, oklch(0.36 0.12 266) 0%, oklch(0.3 0.11 264) 100%);
   --gradient-topbar: linear-gradient(90deg, oklch(0.32 0.12 266) 0%, oklch(0.38 0.13 260) 100%);
   --shadow-glow: 0 4px 20px color-mix(in oklab, oklch(0 0 0) 8%, transparent), 0 40px 80px -30px color-mix(in oklab, var(--primary) 25%, transparent);
