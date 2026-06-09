@@ -61,6 +61,7 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const batchLabel = (data.batch && data.batch.trim()) || `Importação ${new Date().toISOString().slice(0, 16).replace("T", " ")}`;
     const norm = (v?: string | null) => (v ? v.replace(/\D/g, "") : "");
     let rows = data.leads.map((l) => ({
       nome: l.nome,
@@ -72,6 +73,7 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
       urgencia: l.urgencia || "media",
       consultant_id: l.consultant_id || null,
       created_by: userId,
+      import_batch: batchLabel,
     }));
 
     let skipped = 0;
