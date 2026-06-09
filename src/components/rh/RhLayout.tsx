@@ -21,7 +21,7 @@ export const rhNav = [
   { to: "/rh/ferias", label: "Férias e Licenças", icon: Plane },
   { to: "/rh/banco-horas", label: "Banco de Horas", icon: Clock },
   { to: "/rh/holerites", label: "Holerites", icon: ReceiptText },
-  { to: "/rh/beneficios", label: "Benefícios", icon: HeartHandshake },
+  
   { to: "/rh/documentos", label: "Documentos", icon: FileText },
   { to: "/rh/equipamentos", label: "Equipamentos", icon: Laptop },
   { to: "/rh/treinamentos", label: "Treinamentos", icon: GraduationCap },
