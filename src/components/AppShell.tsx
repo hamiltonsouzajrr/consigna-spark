@@ -63,7 +63,6 @@ const navSections: NavSection[] = [
   {
     section: "Painel",
     items: [
-      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
       { to: "/rh", label: "RH", icon: Users },
       { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
     ],
