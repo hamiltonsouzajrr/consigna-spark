@@ -323,19 +323,19 @@ function Page() {
       )}
 
       {/* Consulta Alagoas — destaque premium */}
-      <div className="card-premium mb-8 p-6 md:p-8">
+      <div className="card-premium mb-8 p-6 text-white md:p-8">
         <div className="mb-5 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20 text-primary-glow ring-1 ring-primary/40">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white ring-1 ring-white/40">
             <Check className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-primary">Grupo Positive</p>
-            <h2 className="text-xl font-bold tracking-tight md:text-2xl">Consulta de Margem <span className="text-gradient">ARACAJU</span></h2>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/80">Grupo Positive</p>
+            <h2 className="text-xl font-bold tracking-tight text-white md:text-2xl">Consulta de Margem <span className="text-white">ARACAJU</span></h2>
           </div>
         </div>
-        <div className="mt-6 border-t pt-4">
-          <Label className="mb-2 block text-sm font-medium">Ou digite um CPF manualmente</Label>
-          <p className="mb-3 text-xs text-muted-foreground">
+        <div className="mt-6 border-t border-white/25 pt-4">
+          <Label className="mb-2 block text-sm font-medium text-white">Ou digite um CPF manualmente</Label>
+          <p className="mb-3 text-xs text-white/75">
             Cria/reutiliza o registro e dispara a Edge Function. Útil para testar um CPF avulso sem subir planilha.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -344,10 +344,10 @@ function Page() {
               value={manualCpf}
               maxLength={14}
               onChange={(e) => setManualCpf(e.target.value)}
-              className="sm:max-w-[220px]"
+              className="border-white/30 bg-white text-black placeholder:text-black/50 sm:max-w-[220px]"
             />
             
-            <Button onClick={processarManual} disabled={running || !manualCpf} variant="secondary" className="text-white">
+            <Button onClick={processarManual} disabled={running || !manualCpf} className="bg-white text-primary hover:bg-white/90">
               {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
               Consultar CPF manual
             </Button>
