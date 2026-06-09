@@ -52,6 +52,7 @@ export type RhUserAccess = {
   id: string;
   email: string;
   tabs: string[];
+  isAdmin: boolean;
   employee: { id: string; full_name: string } | null;
 };
 
