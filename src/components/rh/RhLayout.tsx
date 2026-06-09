@@ -5,7 +5,7 @@ import {
   FileText, GraduationCap, Laptop, Star, AlertTriangle, UserSearch,
   ClipboardCheck, UserMinus, Settings, Network, ReceiptText, HeartHandshake,
   Target, Gauge, TrendingDown, Trophy, IdCard,
-  Goal, Award, ScrollText, ShieldCheck, Lock, LineChart,
+  Goal, Award, ShieldCheck, Lock, LineChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
