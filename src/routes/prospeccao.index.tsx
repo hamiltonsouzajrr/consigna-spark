@@ -10,10 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RhStatCard } from "@/components/rh/RhStatCard";
 import {
-  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, MapPin,
+  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, MapPin, MessageCircle,
 } from "lucide-react";
 import {
-  STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, scoreTone, scoreLabel,
+  STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, scoreTone, scoreLabel, whatsappLink,
   type LeadStatus, type SlaStatus,
 } from "@/lib/prospeccao/constants";
 
