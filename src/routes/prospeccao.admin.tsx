@@ -22,7 +22,7 @@ import {
   getProspectConsultants, adminCreateLeads, adminAssignLeads, getAdminStats,
   adminDistributeLeads, adminRecycleLeads,
 } from "@/lib/prospeccao/prospeccao.functions";
-import { STATUS_LABEL, STATUS_TONE, type LeadStatus } from "@/lib/prospeccao/constants";
+import { STATUS_LABEL, STATUS_TONE, normalizeWhatsappNumber, type LeadStatus } from "@/lib/prospeccao/constants";
 
 export const Route = createFileRoute("/prospeccao/admin")({
   head: () => ({ meta: [{ title: "Painel admin — Prospecção" }, { name: "robots", content: "noindex,nofollow" }] }),
@@ -31,6 +31,56 @@ export const Route = createFileRoute("/prospeccao/admin")({
 
 type LeadRow = { id: string; nome: string; cidade: string | null; origem: string | null; status: LeadStatus; score: number; consultant_id: string | null; created_at: string };
 type ParsedLead = { nome: string; telefone?: string; cpf?: string; cidade?: string; origem?: string; orcamento?: number; urgencia?: "alta" | "media" | "baixa" };
+type ImportMeta = { total: number; comWhats: number; invalidos: number; semTelefone: number; phoneCol: string | null };
+
+const PHONE_ALIASES = ["telefone", "celular", "whatsapp", "cel1", "cel2", "cel", "fone", "contato", "numero", "número"];
+
+// Auto-detect the column that holds a phone/WhatsApp number from the spreadsheet headers.
+function detectPhoneColumn(headers: string[]): string | null {
+  const lower = headers.map((h) => ({ raw: h, low: h.toLowerCase().trim() }));
+  for (const a of PHONE_ALIASES) {
+    const hit = lower.find((h) => h.low === a);
+    if (hit) return hit.raw;
+  }
+  const fuzzy = lower.find((h) => h.low.includes("cel") || h.low.includes("tel") || h.low.includes("whats") || h.low.includes("fone"));
+  return fuzzy?.raw ?? null;
+}
+
+// Build the parsed lead list + WhatsApp validation summary from raw rows.
+function buildParsed(records: Record<string, unknown>[], phoneCol: string): { leads: ParsedLead[]; meta: ImportMeta } {
+  const out: ParsedLead[] = [];
+  let comWhats = 0, invalidos = 0, semTelefone = 0;
+  for (const r of records) {
+    const keys = Object.keys(r).reduce<Record<string, string>>((a, k) => { a[k.toLowerCase().trim()] = k; return a; }, {});
+    const get = (n: string) => (keys[n] ? String(r[keys[n]] ?? "").trim() : "");
+    const nome = get("nome");
+    if (!nome) continue;
+    const orc = get("orcamento") || get("orçamento") || get("margem") || get("renda");
+    const urg = (get("urgencia") || get("urgência")).toLowerCase();
+
+    let telRaw = "";
+    if (phoneCol && phoneCol !== "__auto__") {
+      telRaw = r[phoneCol] != null ? String(r[phoneCol]).trim() : "";
+    } else {
+      telRaw = get("telefone") || get("celular") || get("whatsapp") || get("cel1") || get("cel2") || get("cel") || get("fone") || get("contato") || get("numero") || get("número");
+    }
+    if (!telRaw) semTelefone++;
+    else if (normalizeWhatsappNumber(telRaw)) comWhats++;
+    else invalidos++;
+
+    out.push({
+      nome,
+      telefone: telRaw || undefined,
+      cpf: get("cpf") || undefined,
+      cidade: get("cidade") || undefined,
+      origem: get("origem") || "planilha",
+      orcamento: orc ? Number(orc.replace(/[^\d.,-]/g, "").replace(/\./g, "").replace(",", ".")) || undefined : undefined,
+      urgencia: urg === "alta" || urg === "media" || urg === "média" || urg === "baixa" ? (urg === "média" ? "media" : (urg as any)) : undefined,
+    });
+  }
+  return { leads: out, meta: { total: out.length, comWhats, invalidos, semTelefone, phoneCol: phoneCol === "__auto__" ? null : phoneCol } };
+}
+
 
 function Page() {
   const { user, loading } = useAuth();
