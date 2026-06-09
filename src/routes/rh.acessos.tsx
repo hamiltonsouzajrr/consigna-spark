@@ -124,6 +124,59 @@ function AcessosPage() {
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao vincular."),
   });
 
+  const invalidateUsers = () =>
+    queryClient.invalidateQueries({ queryKey: ["rh", "admin", "users"] });
+
+  const saveUserMutation = useMutation({
+    mutationFn: async () => {
+      if (userDialog?.mode === "create") {
+        return createUser({
+          data: { email: form.email, password: form.password, isAdmin: form.isAdmin },
+        });
+      }
+      return updateUser({
+        data: {
+          targetUserId: selectedId!,
+          email: form.email || undefined,
+          password: form.password || undefined,
+          isAdmin: form.isAdmin,
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success(userDialog?.mode === "create" ? "Usuário criado." : "Usuário atualizado.");
+      setUserDialog(null);
+      setForm({ email: "", password: "", isAdmin: false });
+      invalidateUsers();
+      queryClient.invalidateQueries({ queryKey: ["rh", "my-access"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao salvar usuário."),
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: (targetUserId: string) => removeUser({ data: { targetUserId } }),
+    onSuccess: () => {
+      toast.success("Usuário excluído.");
+      setDeleteTarget(null);
+      if (selectedId === deleteTarget?.id) setSelectedId(null);
+      invalidateUsers();
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao excluir."),
+  });
+
+  const openCreate = () => {
+    setForm({ email: "", password: "", isAdmin: false });
+    setUserDialog({ mode: "create" });
+  };
+
+  const openEdit = (u: RhUserAccess) => {
+    setSelectedId(u.id);
+    setForm({ email: u.email, password: "", isAdmin: u.isAdmin });
+    setUserDialog({ mode: "edit" });
+  };
+
+
+
   if (accessLoading) {
     return <Skeleton className="h-64 w-full" />;
   }
