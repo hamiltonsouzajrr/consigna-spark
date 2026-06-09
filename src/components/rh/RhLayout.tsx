@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import {
   LayoutDashboard, Users, Building2, BriefcaseBusiness, Plane, Clock,
   FileText, GraduationCap, Laptop, Star, AlertTriangle, UserSearch,
-  ClipboardCheck, UserMinus, Settings, Network, ReceiptText, HeartHandshake,
+  ClipboardCheck, UserMinus, Network, ReceiptText, HeartHandshake,
   Target, Gauge, TrendingDown, Trophy, IdCard,
   Goal, Award, ShieldCheck, Lock, LineChart,
 } from "lucide-react";
@@ -38,8 +38,6 @@ export const rhNav = [
   { to: "/rh/recrutamento", label: "Recrutamento", icon: UserSearch },
   { to: "/rh/onboarding", label: "Onboarding", icon: ClipboardCheck },
   { to: "/rh/desligamentos", label: "Desligamentos", icon: UserMinus },
-  
-  { to: "/rh/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
 
 // Admin-only entries (appended for admins, hidden from everyone else).
@@ -49,7 +47,7 @@ export const rhAdminNav = [
 ] as const;
 
 // Tabs only admins may open even if granted elsewhere.
-const ADMIN_ONLY = new Set<string>(["/rh/configuracoes", "/rh/acessos", "/rh/producao"]);
+const ADMIN_ONLY = new Set<string>(["/rh/acessos", "/rh/producao"]);
 
 export function RhLayout({ children }: { children: ReactNode }) {
   const loc = useLocation();
