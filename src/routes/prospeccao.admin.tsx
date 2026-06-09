@@ -134,12 +134,12 @@ function Page() {
     const chunkSize = 2000;
     const total = parsed.length;
     setProgress({ done: 0, total });
-    let inserted = 0, skipped = 0;
+    let inserted = 0, skipped = 0, updated = 0;
     try {
       for (let i = 0; i < total; i += chunkSize) {
         const slice = parsed.slice(i, i + chunkSize);
-        const r = await createLeads({ data: { leads: slice.map((p) => ({ ...p, consultant_id: cid })), dedup } });
-        inserted += r.inserted; skipped += r.skipped ?? 0;
+        const r = await createLeads({ data: { leads: slice.map((p) => ({ ...p, consultant_id: cid })), dedup, update: updateExisting } });
+        inserted += r.inserted; skipped += r.skipped ?? 0; updated += r.updated ?? 0;
         setProgress({ done: Math.min(i + chunkSize, total), total });
       }
       let distMsg = "";
@@ -147,7 +147,7 @@ function Page() {
         const d = await distributeLeads({ data: { consultantIds: [...selectedConsultants], mode: importDist as any } });
         distMsg = ` · ${d.assigned} distribuído(s) entre ${Object.keys(d.perConsultant).length} consultora(s)`;
       }
-      toast.success(`${inserted} lead(s) importados${skipped ? ` · ${skipped} duplicado(s) ignorado(s)` : ""}${distMsg}.`);
+      toast.success(`${inserted} novo(s)${updated ? ` · ${updated} atualizado(s)` : ""}${skipped ? ` · ${skipped} ignorado(s)` : ""}${distMsg}.`);
       setParsed([]); setFileName("");
       await loadLeads(); statsQ.refetch();
     } catch (e: any) { toast.error(e?.message ?? "Falha ao importar."); }
