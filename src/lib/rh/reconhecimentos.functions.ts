@@ -12,13 +12,121 @@ async function assertAdmin(supabase: any, userId: string) {
   if (!data) throw new Error("Acesso restrito a administradores.");
 }
 
-export const TIPOS = ["Trabalho em equipe", "Liderança", "Inovação", "Destaque do mês"] as const;
+// Catálogo de reconhecimentos organizados por categoria.
+export const CATEGORIAS_RECONHECIMENTO: { categoria: string; titulos: string[] }[] = [
+  {
+    categoria: "Resultados e Vendas",
+    titulos: [
+      "🥇 Primeira Venda do Dia",
+      "🏆 Venda Mais Alta da Semana",
+      "🏆 Maior Produção da Semana",
+      "🏆 Maior Produção do Mês",
+      "🏆 Recordista de Conversões",
+      "🏆 Destaque Comercial",
+      "🏆 Meta Batida com Excelência",
+      "🏆 Campeão de Resultados",
+      "🏆 Top Performer",
+    ],
+  },
+  {
+    categoria: "Comportamento e Cultura",
+    titulos: [
+      "🏆 Espírito de Dono",
+      "🏆 Atitude que Faz Acontecer",
+      "🏆 Exemplo de Comprometimento",
+      "🏆 Orgulho Positive",
+      "🏆 Mentalidade Vencedora",
+      "🏆 Profissional de Alta Performance",
+      "🏆 Referência da Equipe",
+      "🏆 Postura Profissional",
+    ],
+  },
+  {
+    categoria: "Atendimento e Relacionamento",
+    titulos: [
+      "🏆 Atendimento de Excelência",
+      "🏆 Melhor Experiência do Cliente",
+      "🏆 Construtor de Confiança",
+      "🏆 Mestre do Follow-up",
+      "🏆 Relacionamento que Gera Resultados",
+      "🏆 Voz da Excelência",
+    ],
+  },
+  {
+    categoria: "Velocidade e Eficiência",
+    titulos: [
+      "🏆 Agilidade na Negociação",
+      "🏆 Resposta Relâmpago",
+      "🏆 Eficiência Operacional",
+      "🏆 Mestre da Execução",
+      "🏆 Resolução Mais Rápida",
+      "🏆 Foco e Agilidade",
+    ],
+  },
+  {
+    categoria: "Desenvolvimento Pessoal",
+    titulos: [
+      "🏆 Evolução da Semana",
+      "🏆 Superação do Mês",
+      "🏆 Destaque em Aprendizado",
+      "🏆 Evolução Contínua",
+      "🏆 Crescimento Exponencial",
+      "🏆 Mentalidade de Crescimento",
+    ],
+  },
+  {
+    categoria: "Trabalho em Equipe",
+    titulos: [
+      "🏆 Parceiro de Ouro",
+      "🏆 Pilar da Equipe",
+      "🏆 Líder Pelo Exemplo",
+      "🏆 Colaboração que Inspira",
+      "🏆 União que Gera Resultado",
+      "🏆 Suporte de Excelência",
+    ],
+  },
+  {
+    categoria: "Categorias Diferenciadas",
+    titulos: [
+      "🏆 Sangue nos Olhos",
+      "🏆 Faca na Caveira das Vendas",
+      "🏆 Não Para Até Fechar",
+      "🏆 Caçador de Oportunidades",
+      "🏆 Máquina de Resultados",
+      "🏆 Consistência de Ferro",
+      "🏆 Resiliência Comercial",
+      "🏆 Imparável",
+      "🏆 Fora da Curva",
+      "🏆 Lenda da Operação",
+    ],
+  },
+  {
+    categoria: "Ranking Mensal Grupo Positive",
+    titulos: [
+      "🥇 Espírito de Dono",
+      "🥈 Venda Mais Alta",
+      "🥉 Maior Produção",
+      "🏅 Excelência no Atendimento",
+      "🏅 Evolução do Mês",
+    ],
+  },
+];
+
+export const TIPOS = CATEGORIAS_RECONHECIMENTO.flatMap((c) => c.titulos);
+
+export const PERIODICIDADES = [
+  { value: "pontual", label: "Pontual" },
+  { value: "diario", label: "Diário" },
+  { value: "semanal", label: "Semanal" },
+  { value: "mensal", label: "Mensal" },
+] as const;
 
 export type Reconhecimento = {
   id: string;
   de: string;
   para: string;
   tipo: string;
+  periodicidade: string;
   mensagem: string;
   data: string;
   periodo_inicio: string | null;
