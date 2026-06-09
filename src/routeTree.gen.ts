@@ -35,7 +35,6 @@ import { Route as RhReconhecimentosRouteImport } from './routes/rh.reconheciment
 import { Route as RhRankingRouteImport } from './routes/rh.ranking'
 import { Route as RhProducaoRouteImport } from './routes/rh.producao'
 import { Route as RhPortalRouteImport } from './routes/rh.portal'
-import { Route as RhPeopleAnalyticsRouteImport } from './routes/rh.people-analytics'
 import { Route as RhPdiRouteImport } from './routes/rh.pdi'
 import { Route as RhOrganogramaRouteImport } from './routes/rh.organograma'
 import { Route as RhOnboardingRouteImport } from './routes/rh.onboarding'
@@ -197,11 +196,6 @@ const RhProducaoRoute = RhProducaoRouteImport.update({
 const RhPortalRoute = RhPortalRouteImport.update({
   id: '/portal',
   path: '/portal',
-  getParentRoute: () => RhRoute,
-} as any)
-const RhPeopleAnalyticsRoute = RhPeopleAnalyticsRouteImport.update({
-  id: '/people-analytics',
-  path: '/people-analytics',
   getParentRoute: () => RhRoute,
 } as any)
 const RhPdiRoute = RhPdiRouteImport.update({
@@ -412,7 +406,6 @@ export interface FileRoutesByFullPath {
   '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/organograma': typeof RhOrganogramaRoute
   '/rh/pdi': typeof RhPdiRoute
-  '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
   '/rh/portal': typeof RhPortalRouteWithChildren
   '/rh/producao': typeof RhProducaoRoute
   '/rh/ranking': typeof RhRankingRoute
@@ -472,7 +465,6 @@ export interface FileRoutesByTo {
   '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/organograma': typeof RhOrganogramaRoute
   '/rh/pdi': typeof RhPdiRoute
-  '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
   '/rh/producao': typeof RhProducaoRoute
   '/rh/ranking': typeof RhRankingRoute
   '/rh/reconhecimentos': typeof RhReconhecimentosRoute
@@ -533,7 +525,6 @@ export interface FileRoutesById {
   '/rh/onboarding': typeof RhOnboardingRoute
   '/rh/organograma': typeof RhOrganogramaRoute
   '/rh/pdi': typeof RhPdiRoute
-  '/rh/people-analytics': typeof RhPeopleAnalyticsRoute
   '/rh/portal': typeof RhPortalRouteWithChildren
   '/rh/producao': typeof RhProducaoRoute
   '/rh/ranking': typeof RhRankingRoute
@@ -596,7 +587,6 @@ export interface FileRouteTypes {
     | '/rh/onboarding'
     | '/rh/organograma'
     | '/rh/pdi'
-    | '/rh/people-analytics'
     | '/rh/portal'
     | '/rh/producao'
     | '/rh/ranking'
@@ -656,7 +646,6 @@ export interface FileRouteTypes {
     | '/rh/onboarding'
     | '/rh/organograma'
     | '/rh/pdi'
-    | '/rh/people-analytics'
     | '/rh/producao'
     | '/rh/ranking'
     | '/rh/reconhecimentos'
@@ -716,7 +705,6 @@ export interface FileRouteTypes {
     | '/rh/onboarding'
     | '/rh/organograma'
     | '/rh/pdi'
-    | '/rh/people-analytics'
     | '/rh/portal'
     | '/rh/producao'
     | '/rh/ranking'
@@ -944,13 +932,6 @@ declare module '@tanstack/react-router' {
       path: '/portal'
       fullPath: '/rh/portal'
       preLoaderRoute: typeof RhPortalRouteImport
-      parentRoute: typeof RhRoute
-    }
-    '/rh/people-analytics': {
-      id: '/rh/people-analytics'
-      path: '/people-analytics'
-      fullPath: '/rh/people-analytics'
-      preLoaderRoute: typeof RhPeopleAnalyticsRouteImport
       parentRoute: typeof RhRoute
     }
     '/rh/pdi': {
@@ -1227,7 +1208,6 @@ interface RhRouteChildren {
   RhOnboardingRoute: typeof RhOnboardingRoute
   RhOrganogramaRoute: typeof RhOrganogramaRoute
   RhPdiRoute: typeof RhPdiRoute
-  RhPeopleAnalyticsRoute: typeof RhPeopleAnalyticsRoute
   RhPortalRoute: typeof RhPortalRouteWithChildren
   RhProducaoRoute: typeof RhProducaoRoute
   RhRankingRoute: typeof RhRankingRoute
@@ -1259,7 +1239,6 @@ const RhRouteChildren: RhRouteChildren = {
   RhOnboardingRoute: RhOnboardingRoute,
   RhOrganogramaRoute: RhOrganogramaRoute,
   RhPdiRoute: RhPdiRoute,
-  RhPeopleAnalyticsRoute: RhPeopleAnalyticsRoute,
   RhPortalRoute: RhPortalRouteWithChildren,
   RhProducaoRoute: RhProducaoRoute,
   RhRankingRoute: RhRankingRoute,
