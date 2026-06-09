@@ -304,6 +304,75 @@ function Page() {
         </Card>
       </div>
 
+      {/* Distribuir & reciclar */}
+      <Card className="mt-6 p-5">
+        <p className="mb-1 text-sm font-semibold flex items-center gap-2"><Shuffle className="h-4 w-4" /> Distribuir &amp; reciclar leads</p>
+        <p className="mb-4 text-xs text-muted-foreground">Cada lead vai para apenas uma consultora. Marque quem deve participar do rodízio.</p>
+
+        <Label className="text-xs">Consultoras participantes</Label>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {consultants.map((c) => {
+            const on = selectedConsultants.has(c.id);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => toggleConsultant(c.id)}
+                className={`rounded-full border px-3 py-1 text-xs transition-colors ${on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-accent/50"}`}
+              >
+                {c.email}
+              </button>
+            );
+          })}
+          {!consultants.length && <span className="text-xs text-muted-foreground">Nenhuma consultora encontrada.</span>}
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          {/* Distribuir não atribuídos */}
+          <div className="rounded-lg border p-4">
+            <p className="mb-2 text-sm font-medium">Distribuir leads não atribuídos</p>
+            <Label className="text-xs">Critério</Label>
+            <Select value={distMode} onValueChange={(v) => setDistMode(v as any)}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="round_robin">Round-robin (rodízio igual)</SelectItem>
+                <SelectItem value="score">Por score (espalha os quentes)</SelectItem>
+                <SelectItem value="city">Por cidade (mesma cidade, mesma pessoa)</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button className="mt-3 w-full" variant="secondary" disabled={busy} onClick={runDistribute}>
+              <Shuffle className="mr-2 h-4 w-4" /> Distribuir agora
+            </Button>
+          </div>
+
+          {/* Reciclar parados */}
+          <div className="rounded-lg border p-4">
+            <p className="mb-2 text-sm font-medium">Reciclar leads parados</p>
+            <p className="mb-2 text-xs text-muted-foreground">Tira leads sem tratativa de quem não trabalhou e passa para quem tem menos fila.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs">Parados há (dias)</Label>
+                <Input type="number" min={1} max={60} value={idleDays} onChange={(e) => setIdleDays(Math.max(1, Math.min(60, Number(e.target.value) || 1)))} className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">Ordem</Label>
+                <Select value={recycleMode} onValueChange={(v) => setRecycleMode(v as any)}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="score">Por score</SelectItem>
+                    <SelectItem value="round_robin">Round-robin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Button className="mt-3 w-full" variant="secondary" disabled={busy} onClick={runRecycle}>
+              <RefreshCw className="mr-2 h-4 w-4" /> Reciclar agora
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+
       {/* Ranking + origem */}
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <Card className="p-5">
