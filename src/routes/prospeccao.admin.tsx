@@ -17,9 +17,10 @@ import { RhStatCard } from "@/components/rh/RhStatCard";
 import { toast } from "sonner";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { ArrowLeft, UploadCloud, Trophy, AlertTriangle, Ghost, UserPlus } from "lucide-react";
+import { ArrowLeft, UploadCloud, Trophy, AlertTriangle, Ghost, UserPlus, Shuffle, RefreshCw } from "lucide-react";
 import {
   getProspectConsultants, adminCreateLeads, adminAssignLeads, getAdminStats,
+  adminDistributeLeads, adminRecycleLeads,
 } from "@/lib/prospeccao/prospeccao.functions";
 import { STATUS_LABEL, STATUS_TONE, type LeadStatus } from "@/lib/prospeccao/constants";
 
