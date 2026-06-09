@@ -274,6 +274,53 @@ function Page() {
         <RhStatCard label="Consultoras ativas" value={stats?.ranking.filter((r) => r.consultantId).length ?? "—"} icon={UserPlus} tone="violet" />
       </div>
 
+      <Card className="mt-6 p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="flex items-center gap-2 text-sm font-semibold"><FileSpreadsheet className="h-4 w-4 text-primary" /> Planilhas importadas</p>
+          <Button variant="ghost" size="sm" onClick={() => batchesQ.refetch()} disabled={batchesQ.isFetching}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${batchesQ.isFetching ? "animate-spin" : ""}`} /> Atualizar
+          </Button>
+        </div>
+        {batchesQ.isLoading ? (
+          <p className="text-sm text-muted-foreground">Carregando importações…</p>
+        ) : (batchesQ.data?.length ?? 0) === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma importação registrada.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Importação</TableHead>
+                  <TableHead className="text-right">Leads</TableHead>
+                  <TableHead className="text-right">Atribuídos</TableHead>
+                  <TableHead className="text-right">Trabalhados</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {batchesQ.data!.map((b) => (
+                  <TableRow key={b.batch ?? "__none__"}>
+                    <TableCell className="max-w-[280px] truncate font-medium">{b.label}</TableCell>
+                    <TableCell className="text-right">{b.total}</TableCell>
+                    <TableCell className="text-right">{b.assigned}</TableCell>
+                    <TableCell className="text-right">{b.worked}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{new Date(b.last_at).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" disabled={busy} onClick={() => removeBatch(b.batch, b.label, b.total)}>
+                        <Trash2 className="mr-1 h-4 w-4" /> Excluir
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </Card>
+
+
+
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         {/* Upload */}
         <Card className="p-5">
