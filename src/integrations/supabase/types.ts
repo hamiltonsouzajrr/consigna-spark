@@ -824,6 +824,48 @@ export type Database = {
         }
         Relationships: []
       }
+      rh_reconhecimentos: {
+        Row: {
+          created_at: string
+          data: string
+          de: string
+          id: string
+          mensagem: string
+          para: string
+          periodo_fim: string | null
+          periodo_inicio: string | null
+          popup: boolean
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data?: string
+          de: string
+          id?: string
+          mensagem: string
+          para: string
+          periodo_fim?: string | null
+          periodo_inicio?: string | null
+          popup?: boolean
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          de?: string
+          id?: string
+          mensagem?: string
+          para?: string
+          periodo_fim?: string | null
+          periodo_inicio?: string | null
+          popup?: boolean
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rh_tab_access: {
         Row: {
           created_at: string
