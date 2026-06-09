@@ -754,6 +754,30 @@ export type Database = {
         }
         Relationships: []
       }
+      rh_onboarding: {
+        Row: {
+          colaborador: string
+          created_at: string
+          id: string
+          tarefas: Json
+          updated_at: string
+        }
+        Insert: {
+          colaborador: string
+          created_at?: string
+          id?: string
+          tarefas?: Json
+          updated_at?: string
+        }
+        Update: {
+          colaborador?: string
+          created_at?: string
+          id?: string
+          tarefas?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rh_portal_atalhos: {
         Row: {
           created_at: string
