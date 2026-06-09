@@ -66,10 +66,18 @@ function AcessosPage() {
   const saveAccess = useServerFn(setRhUserAccess);
   const fetchEmployees = useServerFn(listRhEmployees);
   const linkEmployee = useServerFn(linkEmployeeUser);
+  const createUser = useServerFn(createRhUser);
+  const updateUser = useServerFn(updateRhUser);
+  const removeUser = useServerFn(deleteRhUser);
 
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Set<string>>(new Set());
+
+  // User create/edit/delete dialog state.
+  const [userDialog, setUserDialog] = useState<null | { mode: "create" | "edit" }>(null);
+  const [form, setForm] = useState({ email: "", password: "", isAdmin: false });
+  const [deleteTarget, setDeleteTarget] = useState<RhUserAccess | null>(null);
 
   const usersQuery = useQuery({
     queryKey: ["rh", "admin", "users"],
