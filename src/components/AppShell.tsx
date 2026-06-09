@@ -39,11 +39,16 @@ const navSections: NavSection[] = [
     section: "Produção",
     items: [
       { to: "/producao/meu-dia", label: "Meu Dia", icon: Home },
-      { to: "/upload", label: "Importações", icon: Upload },
-      { to: "/consultas", label: "Consultas", icon: List },
-      { to: "/limpeza", label: "Limpeza", icon: Trash2 },
       { to: "/rh/ranking", label: "Ranking", icon: Trophy },
       { to: "/producao/metas", label: "Metas", icon: Target },
+    ],
+  },
+  {
+    section: "Aracaju",
+    items: [
+      { to: "/upload", label: "Importações", icon: Upload, adminOnly: true },
+      { to: "/consultas", label: "Consultas", icon: List, adminOnly: true },
+      { to: "/limpeza", label: "Limpeza", icon: Trash2, adminOnly: true },
     ],
   },
   {
