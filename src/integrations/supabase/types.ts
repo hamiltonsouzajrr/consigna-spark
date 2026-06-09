@@ -668,6 +668,45 @@ export type Database = {
         }
         Relationships: []
       }
+      rh_ocorrencias: {
+        Row: {
+          colaborador: string
+          created_at: string
+          created_by: string | null
+          data: string
+          descricao: string
+          id: string
+          para_user_id: string | null
+          popup: boolean
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          colaborador: string
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao: string
+          id?: string
+          para_user_id?: string | null
+          popup?: boolean
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          colaborador?: string
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string
+          id?: string
+          para_user_id?: string | null
+          popup?: boolean
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rh_portal_atalhos: {
         Row: {
           created_at: string
