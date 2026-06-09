@@ -549,6 +549,42 @@ export type Database = {
         }
         Relationships: []
       }
+      rh_producao: {
+        Row: {
+          consultora: string
+          contratos: number
+          created_at: string
+          created_by: string | null
+          departamento: string | null
+          id: string
+          mes: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          consultora: string
+          contratos?: number
+          created_at?: string
+          created_by?: string | null
+          departamento?: string | null
+          id?: string
+          mes: string
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          consultora?: string
+          contratos?: number
+          created_at?: string
+          created_by?: string | null
+          departamento?: string | null
+          id?: string
+          mes?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       rh_tab_access: {
         Row: {
           created_at: string

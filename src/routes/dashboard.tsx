@@ -12,6 +12,7 @@ import { Clock, CheckCircle2, AlertCircle, FileText, Loader2, Check, RefreshCw, 
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
+import { ProducaoRanking } from "@/components/rh/ProducaoRanking";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -289,6 +290,11 @@ function Page() {
           </p>
         )}
       </div>
+
+      <div className="mb-6">
+        <ProducaoRanking title="Ranking de Produção" limit={10} />
+      </div>
+
 
       {isAdmin && (
         <>

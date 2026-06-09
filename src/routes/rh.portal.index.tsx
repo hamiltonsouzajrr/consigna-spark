@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
+import { producaoConsultoraQueryOptions, formatMes } from "@/lib/rh/producao";
 import {
   Plane,
   FileText,
@@ -235,6 +236,50 @@ function PortalIndex() {
           </CardContent>
         </Card>
       </div>
+
+      <MinhaProducao consultora={me.nome} />
     </div>
   );
 }
+
+function MinhaProducao({ consultora }: { consultora: string }) {
+  const { data } = useQuery(producaoConsultoraQueryOptions(consultora));
+  const linhas = data ?? [];
+  const totalValor = linhas.reduce((a, r) => a + Number(r.valor), 0);
+  const totalContratos = linhas.reduce((a, r) => a + Number(r.contratos), 0);
+
+  return (
+    <Card className="mt-6">
+      <CardHeader className="pb-3 flex flex-row items-center gap-2">
+        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        <CardTitle className="text-base">Minha produção</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-lg border p-3">
+            <p className="text-xs text-muted-foreground">Valor total produzido</p>
+            <p className="text-xl font-bold">{brl(totalValor)}</p>
+          </div>
+          <div className="rounded-lg border p-3">
+            <p className="text-xs text-muted-foreground">Contratos</p>
+            <p className="text-xl font-bold">{totalContratos}</p>
+          </div>
+        </div>
+        {linhas.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma produção registrada ainda.</p>
+        ) : (
+          linhas.map((r) => (
+            <div key={r.id} className="flex items-center justify-between border-b pb-2 text-sm last:border-0 last:pb-0">
+              <span>{formatMes(r.mes)}</span>
+              <span className="flex items-center gap-3">
+                <Badge variant="secondary" className="border-0">{r.contratos} contratos</Badge>
+                <span className="font-semibold tabular-nums">{brl(Number(r.valor))}</span>
+              </span>
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+

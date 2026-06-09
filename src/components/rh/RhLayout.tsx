@@ -5,7 +5,7 @@ import {
   FileText, GraduationCap, Laptop, Star, AlertTriangle, UserSearch,
   ClipboardCheck, UserMinus, Settings, Network, ReceiptText, HeartHandshake,
   Target, Gauge, Brain, TrendingDown, Trophy, IdCard,
-  Goal, Award, ScrollText, ShieldCheck, Lock,
+  Goal, Award, ScrollText, ShieldCheck, Lock, LineChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -44,11 +44,12 @@ export const rhNav = [
 
 // Admin-only entries (appended for admins, hidden from everyone else).
 export const rhAdminNav = [
+  { to: "/rh/producao", label: "Produção", icon: LineChart },
   { to: "/rh/acessos", label: "Acessos", icon: ShieldCheck },
 ] as const;
 
 // Tabs only admins may open even if granted elsewhere.
-const ADMIN_ONLY = new Set<string>(["/rh/configuracoes", "/rh/acessos"]);
+const ADMIN_ONLY = new Set<string>(["/rh/configuracoes", "/rh/acessos", "/rh/producao"]);
 
 export function RhLayout({ children }: { children: ReactNode }) {
   const loc = useLocation();
