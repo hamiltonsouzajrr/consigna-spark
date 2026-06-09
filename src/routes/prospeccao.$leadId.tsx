@@ -169,9 +169,6 @@ function Page() {
         <div className="space-y-4 lg:col-span-1">
           <Card className="p-5">
             <div className="flex items-start gap-3">
-              <div className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border text-base font-bold ${scoreTone(lead.score)}`}>
-                {lead.score}<span className="text-[9px] uppercase">{scoreLabel(lead.score)}</span>
-              </div>
               <div className="min-w-0">
                 <h1 className="truncate text-xl font-bold">{lead.nome}</h1>
                 <div className="mt-1 flex flex-wrap gap-1.5">
