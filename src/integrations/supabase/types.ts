@@ -355,6 +355,7 @@ export type Database = {
           sla_status: Database["public"]["Enums"]["prospect_sla_status"]
           status: Database["public"]["Enums"]["prospect_status"]
           telefone: string | null
+          telefones: string[]
           updated_at: string
           urgencia: string | null
         }
@@ -380,6 +381,7 @@ export type Database = {
           sla_status?: Database["public"]["Enums"]["prospect_sla_status"]
           status?: Database["public"]["Enums"]["prospect_status"]
           telefone?: string | null
+          telefones?: string[]
           updated_at?: string
           urgencia?: string | null
         }
@@ -405,6 +407,7 @@ export type Database = {
           sla_status?: Database["public"]["Enums"]["prospect_sla_status"]
           status?: Database["public"]["Enums"]["prospect_status"]
           telefone?: string | null
+          telefones?: string[]
           updated_at?: string
           urgencia?: string | null
         }
