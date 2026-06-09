@@ -193,8 +193,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <HorariosOuroDialog />
       <HorariosOuroReminder />
       <aside className="group/side hidden w-16 shrink-0 overflow-hidden sidebar-bg text-sidebar-foreground transition-[width] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:w-64 md:flex md:flex-col print:!hidden">
-        <div className="flex h-14 shrink-0 items-center gap-3 px-3">
-          <img src={logo.url} alt="Grupo Positive" className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain p-1" />
+        <div className="flex h-16 shrink-0 items-center gap-3 px-2">
+          <img src={logo.url} alt="Grupo Positive" className="h-12 w-12 shrink-0 rounded-lg bg-white object-contain p-1" />
           <span className="whitespace-nowrap text-sm font-semibold text-white opacity-0 transition-opacity duration-300 ease-in-out group-hover/side:opacity-100 group-hover/side:delay-150">Grupo Positive</span>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden p-3">
