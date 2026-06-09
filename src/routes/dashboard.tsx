@@ -347,7 +347,7 @@ function Page() {
               className="border-white/30 bg-white text-black placeholder:text-black/50 sm:max-w-[220px]"
             />
             
-            <Button onClick={processarManual} disabled={running || !manualCpf} className="bg-white text-primary hover:bg-white/90">
+            <Button onClick={processarManual} disabled={running || !manualCpf} className="bg-white font-semibold text-primary shadow-md hover:bg-white/90 disabled:opacity-60">
               {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
               Consultar CPF manual
             </Button>
