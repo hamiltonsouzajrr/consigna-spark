@@ -109,6 +109,7 @@ function ProducaoAdmin() {
       <RhPageHeader
         title="Produção"
         description="Lance a produção mensal — atualiza automaticamente o ranking e o painel de cada consultora."
+        actions={<ImportProducaoDialog defaultMes={mes} userId={user?.id} />}
       />
 
       <div className="grid gap-4 lg:grid-cols-3">
