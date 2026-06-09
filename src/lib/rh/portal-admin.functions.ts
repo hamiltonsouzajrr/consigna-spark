@@ -35,6 +35,7 @@ export type PortalContent = {
   avisos: Aviso[];
   atalhos: Atalho[];
   kpis: PortalKpis | null;
+  foto: string | null;
 };
 
 export const getPortalContent = createServerFn({ method: "GET" })
@@ -44,18 +45,62 @@ export const getPortalContent = createServerFn({ method: "GET" })
 
     const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
 
-    const [avisosRes, atalhosRes, kpisRes] = await Promise.all([
+    const [avisosRes, atalhosRes, kpisRes, profileRes] = await Promise.all([
       supabase.from("rh_portal_avisos").select("id, titulo, quando, tone, icon, sort").order("sort"),
       supabase.from("rh_portal_atalhos").select("id, label, icon, sort").order("sort"),
       supabase.from("rh_portal_kpis").select("*").order("created_at").limit(1).maybeSingle(),
+      supabase.from("rh_portal_profiles").select("foto_path").eq("user_id", userId).maybeSingle(),
     ]);
+
+    let foto: string | null = null;
+    const fotoPath = (profileRes.data as any)?.foto_path as string | null | undefined;
+    if (fotoPath) {
+      const { data: signed } = await supabase.storage
+        .from("portal-avatars")
+        .createSignedUrl(fotoPath, 60 * 60);
+      foto = signed?.signedUrl ?? null;
+    }
 
     return {
       isAdmin: !!isAdmin,
       avisos: (avisosRes.data ?? []) as Aviso[],
       atalhos: (atalhosRes.data ?? []) as Atalho[],
       kpis: (kpisRes.data ?? null) as PortalKpis | null,
+      foto,
     };
+  });
+
+export const saveProfilePhoto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ foto_path: z.string().min(1).max(300) }).parse(d))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("rh_portal_profiles")
+      .upsert({ user_id: userId, foto_path: data.foto_path }, { onConflict: "user_id" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteProfilePhoto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    const { data: existing } = await supabase
+      .from("rh_portal_profiles")
+      .select("foto_path")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const fotoPath = (existing as any)?.foto_path as string | null | undefined;
+    if (fotoPath) {
+      await supabase.storage.from("portal-avatars").remove([fotoPath]);
+    }
+    const { error } = await supabase
+      .from("rh_portal_profiles")
+      .update({ foto_path: null })
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 const avisoSchema = z.object({

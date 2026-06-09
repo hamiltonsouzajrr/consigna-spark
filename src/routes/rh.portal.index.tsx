@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { producaoConsultoraQueryOptions, formatMes } from "@/lib/rh/producao";
 import {
   Plane, FileText, ReceiptText, GraduationCap, HeartHandshake, Clock,
   CalendarDays, Bell, CheckCircle2, TrendingUp, ChevronRight,
-  Plus, Pencil, Trash2, Settings2,
+  Plus, Pencil, Trash2, Settings2, Camera, Loader2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,8 +33,10 @@ import { formatDate, brl } from "@/lib/rh/mock";
 import { portalQueryOptions, type KpiKey } from "@/lib/rh/portal";
 import {
   getPortalContent, saveAviso, deleteAviso, saveAtalho, deleteAtalho, saveKpis,
+  saveProfilePhoto, deleteProfilePhoto,
   type Aviso, type Atalho, type PortalKpis,
 } from "@/lib/rh/portal-admin.functions";
+import { supabase } from "@/integrations/supabase/client";
 import {
   PORTAL_ICON_NAMES, PORTAL_TONES, portalIcon, toneClass,
 } from "@/lib/rh/portal-icons";
@@ -90,6 +92,48 @@ function PortalIndex() {
   const isAdmin = content?.isAdmin ?? false;
   const invalidate = () => qc.invalidateQueries({ queryKey: ["rh", "portal-content"] });
 
+  // --- Profile photo (self-service for the consultant)
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const savePhotoFn = useServerFn(saveProfilePhoto);
+  const delPhotoFn = useServerFn(deleteProfilePhoto);
+
+  const uploadPhoto = async (file: File) => {
+    if (file.size > 5 * 1024 * 1024) return toast.error("A imagem deve ter no máximo 5MB.");
+    setPhotoBusy(true);
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) throw new Error("Sessão expirada. Entre novamente.");
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${uid}/avatar-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("portal-avatars")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      await savePhotoFn({ data: { foto_path: path } });
+      toast.success("Foto atualizada.");
+      invalidate();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível enviar a foto.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  const removePhoto = async () => {
+    setPhotoBusy(true);
+    try {
+      await delPhotoFn();
+      toast.success("Foto removida.");
+      invalidate();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível remover a foto.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
   // KPI values: usa config do banco se existir, senão o mock.
   const k = content?.kpis;
   const saldoFerias = k ? k.saldo_ferias : data.saldoFerias;
@@ -144,10 +188,32 @@ function PortalIndex() {
 
       <Card className="mb-6">
         <CardContent className="flex flex-col items-center gap-4 p-6 sm:flex-row sm:items-center">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={me.foto} alt={me.nome} />
-            <AvatarFallback>{me.nome.slice(0, 2)}</AvatarFallback>
-          </Avatar>
+          <div className="group relative">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={content?.foto ?? me.foto} alt={me.nome} />
+              <AvatarFallback>{me.nome.slice(0, 2)}</AvatarFallback>
+            </Avatar>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={photoBusy}
+              className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-100"
+              aria-label="Alterar foto"
+            >
+              {photoBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) uploadPhoto(f);
+                e.target.value = "";
+              }}
+            />
+          </div>
           <div className="text-center sm:text-left">
             <h2 className="text-lg font-bold">{me.nome}</h2>
             <p className="text-sm text-muted-foreground">{me.cargo} · {me.departamento}</p>
@@ -155,6 +221,16 @@ function PortalIndex() {
               <Badge variant="outline">Matrícula {me.matricula}</Badge>
               <Badge variant="outline">Admissão {formatDate(me.admissao)}</Badge>
               <Badge variant="secondary" className="border-0 bg-emerald-100 text-emerald-700">{me.status}</Badge>
+            </div>
+            <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
+              <Button size="sm" variant="outline" disabled={photoBusy} onClick={() => fileInputRef.current?.click()}>
+                <Camera className="mr-2 h-4 w-4" /> {content?.foto ? "Trocar foto" : "Adicionar foto"}
+              </Button>
+              {content?.foto && (
+                <Button size="sm" variant="ghost" disabled={photoBusy} onClick={removePhoto}>
+                  <Trash2 className="mr-2 h-4 w-4 text-destructive" /> Remover
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
