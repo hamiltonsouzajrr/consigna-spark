@@ -17,12 +17,12 @@ import { RhStatCard } from "@/components/rh/RhStatCard";
 import { toast } from "sonner";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { ArrowLeft, UploadCloud, Trophy, AlertTriangle, Ghost, UserPlus, Shuffle, RefreshCw } from "lucide-react";
+import { ArrowLeft, UploadCloud, Trophy, AlertTriangle, Ghost, UserPlus, Shuffle, RefreshCw, MessageCircle } from "lucide-react";
 import {
   getProspectConsultants, adminCreateLeads, adminAssignLeads, getAdminStats,
   adminDistributeLeads, adminRecycleLeads,
 } from "@/lib/prospeccao/prospeccao.functions";
-import { STATUS_LABEL, STATUS_TONE, type LeadStatus } from "@/lib/prospeccao/constants";
+import { STATUS_LABEL, STATUS_TONE, normalizeWhatsappNumber, type LeadStatus } from "@/lib/prospeccao/constants";
 
 export const Route = createFileRoute("/prospeccao/admin")({
   head: () => ({ meta: [{ title: "Painel admin — Prospecção" }, { name: "robots", content: "noindex,nofollow" }] }),
@@ -31,6 +31,56 @@ export const Route = createFileRoute("/prospeccao/admin")({
 
 type LeadRow = { id: string; nome: string; cidade: string | null; origem: string | null; status: LeadStatus; score: number; consultant_id: string | null; created_at: string };
 type ParsedLead = { nome: string; telefone?: string; cpf?: string; cidade?: string; origem?: string; orcamento?: number; urgencia?: "alta" | "media" | "baixa" };
+type ImportMeta = { total: number; comWhats: number; invalidos: number; semTelefone: number; phoneCol: string | null };
+
+const PHONE_ALIASES = ["telefone", "celular", "whatsapp", "cel1", "cel2", "cel", "fone", "contato", "numero", "número"];
+
+// Auto-detect the column that holds a phone/WhatsApp number from the spreadsheet headers.
+function detectPhoneColumn(headers: string[]): string | null {
+  const lower = headers.map((h) => ({ raw: h, low: h.toLowerCase().trim() }));
+  for (const a of PHONE_ALIASES) {
+    const hit = lower.find((h) => h.low === a);
+    if (hit) return hit.raw;
+  }
+  const fuzzy = lower.find((h) => h.low.includes("cel") || h.low.includes("tel") || h.low.includes("whats") || h.low.includes("fone"));
+  return fuzzy?.raw ?? null;
+}
+
+// Build the parsed lead list + WhatsApp validation summary from raw rows.
+function buildParsed(records: Record<string, unknown>[], phoneCol: string): { leads: ParsedLead[]; meta: ImportMeta } {
+  const out: ParsedLead[] = [];
+  let comWhats = 0, invalidos = 0, semTelefone = 0;
+  for (const r of records) {
+    const keys = Object.keys(r).reduce<Record<string, string>>((a, k) => { a[k.toLowerCase().trim()] = k; return a; }, {});
+    const get = (n: string) => (keys[n] ? String(r[keys[n]] ?? "").trim() : "");
+    const nome = get("nome");
+    if (!nome) continue;
+    const orc = get("orcamento") || get("orçamento") || get("margem") || get("renda");
+    const urg = (get("urgencia") || get("urgência")).toLowerCase();
+
+    let telRaw = "";
+    if (phoneCol && phoneCol !== "__auto__") {
+      telRaw = r[phoneCol] != null ? String(r[phoneCol]).trim() : "";
+    } else {
+      telRaw = get("telefone") || get("celular") || get("whatsapp") || get("cel1") || get("cel2") || get("cel") || get("fone") || get("contato") || get("numero") || get("número");
+    }
+    if (!telRaw) semTelefone++;
+    else if (normalizeWhatsappNumber(telRaw)) comWhats++;
+    else invalidos++;
+
+    out.push({
+      nome,
+      telefone: telRaw || undefined,
+      cpf: get("cpf") || undefined,
+      cidade: get("cidade") || undefined,
+      origem: get("origem") || "planilha",
+      orcamento: orc ? Number(orc.replace(/[^\d.,-]/g, "").replace(/\./g, "").replace(",", ".")) || undefined : undefined,
+      urgencia: urg === "alta" || urg === "media" || urg === "média" || urg === "baixa" ? (urg === "média" ? "media" : (urg as any)) : undefined,
+    });
+  }
+  return { leads: out, meta: { total: out.length, comWhats, invalidos, semTelefone, phoneCol: phoneCol === "__auto__" ? null : phoneCol } };
+}
+
 
 function Page() {
   const { user, loading } = useAuth();
@@ -44,7 +94,9 @@ function Page() {
   const fetchStats = useServerFn(getAdminStats);
 
   const [leads, setLeads] = useState<LeadRow[]>([]);
-  const [parsed, setParsed] = useState<ParsedLead[]>([]);
+  const [rawRecords, setRawRecords] = useState<Record<string, unknown>[]>([]);
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [phoneCol, setPhoneCol] = useState<string>("__auto__");
   const [fileName, setFileName] = useState("");
   const [uploadConsultant, setUploadConsultant] = useState<string>("none");
   const [dedup, setDedup] = useState(true);
@@ -66,6 +118,8 @@ function Page() {
   const statsQ = useQuery({ queryKey: ["prospect", "admin-stats"], queryFn: () => fetchStats(), enabled: !!user && isAdmin });
   const consultants = consultantsQ.data ?? [];
   const emailById = useMemo(() => new Map(consultants.map((c) => [c.id, c.email])), [consultants]);
+
+  const { leads: parsed, meta: importMeta } = useMemo(() => buildParsed(rawRecords, phoneCol), [rawRecords, phoneCol]);
 
   // Default: all consultants selected for distribution/recycle once loaded.
   useEffect(() => {
@@ -92,37 +146,24 @@ function Page() {
 
   const parseFile = async (file: File) => {
     setFileName(file.name);
-    const map = (records: Record<string, unknown>[]) => {
-      const out: ParsedLead[] = [];
-      for (const r of records) {
-        const keys = Object.keys(r).reduce<Record<string, string>>((a, k) => { a[k.toLowerCase().trim()] = k; return a; }, {});
-        const get = (n: string) => (keys[n] ? String(r[keys[n]] ?? "").trim() : "");
-        const nome = get("nome");
-        if (!nome) continue;
-        const orc = get("orcamento") || get("orçamento") || get("margem") || get("renda");
-        const urg = (get("urgencia") || get("urgência")).toLowerCase();
-        out.push({
-          nome,
-          telefone:
-            get("telefone") || get("celular") || get("whatsapp") ||
-            get("cel1") || get("cel2") || get("cel") || get("fone") ||
-            get("contato") || get("numero") || get("número") || undefined,
-          cpf: get("cpf") || undefined,
-          cidade: get("cidade") || undefined,
-          origem: get("origem") || "planilha",
-          orcamento: orc ? Number(orc.replace(/[^\d.,-]/g, "").replace(/\./g, "").replace(",", ".")) || undefined : undefined,
-          urgencia: urg === "alta" || urg === "media" || urg === "média" || urg === "baixa" ? (urg === "média" ? "media" : (urg as any)) : undefined,
-        });
-      }
-      setParsed(out);
-      if (!out.length) toast.error("Nenhuma linha com coluna NOME encontrada.");
-      else toast.success(`${out.length} lead(s) prontos para importar.`);
+    const apply = (records: Record<string, unknown>[]) => {
+      const hdrs = records.length ? Object.keys(records[0]) : [];
+      setHeaders(hdrs);
+      setPhoneCol(detectPhoneColumn(hdrs) ?? "__auto__");
+      setRawRecords(records);
+      const named = records.filter((r) => {
+        const k = Object.keys(r).find((x) => x.toLowerCase().trim() === "nome");
+        return k && String(r[k] ?? "").trim();
+      });
+      if (!named.length) toast.error("Nenhuma linha com coluna NOME encontrada.");
+      else toast.success(`${named.length} lead(s) prontos para importar.`);
     };
     const ext = file.name.split(".").pop()?.toLowerCase();
-    if (ext === "csv") Papa.parse<Record<string, unknown>>(file, { header: true, skipEmptyLines: true, complete: (res) => map(res.data) });
-    else if (ext === "xlsx" || ext === "xls") { const wb = XLSX.read(await file.arrayBuffer()); map(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" })); }
+    if (ext === "csv") Papa.parse<Record<string, unknown>>(file, { header: true, skipEmptyLines: true, complete: (res) => apply(res.data) });
+    else if (ext === "xlsx" || ext === "xls") { const wb = XLSX.read(await file.arrayBuffer()); apply(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" })); }
     else toast.error("Use CSV ou XLSX.");
   };
+
 
   const confirmImport = async () => {
     if (!parsed.length) return;
@@ -148,7 +189,7 @@ function Page() {
         distMsg = ` · ${d.assigned} distribuído(s) entre ${Object.keys(d.perConsultant).length} consultora(s)`;
       }
       toast.success(`${inserted} novo(s)${updated ? ` · ${updated} atualizado(s)` : ""}${skipped ? ` · ${skipped} ignorado(s)` : ""}${distMsg}.`);
-      setParsed([]); setFileName("");
+      setRawRecords([]); setHeaders([]); setPhoneCol("__auto__"); setFileName("");
       await loadLeads(); statsQ.refetch();
     } catch (e: any) { toast.error(e?.message ?? "Falha ao importar."); }
     setProgress(null);
@@ -242,6 +283,42 @@ function Page() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* WhatsApp source column + validation */}
+              <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-2">
+                <Label className="text-xs flex items-center gap-1.5 font-medium">
+                  <MessageCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Coluna de origem do WhatsApp
+                </Label>
+                <Select value={phoneCol} onValueChange={setPhoneCol}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__auto__">Automático (CEL/TELEFONE/WhatsApp)</SelectItem>
+                    {headers.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-emerald-700 dark:text-emerald-300">
+                    {importMeta.comWhats} com WhatsApp válido
+                  </span>
+                  {importMeta.invalidos > 0 && (
+                    <span className="rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-amber-700 dark:text-amber-300">
+                      {importMeta.invalidos} número(s) inválido(s)
+                    </span>
+                  )}
+                  {importMeta.semTelefone > 0 && (
+                    <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-muted-foreground">
+                      {importMeta.semTelefone} sem telefone
+                    </span>
+                  )}
+                </div>
+                {importMeta.comWhats === 0 && importMeta.total > 0 && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    Nenhum número válido detectado nesta coluna — selecione a coluna correta acima.
+                  </p>
+                )}
+              </div>
+
               {importDist === "manual" ? (
                 <div>
                   <Label className="text-xs">Atribuir a</Label>
