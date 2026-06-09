@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import {
   STATUS_FLOW, STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, EVENT_LABEL, LOSS_REASONS,
-  PLAYBOOK, scoreTone, scoreLabel, URGENCIA_LABEL,
+  PLAYBOOK, scoreTone, scoreLabel, URGENCIA_LABEL, whatsappLink,
   type LeadStatus, type SlaStatus, type EventKind,
 } from "@/lib/prospeccao/constants";
 import { aiLeadAssist } from "@/lib/prospeccao/prospeccao.functions";
