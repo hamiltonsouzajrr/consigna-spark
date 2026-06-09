@@ -192,6 +192,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       <HorariosOuroDialog />
       <HorariosOuroReminder />
       <aside className="group/side hidden w-16 shrink-0 overflow-hidden sidebar-bg text-sidebar-foreground transition-[width] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:w-64 md:flex md:flex-col print:!hidden">
+        <div className="flex h-14 shrink-0 items-center gap-3 px-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white">
+            <BadgeDollarSign className="h-5 w-5" />
+          </div>
+          <span className="whitespace-nowrap text-sm font-semibold text-white opacity-0 transition-opacity duration-300 ease-in-out group-hover/side:opacity-100 group-hover/side:delay-150">Grupo Positive</span>
+        </div>
         <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden p-3">
           {sections.map((sec, idx) => (
             <div key={sec.section} className="space-y-1">
@@ -259,15 +265,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-72 sidebar-bg border-0 p-0 text-sidebar-foreground">
-              <SheetHeader className="border-b border-white/10 px-6 py-5 text-left">
+              <SheetHeader className="px-4 py-4 text-left">
                 <SheetTitle className="flex items-center gap-2">
                   <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white">
                     <BadgeDollarSign className="h-5 w-5" />
                   </span>
-                  <span>
-                    <span className="block text-sm font-semibold leading-tight text-white">Grupo Positive</span>
-                    <span className="block text-xs font-normal text-white/60">Consultas e simulação</span>
-                  </span>
+                  <span className="text-sm font-semibold text-white">Grupo Positive</span>
                 </SheetTitle>
               </SheetHeader>
               <nav className="flex-1 space-y-1 overflow-y-auto p-3">
