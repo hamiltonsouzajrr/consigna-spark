@@ -102,7 +102,7 @@ function Reconhecimentos() {
       return toast.error("O fim do período deve ser após o início.");
     mSave.mutate({
       ...(editingId ? { id: editingId } : {}),
-      de: form.de, para: form.para, tipo: form.tipo, mensagem: form.mensagem,
+      de: form.de, para: form.para, tipo: form.tipo, periodicidade: form.periodicidade, mensagem: form.mensagem,
       data: form.data,
       periodo_inicio: form.periodo_inicio || null,
       periodo_fim: form.periodo_fim || null,
