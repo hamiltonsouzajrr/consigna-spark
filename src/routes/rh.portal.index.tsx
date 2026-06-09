@@ -33,8 +33,10 @@ import { formatDate, brl } from "@/lib/rh/mock";
 import { portalQueryOptions, type KpiKey } from "@/lib/rh/portal";
 import {
   getPortalContent, saveAviso, deleteAviso, saveAtalho, deleteAtalho, saveKpis,
+  saveProfilePhoto, deleteProfilePhoto,
   type Aviso, type Atalho, type PortalKpis,
 } from "@/lib/rh/portal-admin.functions";
+import { supabase } from "@/integrations/supabase/client";
 import {
   PORTAL_ICON_NAMES, PORTAL_TONES, portalIcon, toneClass,
 } from "@/lib/rh/portal-icons";
