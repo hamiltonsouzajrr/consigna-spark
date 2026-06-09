@@ -27,6 +27,7 @@ import { Route as CalculadoraAlRouteImport } from './routes/calculadora-al'
 import { Route as AlagoasRouteImport } from './routes/alagoas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RhIndexRouteImport } from './routes/rh.index'
+import { Route as ProspeccaoIndexRouteImport } from './routes/prospeccao.index'
 import { Route as RhTurnoverRouteImport } from './routes/rh.turnover'
 import { Route as RhTreinamentosRouteImport } from './routes/rh.treinamentos'
 import { Route as RhRecrutamentoRouteImport } from './routes/rh.recrutamento'
@@ -151,6 +152,11 @@ const RhIndexRoute = RhIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => RhRoute,
+} as any)
+const ProspeccaoIndexRoute = ProspeccaoIndexRouteImport.update({
+  id: '/prospeccao/',
+  path: '/prospeccao/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RhTurnoverRoute = RhTurnoverRouteImport.update({
   id: '/turnover',
@@ -372,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/turnover': typeof RhTurnoverRoute
+  '/prospeccao/': typeof ProspeccaoIndexRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof RhPortalKpiRoute
@@ -424,6 +431,7 @@ export interface FileRoutesByTo {
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/turnover': typeof RhTurnoverRoute
+  '/prospeccao': typeof ProspeccaoIndexRoute
   '/rh': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof RhPortalKpiRoute
@@ -479,6 +487,7 @@ export interface FileRoutesById {
   '/rh/recrutamento': typeof RhRecrutamentoRoute
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/turnover': typeof RhTurnoverRoute
+  '/prospeccao/': typeof ProspeccaoIndexRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof RhPortalKpiRoute
@@ -535,6 +544,7 @@ export interface FileRouteTypes {
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh/turnover'
+    | '/prospeccao/'
     | '/rh/'
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
@@ -587,6 +597,7 @@ export interface FileRouteTypes {
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh/turnover'
+    | '/prospeccao'
     | '/rh'
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
@@ -641,6 +652,7 @@ export interface FileRouteTypes {
     | '/rh/recrutamento'
     | '/rh/treinamentos'
     | '/rh/turnover'
+    | '/prospeccao/'
     | '/rh/'
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
@@ -666,6 +678,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadRoute: typeof UploadRoute
   WhatsappRoute: typeof WhatsappRoute
+  ProspeccaoIndexRoute: typeof ProspeccaoIndexRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
@@ -796,6 +809,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rh/'
       preLoaderRoute: typeof RhIndexRouteImport
       parentRoute: typeof RhRoute
+    }
+    '/prospeccao/': {
+      id: '/prospeccao/'
+      path: '/prospeccao'
+      fullPath: '/prospeccao/'
+      preLoaderRoute: typeof ProspeccaoIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/rh/turnover': {
       id: '/rh/turnover'
@@ -1152,6 +1172,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadRoute: UploadRoute,
   WhatsappRoute: WhatsappRoute,
+  ProspeccaoIndexRoute: ProspeccaoIndexRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport
