@@ -123,6 +123,7 @@ function Page() {
   const consultantsQ = useQuery({ queryKey: ["prospect", "consultants"], queryFn: () => fetchConsultants(), enabled: !!user && isAdmin });
   const statsQ = useQuery({ queryKey: ["prospect", "admin-stats"], queryFn: () => fetchStats(), enabled: !!user && isAdmin });
   const batchesQ = useQuery({ queryKey: ["prospect", "import-batches"], queryFn: () => listBatches(), enabled: !!user && isAdmin });
+  const usersQ = useQuery({ queryKey: ["prospect", "system-users"], queryFn: () => listSystemUsers(), enabled: !!user && isAdmin });
   const consultants = consultantsQ.data ?? [];
   const emailById = useMemo(() => new Map(consultants.map((c) => [c.id, c.email])), [consultants]);
 
