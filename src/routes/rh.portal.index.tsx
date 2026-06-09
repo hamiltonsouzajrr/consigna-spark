@@ -163,7 +163,7 @@ function PortalIndex() {
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiLink kpi="ferias" label="Saldo de férias" value={`${saldoFerias} dias`} icon={Plane} tone="sky" hint="Ver detalhes" />
         <KpiLink kpi="banco-horas" label="Banco de horas" value={`${bancoHoras >= 0 ? "+" : ""}${bancoHoras}h`} icon={Clock} tone="emerald" hint="Ver detalhes" />
-        <KpiLink kpi="salario" label="Salário" value={brl(salario)} icon={ReceiptText} tone="violet" hint="Ver detalhes" />
+        <KpiLink kpi="salario" label="Premiação de campanha" value={brl(salario)} icon={ReceiptText} tone="violet" hint="Ver detalhes" />
         <KpiLink kpi="beneficios" label="Benefícios" value={beneficios} icon={HeartHandshake} tone="amber" hint="Ver detalhes" />
       </div>
 
