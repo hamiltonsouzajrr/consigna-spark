@@ -92,6 +92,8 @@ function Page() {
   const distributeLeads = useServerFn(adminDistributeLeads);
   const recycleLeads = useServerFn(adminRecycleLeads);
   const fetchStats = useServerFn(getAdminStats);
+  const listBatches = useServerFn(adminListImportBatches);
+  const deleteBatch = useServerFn(adminDeleteImportBatch);
 
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [rawRecords, setRawRecords] = useState<Record<string, unknown>[]>([]);
