@@ -128,8 +128,15 @@ export function ImportProducaoDialog({
     );
   };
 
+  const onChangeConsultora = (index: number, nome: string) => {
+    setRows((prev) =>
+      validar(prev.map((r, i) => (i === index ? { ...r, consultora: nome } : r))),
+    );
+  };
+
   const validos = rows.filter((r) => r.erros.length === 0);
   const invalidos = rows.filter((r) => r.erros.length > 0);
+
 
   const onImport = async () => {
     if (!validos.length) {
