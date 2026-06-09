@@ -6,7 +6,7 @@ import { producaoConsultoraQueryOptions, formatMes } from "@/lib/rh/producao";
 import {
   Plane, FileText, ReceiptText, GraduationCap, HeartHandshake, Clock,
   CalendarDays, Bell, CheckCircle2, TrendingUp, ChevronRight,
-  Plus, Pencil, Trash2, Settings2,
+  Plus, Pencil, Trash2, Settings2, Camera, Loader2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
