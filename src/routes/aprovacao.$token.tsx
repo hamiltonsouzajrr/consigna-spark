@@ -16,8 +16,13 @@ export const Route = createFileRoute("/aprovacao/$token")({
 
 function GuestPage() {
   const { token } = useParams({ from: "/aprovacao/$token" });
+  const isValidToken = typeof token === "string" && token.trim().length >= 8;
   const fetchInfo = useServerFn(getApprovalByToken);
-  const info = useQuery({ queryKey: ["approval", token], queryFn: () => fetchInfo({ data: { token } }) });
+  const info = useQuery({
+    queryKey: ["approval", token],
+    queryFn: () => fetchInfo({ data: { token } }),
+    enabled: isValidToken,
+  });
 
   const { status, error, localStream, remoteStream, start, hangup } = useApprovalCall(token, "guest");
   const localRef = useRef<HTMLVideoElement>(null);
@@ -31,6 +36,7 @@ function GuestPage() {
     connected: "Conectado", ended: "Chamada encerrada", error: "Erro de conexão",
   };
 
+  if (!isValidToken) return <Center><p className="text-muted-foreground">Link inválido ou expirado.</p></Center>;
   if (info.isLoading) return <Center><Loader2 className="h-6 w-6 animate-spin" /></Center>;
   if (info.isError || !info.data?.ok) return <Center><p className="text-muted-foreground">Link inválido ou expirado.</p></Center>;
 
