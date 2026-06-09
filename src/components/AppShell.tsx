@@ -167,7 +167,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         }`}
       >
         <Icon className="h-4 w-4 shrink-0" />
-        <span className="flex-1 truncate">{n.label}</span>
+        <span className="flex-1 truncate opacity-0 transition-opacity duration-200 group-hover/side:opacity-100 md:group-[.is-mobile]/side:opacity-100">{n.label}</span>
         {n.badge && count !== null && count > 0 && (
           <Badge
             className={`h-5 min-w-5 justify-center border-0 px-1.5 text-xs ${
