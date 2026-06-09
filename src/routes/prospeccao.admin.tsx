@@ -17,10 +17,10 @@ import { RhStatCard } from "@/components/rh/RhStatCard";
 import { toast } from "sonner";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { ArrowLeft, UploadCloud, Trophy, AlertTriangle, Ghost, UserPlus, Shuffle, RefreshCw, MessageCircle } from "lucide-react";
+import { ArrowLeft, UploadCloud, Trophy, AlertTriangle, Ghost, UserPlus, Shuffle, RefreshCw, MessageCircle, Trash2, FileSpreadsheet } from "lucide-react";
 import {
   getProspectConsultants, adminCreateLeads, adminAssignLeads, getAdminStats,
-  adminDistributeLeads, adminRecycleLeads,
+  adminDistributeLeads, adminRecycleLeads, adminListImportBatches, adminDeleteImportBatch,
 } from "@/lib/prospeccao/prospeccao.functions";
 import { STATUS_LABEL, STATUS_TONE, normalizeWhatsappNumber, type LeadStatus } from "@/lib/prospeccao/constants";
 
@@ -92,6 +92,8 @@ function Page() {
   const distributeLeads = useServerFn(adminDistributeLeads);
   const recycleLeads = useServerFn(adminRecycleLeads);
   const fetchStats = useServerFn(getAdminStats);
+  const listBatches = useServerFn(adminListImportBatches);
+  const deleteBatch = useServerFn(adminDeleteImportBatch);
 
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [rawRecords, setRawRecords] = useState<Record<string, unknown>[]>([]);
@@ -116,6 +118,7 @@ function Page() {
 
   const consultantsQ = useQuery({ queryKey: ["prospect", "consultants"], queryFn: () => fetchConsultants(), enabled: !!user && isAdmin });
   const statsQ = useQuery({ queryKey: ["prospect", "admin-stats"], queryFn: () => fetchStats(), enabled: !!user && isAdmin });
+  const batchesQ = useQuery({ queryKey: ["prospect", "import-batches"], queryFn: () => listBatches(), enabled: !!user && isAdmin });
   const consultants = consultantsQ.data ?? [];
   const emailById = useMemo(() => new Map(consultants.map((c) => [c.id, c.email])), [consultants]);
 
@@ -176,10 +179,11 @@ function Page() {
     const total = parsed.length;
     setProgress({ done: 0, total });
     let inserted = 0, skipped = 0, updated = 0;
+    const batch = fileName ? `${fileName} · ${new Date().toLocaleString("pt-BR")}` : null;
     try {
       for (let i = 0; i < total; i += chunkSize) {
         const slice = parsed.slice(i, i + chunkSize);
-        const r = await createLeads({ data: { leads: slice.map((p) => ({ ...p, consultant_id: cid })), dedup, update: updateExisting } });
+        const r = await createLeads({ data: { leads: slice.map((p) => ({ ...p, consultant_id: cid })), dedup, update: updateExisting, batch } });
         inserted += r.inserted; skipped += r.skipped ?? 0; updated += r.updated ?? 0;
         setProgress({ done: Math.min(i + chunkSize, total), total });
       }
@@ -190,7 +194,7 @@ function Page() {
       }
       toast.success(`${inserted} novo(s)${updated ? ` · ${updated} atualizado(s)` : ""}${skipped ? ` · ${skipped} ignorado(s)` : ""}${distMsg}.`);
       setRawRecords([]); setHeaders([]); setPhoneCol("__auto__"); setFileName("");
-      await loadLeads(); statsQ.refetch();
+      await loadLeads(); statsQ.refetch(); batchesQ.refetch();
     } catch (e: any) { toast.error(e?.message ?? "Falha ao importar."); }
     setProgress(null);
     setBusy(false);
@@ -244,6 +248,17 @@ function Page() {
     } catch (e: any) { toast.error(e?.message ?? "Falha ao atribuir."); }
   };
 
+  const removeBatch = async (batch: string | null, label: string, total: number) => {
+    if (!confirm(`Excluir a importação "${label}" e seus ${total} lead(s)? Esta ação não pode ser desfeita.`)) return;
+    setBusy(true);
+    try {
+      const r = await deleteBatch({ data: { batch } });
+      toast.success(`${r.deleted} lead(s) excluído(s).`);
+      await loadLeads(); statsQ.refetch(); batchesQ.refetch();
+    } catch (e: any) { toast.error(e?.message ?? "Falha ao excluir importação."); }
+    setBusy(false);
+  };
+
   const stats = statsQ.data;
 
   return (
@@ -258,6 +273,53 @@ function Page() {
         <RhStatCard label="Esquecidos (3+ dias)" value={stats?.esquecidos ?? "—"} icon={Ghost} tone="rose" />
         <RhStatCard label="Consultoras ativas" value={stats?.ranking.filter((r) => r.consultantId).length ?? "—"} icon={UserPlus} tone="violet" />
       </div>
+
+      <Card className="mt-6 p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="flex items-center gap-2 text-sm font-semibold"><FileSpreadsheet className="h-4 w-4 text-primary" /> Planilhas importadas</p>
+          <Button variant="ghost" size="sm" onClick={() => batchesQ.refetch()} disabled={batchesQ.isFetching}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${batchesQ.isFetching ? "animate-spin" : ""}`} /> Atualizar
+          </Button>
+        </div>
+        {batchesQ.isLoading ? (
+          <p className="text-sm text-muted-foreground">Carregando importações…</p>
+        ) : (batchesQ.data?.length ?? 0) === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma importação registrada.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Importação</TableHead>
+                  <TableHead className="text-right">Leads</TableHead>
+                  <TableHead className="text-right">Atribuídos</TableHead>
+                  <TableHead className="text-right">Trabalhados</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {batchesQ.data!.map((b) => (
+                  <TableRow key={b.batch ?? "__none__"}>
+                    <TableCell className="max-w-[280px] truncate font-medium">{b.label}</TableCell>
+                    <TableCell className="text-right">{b.total}</TableCell>
+                    <TableCell className="text-right">{b.assigned}</TableCell>
+                    <TableCell className="text-right">{b.worked}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{new Date(b.last_at).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" disabled={busy} onClick={() => removeBatch(b.batch, b.label, b.total)}>
+                        <Trash2 className="mr-1 h-4 w-4" /> Excluir
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </Card>
+
+
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         {/* Upload */}
