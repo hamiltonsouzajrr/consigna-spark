@@ -520,3 +520,105 @@ export const adminDeleteImportBatch = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { deleted: count ?? 0 };
   });
+
+// ===================== System access management (admin-only) =====================
+
+export type SystemUser = {
+  id: string;
+  email: string;
+  isAdmin: boolean;
+  leadCount: number;
+  created_at: string | null;
+  last_sign_in_at: string | null;
+};
+
+// List every user account with role + lead-load info.
+export const adminListSystemUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<SystemUser[]> => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: usersData, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    if (error) throw new Error(error.message);
+
+    const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id, role");
+    const adminSet = new Set((roles ?? []).filter((r: any) => r.role === "admin").map((r: any) => r.user_id));
+
+    const { data: leadRows } = await supabaseAdmin.from("prospect_leads").select("consultant_id");
+    const leadCount = new Map<string, number>();
+    for (const r of (leadRows ?? []) as any[]) {
+      if (r.consultant_id) leadCount.set(r.consultant_id, (leadCount.get(r.consultant_id) ?? 0) + 1);
+    }
+
+    return usersData.users
+      .map((u) => ({
+        id: u.id,
+        email: u.email ?? "(sem e-mail)",
+        isAdmin: adminSet.has(u.id),
+        leadCount: leadCount.get(u.id) ?? 0,
+        created_at: u.created_at ?? null,
+        last_sign_in_at: u.last_sign_in_at ?? null,
+      }))
+      .sort((a, b) => Number(b.isAdmin) - Number(a.isAdmin) || a.email.localeCompare(b.email));
+  });
+
+// Grant or revoke the admin role for a user.
+export const adminSetUserRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ targetUserId: z.string().uuid(), makeAdmin: z.boolean() }).parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+
+    if (data.targetUserId === userId && !data.makeAdmin) {
+      throw new Error("Você não pode remover o seu próprio acesso de administrador.");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.makeAdmin) {
+      const { error } = await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: data.targetUserId, role: "admin" } as any, { onConflict: "user_id,role" });
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabaseAdmin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", data.targetUserId)
+        .eq("role", "admin");
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+// Delete a user account entirely (and unassign their leads).
+export const adminDeleteSystemUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ targetUserId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+
+    if (data.targetUserId === userId) {
+      throw new Error("Você não pode excluir o seu próprio usuário.");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Unassign this user's leads so they return to the pool.
+    await supabaseAdmin
+      .from("prospect_leads")
+      .update({ consultant_id: null } as any)
+      .eq("consultant_id", data.targetUserId);
+
+    // Clean up roles.
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", data.targetUserId);
+
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.targetUserId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
