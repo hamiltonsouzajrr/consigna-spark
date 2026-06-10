@@ -12,7 +12,7 @@ import { RhStatCard } from "@/components/rh/RhStatCard";
 import { toast } from "sonner";
 import {
   ArrowLeft, Video, Download, Copy, Trash2, RefreshCw, FileAudio, FileText,
-  CheckCircle2, XCircle, ShieldCheck, Sparkles, Loader2, KeyRound,
+  CheckCircle2, XCircle, ShieldCheck, Sparkles, Loader2, KeyRound, Clock,
 } from "lucide-react";
 import {
   adminListApprovals, adminApprovalMediaUrl, adminDeleteApproval, aiTranscribeApproval,
@@ -46,6 +46,9 @@ function Page() {
   const validateFn = useServerFn(getApprovalByToken);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [openTranscript, setOpenTranscript] = useState<string | null>(null);
+  // Detailed per-item status while regenerating the short link.
+  type RegenPhase = "pendente" | "processando" | "validando" | "ok" | "erro";
+  const [regenState, setRegenState] = useState<Record<string, { phase: RegenPhase; message: string }>>({});
 
   const q = useQuery({
     queryKey: ["legal", "approvals"],
@@ -90,20 +93,33 @@ function Page() {
     toast.success("Link do cliente copiado.");
   };
 
+  const setRegen = (id: string, phase: RegenPhase, message: string) =>
+    setRegenState((prev) => ({ ...prev, [id]: { phase, message } }));
+
   const regenerate = async (it: AdminApproval) => {
     if (!confirm(`Gerar um novo link para "${it.nome_completo}"? O link anterior deixará de funcionar.`)) return;
     setBusyId(it.id);
+    setRegen(it.id, "pendente", "Aguardando para iniciar…");
     try {
+      setRegen(it.id, "processando", "Gerando novo token seguro…");
       const { token } = await regenFn({ data: { approvalId: it.id } });
-      // Validate the new short link resolves before reporting success.
+
+      setRegen(it.id, "validando", "Validando o novo link…");
       const check = await validateFn({ data: { token } });
-      if (!check.ok) throw new Error("O novo link não pôde ser validado.");
+      if (!check.ok) throw new Error("O novo link foi gerado, mas não pôde ser validado. Tente novamente.");
+
       await navigator.clipboard.writeText(`${window.location.origin}/aprovacao/${token}`);
+      setRegen(it.id, "ok", "Novo link gerado, validado e copiado para a área de transferência.");
       toast.success("Novo link gerado, validado e copiado.");
       q.refetch();
-    } catch (e: any) { toast.error(e?.message ?? "Falha ao regenerar o link."); }
+    } catch (e: any) {
+      const msg = e?.message ?? "Falha ao regenerar o link.";
+      setRegen(it.id, "erro", msg);
+      toast.error(msg);
+    }
     setBusyId(null);
   };
+
 
   const remove = async (it: AdminApproval) => {
     if (!confirm(`Excluir a gravação de "${it.nome_completo}"? Os arquivos serão apagados. Esta ação não pode ser desfeita.`)) return;
@@ -201,6 +217,12 @@ function Page() {
               </div>
             </div>
 
+            {regenState[it.id] && (
+              <RegenStatus phase={regenState[it.id].phase} message={regenState[it.id].message} />
+            )}
+
+
+
             {(it.transcricao || it.resumo) && (
               <div className="mt-3 border-t pt-3">
                 <Button size="sm" variant="ghost" className="mb-1 h-7 px-2 text-xs" onClick={() => setOpenTranscript((p) => (p === it.id ? null : it.id))}>
@@ -220,3 +242,21 @@ function Page() {
     </AppShell>
   );
 }
+
+function RegenStatus({ phase, message }: { phase: "pendente" | "processando" | "validando" | "ok" | "erro"; message: string }) {
+  const cfg = {
+    pendente: { label: "Pendente", cls: "border-muted-foreground/30 bg-muted/40 text-muted-foreground", icon: <Clock className="h-4 w-4" /> },
+    processando: { label: "Processando", cls: "border-sky-500/30 bg-sky-500/10 text-sky-700", icon: <Loader2 className="h-4 w-4 animate-spin" /> },
+    validando: { label: "Validando", cls: "border-amber-500/30 bg-amber-500/10 text-amber-700", icon: <Loader2 className="h-4 w-4 animate-spin" /> },
+    ok: { label: "Concluído", cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700", icon: <CheckCircle2 className="h-4 w-4" /> },
+    erro: { label: "Erro", cls: "border-destructive/30 bg-destructive/10 text-destructive", icon: <XCircle className="h-4 w-4" /> },
+  }[phase];
+  return (
+    <div className={`mt-3 flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${cfg.cls}`}>
+      {cfg.icon}
+      <span className="font-medium">{cfg.label}:</span>
+      <span>{message}</span>
+    </div>
+  );
+}
+
