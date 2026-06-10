@@ -46,6 +46,9 @@ function Page() {
   const validateFn = useServerFn(getApprovalByToken);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [openTranscript, setOpenTranscript] = useState<string | null>(null);
+  // Detailed per-item status while regenerating the short link.
+  type RegenPhase = "pendente" | "processando" | "validando" | "ok" | "erro";
+  const [regenState, setRegenState] = useState<Record<string, { phase: RegenPhase; message: string }>>({});
 
   const q = useQuery({
     queryKey: ["legal", "approvals"],
