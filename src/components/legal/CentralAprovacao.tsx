@@ -39,7 +39,9 @@ export function CentralAprovacao({ lead }: { lead: { id: string; nome: string; c
   const create = async () => {
     if (!form.nome_completo.trim()) { toast.error("Informe o nome completo."); return; }
     setBusy(true);
-    const token = (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, "");
+    // Short, hard-to-guess token (12 chars) for a shorter shareable link.
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(9)))
+      .map((b) => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
     const { data, error } = await supabase.from("legal_approvals").insert({
       lead_id: lead.id, token, consultant_id: user?.id ?? null, consultant_email: user?.email ?? null,
       created_by: user?.id ?? null, nome_completo: form.nome_completo.trim(), cpf: form.cpf.trim() || null,
