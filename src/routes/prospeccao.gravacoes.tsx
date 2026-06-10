@@ -180,6 +180,9 @@ function Page() {
 
               <div className="flex flex-wrap justify-end gap-2">
                 <Button size="sm" variant="outline" onClick={() => copyLink(it.token)}><Copy className="mr-1.5 h-4 w-4" /> Link</Button>
+                <Button size="sm" variant="outline" disabled={busyId === it.id} onClick={() => regenerate(it)}>
+                  {busyId === it.id ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <KeyRound className="mr-1.5 h-4 w-4" />} Novo link
+                </Button>
                 <Button size="sm" variant="outline" disabled={!it.video_ok || busyId === it.id} onClick={() => openMedia(it.id, "video")}>
                   {busyId === it.id ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Video className="mr-1.5 h-4 w-4" />} Assistir
                 </Button>
