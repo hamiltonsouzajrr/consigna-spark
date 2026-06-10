@@ -12,10 +12,11 @@ import { RhStatCard } from "@/components/rh/RhStatCard";
 import { toast } from "sonner";
 import {
   ArrowLeft, Video, Download, Copy, Trash2, RefreshCw, FileAudio, FileText,
-  CheckCircle2, XCircle, ShieldCheck, Sparkles, Loader2,
+  CheckCircle2, XCircle, ShieldCheck, Sparkles, Loader2, KeyRound,
 } from "lucide-react";
 import {
   adminListApprovals, adminApprovalMediaUrl, adminDeleteApproval, aiTranscribeApproval,
+  adminRegenerateToken, getApprovalByToken,
   type AdminApproval,
 } from "@/lib/legal/legal.functions";
 
