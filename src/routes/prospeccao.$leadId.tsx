@@ -33,9 +33,9 @@ export const Route = createFileRoute("/prospeccao/$leadId")({
 type Lead = {
   id: string; nome: string; telefone: string | null; telefones: string[] | null; cpf: string | null; cidade: string | null;
   origem: string | null; orcamento: number | null; urgencia: string | null; status: LeadStatus;
-  score: number; sla_status: SlaStatus; loss_reason: string | null; notes: string | null;
+  score: number; quality_score: number | null; sla_status: SlaStatus; loss_reason: string | null; notes: string | null;
   next_follow_up_at: string | null; last_contact_at: string | null; first_response_at: string | null;
-  respondeu_whatsapp: boolean; consultant_id: string | null;
+  respondeu_whatsapp: boolean; consultant_id: string | null; import_batch: string | null; created_at: string | null;
 };
 type Ev = { id: string; kind: EventKind; body: string | null; created_at: string };
 type Task = { id: string; title: string; due_at: string; status: string };
