@@ -93,20 +93,33 @@ function Page() {
     toast.success("Link do cliente copiado.");
   };
 
+  const setRegen = (id: string, phase: RegenPhase, message: string) =>
+    setRegenState((prev) => ({ ...prev, [id]: { phase, message } }));
+
   const regenerate = async (it: AdminApproval) => {
     if (!confirm(`Gerar um novo link para "${it.nome_completo}"? O link anterior deixará de funcionar.`)) return;
     setBusyId(it.id);
+    setRegen(it.id, "pendente", "Aguardando para iniciar…");
     try {
+      setRegen(it.id, "processando", "Gerando novo token seguro…");
       const { token } = await regenFn({ data: { approvalId: it.id } });
-      // Validate the new short link resolves before reporting success.
+
+      setRegen(it.id, "validando", "Validando o novo link…");
       const check = await validateFn({ data: { token } });
-      if (!check.ok) throw new Error("O novo link não pôde ser validado.");
+      if (!check.ok) throw new Error("O novo link foi gerado, mas não pôde ser validado. Tente novamente.");
+
       await navigator.clipboard.writeText(`${window.location.origin}/aprovacao/${token}`);
+      setRegen(it.id, "ok", "Novo link gerado, validado e copiado para a área de transferência.");
       toast.success("Novo link gerado, validado e copiado.");
       q.refetch();
-    } catch (e: any) { toast.error(e?.message ?? "Falha ao regenerar o link."); }
+    } catch (e: any) {
+      const msg = e?.message ?? "Falha ao regenerar o link.";
+      setRegen(it.id, "erro", msg);
+      toast.error(msg);
+    }
     setBusyId(null);
   };
+
 
   const remove = async (it: AdminApproval) => {
     if (!confirm(`Excluir a gravação de "${it.nome_completo}"? Os arquivos serão apagados. Esta ação não pode ser desfeita.`)) return;
