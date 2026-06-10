@@ -42,6 +42,8 @@ function Page() {
   const mediaFn = useServerFn(adminApprovalMediaUrl);
   const deleteFn = useServerFn(adminDeleteApproval);
   const transcribeFn = useServerFn(aiTranscribeApproval);
+  const regenFn = useServerFn(adminRegenerateToken);
+  const validateFn = useServerFn(getApprovalByToken);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [openTranscript, setOpenTranscript] = useState<string | null>(null);
 
