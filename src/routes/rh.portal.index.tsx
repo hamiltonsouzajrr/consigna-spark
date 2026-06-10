@@ -251,7 +251,6 @@ function PortalIndex() {
         <Card className="lg:col-span-2">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-base">Atalhos</CardTitle>
-            {isAdmin && <Button size="sm" variant="ghost" onClick={() => openAtalho()}><Plus className="mr-1 h-4 w-4" /> Adicionar</Button>}
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {atalhos.length === 0 && <p className="col-span-full text-sm text-muted-foreground">Nenhum atalho configurado.</p>}
