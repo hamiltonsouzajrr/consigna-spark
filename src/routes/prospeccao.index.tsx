@@ -34,8 +34,12 @@ type Lead = {
   id: string;
   nome: string;
   telefone: string | null;
+  telefones: string[] | null;
+  cpf: string | null;
   cidade: string | null;
   origem: string | null;
+  orcamento: number | null;
+  urgencia: string | null;
   status: LeadStatus;
   score: number;
   sla_status: SlaStatus;
