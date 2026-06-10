@@ -12,10 +12,11 @@ import { RhStatCard } from "@/components/rh/RhStatCard";
 import { toast } from "sonner";
 import {
   ArrowLeft, Video, Download, Copy, Trash2, RefreshCw, FileAudio, FileText,
-  CheckCircle2, XCircle, ShieldCheck, Sparkles, Loader2,
+  CheckCircle2, XCircle, ShieldCheck, Sparkles, Loader2, KeyRound,
 } from "lucide-react";
 import {
   adminListApprovals, adminApprovalMediaUrl, adminDeleteApproval, aiTranscribeApproval,
+  adminRegenerateToken, getApprovalByToken,
   type AdminApproval,
 } from "@/lib/legal/legal.functions";
 
@@ -41,6 +42,8 @@ function Page() {
   const mediaFn = useServerFn(adminApprovalMediaUrl);
   const deleteFn = useServerFn(adminDeleteApproval);
   const transcribeFn = useServerFn(aiTranscribeApproval);
+  const regenFn = useServerFn(adminRegenerateToken);
+  const validateFn = useServerFn(getApprovalByToken);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [openTranscript, setOpenTranscript] = useState<string | null>(null);
 
@@ -85,6 +88,21 @@ function Page() {
   const copyLink = async (token: string) => {
     await navigator.clipboard.writeText(`${window.location.origin}/aprovacao/${token}`);
     toast.success("Link do cliente copiado.");
+  };
+
+  const regenerate = async (it: AdminApproval) => {
+    if (!confirm(`Gerar um novo link para "${it.nome_completo}"? O link anterior deixará de funcionar.`)) return;
+    setBusyId(it.id);
+    try {
+      const { token } = await regenFn({ data: { approvalId: it.id } });
+      // Validate the new short link resolves before reporting success.
+      const check = await validateFn({ data: { token } });
+      if (!check.ok) throw new Error("O novo link não pôde ser validado.");
+      await navigator.clipboard.writeText(`${window.location.origin}/aprovacao/${token}`);
+      toast.success("Novo link gerado, validado e copiado.");
+      q.refetch();
+    } catch (e: any) { toast.error(e?.message ?? "Falha ao regenerar o link."); }
+    setBusyId(null);
   };
 
   const remove = async (it: AdminApproval) => {
@@ -162,6 +180,9 @@ function Page() {
 
               <div className="flex flex-wrap justify-end gap-2">
                 <Button size="sm" variant="outline" onClick={() => copyLink(it.token)}><Copy className="mr-1.5 h-4 w-4" /> Link</Button>
+                <Button size="sm" variant="outline" disabled={busyId === it.id} onClick={() => regenerate(it)}>
+                  {busyId === it.id ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <KeyRound className="mr-1.5 h-4 w-4" />} Novo link
+                </Button>
                 <Button size="sm" variant="outline" disabled={!it.video_ok || busyId === it.id} onClick={() => openMedia(it.id, "video")}>
                   {busyId === it.id ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Video className="mr-1.5 h-4 w-4" />} Assistir
                 </Button>
