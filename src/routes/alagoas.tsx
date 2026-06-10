@@ -179,16 +179,16 @@ function ProdutoCard({ p }: { p: Produto }) {
 }
 
 // Tabela de coeficientes Caixa por convenente e prazo
-// Calculados via simulação price (taxa 1,75% a.m.) + IOF + seguro prestamista,
+// Calculados via simulação price (taxa 1,66% a.m.) + IOF + seguro prestamista,
 // usando prazo de extrato de cada convenente (Estado 47d, Maceió 38d).
 const CAIXA_TABELA: Record<string, { label: string; coefs: Record<number, number> }> = {
   estado: {
     label: "​SIMULAÇÃO GOVERNO DE ALAGOAS (Estado)",
-    coefs: { 24: 0.054160, 36: 0.039709, 48: 0.032637, 60: 0.028514, 72: 0.025861, 84: 0.024044, 96: 0.022746, 108: 0.021791, 120: 0.021072, 132: 0.020523, 144: 0.020097 },
+    coefs: { 24: 0.053603, 36: 0.039127, 48: 0.032028, 60: 0.027877, 72: 0.025197, 84: 0.023355, 96: 0.022032, 108: 0.021053, 120: 0.020313, 132: 0.019743, 144: 0.019298 },
   },
   maceio: {
     label: "Prefeitura de Maceió",
-    coefs: { 24: 0.054556, 36: 0.040081, 48: 0.032976, 60: 0.028827, 72: 0.026154, 84: 0.024323, 96: 0.023015 },
+    coefs: { 24: 0.053994, 36: 0.039494, 48: 0.032361, 60: 0.028183, 72: 0.025483, 84: 0.023626, 96: 0.022292 },
   },
 };
 
