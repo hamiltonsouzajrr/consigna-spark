@@ -90,6 +90,21 @@ function Page() {
     toast.success("Link do cliente copiado.");
   };
 
+  const regenerate = async (it: AdminApproval) => {
+    if (!confirm(`Gerar um novo link para "${it.nome_completo}"? O link anterior deixará de funcionar.`)) return;
+    setBusyId(it.id);
+    try {
+      const { token } = await regenFn({ data: { approvalId: it.id } });
+      // Validate the new short link resolves before reporting success.
+      const check = await validateFn({ data: { token } });
+      if (!check.ok) throw new Error("O novo link não pôde ser validado.");
+      await navigator.clipboard.writeText(`${window.location.origin}/aprovacao/${token}`);
+      toast.success("Novo link gerado, validado e copiado.");
+      q.refetch();
+    } catch (e: any) { toast.error(e?.message ?? "Falha ao regenerar o link."); }
+    setBusyId(null);
+  };
+
   const remove = async (it: AdminApproval) => {
     if (!confirm(`Excluir a gravação de "${it.nome_completo}"? Os arquivos serão apagados. Esta ação não pode ser desfeita.`)) return;
     setBusyId(it.id);
