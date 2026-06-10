@@ -13,9 +13,10 @@ import {
   Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, MapPin, MessageCircle,
 } from "lucide-react";
 import {
-  STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, scoreTone, scoreLabel, whatsappLink,
+  STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, whatsappLink,
   type LeadStatus, type SlaStatus,
 } from "@/lib/prospeccao/constants";
+import { User } from "lucide-react";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 
 export const Route = createFileRoute("/prospeccao/")({
@@ -33,8 +34,12 @@ type Lead = {
   id: string;
   nome: string;
   telefone: string | null;
+  telefones: string[] | null;
+  cpf: string | null;
   cidade: string | null;
   origem: string | null;
+  orcamento: number | null;
+  urgencia: string | null;
   status: LeadStatus;
   score: number;
   sla_status: SlaStatus;
@@ -63,7 +68,7 @@ function Page() {
     const load = async () => {
       const { data } = await supabase
         .from("prospect_leads")
-        .select("id,nome,telefone,cidade,origem,status,score,sla_status,next_follow_up_at,last_contact_at,first_response_at,created_at")
+        .select("id,nome,telefone,telefones,cpf,cidade,origem,orcamento,urgencia,status,score,sla_status,next_follow_up_at,last_contact_at,first_response_at,created_at")
         .order("score", { ascending: false })
         .limit(500);
       if (!cancelled) { setLeads((data ?? []) as any); setLoadingLeads(false); }
@@ -154,9 +159,8 @@ function Page() {
         {visible.map((l) => (
           <Link key={l.id} to="/prospeccao/$leadId" params={{ leadId: l.id }}>
             <Card className={`flex items-center gap-4 p-4 transition hover:bg-accent/50 ${l.sla_status === "atrasado" ? "border-rose-500/40" : ""}`}>
-              <div className={`flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl border text-sm font-bold ${scoreTone(l.score)}`}>
-                {l.score}
-                <span className="text-[9px] font-medium uppercase">{scoreLabel(l.score)}</span>
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-muted text-muted-foreground">
+                <User className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -164,8 +168,16 @@ function Page() {
                   <Badge variant="outline" className={STATUS_TONE[l.status]}>{STATUS_LABEL[l.status]}</Badge>
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  {l.telefone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{l.telefone}</span>}
+                  {l.cpf && <span>CPF: {l.cpf}</span>}
+                  {(() => {
+                    const nums = (l.telefones && l.telefones.length ? l.telefones : (l.telefone ? [l.telefone] : []));
+                    const uniq = Array.from(new Set(nums.map((n) => n.trim()).filter(Boolean)));
+                    return uniq.map((num, i) => (
+                      <span key={`${num}-${i}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{num}</span>
+                    ));
+                  })()}
                   {l.cidade && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{l.cidade}</span>}
+                  {l.orcamento != null && <span>{l.orcamento.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>}
                   <span>Follow-up: {fmtWhen(l.next_follow_up_at)}</span>
                 </div>
               </div>
