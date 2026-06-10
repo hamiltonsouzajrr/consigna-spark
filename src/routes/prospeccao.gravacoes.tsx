@@ -217,6 +217,12 @@ function Page() {
               </div>
             </div>
 
+            {regenState[it.id] && (
+              <RegenStatus phase={regenState[it.id].phase} message={regenState[it.id].message} />
+            )}
+
+
+
             {(it.transcricao || it.resumo) && (
               <div className="mt-3 border-t pt-3">
                 <Button size="sm" variant="ghost" className="mb-1 h-7 px-2 text-xs" onClick={() => setOpenTranscript((p) => (p === it.id ? null : it.id))}>
