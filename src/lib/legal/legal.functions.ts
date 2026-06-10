@@ -95,6 +95,40 @@ export const adminDeleteApproval = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Generates a short, hard-to-guess token (12 chars) matching the client link format.
+function makeShortToken(): string {
+  const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => alphabet[b % alphabet.length]).join("");
+}
+
+// Admin-only: regenerate the short token (link) for an approval. The old link
+// stops working and a fresh, unique short token is returned for sharing.
+export const adminRegenerateToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ approvalId: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }): Promise<{ token: string }> => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Retry a few times in the unlikely event of a token collision (unique token).
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const token = makeShortToken();
+      const { data: existing } = await supabaseAdmin
+        .from("legal_approvals").select("id").eq("token", token).maybeSingle();
+      if (existing) continue;
+      const { error } = await supabaseAdmin
+        .from("legal_approvals").update({ token }).eq("id", data.approvalId);
+      if (error) throw new Error(error.message);
+      return { token };
+    }
+    throw new Error("Não foi possível gerar um novo token. Tente novamente.");
+  });
+
+
+
 
 export const getApprovalByToken = createServerFn({ method: "GET" })
   .inputValidator((d) => z.object({ token: z.string().min(8).max(120) }).parse(d))
