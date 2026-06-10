@@ -54,6 +54,7 @@ import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
 import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
 import { Route as RhAcessosRouteImport } from './routes/rh.acessos'
 import { Route as ProspeccaoRecentesRouteImport } from './routes/prospeccao.recentes'
+import { Route as ProspeccaoGravacoesRouteImport } from './routes/prospeccao.gravacoes'
 import { Route as ProspeccaoFollowupsRouteImport } from './routes/prospeccao.followups'
 import { Route as ProspeccaoAdminRouteImport } from './routes/prospeccao.admin'
 import { Route as ProspeccaoLeadIdRouteImport } from './routes/prospeccao.$leadId'
@@ -291,6 +292,11 @@ const ProspeccaoRecentesRoute = ProspeccaoRecentesRouteImport.update({
   path: '/prospeccao/recentes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProspeccaoGravacoesRoute = ProspeccaoGravacoesRouteImport.update({
+  id: '/prospeccao/gravacoes',
+  path: '/prospeccao/gravacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProspeccaoFollowupsRoute = ProspeccaoFollowupsRouteImport.update({
   id: '/prospeccao/followups',
   path: '/prospeccao/followups',
@@ -373,6 +379,7 @@ export interface FileRoutesByFullPath {
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof ProspeccaoAdminRoute
   '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
+  '/prospeccao/gravacoes': typeof ProspeccaoGravacoesRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -430,6 +437,7 @@ export interface FileRoutesByTo {
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof ProspeccaoAdminRoute
   '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
+  '/prospeccao/gravacoes': typeof ProspeccaoGravacoesRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -488,6 +496,7 @@ export interface FileRoutesById {
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof ProspeccaoAdminRoute
   '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
+  '/prospeccao/gravacoes': typeof ProspeccaoGravacoesRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -548,6 +557,7 @@ export interface FileRouteTypes {
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
     | '/prospeccao/followups'
+    | '/prospeccao/gravacoes'
     | '/prospeccao/recentes'
     | '/rh/acessos'
     | '/rh/avaliacoes'
@@ -605,6 +615,7 @@ export interface FileRouteTypes {
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
     | '/prospeccao/followups'
+    | '/prospeccao/gravacoes'
     | '/prospeccao/recentes'
     | '/rh/acessos'
     | '/rh/avaliacoes'
@@ -662,6 +673,7 @@ export interface FileRouteTypes {
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
     | '/prospeccao/followups'
+    | '/prospeccao/gravacoes'
     | '/prospeccao/recentes'
     | '/rh/acessos'
     | '/rh/avaliacoes'
@@ -721,6 +733,7 @@ export interface RootRouteChildren {
   ProspeccaoLeadIdRoute: typeof ProspeccaoLeadIdRoute
   ProspeccaoAdminRoute: typeof ProspeccaoAdminRoute
   ProspeccaoFollowupsRoute: typeof ProspeccaoFollowupsRoute
+  ProspeccaoGravacoesRoute: typeof ProspeccaoGravacoesRoute
   ProspeccaoRecentesRoute: typeof ProspeccaoRecentesRoute
   ProspeccaoIndexRoute: typeof ProspeccaoIndexRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
@@ -1043,6 +1056,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProspeccaoRecentesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/prospeccao/gravacoes': {
+      id: '/prospeccao/gravacoes'
+      path: '/prospeccao/gravacoes'
+      fullPath: '/prospeccao/gravacoes'
+      preLoaderRoute: typeof ProspeccaoGravacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/prospeccao/followups': {
       id: '/prospeccao/followups'
       path: '/prospeccao/followups'
@@ -1234,6 +1254,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProspeccaoLeadIdRoute: ProspeccaoLeadIdRoute,
   ProspeccaoAdminRoute: ProspeccaoAdminRoute,
   ProspeccaoFollowupsRoute: ProspeccaoFollowupsRoute,
+  ProspeccaoGravacoesRoute: ProspeccaoGravacoesRoute,
   ProspeccaoRecentesRoute: ProspeccaoRecentesRoute,
   ProspeccaoIndexRoute: ProspeccaoIndexRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,

@@ -123,9 +123,14 @@ function Page() {
           <p className="text-sm text-muted-foreground">Sua fila de leads priorizada por score e prazo de atendimento.</p>
         </div>
         {isAdmin && (
-          <Button asChild variant="outline">
-            <Link to="/prospeccao/admin"><Settings2 className="mr-2 h-4 w-4" /> Painel admin</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link to="/prospeccao/gravacoes"><Video className="mr-2 h-4 w-4" /> Gravações</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/prospeccao/admin"><Settings2 className="mr-2 h-4 w-4" /> Painel admin</Link>
+            </Button>
+          </div>
         )}
       </div>
 
