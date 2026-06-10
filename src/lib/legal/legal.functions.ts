@@ -14,6 +14,88 @@ async function assertAdmin(supabase: any, userId: string) {
 
 export type GuestApproval = { ok: boolean; nome_completo: string | null; consultant_email: string | null; status: string | null };
 
+export type AdminApproval = {
+  id: string; lead_id: string | null; token: string; nome_completo: string;
+  cpf: string | null; banco: string | null; tipo_operacao: string | null;
+  valor_solicitado: number | null; valor_parcela: number | null;
+  status: string; cliente_aceite: boolean | null;
+  video_path: string | null; audio_path: string | null;
+  duracao_segundos: number | null; file_hash: string | null;
+  transcricao: string | null; resumo: string | null;
+  consultant_email: string | null; gravado_em: string | null; created_at: string;
+  video_ok: boolean; audio_ok: boolean;
+};
+
+// Admin-only: list every approval session (video calls) with a storage health check.
+export const adminListApprovals = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AdminApproval[]> => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("legal_approvals")
+      .select("id,lead_id,token,nome_completo,cpf,banco,tipo_operacao,valor_solicitado,valor_parcela,status,cliente_aceite,video_path,audio_path,duracao_segundos,file_hash,transcricao,resumo,consultant_email,gravado_em,created_at")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    const rows = data ?? [];
+
+    // Verify each stored file actually exists in the bucket.
+    const checkExists = async (path: string | null): Promise<boolean> => {
+      if (!path) return false;
+      const slash = path.lastIndexOf("/");
+      const dir = slash >= 0 ? path.slice(0, slash) : "";
+      const name = slash >= 0 ? path.slice(slash + 1) : path;
+      const { data: list } = await supabaseAdmin.storage.from("legal-recordings").list(dir, { search: name, limit: 100 });
+      return !!list?.some((f) => f.name === name);
+    };
+
+    return Promise.all(
+      rows.map(async (r: any) => ({
+        ...r,
+        video_ok: await checkExists(r.video_path),
+        audio_ok: await checkExists(r.audio_path),
+      })),
+    ) as Promise<AdminApproval[]>;
+  });
+
+// Admin-only: signed URL to play/download a stored recording (video or audio).
+export const adminApprovalMediaUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ approvalId: z.string().uuid(), kind: z.enum(["video", "audio"]) }).parse(d))
+  .handler(async ({ context, data }): Promise<{ url: string }> => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
+      .from("legal_approvals").select("video_path,audio_path").eq("id", data.approvalId).maybeSingle();
+    if (error || !row) throw new Error("Gravação não encontrada.");
+    const path = data.kind === "video" ? row.video_path : row.audio_path;
+    if (!path) throw new Error("Arquivo não disponível para esta gravação.");
+    const { data: signed, error: sErr } = await supabaseAdmin.storage
+      .from("legal-recordings").createSignedUrl(path, 60 * 60);
+    if (sErr || !signed?.signedUrl) throw new Error(sErr?.message ?? "Não foi possível gerar o link do arquivo.");
+    return { url: signed.signedUrl };
+  });
+
+// Admin-only: delete an approval session and its stored files.
+export const adminDeleteApproval = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ approvalId: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("legal_approvals").select("video_path,audio_path").eq("id", data.approvalId).maybeSingle();
+    const paths = [row?.video_path, row?.audio_path].filter(Boolean) as string[];
+    if (paths.length) await supabaseAdmin.storage.from("legal-recordings").remove(paths);
+    const { error } = await supabaseAdmin.from("legal_approvals").delete().eq("id", data.approvalId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 export const getApprovalByToken = createServerFn({ method: "GET" })
   .inputValidator((d) => z.object({ token: z.string().min(8).max(120) }).parse(d))
   .handler(async ({ data }): Promise<GuestApproval> => {
