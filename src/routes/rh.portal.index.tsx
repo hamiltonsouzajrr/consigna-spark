@@ -222,8 +222,6 @@ function PortalIndex() {
             <h2 className="text-lg font-bold">{me.nome}</h2>
             <p className="text-sm text-muted-foreground">{me.cargo} · {me.departamento}</p>
             <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
-              <Badge variant="outline">Matrícula {me.matricula}</Badge>
-              <Badge variant="outline">Admissão {formatDate(me.admissao)}</Badge>
               <Badge variant="secondary" className="border-0 bg-emerald-100 text-emerald-700">{me.status}</Badge>
             </div>
             <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
