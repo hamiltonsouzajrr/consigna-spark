@@ -242,3 +242,21 @@ function Page() {
     </AppShell>
   );
 }
+
+function RegenStatus({ phase, message }: { phase: "pendente" | "processando" | "validando" | "ok" | "erro"; message: string }) {
+  const cfg = {
+    pendente: { label: "Pendente", cls: "border-muted-foreground/30 bg-muted/40 text-muted-foreground", icon: <Clock className="h-4 w-4" /> },
+    processando: { label: "Processando", cls: "border-sky-500/30 bg-sky-500/10 text-sky-700", icon: <Loader2 className="h-4 w-4 animate-spin" /> },
+    validando: { label: "Validando", cls: "border-amber-500/30 bg-amber-500/10 text-amber-700", icon: <Loader2 className="h-4 w-4 animate-spin" /> },
+    ok: { label: "Concluído", cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700", icon: <CheckCircle2 className="h-4 w-4" /> },
+    erro: { label: "Erro", cls: "border-destructive/30 bg-destructive/10 text-destructive", icon: <XCircle className="h-4 w-4" /> },
+  }[phase];
+  return (
+    <div className={`mt-3 flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${cfg.cls}`}>
+      {cfg.icon}
+      <span className="font-medium">{cfg.label}:</span>
+      <span>{message}</span>
+    </div>
+  );
+}
+
