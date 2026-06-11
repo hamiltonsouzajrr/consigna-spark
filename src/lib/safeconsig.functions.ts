@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 
@@ -331,6 +330,7 @@ async function attemptConsulta(cpf: string, ua: string, userId: string): Promise
   if (status === "sem_email") {
     try {
       console.log("[SafeConsig] upsert lead sem_email", { cpf });
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { error: upsertError } = await supabaseAdmin
         .from("safeconsig_leads")
         .upsert(

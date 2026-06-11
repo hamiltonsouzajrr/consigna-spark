@@ -29,7 +29,11 @@ export const getOnboarding = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<OnboardingResult> => {
     const { supabase, userId } = context;
     const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-    const { data, error } = await supabase
+    // Onboarding records are intentionally visible to all staff (portal feed),
+    // but direct table read access is locked to admins, so we read through the
+    // service-role client inside this authenticated server function.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("rh_onboarding")
       .select("id, colaborador, tarefas")
       .order("created_at", { ascending: false });
