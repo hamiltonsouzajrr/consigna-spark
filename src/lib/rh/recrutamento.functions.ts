@@ -43,16 +43,27 @@ export const getRecrutamento = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<RecrutamentoResult> => {
     const { supabase, userId } = context;
     const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-    const [vagasRes, candRes] = await Promise.all([
-      supabase.from("rh_vagas").select("id, titulo, departamento, status").order("created_at", { ascending: false }),
-      supabase.from("rh_candidatos").select("id, nome, vaga_id, etapa, email, telefone, fit, notas").order("created_at", { ascending: false }),
-    ]);
+    const vagasRes = await supabase
+      .from("rh_vagas")
+      .select("id, titulo, departamento, status")
+      .order("created_at", { ascending: false });
     if (vagasRes.error) throw new Error(vagasRes.error.message);
-    if (candRes.error) throw new Error(candRes.error.message);
+
+    // Candidate PII (e-mail/telefone) is restricted to admins only.
+    let candidatos: Candidato[] = [];
+    if (isAdmin) {
+      const candRes = await supabase
+        .from("rh_candidatos")
+        .select("id, nome, vaga_id, etapa, email, telefone, fit, notas")
+        .order("created_at", { ascending: false });
+      if (candRes.error) throw new Error(candRes.error.message);
+      candidatos = (candRes.data ?? []) as Candidato[];
+    }
+
     return {
       isAdmin: !!isAdmin,
       vagas: (vagasRes.data ?? []) as Vaga[],
-      candidatos: (candRes.data ?? []) as Candidato[],
+      candidatos,
     };
   });
 
