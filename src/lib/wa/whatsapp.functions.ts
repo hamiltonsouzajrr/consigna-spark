@@ -11,6 +11,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const GRAPH_VERSION = "v21.0";
 
+async function assertWaAdmin(supabase: any, userId: string) {
+  const { data, error } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Acesso restrito a administradores.");
+}
+
 async function resolveSenderName(supabase: any, userId: string, claims: any): Promise<string> {
   const { data } = await supabase
     .from("rh_employees")
@@ -48,6 +54,7 @@ export const addWaAccount = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    await assertWaAdmin(supabase, context.userId);
     const { data: inserted, error } = await supabase
       .from("wa_accounts")
       .insert({
@@ -70,6 +77,7 @@ export const verifyWaAccount = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    await assertWaAdmin(supabase, context.userId);
     const { data: account, error } = await supabase
       .from("wa_accounts")
       .select("id, phone_number_id, business_account_id, access_token")
@@ -142,7 +150,8 @@ export const verifyWaAccount = createServerFn({ method: "POST" })
 // valid regardless of whether the user is on the preview or production build.
 export const getWaWebhookConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    await assertWaAdmin(context.supabase, context.userId);
     const { getRequestHost } = await import("@tanstack/react-start/server");
     let host: string | null = null;
     try {
@@ -166,6 +175,7 @@ export const getWaWebhookStatus = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    await assertWaAdmin(supabase, context.userId);
     const { data: account, error } = await supabase
       .from("wa_accounts")
       .select("id, phone_number_id, business_account_id, access_token")
@@ -233,6 +243,7 @@ export const updateWaAccount = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    await assertWaAdmin(supabase, context.userId);
     const patch: {
       name?: string;
       display_phone?: string;
@@ -253,6 +264,7 @@ export const deleteWaAccount = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    await assertWaAdmin(supabase, context.userId);
     const { error } = await supabase.from("wa_accounts").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

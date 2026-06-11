@@ -1,19 +1,20 @@
 // Produção mensal das consultoras — alimenta o ranking e o painel individual.
-// Usa o cliente Supabase do browser (RLS aplica): leitura para qualquer usuário
-// autenticado; escrita apenas para admins (políticas com has_role).
+// Leitura disponível a qualquer usuário autenticado (recurso interno da
+// empresa) e escrita apenas para admins. Todo o acesso ao banco passa por
+// server functions (`producao.functions.ts`) que usam o cliente de serviço
+// dentro de handlers autenticados, mantendo o acesso direto à tabela restrito.
 import { queryOptions } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  fetchMesesFn,
+  fetchProducaoMesFn,
+  fetchProducaoConsultoraFn,
+  upsertProducaoFn,
+  upsertProducaoBatchFn,
+  deleteProducaoFn,
+  type ProducaoRow,
+} from "./producao.functions";
 
-export type Producao = {
-  id: string;
-  consultora: string;
-  departamento: string | null;
-  mes: string; // formato "YYYY-MM"
-  valor: number;
-  contratos: number;
-  created_at: string;
-  updated_at: string;
-};
+export type Producao = ProducaoRow;
 
 export type ProducaoInput = {
   consultora: string;
@@ -39,80 +40,50 @@ export function formatMes(mes: string): string {
 
 /** Lista os meses disponíveis (distintos) com produção registrada. */
 export async function fetchMeses(): Promise<string[]> {
-  const { data, error } = await supabase
-    .from("rh_producao")
-    .select("mes")
-    .order("mes", { ascending: false });
-  if (error) throw error;
-  const set = new Set<string>((data ?? []).map((r) => r.mes as string));
-  const atual = mesAtual();
-  set.add(atual);
-  return Array.from(set).sort().reverse();
+  return fetchMesesFn();
 }
 
 /** Produção de um mês específico, ordenada por valor (ranking). */
 export async function fetchProducaoMes(mes: string): Promise<Producao[]> {
-  const { data, error } = await supabase
-    .from("rh_producao")
-    .select("*")
-    .eq("mes", mes)
-    .order("valor", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Producao[];
+  return fetchProducaoMesFn({ data: { mes } });
 }
 
 /** Produção de uma consultora específica (todos os meses). */
 export async function fetchProducaoConsultora(consultora: string): Promise<Producao[]> {
-  const { data, error } = await supabase
-    .from("rh_producao")
-    .select("*")
-    .eq("consultora", consultora)
-    .order("mes", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Producao[];
+  return fetchProducaoConsultoraFn({ data: { consultora } });
 }
 
 /** Insere ou atualiza a produção de uma consultora no mês (admin). */
-export async function upsertProducao(input: ProducaoInput, userId?: string): Promise<void> {
-  const { error } = await supabase
-    .from("rh_producao")
-    .upsert(
-      {
-        consultora: input.consultora,
-        departamento: input.departamento ?? null,
-        mes: input.mes,
-        valor: input.valor,
-        contratos: input.contratos,
-        created_by: userId ?? null,
-      },
-      { onConflict: "consultora,mes" },
-    );
-  if (error) throw error;
-}
-
-/** Insere/atualiza vários lançamentos de uma vez (importação de planilha). */
-export async function upsertProducaoBatch(
-  inputs: ProducaoInput[],
-  userId?: string,
-): Promise<void> {
-  if (!inputs.length) return;
-  const { error } = await supabase.from("rh_producao").upsert(
-    inputs.map((input) => ({
+export async function upsertProducao(input: ProducaoInput, _userId?: string): Promise<void> {
+  await upsertProducaoFn({
+    data: {
       consultora: input.consultora,
       departamento: input.departamento ?? null,
       mes: input.mes,
       valor: input.valor,
       contratos: input.contratos,
-      created_by: userId ?? null,
-    })),
-    { onConflict: "consultora,mes" },
-  );
-  if (error) throw error;
+    },
+  });
+}
+
+/** Insere/atualiza vários lançamentos de uma vez (importação de planilha). */
+export async function upsertProducaoBatch(inputs: ProducaoInput[], _userId?: string): Promise<void> {
+  if (!inputs.length) return;
+  await upsertProducaoBatchFn({
+    data: {
+      items: inputs.map((input) => ({
+        consultora: input.consultora,
+        departamento: input.departamento ?? null,
+        mes: input.mes,
+        valor: input.valor,
+        contratos: input.contratos,
+      })),
+    },
+  });
 }
 
 export async function deleteProducao(id: string): Promise<void> {
-  const { error } = await supabase.from("rh_producao").delete().eq("id", id);
-  if (error) throw error;
+  await deleteProducaoFn({ data: { id } });
 }
 
 export const producaoMesQueryOptions = (mes: string) =>

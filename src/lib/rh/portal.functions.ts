@@ -6,6 +6,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { KpiDetail, KpiKey, PeriodKey } from "./portal";
 
 const MESES = [
@@ -30,22 +31,60 @@ const inputSchema = z.object({
 });
 
 export const fetchKpiDetailFromDb = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => inputSchema.parse(data))
-  .handler(async ({ data }): Promise<KpiDetail> => {
+  .handler(async ({ data, context }): Promise<KpiDetail> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { kpi, period } = data;
     const months = PERIOD_MONTHS[period];
 
-    // Resolve the target employee (defaults to the first one — "me").
+    // Authorization: admins can read any employee; everyone else only their own
+    // linked record. This guards salary/vacation/benefit/KPI data read via the
+    // service-role client below (which bypasses RLS).
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+
+    const { data: ownEmp } = await supabaseAdmin
+      .from("rh_employees")
+      .select("id, salary")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+
+    // Resolve the target employee record.
+    type EmpRow = { id: string; salary: number | null };
     let employeeId = data.employeeId;
     let salary = 0;
     {
-      const { data: emp, error } = employeeId
-        ? await supabaseAdmin.from("rh_employees").select("id, salary").eq("id", employeeId).maybeSingle()
-        : await supabaseAdmin.from("rh_employees").select("id, salary").order("created_at").limit(1).maybeSingle();
-      if (error) throw new Error(error.message);
+      let emp: EmpRow | null = null;
+      if (!isAdmin) {
+        // Non-admins may only access their own record.
+        if (data.employeeId && data.employeeId !== ownEmp?.id) {
+          throw new Error("Acesso negado.");
+        }
+        emp = (ownEmp as EmpRow | null) ?? null;
+      } else if (data.employeeId) {
+        const res = await supabaseAdmin
+          .from("rh_employees")
+          .select("id, salary")
+          .eq("id", data.employeeId)
+          .maybeSingle();
+        if (res.error) throw new Error(res.error.message);
+        emp = (res.data as EmpRow | null) ?? null;
+      } else if (ownEmp) {
+        emp = ownEmp as EmpRow;
+      } else {
+        const res = await supabaseAdmin
+          .from("rh_employees")
+          .select("id, salary")
+          .order("created_at")
+          .limit(1)
+          .maybeSingle();
+        emp = (res.data as EmpRow | null) ?? null;
+      }
       if (!emp) throw new Error("Colaborador não encontrado.");
-      employeeId = emp.id as string;
+      employeeId = emp.id;
       salary = Number(emp.salary) || 0;
     }
 
