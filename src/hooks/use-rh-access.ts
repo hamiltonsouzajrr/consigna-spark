@@ -6,7 +6,7 @@ import { getMyRhAccess } from "@/lib/rh/access.functions";
 
 // Tabs every authenticated user can always reach (no admin grant required).
 // Configurações/Acessos are admin-only and handled separately.
-const ALWAYS_ALLOWED = new Set<string>(["/rh", "/rh/dashboard", "/rh/portal"]);
+const ALWAYS_ALLOWED = new Set<string>(["/rh", "/rh/dashboard"]);
 
 export function useRhAccess() {
   const { user, loading: authLoading } = useAuth();
