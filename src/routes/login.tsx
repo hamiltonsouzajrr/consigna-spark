@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wallet } from "lucide-react";
 import { toast } from "sonner";
+import logo from "@/assets/grupo-positive-logo.png.asset.json";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
