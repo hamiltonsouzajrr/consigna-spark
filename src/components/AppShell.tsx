@@ -145,9 +145,17 @@ function useClock() {
 export function AppShell({ children }: { children: ReactNode }) {
   const { signOut, user } = useAuth();
   const now = useClock();
-  const { isAdmin } = useRhAccess();
+  const { isAdmin, hasAnyAccess } = useRhAccess();
   const sections = navSections
-    .map((s) => ({ ...s, items: s.items.filter((n) => !n.adminOnly || isAdmin) }))
+    .map((s) => ({
+      ...s,
+      items: s.items.filter((n) => {
+        if (n.adminOnly && !isAdmin) return false;
+        // RH area only for admins or users the admin directed (granted access).
+        if (n.to === "/rh" && !hasAnyAccess) return false;
+        return true;
+      }),
+    }))
     .filter((s) => s.items.length > 0);
   const nav2 = useNavigate();
   const loc = useLocation();
