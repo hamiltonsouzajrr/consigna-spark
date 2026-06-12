@@ -156,7 +156,6 @@ function ChatBody({ onClose, onMinimize }: { onClose: () => void; onMinimize: ()
 export function PositivaCoachWidget() {
   const { user, loading } = useAuth();
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   if (loading || !user) return null;
 
@@ -169,14 +168,13 @@ export function PositivaCoachWidget() {
             "animate-in fade-in slide-in-from-bottom-4 duration-200",
           )}
         >
-          {/* keep mounted state to preserve conversation while minimized */}
-          <ChatBody onClose={() => { setOpen(false); setMounted(false); }} onMinimize={() => setOpen(false)} />
+          <ChatBody onClose={() => setOpen(false)} onMinimize={() => setOpen(false)} />
         </div>
       )}
 
       {!open && (
         <button
-          onClick={() => { setOpen(true); setMounted(true); }}
+          onClick={() => setOpen(true)}
           aria-label="Abrir POSITIVA IA"
           className="group flex items-center gap-2 rounded-full bg-primary py-3 pl-3 pr-4 text-primary-foreground shadow-2xl transition-transform hover:scale-105"
         >
@@ -187,8 +185,6 @@ export function PositivaCoachWidget() {
           <span className="text-sm font-bold">POSITIVA IA</span>
         </button>
       )}
-      {/* avoid unused warning while preserving intent */}
-      <span className="hidden">{mounted ? "" : ""}</span>
     </div>
   );
 }
