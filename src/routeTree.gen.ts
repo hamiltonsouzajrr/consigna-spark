@@ -62,6 +62,7 @@ import { Route as ProducaoMeuDiaRouteImport } from './routes/producao.meu-dia'
 import { Route as ProducaoMetasRouteImport } from './routes/producao.metas'
 import { Route as PosVendaAvaliacoesRouteImport } from './routes/pos-venda.avaliacoes'
 import { Route as AprovacaoTokenRouteImport } from './routes/aprovacao.$token'
+import { Route as ApiPositivaCoachRouteImport } from './routes/api/positiva-coach'
 import { Route as RhPortalIndexRouteImport } from './routes/rh.portal.index'
 import { Route as RhPortalKpiRouteImport } from './routes/rh.portal.$kpi'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
@@ -332,6 +333,11 @@ const AprovacaoTokenRoute = AprovacaoTokenRouteImport.update({
   path: '/aprovacao/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPositivaCoachRoute = ApiPositivaCoachRouteImport.update({
+  id: '/api/positiva-coach',
+  path: '/api/positiva-coach',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RhPortalIndexRoute = RhPortalIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -372,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/api/positiva-coach': typeof ApiPositivaCoachRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/pos-venda/avaliacoes': typeof PosVendaAvaliacoesRoute
   '/producao/metas': typeof ProducaoMetasRoute
@@ -430,6 +437,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/api/positiva-coach': typeof ApiPositivaCoachRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/pos-venda/avaliacoes': typeof PosVendaAvaliacoesRoute
   '/producao/metas': typeof ProducaoMetasRoute
@@ -489,6 +497,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/api/positiva-coach': typeof ApiPositivaCoachRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/pos-venda/avaliacoes': typeof PosVendaAvaliacoesRoute
   '/producao/metas': typeof ProducaoMetasRoute
@@ -550,6 +559,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/api/positiva-coach'
     | '/aprovacao/$token'
     | '/pos-venda/avaliacoes'
     | '/producao/metas'
@@ -608,6 +618,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/api/positiva-coach'
     | '/aprovacao/$token'
     | '/pos-venda/avaliacoes'
     | '/producao/metas'
@@ -666,6 +677,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/api/positiva-coach'
     | '/aprovacao/$token'
     | '/pos-venda/avaliacoes'
     | '/producao/metas'
@@ -726,6 +738,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadRoute: typeof UploadRoute
   WhatsappRoute: typeof WhatsappRoute
+  ApiPositivaCoachRoute: typeof ApiPositivaCoachRoute
   AprovacaoTokenRoute: typeof AprovacaoTokenRoute
   PosVendaAvaliacoesRoute: typeof PosVendaAvaliacoesRoute
   ProducaoMetasRoute: typeof ProducaoMetasRoute
@@ -1112,6 +1125,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AprovacaoTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/positiva-coach': {
+      id: '/api/positiva-coach'
+      path: '/api/positiva-coach'
+      fullPath: '/api/positiva-coach'
+      preLoaderRoute: typeof ApiPositivaCoachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rh/portal/': {
       id: '/rh/portal/'
       path: '/'
@@ -1247,6 +1267,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadRoute: UploadRoute,
   WhatsappRoute: WhatsappRoute,
+  ApiPositivaCoachRoute: ApiPositivaCoachRoute,
   AprovacaoTokenRoute: AprovacaoTokenRoute,
   PosVendaAvaliacoesRoute: PosVendaAvaliacoesRoute,
   ProducaoMetasRoute: ProducaoMetasRoute,
