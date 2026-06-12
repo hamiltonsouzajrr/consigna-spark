@@ -201,6 +201,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen app-bg print:block print:min-h-0 print:bg-none">
       <HorariosOuroDialog />
       <HorariosOuroReminder />
+      <PositivaCoachWidget />
       <aside className="group/side hidden w-16 shrink-0 overflow-hidden sidebar-bg text-sidebar-foreground transition-[width] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:w-64 md:flex md:flex-col print:!hidden">
         <div className="flex h-16 shrink-0 items-center gap-3 px-2">
           <img src={logo.url} alt="Grupo Positive" className="h-12 w-12 shrink-0 rounded-lg bg-white object-contain p-1" />
