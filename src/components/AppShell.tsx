@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
 import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
+import { PositivaCoachWidget } from "@/components/PositivaCoachWidget";
 import type { ReactNode } from "react";
 
 type BadgeKind = "leads" | "followups";
