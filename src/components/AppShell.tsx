@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, Flame, CalendarClock, Home, Trophy, Star, MessageSquare, Clock } from "lucide-react";
+import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, Flame, CalendarClock, Home, Trophy, Star, MessageSquare, Clock, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useRhAccess } from "@/hooks/use-rh-access";
@@ -64,6 +64,7 @@ const navSections: NavSection[] = [
   {
     section: "Painel",
     items: [
+      { to: "/positiva-ia", label: "POSITIVA IA", full: "POSITIVA IA - GERENTE COMERCIAL VIRTUAL", icon: Sparkles, exact: true },
       { to: "/rh", label: "RH", icon: Users },
       { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
     ],

@@ -17,6 +17,7 @@ import { Route as ServidoresSemAcessoRouteImport } from './routes/servidores-sem
 import { Route as SafeConsigRouteImport } from './routes/safe-consig'
 import { Route as RhRouteImport } from './routes/rh'
 import { Route as QrcodesRouteImport } from './routes/qrcodes'
+import { Route as PositivaIaRouteImport } from './routes/positiva-ia'
 import { Route as PesquisasRouteImport } from './routes/pesquisas'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LimpezaRouteImport } from './routes/limpeza'
@@ -60,8 +61,10 @@ import { Route as ProspeccaoAdminRouteImport } from './routes/prospeccao.admin'
 import { Route as ProspeccaoLeadIdRouteImport } from './routes/prospeccao.$leadId'
 import { Route as ProducaoMeuDiaRouteImport } from './routes/producao.meu-dia'
 import { Route as ProducaoMetasRouteImport } from './routes/producao.metas'
+import { Route as PositivaIaAdminRouteImport } from './routes/positiva-ia.admin'
 import { Route as PosVendaAvaliacoesRouteImport } from './routes/pos-venda.avaliacoes'
 import { Route as AprovacaoTokenRouteImport } from './routes/aprovacao.$token'
+import { Route as ApiPositivaCoachRouteImport } from './routes/api/positiva-coach'
 import { Route as RhPortalIndexRouteImport } from './routes/rh.portal.index'
 import { Route as RhPortalKpiRouteImport } from './routes/rh.portal.$kpi'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
@@ -105,6 +108,11 @@ const RhRoute = RhRouteImport.update({
 const QrcodesRoute = QrcodesRouteImport.update({
   id: '/qrcodes',
   path: '/qrcodes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PositivaIaRoute = PositivaIaRouteImport.update({
+  id: '/positiva-ia',
+  path: '/positiva-ia',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PesquisasRoute = PesquisasRouteImport.update({
@@ -322,6 +330,11 @@ const ProducaoMetasRoute = ProducaoMetasRouteImport.update({
   path: '/producao/metas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PositivaIaAdminRoute = PositivaIaAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => PositivaIaRoute,
+} as any)
 const PosVendaAvaliacoesRoute = PosVendaAvaliacoesRouteImport.update({
   id: '/pos-venda/avaliacoes',
   path: '/pos-venda/avaliacoes',
@@ -330,6 +343,11 @@ const PosVendaAvaliacoesRoute = PosVendaAvaliacoesRouteImport.update({
 const AprovacaoTokenRoute = AprovacaoTokenRouteImport.update({
   id: '/aprovacao/$token',
   path: '/aprovacao/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPositivaCoachRoute = ApiPositivaCoachRouteImport.update({
+  id: '/api/positiva-coach',
+  path: '/api/positiva-coach',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RhPortalIndexRoute = RhPortalIndexRouteImport.update({
@@ -364,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/limpeza': typeof LimpezaRoute
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
+  '/positiva-ia': typeof PositivaIaRouteWithChildren
   '/qrcodes': typeof QrcodesRoute
   '/rh': typeof RhRouteWithChildren
   '/safe-consig': typeof SafeConsigRoute
@@ -372,8 +391,10 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/api/positiva-coach': typeof ApiPositivaCoachRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/pos-venda/avaliacoes': typeof PosVendaAvaliacoesRoute
+  '/positiva-ia/admin': typeof PositivaIaAdminRoute
   '/producao/metas': typeof ProducaoMetasRoute
   '/producao/meu-dia': typeof ProducaoMeuDiaRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
@@ -423,6 +444,7 @@ export interface FileRoutesByTo {
   '/limpeza': typeof LimpezaRoute
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
+  '/positiva-ia': typeof PositivaIaRouteWithChildren
   '/qrcodes': typeof QrcodesRoute
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
@@ -430,8 +452,10 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/api/positiva-coach': typeof ApiPositivaCoachRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/pos-venda/avaliacoes': typeof PosVendaAvaliacoesRoute
+  '/positiva-ia/admin': typeof PositivaIaAdminRoute
   '/producao/metas': typeof ProducaoMetasRoute
   '/producao/meu-dia': typeof ProducaoMeuDiaRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
@@ -481,6 +505,7 @@ export interface FileRoutesById {
   '/limpeza': typeof LimpezaRoute
   '/login': typeof LoginRoute
   '/pesquisas': typeof PesquisasRoute
+  '/positiva-ia': typeof PositivaIaRouteWithChildren
   '/qrcodes': typeof QrcodesRoute
   '/rh': typeof RhRouteWithChildren
   '/safe-consig': typeof SafeConsigRoute
@@ -489,8 +514,10 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/whatsapp': typeof WhatsappRoute
+  '/api/positiva-coach': typeof ApiPositivaCoachRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/pos-venda/avaliacoes': typeof PosVendaAvaliacoesRoute
+  '/positiva-ia/admin': typeof PositivaIaAdminRoute
   '/producao/metas': typeof ProducaoMetasRoute
   '/producao/meu-dia': typeof ProducaoMeuDiaRoute
   '/prospeccao/$leadId': typeof ProspeccaoLeadIdRoute
@@ -542,6 +569,7 @@ export interface FileRouteTypes {
     | '/limpeza'
     | '/login'
     | '/pesquisas'
+    | '/positiva-ia'
     | '/qrcodes'
     | '/rh'
     | '/safe-consig'
@@ -550,8 +578,10 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/api/positiva-coach'
     | '/aprovacao/$token'
     | '/pos-venda/avaliacoes'
+    | '/positiva-ia/admin'
     | '/producao/metas'
     | '/producao/meu-dia'
     | '/prospeccao/$leadId'
@@ -601,6 +631,7 @@ export interface FileRouteTypes {
     | '/limpeza'
     | '/login'
     | '/pesquisas'
+    | '/positiva-ia'
     | '/qrcodes'
     | '/safe-consig'
     | '/servidores-sem-acesso'
@@ -608,8 +639,10 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/api/positiva-coach'
     | '/aprovacao/$token'
     | '/pos-venda/avaliacoes'
+    | '/positiva-ia/admin'
     | '/producao/metas'
     | '/producao/meu-dia'
     | '/prospeccao/$leadId'
@@ -658,6 +691,7 @@ export interface FileRouteTypes {
     | '/limpeza'
     | '/login'
     | '/pesquisas'
+    | '/positiva-ia'
     | '/qrcodes'
     | '/rh'
     | '/safe-consig'
@@ -666,8 +700,10 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upload'
     | '/whatsapp'
+    | '/api/positiva-coach'
     | '/aprovacao/$token'
     | '/pos-venda/avaliacoes'
+    | '/positiva-ia/admin'
     | '/producao/metas'
     | '/producao/meu-dia'
     | '/prospeccao/$leadId'
@@ -718,6 +754,7 @@ export interface RootRouteChildren {
   LimpezaRoute: typeof LimpezaRoute
   LoginRoute: typeof LoginRoute
   PesquisasRoute: typeof PesquisasRoute
+  PositivaIaRoute: typeof PositivaIaRouteWithChildren
   QrcodesRoute: typeof QrcodesRoute
   RhRoute: typeof RhRouteWithChildren
   SafeConsigRoute: typeof SafeConsigRoute
@@ -726,6 +763,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadRoute: typeof UploadRoute
   WhatsappRoute: typeof WhatsappRoute
+  ApiPositivaCoachRoute: typeof ApiPositivaCoachRoute
   AprovacaoTokenRoute: typeof AprovacaoTokenRoute
   PosVendaAvaliacoesRoute: typeof PosVendaAvaliacoesRoute
   ProducaoMetasRoute: typeof ProducaoMetasRoute
@@ -795,6 +833,13 @@ declare module '@tanstack/react-router' {
       path: '/qrcodes'
       fullPath: '/qrcodes'
       preLoaderRoute: typeof QrcodesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/positiva-ia': {
+      id: '/positiva-ia'
+      path: '/positiva-ia'
+      fullPath: '/positiva-ia'
+      preLoaderRoute: typeof PositivaIaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pesquisas': {
@@ -1098,6 +1143,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProducaoMetasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/positiva-ia/admin': {
+      id: '/positiva-ia/admin'
+      path: '/admin'
+      fullPath: '/positiva-ia/admin'
+      preLoaderRoute: typeof PositivaIaAdminRouteImport
+      parentRoute: typeof PositivaIaRoute
+    }
     '/pos-venda/avaliacoes': {
       id: '/pos-venda/avaliacoes'
       path: '/pos-venda/avaliacoes'
@@ -1110,6 +1162,13 @@ declare module '@tanstack/react-router' {
       path: '/aprovacao/$token'
       fullPath: '/aprovacao/$token'
       preLoaderRoute: typeof AprovacaoTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/positiva-coach': {
+      id: '/api/positiva-coach'
+      path: '/api/positiva-coach'
+      fullPath: '/api/positiva-coach'
+      preLoaderRoute: typeof ApiPositivaCoachRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rh/portal/': {
@@ -1142,6 +1201,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface PositivaIaRouteChildren {
+  PositivaIaAdminRoute: typeof PositivaIaAdminRoute
+}
+
+const PositivaIaRouteChildren: PositivaIaRouteChildren = {
+  PositivaIaAdminRoute: PositivaIaAdminRoute,
+}
+
+const PositivaIaRouteWithChildren = PositivaIaRoute._addFileChildren(
+  PositivaIaRouteChildren,
+)
 
 interface RhColaboradoresRouteChildren {
   RhColaboradoresIdRoute: typeof RhColaboradoresIdRoute
@@ -1239,6 +1310,7 @@ const rootRouteChildren: RootRouteChildren = {
   LimpezaRoute: LimpezaRoute,
   LoginRoute: LoginRoute,
   PesquisasRoute: PesquisasRoute,
+  PositivaIaRoute: PositivaIaRouteWithChildren,
   QrcodesRoute: QrcodesRoute,
   RhRoute: RhRouteWithChildren,
   SafeConsigRoute: SafeConsigRoute,
@@ -1247,6 +1319,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadRoute: UploadRoute,
   WhatsappRoute: WhatsappRoute,
+  ApiPositivaCoachRoute: ApiPositivaCoachRoute,
   AprovacaoTokenRoute: AprovacaoTokenRoute,
   PosVendaAvaliacoesRoute: PosVendaAvaliacoesRoute,
   ProducaoMetasRoute: ProducaoMetasRoute,

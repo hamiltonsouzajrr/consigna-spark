@@ -347,6 +347,219 @@ export type Database = {
         }
         Relationships: []
       }
+      positiva_alertas: {
+        Row: {
+          created_at: string
+          id: string
+          mensagem: string
+          meta: Json
+          resolvido: boolean
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mensagem: string
+          meta?: Json
+          resolvido?: boolean
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mensagem?: string
+          meta?: Json
+          resolvido?: boolean
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      positiva_atividades: {
+        Row: {
+          created_at: string
+          id: string
+          meta: Json
+          quantidade: number
+          ref_date: string
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meta?: Json
+          quantidade?: number
+          ref_date?: string
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meta?: Json
+          quantidade?: number
+          ref_date?: string
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      positiva_checkins: {
+        Row: {
+          created_at: string
+          energia: number | null
+          id: string
+          periodo: string
+          ref_date: string
+          respostas: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          energia?: number | null
+          id?: string
+          periodo: string
+          ref_date?: string
+          respostas?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          energia?: number | null
+          id?: string
+          periodo?: string
+          ref_date?: string
+          respostas?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      positiva_coach_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      positiva_humor: {
+        Row: {
+          created_at: string
+          estado: string
+          id: string
+          ref_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          estado: string
+          id?: string
+          ref_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          estado?: string
+          id?: string
+          ref_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      positiva_missoes: {
+        Row: {
+          alvo: number
+          chave: string
+          concluida: boolean
+          created_at: string
+          id: string
+          progresso: number
+          ref_date: string
+          titulo: string
+          updated_at: string
+          user_id: string
+          xp: number
+        }
+        Insert: {
+          alvo?: number
+          chave: string
+          concluida?: boolean
+          created_at?: string
+          id?: string
+          progresso?: number
+          ref_date?: string
+          titulo: string
+          updated_at?: string
+          user_id: string
+          xp?: number
+        }
+        Update: {
+          alvo?: number
+          chave?: string
+          concluida?: boolean
+          created_at?: string
+          id?: string
+          progresso?: number
+          ref_date?: string
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+          xp?: number
+        }
+        Relationships: []
+      }
+      positiva_score: {
+        Row: {
+          created_at: string
+          dimensoes: Json
+          hunter_score: number
+          id: string
+          ref_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dimensoes?: Json
+          hunter_score?: number
+          id?: string
+          ref_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dimensoes?: Json
+          hunter_score?: number
+          id?: string
+          ref_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       processar_logs: {
         Row: {
           consulta_id: string
