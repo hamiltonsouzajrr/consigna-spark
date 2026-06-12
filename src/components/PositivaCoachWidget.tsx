@@ -14,7 +14,7 @@ import {
   PromptInput, PromptInputTextarea, PromptInputFooter, PromptInputSubmit,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
-import logo from "@/assets/grupo-positive-logo.png.asset.json";
+
 import { loadCoachHistory, saveCoachMessage } from "@/lib/positiva/positiva.functions";
 import { Bot, Minus, X } from "lucide-react";
 
