@@ -3,7 +3,7 @@
 // ============================================================
 
 export type Periodo = "08h" | "11h" | "15h" | "17h";
-export type AtividadeTipo = "ligacao" | "prospeccao" | "proposta" | "followup" | "contrato" | "reativacao";
+export type AtividadeTipo = "ligacao" | "prospeccao" | "proposta" | "followup" | "contrato" | "reativacao" | "agendamento";
 export type HumorEstado = "motivada" | "normal" | "cansada" | "desanimada";
 
 export const ATIVIDADE_LABEL: Record<AtividadeTipo, string> = {
@@ -13,6 +13,7 @@ export const ATIVIDADE_LABEL: Record<AtividadeTipo, string> = {
   followup: "Follow-ups",
   contrato: "Contratos",
   reativacao: "Reativações",
+  agendamento: "Agendamentos",
 };
 
 export const HUMOR_LABEL: Record<HumorEstado, string> = {

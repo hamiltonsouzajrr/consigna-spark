@@ -29,7 +29,7 @@ export const saveCoachMessage = createServerFn({ method: "POST" })
   });
 
 // ----- Activities -----
-const TIPOS = ["ligacao", "prospeccao", "proposta", "followup", "contrato", "reativacao"] as const;
+const TIPOS = ["ligacao", "prospeccao", "proposta", "followup", "contrato", "reativacao", "agendamento"] as const;
 export const registrarAtividade = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { tipo: (typeof TIPOS)[number]; quantidade?: number }) =>
