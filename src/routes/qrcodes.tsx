@@ -4,7 +4,7 @@ import { QRCode } from "react-qr-code";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExternalLink, Star, MessageSquareHeart, Instagram } from "lucide-react";
+import { ExternalLink, Star, MessageSquareHeart, Camera } from "lucide-react";
 import instaQr from "@/assets/insta-qr.png.asset.json";
 
 export const Route = createFileRoute("/qrcodes")({
@@ -49,7 +49,7 @@ const itens: QrItem[] = [
     titulo: "Instagram",
     descricao: "Convide o cliente a seguir nosso perfil.",
     url: "https://www.instagram.com/grupo.positive?igsh=N295bGZ5amVocHo3&utm_source=qr",
-    icon: Instagram,
+    icon: Camera,
     cor: "#db2777",
     imagem: instaQr.url,
   },
