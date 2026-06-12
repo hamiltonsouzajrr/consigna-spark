@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
 import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
 import { PositivaCoachWidget } from "@/components/PositivaCoachWidget";
+import { PositivaCobrancaPopup } from "@/components/PositivaCobrancaPopup";
 import type { ReactNode } from "react";
 
 type BadgeKind = "leads" | "followups";
