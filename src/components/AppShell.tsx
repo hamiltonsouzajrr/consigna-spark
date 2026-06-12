@@ -64,6 +64,7 @@ const navSections: NavSection[] = [
   {
     section: "Painel",
     items: [
+      { to: "/positiva-ia", label: "POSITIVA IA", full: "POSITIVA IA - GERENTE COMERCIAL VIRTUAL", icon: Sparkles, exact: true },
       { to: "/rh", label: "RH", icon: Users },
       { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
     ],
