@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wallet } from "lucide-react";
 import { toast } from "sonner";
+import logo from "@/assets/grupo-positive-logo.png.asset.json";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -72,12 +72,14 @@ function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-accent p-4">
-      <Card className="w-full max-w-md p-8">
+    <main className="flex min-h-screen items-center justify-center app-bg p-4">
+      <Card className="w-full max-w-md p-8 shadow-[var(--shadow-glow)]">
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Wallet className="h-6 w-6" />
-          </div>
+          <img
+            src={logo.url}
+            alt="Grupo Positive"
+            className="h-12 w-12 shrink-0 rounded-xl bg-white object-contain p-1 shadow-[var(--shadow-elegant)]"
+          />
           <div>
             <h1 className="text-xl font-bold">Consulta de Margem</h1>
             <p className="text-sm text-muted-foreground">Acesse o painel administrativo</p>
