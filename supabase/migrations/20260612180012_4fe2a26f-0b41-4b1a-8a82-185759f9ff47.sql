@@ -1,0 +1,2 @@
+ALTER TABLE public.positiva_atividades DROP CONSTRAINT IF EXISTS positiva_atividades_tipo_check;
+ALTER TABLE public.positiva_atividades ADD CONSTRAINT positiva_atividades_tipo_check CHECK (tipo = ANY (ARRAY['ligacao'::text, 'prospeccao'::text, 'proposta'::text, 'followup'::text, 'contrato'::text, 'reativacao'::text, 'agendamento'::text]));
