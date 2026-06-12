@@ -31,10 +31,15 @@ export function useRhAccess() {
     return granted.has(to);
   };
 
+  // Whether the user may see the RH area at all: admins, or users the admin
+  // explicitly granted at least one RH tab.
+  const hasAnyAccess = isAdmin || granted.size > 0;
+
   return {
     isAdmin,
     granted,
     canAccess,
+    hasAnyAccess,
     isLoading: authLoading || (!!user && query.isLoading),
     alwaysAllowed: ALWAYS_ALLOWED,
   };
