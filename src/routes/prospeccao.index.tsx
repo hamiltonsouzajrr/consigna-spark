@@ -194,7 +194,20 @@ function Page() {
         <RhStatCard label="1ª resposta (méd.)" value={stats.avgMin ? `${stats.avgMin} min` : "—"} icon={Timer} tone="violet" />
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-2">
+      <Card className="mt-4 p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <Target className="h-4 w-4 text-primary" />
+          <p className="text-sm font-semibold">Minha produção de hoje</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+          <RhStatCard label="Leads abertos" value={prod.abertos} icon={DoorOpen} tone="sky" />
+          <RhStatCard label="Qualificados" value={prod.qualificados} icon={CheckCircle2} tone="violet" />
+          <RhStatCard label="Ligações feitas" value={prod.ligacoes} icon={PhoneCall} tone="emerald" />
+          <RhStatCard label="WhatsApps" value={prod.whats} icon={MessageCircle} tone="emerald" />
+          <RhStatCard label="Follow-ups pendentes" value={prod.followups} icon={CalendarClock} tone="amber" />
+        </div>
+      </Card>
+
         {(["todos", "hoje", "quentes", "atrasados"] as const).map((f) => (
           <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} onClick={() => setFilter(f)}>
             {f === "todos" ? "Todos" : f === "hoje" ? "Hoje" : f === "quentes" ? "Quentes" : "Atrasados"}
