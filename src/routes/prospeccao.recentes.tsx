@@ -92,7 +92,7 @@ function Page() {
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   {l.telefone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{l.telefone}</span>}
-                  <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{fmtWhen(l.created_at)}</span>
+                  <span className="flex items-center gap-1"><Clock className="h-3 w-3" />Aberto: {fmtWhen(l.opened_at)}</span>
                   <span className="flex items-center gap-1"><CalendarClock className="h-3 w-3" />Próxima ação: {fmtWhen(l.next_follow_up_at)}</span>
                 </div>
               </div>
