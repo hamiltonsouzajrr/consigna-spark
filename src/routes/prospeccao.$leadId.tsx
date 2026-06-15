@@ -74,6 +74,7 @@ function Page() {
   const [busy, setBusy] = useState(false);
   const [aiText, setAiText] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const noteRef = useRef<HTMLTextAreaElement>(null);
 
   const load = useCallback(async () => {
