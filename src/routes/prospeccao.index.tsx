@@ -264,9 +264,10 @@ function Page() {
                 <User className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <p className="truncate font-semibold">{l.nome}</p>
                   <Badge variant="outline" className={STATUS_TONE[l.status]}>{STATUS_LABEL[l.status]}</Badge>
+                  {l.situacao && <Badge variant="secondary">{l.situacao}</Badge>}
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   {l.cpf && <span>CPF: {l.cpf}</span>}
