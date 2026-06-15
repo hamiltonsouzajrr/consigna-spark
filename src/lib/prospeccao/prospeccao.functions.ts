@@ -210,6 +210,7 @@ export const refillMyQueue = createServerFn({ method: "POST" })
       .is("consultant_id", null)
       .eq("status", "novo")
       .is("first_response_at", null)
+      .is("opened_at", null)
       .order("score", { ascending: false })
       .limit(need * 3);
     if (poolErr) throw new Error(poolErr.message);
