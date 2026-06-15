@@ -28,6 +28,7 @@ type Lead = {
   status: LeadStatus;
   next_follow_up_at: string | null;
   last_contact_at: string | null;
+  opened_at: string | null;
   created_at: string;
 };
 
@@ -47,8 +48,9 @@ function Page() {
     const load = async () => {
       const { data } = await supabase
         .from("prospect_leads")
-        .select("id,nome,telefone,status,next_follow_up_at,last_contact_at,created_at")
-        .order("created_at", { ascending: false })
+        .select("id,nome,telefone,status,next_follow_up_at,last_contact_at,opened_at,created_at")
+        .not("opened_at", "is", null)
+        .order("opened_at", { ascending: false })
         .limit(50);
       if (!cancelled) { setLeads((data ?? []) as any); setLoadingLeads(false); }
     };
@@ -90,7 +92,7 @@ function Page() {
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   {l.telefone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{l.telefone}</span>}
-                  <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{fmtWhen(l.created_at)}</span>
+                  <span className="flex items-center gap-1"><Clock className="h-3 w-3" />Aberto: {fmtWhen(l.opened_at)}</span>
                   <span className="flex items-center gap-1"><CalendarClock className="h-3 w-3" />Próxima ação: {fmtWhen(l.next_follow_up_at)}</span>
                 </div>
               </div>

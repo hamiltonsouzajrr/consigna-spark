@@ -21,7 +21,7 @@ import {
   type LeadStatus, type SlaStatus, type EventKind,
 } from "@/lib/prospeccao/constants";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
-import { aiLeadAssist } from "@/lib/prospeccao/prospeccao.functions";
+import { aiLeadAssist, markLeadOpened } from "@/lib/prospeccao/prospeccao.functions";
 import { CentralAprovacao } from "@/components/legal/CentralAprovacao";
 import { useRhAccess } from "@/hooks/use-rh-access";
 
@@ -49,6 +49,7 @@ function Page() {
   const { isAdmin } = useRhAccess();
   const { leadId } = useParams({ from: "/prospeccao/$leadId" });
   const runAi = useServerFn(aiLeadAssist);
+  const markOpened = useServerFn(markLeadOpened);
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [events, setEvents] = useState<Ev[]>([]);
@@ -75,6 +76,13 @@ function Page() {
   }, [leadId]);
 
   useEffect(() => { if (user) load(); }, [user, load]);
+
+  // Opening a lead removes it from the active queue (and tops it up with a fresh
+  // one). Fire once per lead; non-blocking.
+  useEffect(() => {
+    if (!user || !leadId) return;
+    markOpened({ data: { leadId } }).catch(() => { /* non-blocking */ });
+  }, [user, leadId]);
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;

@@ -78,6 +78,7 @@ function Page() {
         .select("id,nome,telefone,telefones,cpf,cidade,origem,orcamento,urgencia,status,score,sla_status,next_follow_up_at,last_contact_at,first_response_at,created_at")
         .eq("status", "novo")
         .is("first_response_at", null)
+        .is("opened_at", null)
         .order("score", { ascending: false })
         .limit(500);
       if (!cancelled) { setLeads((data ?? []) as any); setLoadingLeads(false); }

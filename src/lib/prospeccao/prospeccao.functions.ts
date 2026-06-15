@@ -196,7 +196,8 @@ export const refillMyQueue = createServerFn({ method: "POST" })
       .select("id", { count: "exact", head: true })
       .eq("consultant_id", userId)
       .eq("status", "novo")
-      .is("first_response_at", null);
+      .is("first_response_at", null)
+      .is("opened_at", null);
 
     const have = activeCount ?? 0;
     const need = Math.max(0, target - have);
@@ -209,6 +210,7 @@ export const refillMyQueue = createServerFn({ method: "POST" })
       .is("consultant_id", null)
       .eq("status", "novo")
       .is("first_response_at", null)
+      .is("opened_at", null)
       .order("score", { ascending: false })
       .limit(need * 3);
     if (poolErr) throw new Error(poolErr.message);
@@ -227,6 +229,64 @@ export const refillMyQueue = createServerFn({ method: "POST" })
 
     const claimed = claimedRows?.length ?? 0;
     return { claimed, active: have + claimed };
+  });
+
+// Mark a lead as opened by the signed-in consultant. The first time a lead is
+// opened it gets stamped with opened_at, which removes it from the active queue
+// (so it can be replaced by a fresh lead) and surfaces it in "Recentes".
+// We then top the consultant's queue back up so a new lead appears immediately.
+export const markLeadOpened = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ leadId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }): Promise<{ opened: boolean; claimed: number }> => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Stamp opened_at only if it's still null, and only for a lead this
+    // consultant owns (or an unassigned one, which we also claim on open).
+    const { data: updated, error } = await supabaseAdmin
+      .from("prospect_leads")
+      .update({ opened_at: new Date().toISOString(), consultant_id: userId } as any)
+      .eq("id", data.leadId)
+      .is("opened_at", null)
+      .select("id");
+    if (error) throw new Error(error.message);
+
+    const opened = (updated?.length ?? 0) > 0;
+    if (!opened) return { opened: false, claimed: 0 };
+
+    // Top the queue back up so a fresh lead replaces the one just opened.
+    const target = 15;
+    const { count: activeCount } = await supabaseAdmin
+      .from("prospect_leads")
+      .select("id", { count: "exact", head: true })
+      .eq("consultant_id", userId)
+      .eq("status", "novo")
+      .is("first_response_at", null)
+      .is("opened_at", null);
+    const need = Math.max(0, target - (activeCount ?? 0));
+    if (need === 0) return { opened: true, claimed: 0 };
+
+    const { data: pool } = await supabaseAdmin
+      .from("prospect_leads")
+      .select("id")
+      .is("consultant_id", null)
+      .eq("status", "novo")
+      .is("first_response_at", null)
+      .is("opened_at", null)
+      .order("score", { ascending: false })
+      .limit(need * 3);
+    if (!pool?.length) return { opened: true, claimed: 0 };
+
+    const candidateIds = pool.map((r: any) => r.id).slice(0, need);
+    const { data: claimedRows } = await supabaseAdmin
+      .from("prospect_leads")
+      .update({ consultant_id: userId } as any)
+      .in("id", candidateIds)
+      .is("consultant_id", null)
+      .select("id");
+
+    return { opened: true, claimed: claimedRows?.length ?? 0 };
   });
 
 // Helper: apply leadId -> consultantId assignments in chunked updates.
