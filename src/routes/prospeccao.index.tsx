@@ -208,6 +208,7 @@ function Page() {
         </div>
       </Card>
 
+      <div className="mt-6 flex flex-wrap items-center gap-2">
         {(["todos", "hoje", "quentes", "atrasados"] as const).map((f) => (
           <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} onClick={() => setFilter(f)}>
             {f === "todos" ? "Todos" : f === "hoje" ? "Hoje" : f === "quentes" ? "Quentes" : "Atrasados"}
