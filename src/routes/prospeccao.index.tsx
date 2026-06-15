@@ -307,11 +307,11 @@ function Page() {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    title="Registrar resultado da ligação"
+                    title="Resultado, follow-up e situação"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border px-2 text-xs text-muted-foreground transition hover:bg-accent"
                   >
-                    <Phone className="h-3.5 w-3.5" /> Resultado
+                    <Phone className="h-3.5 w-3.5" /> Tratar
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="max-h-[70vh] overflow-y-auto" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
