@@ -258,6 +258,16 @@ function Page() {
 
   const pendingTasks = useMemo(() => tasks.filter((t) => t.status === "pending"), [tasks]);
   const overdueFollowup = lead?.next_follow_up_at ? new Date(lead.next_follow_up_at) < new Date() : false;
+  const groupedEvents = useMemo(() => {
+    const groups: { day: string; items: Ev[] }[] = [];
+    for (const e of events) {
+      const day = dayKey(e.created_at);
+      const last = groups[groups.length - 1];
+      if (last && last.day === day) last.items.push(e);
+      else groups.push({ day, items: [e] });
+    }
+    return groups;
+  }, [events]);
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
