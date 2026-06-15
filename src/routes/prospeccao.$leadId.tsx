@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import {
   STATUS_FLOW, STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, EVENT_LABEL, LOSS_REASONS,
-  PLAYBOOK, URGENCIA_LABEL, whatsappLink,
+  PLAYBOOK, whatsappLink,
   type LeadStatus, type SlaStatus, type EventKind,
 } from "@/lib/prospeccao/constants";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
