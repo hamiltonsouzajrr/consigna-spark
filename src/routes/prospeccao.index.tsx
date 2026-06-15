@@ -252,6 +252,16 @@ function Page() {
                   <span>Follow-up: {fmtWhen(l.next_follow_up_at)}</span>
                 </div>
               </div>
+              {telLink(l.telefone) && (
+                <a
+                  href={telLink(l.telefone)!}
+                  title="Ligar pelo celular / discador"
+                  onClick={(e) => { e.stopPropagation(); }}
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sky-500/15 text-sky-600 transition hover:bg-sky-500/25 dark:text-sky-400"
+                >
+                  <PhoneCall className="h-4 w-4" />
+                </a>
+              )}
               {whatsappLink(l.telefone) && (
                 <button
                   type="button"
@@ -262,6 +272,26 @@ function Page() {
                   <WhatsAppIcon className="h-4 w-4" />
                 </button>
               )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    title="Registrar resultado da ligação"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border px-2 text-xs text-muted-foreground transition hover:bg-accent"
+                  >
+                    <Phone className="h-3.5 w-3.5" /> Resultado
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                  <DropdownMenuLabel>Resultado da ligação</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {CALL_OUTCOMES.map((o) => (
+                    <DropdownMenuItem key={o} onSelect={() => logCall(l.id, o)}>{o}</DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Badge variant="outline" className={SLA_TONE[l.sla_status]}>{SLA_LABEL[l.sla_status]}</Badge>
               <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
             </Card>
