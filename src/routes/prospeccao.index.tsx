@@ -19,7 +19,7 @@ import {
   Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, PhoneCall, MapPin, MessageCircle, Video, DoorOpen, CheckCircle2,
 } from "lucide-react";
 import {
-  STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, whatsappLink, telLink, CALL_OUTCOMES,
+  STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, whatsappLink, telLink, CALL_OUTCOMES, SITUACAO_TAGS,
   type LeadStatus, type SlaStatus,
 } from "@/lib/prospeccao/constants";
 import { User } from "lucide-react";
