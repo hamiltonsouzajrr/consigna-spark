@@ -48,6 +48,7 @@ type Lead = {
   orcamento: number | null;
   urgencia: string | null;
   status: LeadStatus;
+  situacao: string | null;
   score: number;
   sla_status: SlaStatus;
   next_follow_up_at: string | null;
