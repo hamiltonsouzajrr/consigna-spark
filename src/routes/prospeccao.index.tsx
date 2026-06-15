@@ -200,7 +200,7 @@ function Page() {
                     ));
                   })()}
                   {l.cidade && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{l.cidade}</span>}
-                  {l.orcamento != null && <span>{l.orcamento.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>}
+                  
                   <span>Follow-up: {fmtWhen(l.next_follow_up_at)}</span>
                 </div>
               </div>

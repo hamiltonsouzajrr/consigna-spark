@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import {
   STATUS_FLOW, STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, EVENT_LABEL, LOSS_REASONS,
-  PLAYBOOK, URGENCIA_LABEL, whatsappLink,
+  PLAYBOOK, whatsappLink,
   type LeadStatus, type SlaStatus, type EventKind,
 } from "@/lib/prospeccao/constants";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
@@ -224,9 +224,6 @@ function Page() {
               })()}
               {lead.cidade && <Row k="Município" v={lead.cidade} />}
               {lead.origem && <Row k="Origem" v={lead.origem} />}
-              {lead.orcamento != null && <Row k="Orçamento" v={lead.orcamento.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} />}
-              {lead.urgencia && <Row k="Urgência" v={URGENCIA_LABEL[lead.urgencia] ?? lead.urgencia} />}
-              {lead.quality_score != null && <Row k="Qualidade" v={String(lead.quality_score)} />}
               <Row k="Respondeu WhatsApp" v={lead.respondeu_whatsapp ? "Sim" : "Não"} />
               {lead.import_batch && <Row k="Lote de importação" v={lead.import_batch} />}
               {lead.created_at && <Row k="Cadastrado em" v={fmt(lead.created_at)} />}
