@@ -357,45 +357,74 @@ function Page() {
         <div className="space-y-4 lg:col-span-1">
           <Card className="p-5">
             <p className="mb-3 text-sm font-semibold">Dados do lead</p>
-            <dl className="space-y-1.5 text-sm">
-              <Row k="CPF" v={lead.cpf} />
+
+            {/* Highlights: phones + city + score */}
+            <div className="space-y-2">
               {phones.map((num, i) => {
                 const link = whatsappLink(num, `Olá ${lead.nome.split(" ")[0]}, tudo bem?`);
                 return (
-                  <div key={`${num}-${i}`} className="flex items-center justify-between gap-3">
-                    <dt className="text-muted-foreground">{i === 0 ? "Telefone" : `Telefone ${i + 1}`}</dt>
-                    <dd className="flex items-center gap-2 text-right font-medium">
-                      <span>{num}</span>
+                  <div key={`${num}-${i}`} className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{i === 0 ? "Telefone" : `Telefone ${i + 1}`}</p>
+                      <p className="truncate text-base font-semibold">{num}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
                       {telLink(num) && (
-                        <a href={telLink(num)!} title="Ligar" className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-sky-500/15 text-sky-600 transition hover:bg-sky-500/25 dark:text-sky-400">
+                        <a href={telLink(num)!} title="Ligar" className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-sky-500/15 text-sky-600 transition hover:bg-sky-500/25 dark:text-sky-400">
                           <PhoneCall className="h-4 w-4" />
                         </a>
                       )}
                       {link && (
-                        <a href={link} target="_blank" rel="noopener noreferrer" title="Abrir no WhatsApp" className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600 transition hover:bg-emerald-500/25 dark:text-emerald-400">
+                        <a href={link} target="_blank" rel="noopener noreferrer" title="Abrir no WhatsApp" className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600 transition hover:bg-emerald-500/25 dark:text-emerald-400">
                           <WhatsAppIcon className="h-4 w-4" />
                         </a>
                       )}
-                    </dd>
+                    </div>
                   </div>
                 );
               })}
-              {!phones.length && <Row k="Telefone" v={null} />}
-              <Row k="Município" v={lead.cidade} />
-              <Row k="Origem" v={lead.origem} />
-              <Row k="Respondeu WhatsApp" v={lead.respondeu_whatsapp ? "Sim" : null} />
-              <Row k="Lote de importação" v={lead.import_batch} />
-              <Row k="Cadastrado em" v={lead.created_at ? fmt(lead.created_at) : null} />
-              <Row k="1ª resposta" v={lead.first_response_at ? fmt(lead.first_response_at) : null} />
-              <Row k="Último contato" v={lead.last_contact_at ? fmt(lead.last_contact_at) : null} />
-              <Row
-                k="Próx. follow-up"
-                v={lead.next_follow_up_at ? fmt(lead.next_follow_up_at) : null}
-                tone={overdueFollowup ? "text-rose-600 dark:text-rose-400" : undefined}
-              />
-              <Row k="Motivo perda" v={lead.loss_reason} />
-            </dl>
+              {!phones.length && <p className="rounded-lg border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">Sem telefone cadastrado</p>}
+
+              <div className="flex gap-2">
+                <div className="flex-1 rounded-lg border bg-muted/30 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Município</p>
+                  <p className="truncate text-sm font-semibold">{lead.cidade ?? "—"}</p>
+                </div>
+                <div className="flex-1 rounded-lg border bg-muted/30 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Pontuação</p>
+                  <p className={`text-sm font-semibold ${scoreTone(lead.score)}`}>{scoreLabel(lead.score)} · {lead.score}</p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowMore((v) => !v)}
+              className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              {showMore ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              {showMore ? "Ver menos" : "Ver mais detalhes"}
+            </button>
+
+            {showMore && (
+              <dl className="mt-3 space-y-1.5 border-t pt-3 text-sm">
+                <Row k="CPF" v={lead.cpf} />
+                <Row k="Origem" v={lead.origem} />
+                <Row k="Respondeu WhatsApp" v={lead.respondeu_whatsapp ? "Sim" : null} />
+                <Row k="Lote de importação" v={lead.import_batch} />
+                <Row k="Cadastrado em" v={lead.created_at ? fmt(lead.created_at) : null} />
+                <Row k="1ª resposta" v={lead.first_response_at ? fmt(lead.first_response_at) : null} />
+                <Row k="Último contato" v={lead.last_contact_at ? fmt(lead.last_contact_at) : null} />
+                <Row
+                  k="Próx. follow-up"
+                  v={lead.next_follow_up_at ? fmt(lead.next_follow_up_at) : null}
+                  tone={overdueFollowup ? "text-rose-600 dark:text-rose-400" : undefined}
+                />
+                <Row k="Motivo perda" v={lead.loss_reason} />
+              </dl>
+            )}
           </Card>
+
 
           {/* Tags: status + situação */}
           <Card className="p-5">
