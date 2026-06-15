@@ -359,17 +359,44 @@ function Page() {
             </dl>
           </Card>
 
-          {/* Status change */}
+          {/* Tags: status + situação */}
           <Card className="p-5">
-            <p className="mb-3 text-sm font-semibold">Mudar status</p>
+            <p className="mb-2 text-sm font-semibold flex items-center gap-2"><Tag className="h-4 w-4" /> Status</p>
             <div className="flex flex-wrap gap-2">
-              {STATUS_FLOW.map((s) => (
-                <Button key={s} size="sm" variant={lead.status === s ? "default" : "outline"} disabled={busy || lead.status === s} onClick={() => changeStatus(s)}>
-                  {STATUS_LABEL[s]}
-                </Button>
-              ))}
+              {STATUS_FLOW.map((s) => {
+                const active = lead.status === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={busy || active}
+                    onClick={() => changeStatus(s)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition disabled:opacity-100 ${active ? `${STATUS_TONE[s]} ring-2 ring-primary/40` : "border-border text-muted-foreground hover:bg-muted"}`}
+                  >
+                    {STATUS_LABEL[s]}
+                  </button>
+                );
+              })}
             </div>
-            <div className="mt-3">
+
+            <p className="mb-2 mt-4 text-sm font-semibold flex items-center gap-2"><Tag className="h-4 w-4" /> Situação</p>
+            <div className="flex flex-wrap gap-2">
+              {SITUACAO_TAGS.map((t) => {
+                const active = lead.situacao === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setSituacao(active ? "" : t)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${active ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/40" : "border-border text-muted-foreground hover:bg-muted"}`}
+                  >
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-4">
               <Label className="text-xs">Motivo da perda (obrigatório p/ "Perdido")</Label>
               <Select value={lossReason} onValueChange={setLossReason}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Selecionar motivo" /></SelectTrigger>
