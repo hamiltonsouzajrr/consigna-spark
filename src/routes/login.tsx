@@ -74,17 +74,17 @@ function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center app-bg p-4">
-      <Card className="w-full max-w-md p-8 shadow-[var(--shadow-glow)]">
+    <main className="flex min-h-screen items-center justify-center app-bg p-4 sm:p-6">
+      <Card className="w-full max-w-md p-6 shadow-[var(--shadow-glow)] sm:p-8">
         <div className="mb-6 flex items-center gap-3">
           <img
             src={logo.url}
             alt="Grupo Positive"
-            className="h-12 w-12 shrink-0 rounded-xl bg-white object-contain p-1 shadow-[var(--shadow-elegant)]"
+            className="h-11 w-11 shrink-0 rounded-xl bg-white object-contain p-1 shadow-[var(--shadow-elegant)] sm:h-12 sm:w-12"
           />
-          <div>
-            <h1 className="text-xl font-bold">Consulta de Margem</h1>
-            <p className="text-sm text-muted-foreground">Acesse o painel administrativo</p>
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-bold sm:text-xl">Consulta de Margem</h1>
+            <p className="truncate text-sm text-muted-foreground">Acesse o painel administrativo</p>
           </div>
         </div>
 
@@ -97,17 +97,26 @@ function LoginPage() {
             <TabsContent key={m} value={m} className="mt-4 space-y-4">
               <div className="space-y-2">
                 <Label>Email</Label>
-                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" />
+                <Input
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  className="h-11"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Senha</Label>
                 <div className="relative">
                   <Input
                     type={showPassword ? "text" : "password"}
+                    autoComplete={m === "in" ? "current-password" : "new-password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="pr-10"
+                    className="h-11 pr-11"
                   />
                   <button
                     type="button"
@@ -119,7 +128,7 @@ function LoginPage() {
                   </button>
                 </div>
               </div>
-              <Button className="w-full" disabled={busy || !email || !password} onClick={() => handle(m)}>
+              <Button className="h-11 w-full" disabled={busy || !email || !password} onClick={() => handle(m)}>
                 {busy ? "Aguarde…" : m === "in" ? "Entrar" : "Criar conta"}
               </Button>
             </TabsContent>
