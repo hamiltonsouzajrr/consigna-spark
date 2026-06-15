@@ -26,7 +26,7 @@ import {
 } from "@/lib/prospeccao/constants";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { aiLeadAssist, markLeadOpened } from "@/lib/prospeccao/prospeccao.functions";
-import { CentralAprovacao } from "@/components/legal/CentralAprovacao";
+
 import { useRhAccess } from "@/hooks/use-rh-access";
 
 export const Route = createFileRoute("/prospeccao/$leadId")({
