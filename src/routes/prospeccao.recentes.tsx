@@ -28,6 +28,7 @@ type Lead = {
   status: LeadStatus;
   next_follow_up_at: string | null;
   last_contact_at: string | null;
+  opened_at: string | null;
   created_at: string;
 };
 
