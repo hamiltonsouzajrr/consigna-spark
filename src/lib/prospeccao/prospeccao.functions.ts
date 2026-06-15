@@ -196,7 +196,8 @@ export const refillMyQueue = createServerFn({ method: "POST" })
       .select("id", { count: "exact", head: true })
       .eq("consultant_id", userId)
       .eq("status", "novo")
-      .is("first_response_at", null);
+      .is("first_response_at", null)
+      .is("opened_at", null);
 
     const have = activeCount ?? 0;
     const need = Math.max(0, target - have);
