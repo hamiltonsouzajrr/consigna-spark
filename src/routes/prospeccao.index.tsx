@@ -68,8 +68,25 @@ function Page() {
   const [loadingLeads, setLoadingLeads] = useState(true);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"todos" | "hoje" | "quentes" | "atrasados">("todos");
+  const [prod, setProd] = useState({ abertos: 0, qualificados: 0, ligacoes: 0, whats: 0, followups: 0 });
 
   const refill = useServerFn(refillMyQueue);
+
+  // Productivity panel: counts the consultant's own effort today.
+  const loadProd = async (uid: string) => {
+    const start = new Date(); start.setHours(0, 0, 0, 0);
+    const end = new Date(); end.setHours(23, 59, 59, 999);
+    const iso = start.toISOString();
+    const cnt = (p: any) => p.then((r: any) => r.count ?? 0);
+    const [abertos, qualificados, ligacoes, whats, followups] = await Promise.all([
+      cnt(supabase.from("prospect_leads").select("id", { count: "exact", head: true }).eq("consultant_id", uid).gte("opened_at", iso)),
+      cnt(supabase.from("prospect_leads").select("id", { count: "exact", head: true }).eq("consultant_id", uid).in("status", ["qualificado", "proposta", "ganho"])),
+      cnt(supabase.from("lead_events").select("id", { count: "exact", head: true }).eq("consultant_id", uid).eq("kind", "ligacao").gte("created_at", iso)),
+      cnt(supabase.from("lead_events").select("id", { count: "exact", head: true }).eq("consultant_id", uid).eq("kind", "whatsapp").gte("created_at", iso)),
+      cnt(supabase.from("lead_tasks").select("id", { count: "exact", head: true }).eq("consultant_id", uid).eq("status", "pending").lte("due_at", end.toISOString())),
+    ]);
+    setProd({ abertos, qualificados, ligacoes, whats, followups });
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -87,6 +104,7 @@ function Page() {
         .order("score", { ascending: false })
         .limit(500);
       if (!cancelled) { setLeads((data ?? []) as any); setLoadingLeads(false); }
+      if (!cancelled) loadProd(user.id);
     };
     // Consultants get their queue topped up from the pool before loading.
     const init = async () => {
@@ -102,6 +120,17 @@ function Page() {
       .subscribe();
     return () => { cancelled = true; supabase.removeChannel(ch); };
   }, [user, isAdmin]);
+
+  // Register a call result straight from the card (no need to open the lead).
+  const logCall = async (leadId: string, outcome: string) => {
+    if (!user) return;
+    const nowIso = new Date().toISOString();
+    await supabase.from("lead_events").insert({ lead_id: leadId, consultant_id: user.id, kind: "ligacao", body: `Resultado: ${outcome}` } as any);
+    await supabase.from("prospect_leads").update({ last_contact_at: nowIso } as any).eq("id", leadId);
+    toast.success(`Ligação registrada: ${outcome}`);
+    loadProd(user.id);
+  };
+
 
 
   const stats = useMemo(() => {
