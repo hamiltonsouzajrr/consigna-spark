@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import {
   ArrowLeft, Phone, PhoneCall, MessageCircle, StickyNote, CalendarClock, Sparkles, Loader2, CheckCircle2,
-  Copy, SkipForward, Tag,
+  Copy, SkipForward, Tag, ChevronDown, ChevronUp, AlertTriangle, MapPin, Activity,
 } from "lucide-react";
 import {
   STATUS_FLOW, STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, EVENT_LABEL, LOSS_REASONS,
