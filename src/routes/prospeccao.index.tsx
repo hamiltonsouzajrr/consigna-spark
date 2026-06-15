@@ -259,84 +259,88 @@ function Page() {
         )}
         {visible.map((l) => (
           <Link key={l.id} to="/prospeccao/$leadId" params={{ leadId: l.id }}>
-            <Card className={`flex items-center gap-4 p-4 transition hover:bg-accent/50 ${l.sla_status === "atrasado" ? "border-rose-500/40" : ""}`}>
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-muted text-muted-foreground">
-                <User className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate font-semibold">{l.nome}</p>
-                  <Badge variant="outline" className={STATUS_TONE[l.status]}>{STATUS_LABEL[l.status]}</Badge>
-                  {l.situacao && <Badge variant="secondary">{l.situacao}</Badge>}
+            <Card className={`flex flex-col gap-3 p-4 transition hover:bg-accent/50 sm:flex-row sm:items-center sm:gap-4 ${l.sla_status === "atrasado" ? "border-rose-500/40" : ""}`}>
+              <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-muted text-muted-foreground">
+                  <User className="h-5 w-5" />
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  {l.cpf && <span>CPF: {l.cpf}</span>}
-                  {(() => {
-                    const nums = (l.telefones && l.telefones.length ? l.telefones : (l.telefone ? [l.telefone] : []));
-                    const uniq = Array.from(new Set(nums.map((n) => n.trim()).filter(Boolean)));
-                    return uniq.map((num, i) => (
-                      <span key={`${num}-${i}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{num}</span>
-                    ));
-                  })()}
-                  {l.cidade && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{l.cidade}</span>}
-                  
-                  <span>Follow-up: {fmtWhen(l.next_follow_up_at)}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate font-semibold">{l.nome}</p>
+                    <Badge variant="outline" className={STATUS_TONE[l.status]}>{STATUS_LABEL[l.status]}</Badge>
+                    {l.situacao && <Badge variant="secondary">{l.situacao}</Badge>}
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    {l.cpf && <span>CPF: {l.cpf}</span>}
+                    {(() => {
+                      const nums = (l.telefones && l.telefones.length ? l.telefones : (l.telefone ? [l.telefone] : []));
+                      const uniq = Array.from(new Set(nums.map((n) => n.trim()).filter(Boolean)));
+                      return uniq.map((num, i) => (
+                        <span key={`${num}-${i}`} className="flex items-center gap-1"><Phone className="h-3 w-3" />{num}</span>
+                      ));
+                    })()}
+                    {l.cidade && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{l.cidade}</span>}
+
+                    <span>Follow-up: {fmtWhen(l.next_follow_up_at)}</span>
+                  </div>
                 </div>
               </div>
-              {telLink(l.telefone) && (
-                <a
-                  href={telLink(l.telefone)!}
-                  title="Ligar pelo celular / discador"
-                  onClick={(e) => { e.stopPropagation(); }}
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sky-500/15 text-sky-600 transition hover:bg-sky-500/25 dark:text-sky-400"
-                >
-                  <PhoneCall className="h-4 w-4" />
-                </a>
-              )}
-              {whatsappLink(l.telefone) && (
-                <button
-                  type="button"
-                  title="Abrir no WhatsApp"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(whatsappLink(l.telefone)!, "_blank", "noopener,noreferrer"); }}
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600 transition hover:bg-emerald-500/25 dark:text-emerald-400"
-                >
-                  <WhatsAppIcon className="h-4 w-4" />
-                </button>
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+              <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                {telLink(l.telefone) && (
+                  <a
+                    href={telLink(l.telefone)!}
+                    title="Ligar pelo celular / discador"
+                    onClick={(e) => { e.stopPropagation(); }}
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sky-500/15 text-sky-600 transition hover:bg-sky-500/25 dark:text-sky-400"
+                  >
+                    <PhoneCall className="h-4 w-4" />
+                  </a>
+                )}
+                {whatsappLink(l.telefone) && (
                   <button
                     type="button"
-                    title="Resultado, follow-up e situação"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                    className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border px-2 text-xs text-muted-foreground transition hover:bg-accent"
+                    title="Abrir no WhatsApp"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(whatsappLink(l.telefone)!, "_blank", "noopener,noreferrer"); }}
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600 transition hover:bg-emerald-500/25 dark:text-emerald-400"
                   >
-                    <Phone className="h-3.5 w-3.5" /> Tratar
+                    <WhatsAppIcon className="h-4 w-4" />
                   </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="max-h-[70vh] overflow-y-auto" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                  <DropdownMenuLabel>Resultado da ligação</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {CALL_OUTCOMES.map((o) => (
-                    <DropdownMenuItem key={o} onSelect={() => logCall(l.id, o)}>{o}</DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel>Agendar follow-up</DropdownMenuLabel>
-                  {followupOptions().map((f) => (
-                    <DropdownMenuItem key={f.label} onSelect={() => scheduleFollowup(l.id, f.label, f.date)}>
-                      <CalendarClock className="mr-2 h-3.5 w-3.5" /> {f.label}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel>Situação</DropdownMenuLabel>
-                  {SITUACAO_TAGS.map((t) => (
-                    <DropdownMenuItem key={t} onSelect={() => setSituacao(l.id, t)}>{t}</DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      title="Resultado, follow-up e situação"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                      className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border px-2 text-xs text-muted-foreground transition hover:bg-accent"
+                    >
+                      <Phone className="h-3.5 w-3.5" /> Tratar
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="max-h-[70vh] overflow-y-auto" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                    <DropdownMenuLabel>Resultado da ligação</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {CALL_OUTCOMES.map((o) => (
+                      <DropdownMenuItem key={o} onSelect={() => logCall(l.id, o)}>{o}</DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Agendar follow-up</DropdownMenuLabel>
+                    {followupOptions().map((f) => (
+                      <DropdownMenuItem key={f.label} onSelect={() => scheduleFollowup(l.id, f.label, f.date)}>
+                        <CalendarClock className="mr-2 h-3.5 w-3.5" /> {f.label}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Situação</DropdownMenuLabel>
+                    {SITUACAO_TAGS.map((t) => (
+                      <DropdownMenuItem key={t} onSelect={() => setSituacao(l.id, t)}>{t}</DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-              <Badge variant="outline" className={SLA_TONE[l.sla_status]}>{l.sla_status === "ok" ? "Ainda não prospectado" : SLA_LABEL[l.sla_status]}</Badge>
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <Badge variant="outline" className={SLA_TONE[l.sla_status]}>{l.sla_status === "ok" ? "Ainda não prospectado" : SLA_LABEL[l.sla_status]}</Badge>
+                <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground sm:ml-0" />
+              </div>
             </Card>
           </Link>
         ))}
