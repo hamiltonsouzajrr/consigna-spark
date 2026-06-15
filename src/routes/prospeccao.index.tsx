@@ -335,7 +335,7 @@ function Page() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Badge variant="outline" className={SLA_TONE[l.sla_status]}>{SLA_LABEL[l.sla_status]}</Badge>
+              <Badge variant="outline" className={SLA_TONE[l.sla_status]}>{l.sla_status === "ok" ? "Ainda não prospectado" : SLA_LABEL[l.sla_status]}</Badge>
               <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
             </Card>
           </Link>
