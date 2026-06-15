@@ -64,24 +64,39 @@ function Page() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"todos" | "hoje" | "quentes" | "atrasados">("todos");
 
+  const refill = useServerFn(refillMyQueue);
+
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     const load = async () => {
+      // Only show the active queue: untouched, not-yet-prospected leads.
+      // Leads that were already worked (responded / moved past "novo")
+      // drop out automatically and are replaced by fresh ones.
       const { data } = await supabase
         .from("prospect_leads")
         .select("id,nome,telefone,telefones,cpf,cidade,origem,orcamento,urgencia,status,score,sla_status,next_follow_up_at,last_contact_at,first_response_at,created_at")
+        .eq("status", "novo")
+        .is("first_response_at", null)
         .order("score", { ascending: false })
         .limit(500);
       if (!cancelled) { setLeads((data ?? []) as any); setLoadingLeads(false); }
     };
-    load();
+    // Consultants get their queue topped up from the pool before loading.
+    const init = async () => {
+      if (!isAdmin) {
+        try { await refill({ data: {} }); } catch { /* non-blocking */ }
+      }
+      if (!cancelled) await load();
+    };
+    init();
     const ch = supabase
       .channel("prospect_leads_queue")
       .on("postgres_changes", { event: "*", schema: "public", table: "prospect_leads" }, () => load())
       .subscribe();
     return () => { cancelled = true; supabase.removeChannel(ch); };
-  }, [user]);
+  }, [user, isAdmin]);
+
 
   const stats = useMemo(() => {
     const now = Date.now();
