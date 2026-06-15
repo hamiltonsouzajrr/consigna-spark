@@ -1,5 +1,5 @@
-import { createFileRoute, Navigate, Link, useParams } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { createFileRoute, Navigate, Link, useParams, useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,13 +11,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Phone, MessageCircle, StickyNote, CalendarClock, Sparkles, Loader2, CheckCircle2,
+  ArrowLeft, Phone, PhoneCall, MessageCircle, StickyNote, CalendarClock, Sparkles, Loader2, CheckCircle2,
+  Copy, SkipForward, Tag,
 } from "lucide-react";
 import {
   STATUS_FLOW, STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, EVENT_LABEL, LOSS_REASONS,
-  PLAYBOOK, whatsappLink,
+  PLAYBOOK, whatsappLink, telLink, CALL_OUTCOMES, SITUACAO_TAGS, scoreTone, scoreLabel,
   type LeadStatus, type SlaStatus, type EventKind,
 } from "@/lib/prospeccao/constants";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
@@ -32,7 +36,7 @@ export const Route = createFileRoute("/prospeccao/$leadId")({
 
 type Lead = {
   id: string; nome: string; telefone: string | null; telefones: string[] | null; cpf: string | null; cidade: string | null;
-  origem: string | null; orcamento: number | null; urgencia: string | null; status: LeadStatus;
+  origem: string | null; orcamento: number | null; urgencia: string | null; status: LeadStatus; situacao: string | null;
   score: number; quality_score: number | null; sla_status: SlaStatus; loss_reason: string | null; notes: string | null;
   next_follow_up_at: string | null; last_contact_at: string | null; first_response_at: string | null;
   respondeu_whatsapp: boolean; consultant_id: string | null; import_batch: string | null; created_at: string | null;
@@ -44,10 +48,16 @@ function fmt(iso: string | null) {
   return iso ? new Date(iso).toLocaleString("pt-BR") : "—";
 }
 
+function leadPhones(lead: Lead): string[] {
+  const nums = lead.telefones && lead.telefones.length ? lead.telefones : (lead.telefone ? [lead.telefone] : []);
+  return Array.from(new Set(nums.map((n) => n.trim()).filter(Boolean)));
+}
+
 function Page() {
   const { user, loading } = useAuth();
   const { isAdmin } = useRhAccess();
   const { leadId } = useParams({ from: "/prospeccao/$leadId" });
+  const navigate = useNavigate();
   const runAi = useServerFn(aiLeadAssist);
   const markOpened = useServerFn(markLeadOpened);
 
@@ -64,6 +74,7 @@ function Page() {
   const [busy, setBusy] = useState(false);
   const [aiText, setAiText] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
+  const noteRef = useRef<HTMLTextAreaElement>(null);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.from("prospect_leads").select("*").eq("id", leadId).maybeSingle();
@@ -84,15 +95,15 @@ function Page() {
     markOpened({ data: { leadId } }).catch(() => { /* non-blocking */ });
   }, [user, leadId]);
 
-  if (loading) return null;
-  if (!user) return <Navigate to="/login" />;
+  const phones = lead ? leadPhones(lead) : [];
+  const primaryPhone = phones[0] ?? null;
 
-  const registerContact = async () => {
+  const registerContact = useCallback(async () => {
     if (!contactBody.trim() || !lead) return;
     setBusy(true);
     const nowIso = new Date().toISOString();
     const { error: evErr } = await supabase.from("lead_events").insert({
-      lead_id: leadId, consultant_id: user.id, kind: contactKind, body: contactBody.trim(),
+      lead_id: leadId, consultant_id: user!.id, kind: contactKind, body: contactBody.trim(),
     } as any);
     if (evErr) { toast.error(evErr.message); setBusy(false); return; }
     const patch: any = { last_contact_at: nowIso };
@@ -103,22 +114,58 @@ function Page() {
     toast.success("Contato registrado.");
     setBusy(false);
     load();
-  };
+  }, [contactBody, contactKind, lead, leadId, user, load]);
+
+  // One-click call result, straight from the header (no typing required).
+  const logOutcome = useCallback(async (outcome: string) => {
+    if (!lead || !user) return;
+    const nowIso = new Date().toISOString();
+    await supabase.from("lead_events").insert({ lead_id: leadId, consultant_id: user.id, kind: "ligacao", body: `Resultado: ${outcome}` } as any);
+    const patch: any = { last_contact_at: nowIso };
+    if (!lead.first_response_at) patch.first_response_at = nowIso;
+    await supabase.from("prospect_leads").update(patch).eq("id", leadId);
+    toast.success(`Ligação registrada: ${outcome}`);
+    load();
+  }, [lead, user, leadId, load]);
+
+  const setSituacao = useCallback(async (situacao: string) => {
+    if (!lead) return;
+    setLead((prev) => (prev ? { ...prev, situacao } : prev));
+    await supabase.from("prospect_leads").update({ situacao } as any).eq("id", leadId);
+    toast.success(`Marcado como: ${situacao}`);
+  }, [lead, leadId]);
 
   const scheduleFollowUp = async () => {
     if (!fuWhen || !lead) { toast.error("Defina data/hora do follow-up."); return; }
+    await doScheduleFollowUp(fuTitle.trim() || "Follow-up", new Date(fuWhen));
+    setFuWhen("");
+  };
+
+  // Quick follow-up presets (1h / amanhã 9h / 2 dias).
+  const doScheduleFollowUp = useCallback(async (title: string, when: Date) => {
+    if (!lead || !user) return;
     setBusy(true);
-    const dueIso = new Date(fuWhen).toISOString();
+    const dueIso = when.toISOString();
     const { error } = await supabase.from("lead_tasks").insert({
-      lead_id: leadId, consultant_id: user.id, title: fuTitle.trim() || "Follow-up", due_at: dueIso,
+      lead_id: leadId, consultant_id: user.id, title, due_at: dueIso,
     } as any);
     if (error) { toast.error(error.message); setBusy(false); return; }
     await supabase.from("prospect_leads").update({ next_follow_up_at: dueIso } as any).eq("id", leadId);
-    await supabase.from("lead_events").insert({ lead_id: leadId, consultant_id: user.id, kind: "followup", body: `Follow-up agendado: ${fuTitle} (${new Date(dueIso).toLocaleString("pt-BR")})` } as any);
-    setFuWhen("");
+    await supabase.from("lead_events").insert({ lead_id: leadId, consultant_id: user.id, kind: "followup", body: `Follow-up agendado: ${title} (${when.toLocaleString("pt-BR")})` } as any);
     toast.success("Follow-up agendado.");
     setBusy(false);
     load();
+  }, [lead, user, leadId, load]);
+
+  const followupPresets = () => {
+    const in1h = new Date(Date.now() + 60 * 60 * 1000);
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); tomorrow.setHours(9, 0, 0, 0);
+    const in2d = new Date(); in2d.setDate(in2d.getDate() + 2); in2d.setHours(9, 0, 0, 0);
+    return [
+      { label: "Em 1 hora", date: in1h },
+      { label: "Amanhã 9h", date: tomorrow },
+      { label: "Em 2 dias", date: in2d },
+    ];
   };
 
   const changeStatus = async (status: LeadStatus) => {
@@ -130,7 +177,7 @@ function Page() {
     const { error } = await supabase.from("prospect_leads").update(patch).eq("id", leadId);
     if (error) { toast.error(error.message); setBusy(false); return; }
     await supabase.from("lead_events").insert({
-      lead_id: leadId, consultant_id: user.id, kind: "status",
+      lead_id: leadId, consultant_id: user!.id, kind: "status",
       body: `Status → ${STATUS_LABEL[status]}${status === "perdido" ? ` (motivo: ${lossReason})` : ""}`,
     } as any);
     toast.success("Status atualizado.");
@@ -143,6 +190,27 @@ function Page() {
     load();
   };
 
+  // Jump straight to the next untouched lead in the queue (call-in-sequence).
+  const goNextLead = useCallback(async () => {
+    const { data } = await supabase
+      .from("prospect_leads")
+      .select("id")
+      .eq("status", "novo")
+      .is("first_response_at", null)
+      .is("opened_at", null)
+      .neq("id", leadId)
+      .order("score", { ascending: false })
+      .limit(1);
+    const next = data?.[0]?.id as string | undefined;
+    if (next) navigate({ to: "/prospeccao/$leadId", params: { leadId: next } });
+    else { toast.info("Não há mais leads na fila."); navigate({ to: "/prospeccao" }); }
+  }, [leadId, navigate]);
+
+  const copyPhone = useCallback(() => {
+    if (!primaryPhone) return;
+    navigator.clipboard?.writeText(primaryPhone).then(() => toast.success("Número copiado.")).catch(() => {});
+  }, [primaryPhone]);
+
   const askAi = async () => {
     setAiBusy(true); setAiText("");
     try {
@@ -152,6 +220,27 @@ function Page() {
       toast.error(e?.message ?? "Falha ao consultar a IA.");
     } finally { setAiBusy(false); }
   };
+
+  // Keyboard shortcuts: L = ligar, W = WhatsApp, N = foco na nota.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === "l" && primaryPhone) { const link = telLink(primaryPhone); if (link) window.location.href = link; }
+      else if (k === "w" && primaryPhone) { const link = whatsappLink(primaryPhone, lead ? `Olá ${lead.nome.split(" ")[0]}, tudo bem?` : undefined); if (link) window.open(link, "_blank", "noopener,noreferrer"); }
+      else if (k === "n") { e.preventDefault(); setContactKind("nota"); noteRef.current?.focus(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [primaryPhone, lead]);
+
+  const pendingTasks = useMemo(() => tasks.filter((t) => t.status === "pending"), [tasks]);
+  const overdueFollowup = lead?.next_follow_up_at ? new Date(lead.next_follow_up_at) < new Date() : false;
+
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" />;
 
   if (notFound) {
     return (
@@ -167,70 +256,106 @@ function Page() {
   if (!lead) return <AppShell><p className="py-10 text-sm text-muted-foreground">Carregando…</p></AppShell>;
 
   const playbook = PLAYBOOK[lead.status];
+  const telHref = telLink(primaryPhone);
+  const waHref = whatsappLink(primaryPhone, `Olá ${lead.nome.split(" ")[0]}, tudo bem?`);
 
   return (
     <AppShell>
-      <Button asChild variant="ghost" size="sm" className="mb-4"><Link to="/prospeccao"><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</Link></Button>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <Button asChild variant="ghost" size="sm"><Link to="/prospeccao"><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</Link></Button>
+        <Button variant="outline" size="sm" onClick={goNextLead}><SkipForward className="mr-2 h-4 w-4" /> Próximo lead</Button>
+      </div>
+
+      {/* Sticky quick-action bar */}
+      <Card className="mb-6 p-4">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-bold sm:text-2xl">{lead.nome}</h1>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <Badge variant="outline" className={STATUS_TONE[lead.status]}>{STATUS_LABEL[lead.status]}</Badge>
+              <Badge variant="outline" className={SLA_TONE[lead.sla_status]}>{lead.sla_status === "ok" ? "Ainda não prospectado" : SLA_LABEL[lead.sla_status]}</Badge>
+              <Badge variant="outline" className={scoreTone(lead.score)}>{scoreLabel(lead.score)} · {lead.score}</Badge>
+              {lead.situacao && <Badge variant="secondary"><Tag className="mr-1 h-3 w-3" />{lead.situacao}</Badge>}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {telHref && (
+              <Button asChild size="sm" className="bg-sky-600 hover:bg-sky-700">
+                <a href={telHref} title="Ligar (L)"><PhoneCall className="mr-1.5 h-4 w-4" /> Ligar</a>
+              </Button>
+            )}
+            {waHref && (
+              <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                <a href={waHref} target="_blank" rel="noopener noreferrer" title="WhatsApp (W)"><WhatsAppIcon className="mr-1.5 h-4 w-4" /> WhatsApp</a>
+              </Button>
+            )}
+            {primaryPhone && (
+              <Button size="sm" variant="outline" onClick={copyPhone} title="Copiar número"><Copy className="mr-1.5 h-4 w-4" /> Copiar</Button>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline"><Phone className="mr-1.5 h-4 w-4" /> Resultado</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="max-h-[70vh] overflow-y-auto">
+                <DropdownMenuLabel>Resultado da ligação</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {CALL_OUTCOMES.map((o) => (
+                  <DropdownMenuItem key={o} onSelect={() => logOutcome(o)}>{o}</DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Situação</DropdownMenuLabel>
+                {SITUACAO_TAGS.map((t) => (
+                  <DropdownMenuItem key={t} onSelect={() => setSituacao(t)}>{t}</DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">Atalhos: <kbd className="rounded border px-1">L</kbd> ligar · <kbd className="rounded border px-1">W</kbd> WhatsApp · <kbd className="rounded border px-1">N</kbd> nota</p>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left: lead summary + actions */}
         <div className="space-y-4 lg:col-span-1">
           <Card className="p-5">
-            <div className="flex items-start gap-3">
-              <div className="min-w-0">
-                <h1 className="truncate text-xl font-bold">{lead.nome}</h1>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  <Badge variant="outline" className={STATUS_TONE[lead.status]}>{STATUS_LABEL[lead.status]}</Badge>
-                  <Badge variant="outline" className={SLA_TONE[lead.sla_status]}>{SLA_LABEL[lead.sla_status]}</Badge>
-                </div>
-              </div>
-            </div>
-            <dl className="mt-4 space-y-1.5 text-sm">
-              <Row k="Nome" v={lead.nome} />
-              <Row k="CPF" v={lead.cpf ?? "—"} />
-              {(() => {
-                const nums = (lead.telefones && lead.telefones.length ? lead.telefones : (lead.telefone ? [lead.telefone] : []));
-                const uniq = Array.from(new Set(nums.map((n) => n.trim()).filter(Boolean)));
-                if (!uniq.length) {
-                  return (
-                    <div className="flex items-center justify-between gap-3">
-                      <dt className="text-muted-foreground">Telefone</dt>
-                      <dd className="text-right font-medium">—</dd>
-                    </div>
-                  );
-                }
-                return uniq.map((num, i) => {
-                  const link = whatsappLink(num, `Olá ${lead.nome.split(" ")[0]}, tudo bem?`);
-                  return (
-                    <div key={`${num}-${i}`} className="flex items-center justify-between gap-3">
-                      <dt className="text-muted-foreground">{i === 0 ? "Telefone" : `Telefone ${i + 1}`}</dt>
-                      <dd className="flex items-center gap-2 text-right font-medium">
-                        <span>{num}</span>
-                        {link && (
-                          <a
-                            href={link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="Abrir no WhatsApp"
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600 transition hover:bg-emerald-500/25 dark:text-emerald-400"
-                          >
-                            <WhatsAppIcon className="h-4 w-4" />
-                          </a>
-                        )}
-                      </dd>
-                    </div>
-                  );
-                });
-              })()}
-              {lead.cidade && <Row k="Município" v={lead.cidade} />}
-              {lead.origem && <Row k="Origem" v={lead.origem} />}
-              <Row k="Respondeu WhatsApp" v={lead.respondeu_whatsapp ? "Sim" : "Não"} />
-              {lead.import_batch && <Row k="Lote de importação" v={lead.import_batch} />}
-              {lead.created_at && <Row k="Cadastrado em" v={fmt(lead.created_at)} />}
-              <Row k="1ª resposta" v={fmt(lead.first_response_at)} />
-              <Row k="Último contato" v={fmt(lead.last_contact_at)} />
-              <Row k="Próx. follow-up" v={fmt(lead.next_follow_up_at)} />
-              {lead.loss_reason && <Row k="Motivo perda" v={lead.loss_reason} />}
+            <p className="mb-3 text-sm font-semibold">Dados do lead</p>
+            <dl className="space-y-1.5 text-sm">
+              <Row k="CPF" v={lead.cpf} />
+              {phones.map((num, i) => {
+                const link = whatsappLink(num, `Olá ${lead.nome.split(" ")[0]}, tudo bem?`);
+                return (
+                  <div key={`${num}-${i}`} className="flex items-center justify-between gap-3">
+                    <dt className="text-muted-foreground">{i === 0 ? "Telefone" : `Telefone ${i + 1}`}</dt>
+                    <dd className="flex items-center gap-2 text-right font-medium">
+                      <span>{num}</span>
+                      {telLink(num) && (
+                        <a href={telLink(num)!} title="Ligar" className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-sky-500/15 text-sky-600 transition hover:bg-sky-500/25 dark:text-sky-400">
+                          <PhoneCall className="h-4 w-4" />
+                        </a>
+                      )}
+                      {link && (
+                        <a href={link} target="_blank" rel="noopener noreferrer" title="Abrir no WhatsApp" className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600 transition hover:bg-emerald-500/25 dark:text-emerald-400">
+                          <WhatsAppIcon className="h-4 w-4" />
+                        </a>
+                      )}
+                    </dd>
+                  </div>
+                );
+              })}
+              {!phones.length && <Row k="Telefone" v={null} />}
+              <Row k="Município" v={lead.cidade} />
+              <Row k="Origem" v={lead.origem} />
+              <Row k="Respondeu WhatsApp" v={lead.respondeu_whatsapp ? "Sim" : null} />
+              <Row k="Lote de importação" v={lead.import_batch} />
+              <Row k="Cadastrado em" v={lead.created_at ? fmt(lead.created_at) : null} />
+              <Row k="1ª resposta" v={lead.first_response_at ? fmt(lead.first_response_at) : null} />
+              <Row k="Último contato" v={lead.last_contact_at ? fmt(lead.last_contact_at) : null} />
+              <Row
+                k="Próx. follow-up"
+                v={lead.next_follow_up_at ? fmt(lead.next_follow_up_at) : null}
+                tone={overdueFollowup ? "text-rose-600 dark:text-rose-400" : undefined}
+              />
+              <Row k="Motivo perda" v={lead.loss_reason} />
             </dl>
           </Card>
 
@@ -288,18 +413,25 @@ function Page() {
                   </Button>
                 ))}
               </div>
-              <Textarea className="mt-3" rows={3} placeholder="O que foi tratado?" value={contactBody} onChange={(e) => setContactBody(e.target.value)} />
+              <Textarea ref={noteRef} className="mt-3" rows={3} placeholder="O que foi tratado?" value={contactBody} onChange={(e) => setContactBody(e.target.value)} />
               <Button className="mt-2 w-full" disabled={busy || !contactBody.trim()} onClick={registerContact}>Salvar contato</Button>
             </Card>
 
             <Card className="p-5">
               <p className="mb-3 text-sm font-semibold flex items-center gap-2"><CalendarClock className="h-4 w-4" /> Agendar follow-up</p>
+              <div className="mb-3 flex flex-wrap gap-2">
+                {followupPresets().map((p) => (
+                  <Button key={p.label} size="sm" variant="outline" disabled={busy} onClick={() => doScheduleFollowUp("Retornar contato", p.date)}>
+                    {p.label}
+                  </Button>
+                ))}
+              </div>
               <Input placeholder="Título" value={fuTitle} onChange={(e) => setFuTitle(e.target.value)} />
               <Input className="mt-2" type="datetime-local" value={fuWhen} onChange={(e) => setFuWhen(e.target.value)} />
-              <Button className="mt-2 w-full" disabled={busy || !fuWhen} onClick={scheduleFollowUp}>Agendar</Button>
-              {tasks.filter((t) => t.status === "pending").length > 0 && (
+              <Button className="mt-2 w-full" disabled={busy || !fuWhen} onClick={scheduleFollowUp}>Agendar data específica</Button>
+              {pendingTasks.length > 0 && (
                 <div className="mt-3 space-y-2 border-t pt-3">
-                  {tasks.filter((t) => t.status === "pending").map((t) => {
+                  {pendingTasks.map((t) => {
                     const late = new Date(t.due_at) < new Date();
                     return (
                       <div key={t.id} className="flex items-center gap-2 text-sm">
@@ -337,11 +469,12 @@ function Page() {
   );
 }
 
-function Row({ k, v }: { k: string; v: string }) {
+function Row({ k, v, tone }: { k: string; v: string | null; tone?: string }) {
+  if (!v) return null;
   return (
     <div className="flex justify-between gap-3">
       <dt className="text-muted-foreground">{k}</dt>
-      <dd className="text-right font-medium">{v}</dd>
+      <dd className={`text-right font-medium ${tone ?? ""}`}>{v}</dd>
     </div>
   );
 }
