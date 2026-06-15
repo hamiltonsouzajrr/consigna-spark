@@ -540,21 +540,31 @@ function Page() {
           </div>
 
           <Card className="p-5">
-            <p className="mb-4 text-sm font-semibold">Timeline</p>
+            <p className="mb-4 text-sm font-semibold">Linha do tempo</p>
             {events.length === 0 && <p className="text-sm text-muted-foreground">Sem interações ainda. Registre o primeiro contato.</p>}
-            <ol className="relative space-y-4 border-l pl-5">
-              {events.map((e) => (
-                <li key={e.id} className="relative">
-                  <span className="absolute -left-[26px] top-1 h-3 w-3 rounded-full border-2 border-background bg-primary" />
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">{EVENT_LABEL[e.kind]}</Badge>
-                    <span className="text-xs text-muted-foreground">{fmt(e.created_at)}</span>
-                  </div>
-                  {e.body && <p className="mt-1 text-sm">{e.body}</p>}
-                </li>
+            <div className="space-y-5">
+              {groupedEvents.map((group) => (
+                <div key={group.day}>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{group.day}</p>
+                  <ol className="relative space-y-4 border-l pl-5">
+                    {group.items.map((e) => (
+                      <li key={e.id} className="relative">
+                        <span className="absolute -left-[27px] top-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-primary/15 text-primary">
+                          <EventIcon kind={e.kind} />
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">{EVENT_LABEL[e.kind]}</Badge>
+                          <span className="text-xs text-muted-foreground">{timeOnly(e.created_at)}</span>
+                        </div>
+                        {e.body && <p className="mt-1 text-sm">{e.body}</p>}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
               ))}
-            </ol>
+            </div>
           </Card>
+
 
           {isAdmin && <CentralAprovacao lead={{ id: lead.id, nome: lead.nome, cpf: lead.cpf }} />}
         </div>
