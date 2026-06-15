@@ -12,14 +12,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RhStatCard } from "@/components/rh/RhStatCard";
 import {
-  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, MapPin, MessageCircle, Video,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import {
+  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, PhoneCall, MapPin, MessageCircle, Video, DoorOpen, CheckCircle2,
 } from "lucide-react";
 import {
-  STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, whatsappLink,
+  STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, whatsappLink, telLink, CALL_OUTCOMES,
   type LeadStatus, type SlaStatus,
 } from "@/lib/prospeccao/constants";
 import { User } from "lucide-react";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
+
 
 export const Route = createFileRoute("/prospeccao/")({
   head: () => ({
