@@ -296,6 +296,14 @@ function Page() {
         <Button variant="outline" size="sm" onClick={goNextLead}><SkipForward className="mr-2 h-4 w-4" /> Próximo lead</Button>
       </div>
 
+      {overdueFollowup && (
+        <div className="mb-4 flex items-center gap-2 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-700 dark:text-rose-300">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          Follow-up vencido — agendado para {fmt(lead.next_follow_up_at)}. Retorne o contato.
+        </div>
+      )}
+
+
       {/* Sticky quick-action bar */}
       <Card className="mb-6 p-4">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
