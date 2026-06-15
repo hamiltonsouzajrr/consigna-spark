@@ -48,6 +48,25 @@ function fmt(iso: string | null) {
   return iso ? new Date(iso).toLocaleString("pt-BR") : "—";
 }
 
+function dayKey(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short", year: "numeric" });
+}
+
+function timeOnly(iso: string) {
+  return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function EventIcon({ kind }: { kind: EventKind }) {
+  const cls = "h-3.5 w-3.5";
+  if (kind === "ligacao") return <PhoneCall className={cls} />;
+  if (kind === "whatsapp") return <MessageCircle className={cls} />;
+  if (kind === "nota") return <StickyNote className={cls} />;
+  if (kind === "followup") return <CalendarClock className={cls} />;
+  if (kind === "status") return <Activity className={cls} />;
+  return <Activity className={cls} />;
+}
+
 function leadPhones(lead: Lead): string[] {
   const nums = lead.telefones && lead.telefones.length ? lead.telefones : (lead.telefone ? [lead.telefone] : []);
   return Array.from(new Set(nums.map((n) => n.trim()).filter(Boolean)));
