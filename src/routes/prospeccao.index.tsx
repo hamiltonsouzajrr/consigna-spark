@@ -132,6 +132,35 @@ function Page() {
     loadProd(user.id);
   };
 
+  // Mark the situation tag (tratativa) straight from the card.
+  const setSituacao = async (leadId: string, situacao: string) => {
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, situacao } : l)));
+    await supabase.from("prospect_leads").update({ situacao } as any).eq("id", leadId);
+    toast.success(`Marcado como: ${situacao}`);
+  };
+
+  // Quick follow-up scheduling (1h / amanhã 9h / 2 dias).
+  const scheduleFollowup = async (leadId: string, label: string, when: Date) => {
+    if (!user) return;
+    const iso = when.toISOString();
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, next_follow_up_at: iso } : l)));
+    await supabase.from("prospect_leads").update({ next_follow_up_at: iso } as any).eq("id", leadId);
+    await supabase.from("lead_tasks").insert({ lead_id: leadId, consultant_id: user.id, title: `Retornar contato (${label})`, due_at: iso, status: "pending" } as any);
+    toast.success(`Follow-up agendado: ${label}`);
+    loadProd(user.id);
+  };
+
+  const followupOptions = (): { label: string; date: Date }[] => {
+    const in1h = new Date(Date.now() + 60 * 60 * 1000);
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); tomorrow.setHours(9, 0, 0, 0);
+    const in2d = new Date(); in2d.setDate(in2d.getDate() + 2); in2d.setHours(9, 0, 0, 0);
+    return [
+      { label: "Em 1 hora", date: in1h },
+      { label: "Amanhã 9h", date: tomorrow },
+      { label: "Em 2 dias", date: in2d },
+    ];
+  };
+
 
 
   const stats = useMemo(() => {
