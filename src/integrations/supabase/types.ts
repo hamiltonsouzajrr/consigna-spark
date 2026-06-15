@@ -655,6 +655,7 @@ export type Database = {
           quality_score: number
           respondeu_whatsapp: boolean
           score: number
+          situacao: string | null
           sla_status: Database["public"]["Enums"]["prospect_sla_status"]
           status: Database["public"]["Enums"]["prospect_status"]
           telefone: string | null
@@ -682,6 +683,7 @@ export type Database = {
           quality_score?: number
           respondeu_whatsapp?: boolean
           score?: number
+          situacao?: string | null
           sla_status?: Database["public"]["Enums"]["prospect_sla_status"]
           status?: Database["public"]["Enums"]["prospect_status"]
           telefone?: string | null
@@ -709,6 +711,7 @@ export type Database = {
           quality_score?: number
           respondeu_whatsapp?: boolean
           score?: number
+          situacao?: string | null
           sla_status?: Database["public"]["Enums"]["prospect_sla_status"]
           status?: Database["public"]["Enums"]["prospect_status"]
           telefone?: string | null

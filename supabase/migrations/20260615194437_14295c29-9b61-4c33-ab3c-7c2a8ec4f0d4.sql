@@ -1,0 +1,1 @@
+ALTER TABLE public.prospect_leads ADD COLUMN IF NOT EXISTS situacao text;
