@@ -21,14 +21,14 @@ const tones: Record<NonNullable<Props["tone"]>, string> = {
 
 export function RhStatCard({ label, value, icon: Icon, hint, tone = "default" }: Props) {
   return (
-    <Card className="p-5">
-      <div className="flex items-start justify-between gap-3">
+    <Card className="p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-2 sm:gap-3">
         <div className="min-w-0">
-          <p className="truncate text-sm text-muted-foreground">{label}</p>
-          <p className="mt-2 text-3xl font-bold tracking-tight">{value}</p>
+          <p className="text-xs leading-tight text-muted-foreground sm:text-sm">{label}</p>
+          <p className="mt-1.5 text-2xl font-bold tracking-tight sm:mt-2 sm:text-3xl">{value}</p>
           {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
         </div>
-        <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", tones[tone])}>
+        <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11", tones[tone])}>
           <Icon className="h-5 w-5" />
         </span>
       </div>
