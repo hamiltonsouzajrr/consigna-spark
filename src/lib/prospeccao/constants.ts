@@ -136,3 +136,43 @@ export function whatsappLink(phone?: string | null, message?: string): string | 
   return message ? `${base}?text=${encodeURIComponent(message)}` : base;
 }
 
+// Build a tel: link that opens the phone's dialer (mobile) or softphone (desktop).
+export function telLink(phone?: string | null): string | null {
+  if (!phone) return null;
+  let d = phone.replace(/[^\d+]/g, "");
+  if (!d) return null;
+  // Keep a leading + if present; otherwise add Brazil country code for local numbers.
+  if (!d.startsWith("+")) {
+    const digits = d.replace(/\D/g, "").replace(/^0+/, "");
+    d = digits.length === 10 || digits.length === 11 ? `+55${digits}` : `+${digits}`;
+  }
+  return `tel:${d}`;
+}
+
+// Quick call outcomes a consultant can log right from the card.
+export const CALL_OUTCOMES = [
+  "Atendeu",
+  "Não atendeu",
+  "Caixa postal",
+  "Ocupado",
+  "Número errado",
+  "Pediu pra retornar",
+  "Sem interesse",
+] as const;
+export type CallOutcome = (typeof CALL_OUTCOMES)[number];
+
+// Suggested situation tags (tratativa) — distinct from the funnel status.
+export const SITUACAO_TAGS = [
+  "Quente",
+  "Morno",
+  "Frio",
+  "Não atende",
+  "WhatsApp sem resposta",
+  "Pediu pra retornar",
+  "Já tem consignado",
+  "Aguardando documento",
+  "Agendou simulação",
+  "Sem interesse",
+] as const;
+
+

@@ -12,14 +12,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RhStatCard } from "@/components/rh/RhStatCard";
 import {
-  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, MapPin, MessageCircle, Video,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import {
+  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, PhoneCall, MapPin, MessageCircle, Video, DoorOpen, CheckCircle2,
 } from "lucide-react";
 import {
-  STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, whatsappLink,
+  STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, whatsappLink, telLink, CALL_OUTCOMES,
   type LeadStatus, type SlaStatus,
 } from "@/lib/prospeccao/constants";
 import { User } from "lucide-react";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
+
 
 export const Route = createFileRoute("/prospeccao/")({
   head: () => ({
@@ -63,8 +68,25 @@ function Page() {
   const [loadingLeads, setLoadingLeads] = useState(true);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"todos" | "hoje" | "quentes" | "atrasados">("todos");
+  const [prod, setProd] = useState({ abertos: 0, qualificados: 0, ligacoes: 0, whats: 0, followups: 0 });
 
   const refill = useServerFn(refillMyQueue);
+
+  // Productivity panel: counts the consultant's own effort today.
+  const loadProd = async (uid: string) => {
+    const start = new Date(); start.setHours(0, 0, 0, 0);
+    const end = new Date(); end.setHours(23, 59, 59, 999);
+    const iso = start.toISOString();
+    const cnt = (p: any) => p.then((r: any) => r.count ?? 0);
+    const [abertos, qualificados, ligacoes, whats, followups] = await Promise.all([
+      cnt(supabase.from("prospect_leads").select("id", { count: "exact", head: true }).eq("consultant_id", uid).gte("opened_at", iso)),
+      cnt(supabase.from("prospect_leads").select("id", { count: "exact", head: true }).eq("consultant_id", uid).in("status", ["qualificado", "proposta", "ganho"])),
+      cnt(supabase.from("lead_events").select("id", { count: "exact", head: true }).eq("consultant_id", uid).eq("kind", "ligacao").gte("created_at", iso)),
+      cnt(supabase.from("lead_events").select("id", { count: "exact", head: true }).eq("consultant_id", uid).eq("kind", "whatsapp").gte("created_at", iso)),
+      cnt(supabase.from("lead_tasks").select("id", { count: "exact", head: true }).eq("consultant_id", uid).eq("status", "pending").lte("due_at", end.toISOString())),
+    ]);
+    setProd({ abertos, qualificados, ligacoes, whats, followups });
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -82,6 +104,7 @@ function Page() {
         .order("score", { ascending: false })
         .limit(500);
       if (!cancelled) { setLeads((data ?? []) as any); setLoadingLeads(false); }
+      if (!cancelled) loadProd(user.id);
     };
     // Consultants get their queue topped up from the pool before loading.
     const init = async () => {
@@ -97,6 +120,17 @@ function Page() {
       .subscribe();
     return () => { cancelled = true; supabase.removeChannel(ch); };
   }, [user, isAdmin]);
+
+  // Register a call result straight from the card (no need to open the lead).
+  const logCall = async (leadId: string, outcome: string) => {
+    if (!user) return;
+    const nowIso = new Date().toISOString();
+    await supabase.from("lead_events").insert({ lead_id: leadId, consultant_id: user.id, kind: "ligacao", body: `Resultado: ${outcome}` } as any);
+    await supabase.from("prospect_leads").update({ last_contact_at: nowIso } as any).eq("id", leadId);
+    toast.success(`Ligação registrada: ${outcome}`);
+    loadProd(user.id);
+  };
+
 
 
   const stats = useMemo(() => {
@@ -160,6 +194,20 @@ function Page() {
         <RhStatCard label="1ª resposta (méd.)" value={stats.avgMin ? `${stats.avgMin} min` : "—"} icon={Timer} tone="violet" />
       </div>
 
+      <Card className="mt-4 p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <Target className="h-4 w-4 text-primary" />
+          <p className="text-sm font-semibold">Minha produção de hoje</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+          <RhStatCard label="Leads abertos" value={prod.abertos} icon={DoorOpen} tone="sky" />
+          <RhStatCard label="Qualificados" value={prod.qualificados} icon={CheckCircle2} tone="violet" />
+          <RhStatCard label="Ligações feitas" value={prod.ligacoes} icon={PhoneCall} tone="emerald" />
+          <RhStatCard label="WhatsApps" value={prod.whats} icon={MessageCircle} tone="emerald" />
+          <RhStatCard label="Follow-ups pendentes" value={prod.followups} icon={CalendarClock} tone="amber" />
+        </div>
+      </Card>
+
       <div className="mt-6 flex flex-wrap items-center gap-2">
         {(["todos", "hoje", "quentes", "atrasados"] as const).map((f) => (
           <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} onClick={() => setFilter(f)}>
@@ -204,6 +252,16 @@ function Page() {
                   <span>Follow-up: {fmtWhen(l.next_follow_up_at)}</span>
                 </div>
               </div>
+              {telLink(l.telefone) && (
+                <a
+                  href={telLink(l.telefone)!}
+                  title="Ligar pelo celular / discador"
+                  onClick={(e) => { e.stopPropagation(); }}
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sky-500/15 text-sky-600 transition hover:bg-sky-500/25 dark:text-sky-400"
+                >
+                  <PhoneCall className="h-4 w-4" />
+                </a>
+              )}
               {whatsappLink(l.telefone) && (
                 <button
                   type="button"
@@ -214,6 +272,26 @@ function Page() {
                   <WhatsAppIcon className="h-4 w-4" />
                 </button>
               )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    title="Registrar resultado da ligação"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border px-2 text-xs text-muted-foreground transition hover:bg-accent"
+                  >
+                    <Phone className="h-3.5 w-3.5" /> Resultado
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                  <DropdownMenuLabel>Resultado da ligação</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {CALL_OUTCOMES.map((o) => (
+                    <DropdownMenuItem key={o} onSelect={() => logCall(l.id, o)}>{o}</DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Badge variant="outline" className={SLA_TONE[l.sla_status]}>{SLA_LABEL[l.sla_status]}</Badge>
               <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
             </Card>
