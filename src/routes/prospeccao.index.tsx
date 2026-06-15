@@ -19,7 +19,7 @@ import {
   Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, PhoneCall, MapPin, MessageCircle, Video, DoorOpen, CheckCircle2,
 } from "lucide-react";
 import {
-  STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, whatsappLink, telLink, CALL_OUTCOMES,
+  STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, whatsappLink, telLink, CALL_OUTCOMES, SITUACAO_TAGS,
   type LeadStatus, type SlaStatus,
 } from "@/lib/prospeccao/constants";
 import { User } from "lucide-react";
@@ -48,6 +48,7 @@ type Lead = {
   orcamento: number | null;
   urgencia: string | null;
   status: LeadStatus;
+  situacao: string | null;
   score: number;
   sla_status: SlaStatus;
   next_follow_up_at: string | null;
@@ -97,7 +98,7 @@ function Page() {
       // drop out automatically and are replaced by fresh ones.
       const { data } = await supabase
         .from("prospect_leads")
-        .select("id,nome,telefone,telefones,cpf,cidade,origem,orcamento,urgencia,status,score,sla_status,next_follow_up_at,last_contact_at,first_response_at,created_at")
+        .select("id,nome,telefone,telefones,cpf,cidade,origem,orcamento,urgencia,status,situacao,score,sla_status,next_follow_up_at,last_contact_at,first_response_at,created_at")
         .eq("status", "novo")
         .is("first_response_at", null)
         .is("opened_at", null)
@@ -129,6 +130,35 @@ function Page() {
     await supabase.from("prospect_leads").update({ last_contact_at: nowIso } as any).eq("id", leadId);
     toast.success(`Ligação registrada: ${outcome}`);
     loadProd(user.id);
+  };
+
+  // Mark the situation tag (tratativa) straight from the card.
+  const setSituacao = async (leadId: string, situacao: string) => {
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, situacao } : l)));
+    await supabase.from("prospect_leads").update({ situacao } as any).eq("id", leadId);
+    toast.success(`Marcado como: ${situacao}`);
+  };
+
+  // Quick follow-up scheduling (1h / amanhã 9h / 2 dias).
+  const scheduleFollowup = async (leadId: string, label: string, when: Date) => {
+    if (!user) return;
+    const iso = when.toISOString();
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, next_follow_up_at: iso } : l)));
+    await supabase.from("prospect_leads").update({ next_follow_up_at: iso } as any).eq("id", leadId);
+    await supabase.from("lead_tasks").insert({ lead_id: leadId, consultant_id: user.id, title: `Retornar contato (${label})`, due_at: iso, status: "pending" } as any);
+    toast.success(`Follow-up agendado: ${label}`);
+    loadProd(user.id);
+  };
+
+  const followupOptions = (): { label: string; date: Date }[] => {
+    const in1h = new Date(Date.now() + 60 * 60 * 1000);
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); tomorrow.setHours(9, 0, 0, 0);
+    const in2d = new Date(); in2d.setDate(in2d.getDate() + 2); in2d.setHours(9, 0, 0, 0);
+    return [
+      { label: "Em 1 hora", date: in1h },
+      { label: "Amanhã 9h", date: tomorrow },
+      { label: "Em 2 dias", date: in2d },
+    ];
   };
 
 
@@ -234,9 +264,10 @@ function Page() {
                 <User className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <p className="truncate font-semibold">{l.nome}</p>
                   <Badge variant="outline" className={STATUS_TONE[l.status]}>{STATUS_LABEL[l.status]}</Badge>
+                  {l.situacao && <Badge variant="secondary">{l.situacao}</Badge>}
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   {l.cpf && <span>CPF: {l.cpf}</span>}
@@ -276,18 +307,30 @@ function Page() {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    title="Registrar resultado da ligação"
+                    title="Resultado, follow-up e situação"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border px-2 text-xs text-muted-foreground transition hover:bg-accent"
                   >
-                    <Phone className="h-3.5 w-3.5" /> Resultado
+                    <Phone className="h-3.5 w-3.5" /> Tratar
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                <DropdownMenuContent align="end" className="max-h-[70vh] overflow-y-auto" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                   <DropdownMenuLabel>Resultado da ligação</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {CALL_OUTCOMES.map((o) => (
                     <DropdownMenuItem key={o} onSelect={() => logCall(l.id, o)}>{o}</DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Agendar follow-up</DropdownMenuLabel>
+                  {followupOptions().map((f) => (
+                    <DropdownMenuItem key={f.label} onSelect={() => scheduleFollowup(l.id, f.label, f.date)}>
+                      <CalendarClock className="mr-2 h-3.5 w-3.5" /> {f.label}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Situação</DropdownMenuLabel>
+                  {SITUACAO_TAGS.map((t) => (
+                    <DropdownMenuItem key={t} onSelect={() => setSituacao(l.id, t)}>{t}</DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
