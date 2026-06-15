@@ -175,6 +175,60 @@ export const adminAssignLeads = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Refill the signed-in consultant's queue with fresh leads from the pool.
+// A lead is "prospected" once it has been responded to or moved past "novo";
+// those leave the active queue. We then claim untouched, unassigned leads
+// (consultant_id IS NULL, status 'novo') until the queue reaches the target.
+export const refillMyQueue = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ target: z.number().int().min(1).max(100).optional() }).parse(data ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<{ claimed: number; active: number }> => {
+    const { userId } = context;
+    const target = data.target ?? 15;
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // How many fresh (un-prospected) leads does the consultant already hold?
+    const { count: activeCount } = await supabaseAdmin
+      .from("prospect_leads")
+      .select("id", { count: "exact", head: true })
+      .eq("consultant_id", userId)
+      .eq("status", "novo")
+      .is("first_response_at", null);
+
+    const have = activeCount ?? 0;
+    const need = Math.max(0, target - have);
+    if (need === 0) return { claimed: 0, active: have };
+
+    // Pull candidate unassigned leads from the pool, prioritising by score.
+    const { data: pool, error: poolErr } = await supabaseAdmin
+      .from("prospect_leads")
+      .select("id")
+      .is("consultant_id", null)
+      .eq("status", "novo")
+      .is("first_response_at", null)
+      .order("score", { ascending: false })
+      .limit(need * 3);
+    if (poolErr) throw new Error(poolErr.message);
+    if (!pool?.length) return { claimed: 0, active: have };
+
+    // Claim leads one chunk at a time, guarding against concurrent claims by
+    // only updating rows that are still unassigned.
+    const candidateIds = pool.map((r: any) => r.id).slice(0, need);
+    const { data: claimedRows, error: claimErr } = await supabaseAdmin
+      .from("prospect_leads")
+      .update({ consultant_id: userId } as any)
+      .in("id", candidateIds)
+      .is("consultant_id", null)
+      .select("id");
+    if (claimErr) throw new Error(claimErr.message);
+
+    const claimed = claimedRows?.length ?? 0;
+    return { claimed, active: have + claimed };
+  });
+
 // Helper: apply leadId -> consultantId assignments in chunked updates.
 async function applyAssignments(
   supabaseAdmin: any,
