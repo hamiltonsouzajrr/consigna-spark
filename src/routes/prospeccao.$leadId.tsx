@@ -77,6 +77,13 @@ function Page() {
 
   useEffect(() => { if (user) load(); }, [user, load]);
 
+  // Opening a lead removes it from the active queue (and tops it up with a fresh
+  // one). Fire once per lead; non-blocking.
+  useEffect(() => {
+    if (!user || !leadId) return;
+    markOpened({ data: { leadId } }).catch(() => { /* non-blocking */ });
+  }, [user, leadId]);
+
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
 
