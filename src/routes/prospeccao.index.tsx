@@ -98,7 +98,7 @@ function Page() {
       // drop out automatically and are replaced by fresh ones.
       const { data } = await supabase
         .from("prospect_leads")
-        .select("id,nome,telefone,telefones,cpf,cidade,origem,orcamento,urgencia,status,score,sla_status,next_follow_up_at,last_contact_at,first_response_at,created_at")
+        .select("id,nome,telefone,telefones,cpf,cidade,origem,orcamento,urgencia,status,situacao,score,sla_status,next_follow_up_at,last_contact_at,first_response_at,created_at")
         .eq("status", "novo")
         .is("first_response_at", null)
         .is("opened_at", null)
