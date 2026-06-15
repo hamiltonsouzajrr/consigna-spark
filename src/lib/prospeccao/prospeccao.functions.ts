@@ -99,7 +99,7 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
       if (cpfs.length) {
         const { data: ex } = await supabaseAdmin
           .from("prospect_leads")
-          .select("id,cpf,telefone,cidade,orcamento")
+          .select("id,cpf,telefone,telefones,cidade,orcamento")
           .in("cpf", cpfs);
         (ex ?? []).forEach((e: any) => { if (e.cpf) existingByCpf.set(norm(e.cpf), e); });
       }
@@ -119,6 +119,23 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
             if (r.telefone && !existing.telefone) patch.telefone = r.telefone;
             if (r.cidade && !existing.cidade) patch.cidade = r.cidade;
             if (r.orcamento != null && existing.orcamento == null) patch.orcamento = r.orcamento;
+            // Merge phone numbers: combine existing + new, dedup by digits.
+            const incoming = (r.telefones && r.telefones.length ? r.telefones : (r.telefone ? [r.telefone] : []));
+            const current: string[] = Array.isArray(existing.telefones) ? existing.telefones : (existing.telefone ? [existing.telefone] : []);
+            const merged: string[] = [];
+            const seenNums = new Set<string>();
+            for (const n of [...current, ...incoming]) {
+              const v = (n ?? "").trim();
+              if (!v) continue;
+              const key = norm(v) || v;
+              if (seenNums.has(key)) continue;
+              seenNums.add(key);
+              merged.push(v);
+            }
+            if (merged.length > current.length) {
+              patch.telefones = merged;
+              if (!existing.telefone && merged[0]) patch.telefone = merged[0];
+            }
             if (Object.keys(patch).length) {
               const { error } = await supabaseAdmin.from("prospect_leads").update(patch as any).eq("id", existing.id);
               if (error) throw new Error(error.message);
