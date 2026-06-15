@@ -49,6 +49,7 @@ function Page() {
   const { isAdmin } = useRhAccess();
   const { leadId } = useParams({ from: "/prospeccao/$leadId" });
   const runAi = useServerFn(aiLeadAssist);
+  const markOpened = useServerFn(markLeadOpened);
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [events, setEvents] = useState<Ev[]>([]);
