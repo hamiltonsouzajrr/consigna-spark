@@ -99,7 +99,7 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
       if (cpfs.length) {
         const { data: ex } = await supabaseAdmin
           .from("prospect_leads")
-          .select("id,cpf,telefone,cidade,orcamento")
+          .select("id,cpf,telefone,telefones,cidade,orcamento")
           .in("cpf", cpfs);
         (ex ?? []).forEach((e: any) => { if (e.cpf) existingByCpf.set(norm(e.cpf), e); });
       }
