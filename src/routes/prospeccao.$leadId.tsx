@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import {
   ArrowLeft, Phone, PhoneCall, MessageCircle, StickyNote, CalendarClock, Sparkles, Loader2, CheckCircle2,
-  Copy, SkipForward, Tag,
+  Copy, SkipForward, Tag, ChevronDown, ChevronUp, AlertTriangle, MapPin, Activity,
 } from "lucide-react";
 import {
   STATUS_FLOW, STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, EVENT_LABEL, LOSS_REASONS,
@@ -48,6 +48,25 @@ function fmt(iso: string | null) {
   return iso ? new Date(iso).toLocaleString("pt-BR") : "—";
 }
 
+function dayKey(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short", year: "numeric" });
+}
+
+function timeOnly(iso: string) {
+  return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function EventIcon({ kind }: { kind: EventKind }) {
+  const cls = "h-3.5 w-3.5";
+  if (kind === "ligacao") return <PhoneCall className={cls} />;
+  if (kind === "whatsapp") return <MessageCircle className={cls} />;
+  if (kind === "nota") return <StickyNote className={cls} />;
+  if (kind === "followup") return <CalendarClock className={cls} />;
+  if (kind === "status") return <Activity className={cls} />;
+  return <Activity className={cls} />;
+}
+
 function leadPhones(lead: Lead): string[] {
   const nums = lead.telefones && lead.telefones.length ? lead.telefones : (lead.telefone ? [lead.telefone] : []);
   return Array.from(new Set(nums.map((n) => n.trim()).filter(Boolean)));
@@ -74,6 +93,7 @@ function Page() {
   const [busy, setBusy] = useState(false);
   const [aiText, setAiText] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const noteRef = useRef<HTMLTextAreaElement>(null);
 
   const load = useCallback(async () => {
@@ -238,6 +258,16 @@ function Page() {
 
   const pendingTasks = useMemo(() => tasks.filter((t) => t.status === "pending"), [tasks]);
   const overdueFollowup = lead?.next_follow_up_at ? new Date(lead.next_follow_up_at) < new Date() : false;
+  const groupedEvents = useMemo(() => {
+    const groups: { day: string; items: Ev[] }[] = [];
+    for (const e of events) {
+      const day = dayKey(e.created_at);
+      const last = groups[groups.length - 1];
+      if (last && last.day === day) last.items.push(e);
+      else groups.push({ day, items: [e] });
+    }
+    return groups;
+  }, [events]);
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
@@ -265,6 +295,14 @@ function Page() {
         <Button asChild variant="ghost" size="sm"><Link to="/prospeccao"><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</Link></Button>
         <Button variant="outline" size="sm" onClick={goNextLead}><SkipForward className="mr-2 h-4 w-4" /> Próximo lead</Button>
       </div>
+
+      {overdueFollowup && (
+        <div className="mb-4 flex items-center gap-2 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-700 dark:text-rose-300">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          Follow-up vencido — agendado para {fmt(lead.next_follow_up_at)}. Retorne o contato.
+        </div>
+      )}
+
 
       {/* Sticky quick-action bar */}
       <Card className="mb-6 p-4">
@@ -319,45 +357,74 @@ function Page() {
         <div className="space-y-4 lg:col-span-1">
           <Card className="p-5">
             <p className="mb-3 text-sm font-semibold">Dados do lead</p>
-            <dl className="space-y-1.5 text-sm">
-              <Row k="CPF" v={lead.cpf} />
+
+            {/* Highlights: phones + city + score */}
+            <div className="space-y-2">
               {phones.map((num, i) => {
                 const link = whatsappLink(num, `Olá ${lead.nome.split(" ")[0]}, tudo bem?`);
                 return (
-                  <div key={`${num}-${i}`} className="flex items-center justify-between gap-3">
-                    <dt className="text-muted-foreground">{i === 0 ? "Telefone" : `Telefone ${i + 1}`}</dt>
-                    <dd className="flex items-center gap-2 text-right font-medium">
-                      <span>{num}</span>
+                  <div key={`${num}-${i}`} className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{i === 0 ? "Telefone" : `Telefone ${i + 1}`}</p>
+                      <p className="truncate text-base font-semibold">{num}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
                       {telLink(num) && (
-                        <a href={telLink(num)!} title="Ligar" className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-sky-500/15 text-sky-600 transition hover:bg-sky-500/25 dark:text-sky-400">
+                        <a href={telLink(num)!} title="Ligar" className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-sky-500/15 text-sky-600 transition hover:bg-sky-500/25 dark:text-sky-400">
                           <PhoneCall className="h-4 w-4" />
                         </a>
                       )}
                       {link && (
-                        <a href={link} target="_blank" rel="noopener noreferrer" title="Abrir no WhatsApp" className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600 transition hover:bg-emerald-500/25 dark:text-emerald-400">
+                        <a href={link} target="_blank" rel="noopener noreferrer" title="Abrir no WhatsApp" className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600 transition hover:bg-emerald-500/25 dark:text-emerald-400">
                           <WhatsAppIcon className="h-4 w-4" />
                         </a>
                       )}
-                    </dd>
+                    </div>
                   </div>
                 );
               })}
-              {!phones.length && <Row k="Telefone" v={null} />}
-              <Row k="Município" v={lead.cidade} />
-              <Row k="Origem" v={lead.origem} />
-              <Row k="Respondeu WhatsApp" v={lead.respondeu_whatsapp ? "Sim" : null} />
-              <Row k="Lote de importação" v={lead.import_batch} />
-              <Row k="Cadastrado em" v={lead.created_at ? fmt(lead.created_at) : null} />
-              <Row k="1ª resposta" v={lead.first_response_at ? fmt(lead.first_response_at) : null} />
-              <Row k="Último contato" v={lead.last_contact_at ? fmt(lead.last_contact_at) : null} />
-              <Row
-                k="Próx. follow-up"
-                v={lead.next_follow_up_at ? fmt(lead.next_follow_up_at) : null}
-                tone={overdueFollowup ? "text-rose-600 dark:text-rose-400" : undefined}
-              />
-              <Row k="Motivo perda" v={lead.loss_reason} />
-            </dl>
+              {!phones.length && <p className="rounded-lg border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">Sem telefone cadastrado</p>}
+
+              <div className="flex gap-2">
+                <div className="flex-1 rounded-lg border bg-muted/30 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Município</p>
+                  <p className="truncate text-sm font-semibold">{lead.cidade ?? "—"}</p>
+                </div>
+                <div className="flex-1 rounded-lg border bg-muted/30 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Pontuação</p>
+                  <p className={`text-sm font-semibold ${scoreTone(lead.score)}`}>{scoreLabel(lead.score)} · {lead.score}</p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowMore((v) => !v)}
+              className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              {showMore ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              {showMore ? "Ver menos" : "Ver mais detalhes"}
+            </button>
+
+            {showMore && (
+              <dl className="mt-3 space-y-1.5 border-t pt-3 text-sm">
+                <Row k="CPF" v={lead.cpf} />
+                <Row k="Origem" v={lead.origem} />
+                <Row k="Respondeu WhatsApp" v={lead.respondeu_whatsapp ? "Sim" : null} />
+                <Row k="Lote de importação" v={lead.import_batch} />
+                <Row k="Cadastrado em" v={lead.created_at ? fmt(lead.created_at) : null} />
+                <Row k="1ª resposta" v={lead.first_response_at ? fmt(lead.first_response_at) : null} />
+                <Row k="Último contato" v={lead.last_contact_at ? fmt(lead.last_contact_at) : null} />
+                <Row
+                  k="Próx. follow-up"
+                  v={lead.next_follow_up_at ? fmt(lead.next_follow_up_at) : null}
+                  tone={overdueFollowup ? "text-rose-600 dark:text-rose-400" : undefined}
+                />
+                <Row k="Motivo perda" v={lead.loss_reason} />
+              </dl>
+            )}
           </Card>
+
 
           {/* Tags: status + situação */}
           <Card className="p-5">
@@ -473,21 +540,31 @@ function Page() {
           </div>
 
           <Card className="p-5">
-            <p className="mb-4 text-sm font-semibold">Timeline</p>
+            <p className="mb-4 text-sm font-semibold">Linha do tempo</p>
             {events.length === 0 && <p className="text-sm text-muted-foreground">Sem interações ainda. Registre o primeiro contato.</p>}
-            <ol className="relative space-y-4 border-l pl-5">
-              {events.map((e) => (
-                <li key={e.id} className="relative">
-                  <span className="absolute -left-[26px] top-1 h-3 w-3 rounded-full border-2 border-background bg-primary" />
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">{EVENT_LABEL[e.kind]}</Badge>
-                    <span className="text-xs text-muted-foreground">{fmt(e.created_at)}</span>
-                  </div>
-                  {e.body && <p className="mt-1 text-sm">{e.body}</p>}
-                </li>
+            <div className="space-y-5">
+              {groupedEvents.map((group) => (
+                <div key={group.day}>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{group.day}</p>
+                  <ol className="relative space-y-4 border-l pl-5">
+                    {group.items.map((e) => (
+                      <li key={e.id} className="relative">
+                        <span className="absolute -left-[27px] top-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-primary/15 text-primary">
+                          <EventIcon kind={e.kind} />
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">{EVENT_LABEL[e.kind]}</Badge>
+                          <span className="text-xs text-muted-foreground">{timeOnly(e.created_at)}</span>
+                        </div>
+                        {e.body && <p className="mt-1 text-sm">{e.body}</p>}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
               ))}
-            </ol>
+            </div>
           </Card>
+
 
           {isAdmin && <CentralAprovacao lead={{ id: lead.id, nome: lead.nome, cpf: lead.cpf }} />}
         </div>
