@@ -47,8 +47,9 @@ function Page() {
     const load = async () => {
       const { data } = await supabase
         .from("prospect_leads")
-        .select("id,nome,telefone,status,next_follow_up_at,last_contact_at,created_at")
-        .order("created_at", { ascending: false })
+        .select("id,nome,telefone,status,next_follow_up_at,last_contact_at,opened_at,created_at")
+        .not("opened_at", "is", null)
+        .order("opened_at", { ascending: false })
         .limit(50);
       if (!cancelled) { setLeads((data ?? []) as any); setLoadingLeads(false); }
     };
