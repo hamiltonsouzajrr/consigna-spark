@@ -649,6 +649,7 @@ export type Database = {
           next_follow_up_at: string | null
           nome: string
           notes: string | null
+          opened_at: string | null
           orcamento: number | null
           origem: string | null
           quality_score: number
@@ -675,6 +676,7 @@ export type Database = {
           next_follow_up_at?: string | null
           nome: string
           notes?: string | null
+          opened_at?: string | null
           orcamento?: number | null
           origem?: string | null
           quality_score?: number
@@ -701,6 +703,7 @@ export type Database = {
           next_follow_up_at?: string | null
           nome?: string
           notes?: string | null
+          opened_at?: string | null
           orcamento?: number | null
           origem?: string | null
           quality_score?: number
