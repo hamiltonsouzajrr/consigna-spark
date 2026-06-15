@@ -314,11 +314,23 @@ function Page() {
                     <Phone className="h-3.5 w-3.5" /> Resultado
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                <DropdownMenuContent align="end" className="max-h-[70vh] overflow-y-auto" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                   <DropdownMenuLabel>Resultado da ligação</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {CALL_OUTCOMES.map((o) => (
                     <DropdownMenuItem key={o} onSelect={() => logCall(l.id, o)}>{o}</DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Agendar follow-up</DropdownMenuLabel>
+                  {followupOptions().map((f) => (
+                    <DropdownMenuItem key={f.label} onSelect={() => scheduleFollowup(l.id, f.label, f.date)}>
+                      <CalendarClock className="mr-2 h-3.5 w-3.5" /> {f.label}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Situação</DropdownMenuLabel>
+                  {SITUACAO_TAGS.map((t) => (
+                    <DropdownMenuItem key={t} onSelect={() => setSituacao(l.id, t)}>{t}</DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
