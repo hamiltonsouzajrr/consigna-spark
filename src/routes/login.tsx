@@ -25,14 +25,36 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { user, signIn, signUp } = useAuth();
+  const { user, signIn, signUp, resetPassword } = useAuth();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [recovering, setRecovering] = useState(false);
 
   useEffect(() => { if (user) nav({ to: "/dashboard" }); }, [user, nav]);
+
+  const handleReset = async () => {
+    if (!email) {
+      toast.error("Informe seu email", { description: "Digite o email da conta para enviar o link de recuperação." });
+      return;
+    }
+    setBusy(true);
+    const { error } = await resetPassword(email);
+    setBusy(false);
+    if (error) {
+      const { title, description } = translateError(error);
+      toast.error(title, { description, duration: 8000 });
+    } else {
+      toast.success("Email enviado!", {
+        description: "Se houver uma conta com esse email, você receberá um link para redefinir a senha.",
+        duration: 8000,
+      });
+      setRecovering(false);
+    }
+  };
+
 
   const translateError = (msg: string): { title: string; description?: string } => {
     const m = msg.toLowerCase();
