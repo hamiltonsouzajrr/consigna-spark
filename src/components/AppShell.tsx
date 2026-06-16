@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, Flame, CalendarClock, Home, Trophy, Star, MessageSquare, Clock, Sparkles } from "lucide-react";
+import { LayoutDashboard, Upload, List, LogOut, BadgeDollarSign, Calculator, Trash2, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, PhoneCall, Flame, CalendarClock, Home, Trophy, Star, MessageSquare, Clock, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useRhAccess } from "@/hooks/use-rh-access";
@@ -145,9 +145,36 @@ function useClock() {
   return now;
 }
 
+// Daily counter of completed calls, kept in localStorage and updated live via
+// the "chamadas-updated" event dispatched from the prospecção screens.
+function chamadasKey() {
+  return `prospeccao_chamadas_${new Date().toISOString().slice(0, 10)}`;
+}
+
+function useChamadas() {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const read = () => {
+      try {
+        const raw = window.localStorage.getItem(chamadasKey());
+        setCount(raw ? Number(raw) || 0 : 0);
+      } catch { /* ignore */ }
+    };
+    read();
+    window.addEventListener("chamadas-updated", read);
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener("chamadas-updated", read);
+      window.removeEventListener("storage", read);
+    };
+  }, []);
+  return count;
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { signOut, user } = useAuth();
   const now = useClock();
+  const chamadas = useChamadas();
   const { isAdmin, hasAnyAccess } = useRhAccess();
   const sections = navSections
     .map((s) => ({
@@ -233,7 +260,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
       <main className="flex-1 overflow-x-hidden print:overflow-visible">
         {/* Top header bar (Bitrix-style) */}
-        <header className="topbar-bg hidden items-center gap-4 px-6 py-2.5 text-white md:flex print:!hidden">
+        <header className="topbar-bg relative hidden items-center gap-4 px-6 py-2.5 text-white md:flex print:!hidden">
+          {/* Centered daily call counter */}
+          <div className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full bg-white/10 px-4 py-1">
+            <PhoneCall className="h-4 w-4 text-white/80" />
+            <span className="text-sm text-white/80">Chamadas hoje</span>
+            <span className="text-xl font-bold leading-none tabular-nums">{chamadas}</span>
+          </div>
           <div className="ml-auto flex items-center gap-4">
             <div className="flex items-center gap-2 tabular-nums">
               <Clock className="h-4 w-4 text-white/70" />
@@ -249,6 +282,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
         </header>
+
 
         <div className="md:hidden flex items-center justify-between topbar-bg px-4 py-3 text-white print:!hidden">
           <div className="flex items-center gap-2">

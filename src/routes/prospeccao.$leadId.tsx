@@ -16,16 +16,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Phone, PhoneCall, MessageCircle, StickyNote, CalendarClock, Sparkles, Loader2, CheckCircle2,
+  ArrowLeft, Phone, PhoneCall, MessageCircle, StickyNote, CalendarClock, CheckCircle2,
   Copy, SkipForward, Tag, ChevronDown, ChevronUp, AlertTriangle, MapPin, Activity,
 } from "lucide-react";
 import {
   STATUS_FLOW, STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, EVENT_LABEL, LOSS_REASONS,
-  PLAYBOOK, whatsappLink, telLink, CALL_OUTCOMES, SITUACAO_TAGS, scoreTone, scoreLabel,
+  PLAYBOOK, whatsappLink, telLink, CALL_OUTCOMES, SITUACAO_TAGS,
   type LeadStatus, type SlaStatus, type EventKind,
 } from "@/lib/prospeccao/constants";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
-import { aiLeadAssist, markLeadOpened } from "@/lib/prospeccao/prospeccao.functions";
+import { markLeadOpened } from "@/lib/prospeccao/prospeccao.functions";
 
 import { useRhAccess } from "@/hooks/use-rh-access";
 
@@ -77,7 +77,6 @@ function Page() {
   const { isAdmin } = useRhAccess();
   const { leadId } = useParams({ from: "/prospeccao/$leadId" });
   const navigate = useNavigate();
-  const runAi = useServerFn(aiLeadAssist);
   const markOpened = useServerFn(markLeadOpened);
 
   const [lead, setLead] = useState<Lead | null>(null);
@@ -91,8 +90,6 @@ function Page() {
   const [fuWhen, setFuWhen] = useState("");
   const [lossReason, setLossReason] = useState<string>("");
   const [busy, setBusy] = useState(false);
-  const [aiText, setAiText] = useState("");
-  const [aiBusy, setAiBusy] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const noteRef = useRef<HTMLTextAreaElement>(null);
 
@@ -231,15 +228,7 @@ function Page() {
     navigator.clipboard?.writeText(primaryPhone).then(() => toast.success("Número copiado.")).catch(() => {});
   }, [primaryPhone]);
 
-  const askAi = async () => {
-    setAiBusy(true); setAiText("");
-    try {
-      const r = await runAi({ data: { leadId } });
-      setAiText(r.text);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao consultar a IA.");
-    } finally { setAiBusy(false); }
-  };
+
 
   // Keyboard shortcuts: L = ligar, W = WhatsApp, N = foco na nota.
   useEffect(() => {
@@ -312,7 +301,6 @@ function Page() {
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               <Badge variant="outline" className={STATUS_TONE[lead.status]}>{STATUS_LABEL[lead.status]}</Badge>
               <Badge variant="outline" className={SLA_TONE[lead.sla_status]}>{lead.sla_status === "ok" ? "Ainda não prospectado" : SLA_LABEL[lead.sla_status]}</Badge>
-              <Badge variant="outline" className={scoreTone(lead.score)}>{scoreLabel(lead.score)} · {lead.score}</Badge>
               {lead.situacao && <Badge variant="secondary"><Tag className="mr-1 h-3 w-3" />{lead.situacao}</Badge>}
             </div>
           </div>
@@ -389,10 +377,6 @@ function Page() {
                 <div className="flex-1 rounded-lg border bg-muted/30 px-3 py-2">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Município</p>
                   <p className="truncate text-sm font-semibold">{lead.cidade ?? "—"}</p>
-                </div>
-                <div className="flex-1 rounded-lg border bg-muted/30 px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Pontuação</p>
-                  <p className={`text-sm font-semibold ${scoreTone(lead.score)}`}>{scoreLabel(lead.score)} · {lead.score}</p>
                 </div>
               </div>
             </div>
@@ -474,17 +458,6 @@ function Page() {
             </div>
           </Card>
 
-          {/* AI assistant */}
-          <Card className="p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> Assistente IA</p>
-              <Button size="sm" variant="outline" onClick={askAi} disabled={aiBusy}>
-                {aiBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Analisar"}
-              </Button>
-            </div>
-            {aiText && <div className="mt-3 whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-sm">{aiText}</div>}
-            {!aiText && !aiBusy && <p className="mt-2 text-xs text-muted-foreground">Resume o histórico, identifica objeções e sugere a próxima ação.</p>}
-          </Card>
         </div>
 
         {/* Right: playbook, actions, timeline */}

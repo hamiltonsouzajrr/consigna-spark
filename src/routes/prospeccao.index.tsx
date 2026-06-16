@@ -87,7 +87,10 @@ function Page() {
   const bumpChamadas = () => {
     setChamadas((c) => {
       const next = c + 1;
-      try { window.localStorage.setItem(chamadasKey(), String(next)); } catch { /* ignore */ }
+      try {
+        window.localStorage.setItem(chamadasKey(), String(next));
+        window.dispatchEvent(new Event("chamadas-updated"));
+      } catch { /* ignore */ }
       return next;
     });
   };
