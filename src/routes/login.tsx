@@ -25,14 +25,36 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { user, signIn, signUp } = useAuth();
+  const { user, signIn, signUp, resetPassword } = useAuth();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [recovering, setRecovering] = useState(false);
 
   useEffect(() => { if (user) nav({ to: "/dashboard" }); }, [user, nav]);
+
+  const handleReset = async () => {
+    if (!email) {
+      toast.error("Informe seu email", { description: "Digite o email da conta para enviar o link de recuperação." });
+      return;
+    }
+    setBusy(true);
+    const { error } = await resetPassword(email);
+    setBusy(false);
+    if (error) {
+      const { title, description } = translateError(error);
+      toast.error(title, { description, duration: 8000 });
+    } else {
+      toast.success("Email enviado!", {
+        description: "Se houver uma conta com esse email, você receberá um link para redefinir a senha.",
+        duration: 8000,
+      });
+      setRecovering(false);
+    }
+  };
+
 
   const translateError = (msg: string): { title: string; description?: string } => {
     const m = msg.toLowerCase();
@@ -88,6 +110,38 @@ function LoginPage() {
           </div>
         </div>
 
+        {recovering ? (
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-base font-semibold">Recuperar conta</h2>
+              <p className="text-sm text-muted-foreground">
+                Informe o email da sua conta e enviaremos um link para redefinir a senha.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                className="h-11"
+              />
+            </div>
+            <Button className="h-11 w-full" disabled={busy || !email} onClick={handleReset}>
+              {busy ? "Aguarde…" : "Enviar link de recuperação"}
+            </Button>
+            <button
+              type="button"
+              onClick={() => setRecovering(false)}
+              className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
+            >
+              Voltar ao login
+            </button>
+          </div>
+        ) : (
         <Tabs defaultValue="in">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="in">Entrar</TabsTrigger>
@@ -128,12 +182,22 @@ function LoginPage() {
                   </button>
                 </div>
               </div>
+              {m === "in" && (
+                <button
+                  type="button"
+                  onClick={() => setRecovering(true)}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Esqueceu a senha? Recuperar conta
+                </button>
+              )}
               <Button className="h-11 w-full" disabled={busy || !email || !password} onClick={() => handle(m)}>
                 {busy ? "Aguarde…" : m === "in" ? "Entrar" : "Criar conta"}
               </Button>
             </TabsContent>
           ))}
         </Tabs>
+        )}
       </Card>
     </main>
   );
