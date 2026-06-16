@@ -389,10 +389,6 @@ function Page() {
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Município</p>
                   <p className="truncate text-sm font-semibold">{lead.cidade ?? "—"}</p>
                 </div>
-                <div className="flex-1 rounded-lg border bg-muted/30 px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Pontuação</p>
-                  <p className={`text-sm font-semibold ${scoreTone(lead.score)}`}>{scoreLabel(lead.score)} · {lead.score}</p>
-                </div>
               </div>
             </div>
 
