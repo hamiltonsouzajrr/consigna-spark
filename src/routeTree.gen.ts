@@ -16,6 +16,7 @@ import { Route as SimulacaoAlagoasRouteImport } from './routes/simulacao-alagoas
 import { Route as ServidoresSemAcessoRouteImport } from './routes/servidores-sem-acesso'
 import { Route as SafeConsigRouteImport } from './routes/safe-consig'
 import { Route as RhRouteImport } from './routes/rh'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as QrcodesRouteImport } from './routes/qrcodes'
 import { Route as PositivaIaRouteImport } from './routes/positiva-ia'
 import { Route as PesquisasRouteImport } from './routes/pesquisas'
@@ -104,6 +105,11 @@ const SafeConsigRoute = SafeConsigRouteImport.update({
 const RhRoute = RhRouteImport.update({
   id: '/rh',
   path: '/rh',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QrcodesRoute = QrcodesRouteImport.update({
@@ -390,6 +396,7 @@ export interface FileRoutesByFullPath {
   '/pesquisas': typeof PesquisasRoute
   '/positiva-ia': typeof PositivaIaRouteWithChildren
   '/qrcodes': typeof QrcodesRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rh': typeof RhRouteWithChildren
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
@@ -453,6 +460,7 @@ export interface FileRoutesByTo {
   '/pesquisas': typeof PesquisasRoute
   '/positiva-ia': typeof PositivaIaRouteWithChildren
   '/qrcodes': typeof QrcodesRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof SimulacaoAlagoasRoute
@@ -515,6 +523,7 @@ export interface FileRoutesById {
   '/pesquisas': typeof PesquisasRoute
   '/positiva-ia': typeof PositivaIaRouteWithChildren
   '/qrcodes': typeof QrcodesRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rh': typeof RhRouteWithChildren
   '/safe-consig': typeof SafeConsigRoute
   '/servidores-sem-acesso': typeof ServidoresSemAcessoRoute
@@ -580,6 +589,7 @@ export interface FileRouteTypes {
     | '/pesquisas'
     | '/positiva-ia'
     | '/qrcodes'
+    | '/reset-password'
     | '/rh'
     | '/safe-consig'
     | '/servidores-sem-acesso'
@@ -643,6 +653,7 @@ export interface FileRouteTypes {
     | '/pesquisas'
     | '/positiva-ia'
     | '/qrcodes'
+    | '/reset-password'
     | '/safe-consig'
     | '/servidores-sem-acesso'
     | '/simulacao-alagoas'
@@ -704,6 +715,7 @@ export interface FileRouteTypes {
     | '/pesquisas'
     | '/positiva-ia'
     | '/qrcodes'
+    | '/reset-password'
     | '/rh'
     | '/safe-consig'
     | '/servidores-sem-acesso'
@@ -768,6 +780,7 @@ export interface RootRouteChildren {
   PesquisasRoute: typeof PesquisasRoute
   PositivaIaRoute: typeof PositivaIaRouteWithChildren
   QrcodesRoute: typeof QrcodesRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   RhRoute: typeof RhRouteWithChildren
   SafeConsigRoute: typeof SafeConsigRoute
   ServidoresSemAcessoRoute: typeof ServidoresSemAcessoRoute
@@ -839,6 +852,13 @@ declare module '@tanstack/react-router' {
       path: '/rh'
       fullPath: '/rh'
       preLoaderRoute: typeof RhRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qrcodes': {
@@ -1332,6 +1352,7 @@ const rootRouteChildren: RootRouteChildren = {
   PesquisasRoute: PesquisasRoute,
   PositivaIaRoute: PositivaIaRouteWithChildren,
   QrcodesRoute: QrcodesRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   RhRoute: RhRouteWithChildren,
   SafeConsigRoute: SafeConsigRoute,
   ServidoresSemAcessoRoute: ServidoresSemAcessoRoute,
