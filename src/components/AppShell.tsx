@@ -260,7 +260,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
       <main className="flex-1 overflow-x-hidden print:overflow-visible">
         {/* Top header bar (Bitrix-style) */}
-        <header className="topbar-bg hidden items-center gap-4 px-6 py-2.5 text-white md:flex print:!hidden">
+        <header className="topbar-bg relative hidden items-center gap-4 px-6 py-2.5 text-white md:flex print:!hidden">
+          {/* Centered daily call counter */}
+          <div className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full bg-white/10 px-4 py-1">
+            <PhoneCall className="h-4 w-4 text-white/80" />
+            <span className="text-sm text-white/80">Chamadas hoje</span>
+            <span className="text-xl font-bold leading-none tabular-nums">{chamadas}</span>
+          </div>
           <div className="ml-auto flex items-center gap-4">
             <div className="flex items-center gap-2 tabular-nums">
               <Clock className="h-4 w-4 text-white/70" />
@@ -276,6 +282,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
         </header>
+
 
         <div className="md:hidden flex items-center justify-between topbar-bg px-4 py-3 text-white print:!hidden">
           <div className="flex items-center gap-2">
