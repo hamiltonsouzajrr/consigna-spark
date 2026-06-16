@@ -93,6 +93,14 @@ function Page() {
   const [showMore, setShowMore] = useState(false);
   const noteRef = useRef<HTMLTextAreaElement>(null);
 
+  // Reset view whenever the lead changes so the previous lead never flashes.
+  useEffect(() => {
+    setLead(null);
+    setEvents([]);
+    setTasks([]);
+    setNotFound(false);
+  }, [leadId]);
+
   const load = useCallback(async () => {
     const { data, error } = await supabase.from("prospect_leads").select("*").eq("id", leadId).maybeSingle();
     if (error || !data) { setNotFound(true); return; }
