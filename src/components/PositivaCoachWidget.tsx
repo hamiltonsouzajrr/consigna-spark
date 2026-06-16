@@ -51,7 +51,14 @@ function ChatBody({ onClose, onMinimize }: { onClose: () => void; onMinimize: ()
   const { messages, sendMessage, status } = useChat({
     id: "positiva-coach",
     messages: initial ?? [],
-    transport: new DefaultChatTransport({ api: "/api/positiva-coach" }),
+    transport: new DefaultChatTransport({
+      api: "/api/positiva-coach",
+      headers: async () => {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        return token ? { Authorization: `Bearer ${token}` } : {};
+      },
+    }),
     onError: () => toast.error("Não consegui responder agora. Tente novamente."),
     onFinish: ({ message }) => {
       const text = message.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
