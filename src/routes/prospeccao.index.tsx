@@ -144,10 +144,16 @@ function Page() {
   // Register a call result straight from the card (no need to open the lead).
   const logCall = async (leadId: string, outcome: string) => {
     if (!user) return;
+    const lead = leads.find((l) => l.id === leadId);
+    if (!lead?.situacao) {
+      toast.warning("Etiquete o lead (situação) antes de registrar a chamada.");
+      return;
+    }
     const nowIso = new Date().toISOString();
     await supabase.from("lead_events").insert({ lead_id: leadId, consultant_id: user.id, kind: "ligacao", body: `Resultado: ${outcome}` } as any);
     await supabase.from("prospect_leads").update({ last_contact_at: nowIso } as any).eq("id", leadId);
-    toast.success(`Ligação registrada: ${outcome}`);
+    bumpChamadas();
+    toast.success(`Ligação registrada: ${outcome} — próximo lead!`);
     loadProd(user.id);
   };
 
