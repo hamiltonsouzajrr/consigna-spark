@@ -3,6 +3,20 @@
 // - POST: receives inbound messages, routes by phone_number_id to the matching account,
 //   upserts the contact and stores the incoming message.
 import { createFileRoute } from "@tanstack/react-router";
+import { createHmac, timingSafeEqual } from "crypto";
+
+// Verify the X-Hub-Signature-256 HMAC that Meta signs every genuine delivery with.
+function verifySignature(rawBody: string, signatureHeader: string | null): boolean {
+  const appSecret = process.env.WHATSAPP_APP_SECRET;
+  if (!appSecret) return false;
+  if (!signatureHeader?.startsWith("sha256=")) return false;
+
+  const expected = "sha256=" + createHmac("sha256", appSecret).update(rawBody).digest("hex");
+  const a = Buffer.from(signatureHeader);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
 
 export const Route = createFileRoute("/api/public/whatsapp/webhook")({
   server: {
@@ -21,9 +35,16 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
       },
 
       POST: async ({ request }) => {
+        const rawBody = await request.text();
+
+        // Reject any request that isn't a genuine, signed Meta delivery.
+        if (!verifySignature(rawBody, request.headers.get("x-hub-signature-256"))) {
+          return new Response("Forbidden", { status: 403 });
+        }
+
         let payload: any;
         try {
-          payload = await request.json();
+          payload = JSON.parse(rawBody);
         } catch {
           return new Response("Bad request", { status: 400 });
         }
