@@ -228,15 +228,7 @@ function Page() {
     navigator.clipboard?.writeText(primaryPhone).then(() => toast.success("Número copiado.")).catch(() => {});
   }, [primaryPhone]);
 
-  const askAi = async () => {
-    setAiBusy(true); setAiText("");
-    try {
-      const r = await runAi({ data: { leadId } });
-      setAiText(r.text);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao consultar a IA.");
-    } finally { setAiBusy(false); }
-  };
+
 
   // Keyboard shortcuts: L = ligar, W = WhatsApp, N = foco na nota.
   useEffect(() => {
