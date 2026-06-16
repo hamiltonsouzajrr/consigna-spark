@@ -35,9 +35,16 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
       },
 
       POST: async ({ request }) => {
+        const rawBody = await request.text();
+
+        // Reject any request that isn't a genuine, signed Meta delivery.
+        if (!verifySignature(rawBody, request.headers.get("x-hub-signature-256"))) {
+          return new Response("Forbidden", { status: 403 });
+        }
+
         let payload: any;
         try {
-          payload = await request.json();
+          payload = JSON.parse(rawBody);
         } catch {
           return new Response("Bad request", { status: 400 });
         }
