@@ -70,8 +70,27 @@ function Page() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"todos" | "hoje" | "quentes" | "atrasados">("todos");
   const [prod, setProd] = useState({ abertos: 0, qualificados: 0, ligacoes: 0, whats: 0, followups: 0 });
+  // Daily counter of completed calls (lead etiquetado + ligação registrada),
+  // kept per-day in localStorage so it survives refreshes.
+  const [chamadas, setChamadas] = useState(0);
 
   const refill = useServerFn(refillMyQueue);
+
+  const chamadasKey = () => `prospeccao_chamadas_${new Date().toISOString().slice(0, 10)}`;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem(chamadasKey());
+    setChamadas(raw ? Number(raw) || 0 : 0);
+  }, []);
+
+  const bumpChamadas = () => {
+    setChamadas((c) => {
+      const next = c + 1;
+      try { window.localStorage.setItem(chamadasKey(), String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
 
   // Productivity panel: counts the consultant's own effort today.
   const loadProd = async (uid: string) => {
@@ -125,10 +144,16 @@ function Page() {
   // Register a call result straight from the card (no need to open the lead).
   const logCall = async (leadId: string, outcome: string) => {
     if (!user) return;
+    const lead = leads.find((l) => l.id === leadId);
+    if (!lead?.situacao) {
+      toast.warning("Etiquete o lead (situação) antes de registrar a chamada.");
+      return;
+    }
     const nowIso = new Date().toISOString();
     await supabase.from("lead_events").insert({ lead_id: leadId, consultant_id: user.id, kind: "ligacao", body: `Resultado: ${outcome}` } as any);
     await supabase.from("prospect_leads").update({ last_contact_at: nowIso } as any).eq("id", leadId);
-    toast.success(`Ligação registrada: ${outcome}`);
+    bumpChamadas();
+    toast.success(`Ligação registrada: ${outcome} — próximo lead!`);
     loadProd(user.id);
   };
 
@@ -229,7 +254,8 @@ function Page() {
           <Target className="h-4 w-4 text-primary" />
           <p className="text-sm font-semibold">Minha produção de hoje</p>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
+          <RhStatCard label="Chamadas concluídas" value={chamadas} icon={PhoneCall} tone="rose" />
           <RhStatCard label="Leads abertos" value={prod.abertos} icon={DoorOpen} tone="sky" />
           <RhStatCard label="Qualificados" value={prod.qualificados} icon={CheckCircle2} tone="violet" />
           <RhStatCard label="Ligações feitas" value={prod.ligacoes} icon={PhoneCall} tone="emerald" />
