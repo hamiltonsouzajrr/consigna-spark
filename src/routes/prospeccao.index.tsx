@@ -70,8 +70,27 @@ function Page() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"todos" | "hoje" | "quentes" | "atrasados">("todos");
   const [prod, setProd] = useState({ abertos: 0, qualificados: 0, ligacoes: 0, whats: 0, followups: 0 });
+  // Daily counter of completed calls (lead etiquetado + ligação registrada),
+  // kept per-day in localStorage so it survives refreshes.
+  const [chamadas, setChamadas] = useState(0);
 
   const refill = useServerFn(refillMyQueue);
+
+  const chamadasKey = () => `prospeccao_chamadas_${new Date().toISOString().slice(0, 10)}`;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem(chamadasKey());
+    setChamadas(raw ? Number(raw) || 0 : 0);
+  }, []);
+
+  const bumpChamadas = () => {
+    setChamadas((c) => {
+      const next = c + 1;
+      try { window.localStorage.setItem(chamadasKey(), String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
 
   // Productivity panel: counts the consultant's own effort today.
   const loadProd = async (uid: string) => {
