@@ -4,6 +4,7 @@ import { DefaultChatTransport } from "ai";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -51,7 +52,14 @@ function ChatBody({ onClose, onMinimize }: { onClose: () => void; onMinimize: ()
   const { messages, sendMessage, status } = useChat({
     id: "positiva-coach",
     messages: initial ?? [],
-    transport: new DefaultChatTransport({ api: "/api/positiva-coach" }),
+    transport: new DefaultChatTransport({
+      api: "/api/positiva-coach",
+      headers: async (): Promise<Record<string, string>> => {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        return token ? { Authorization: `Bearer ${token}` } : {};
+      },
+    }),
     onError: () => toast.error("Não consegui responder agora. Tente novamente."),
     onFinish: ({ message }) => {
       const text = message.parts.map((p) => (p.type === "text" ? p.text : "")).join("");

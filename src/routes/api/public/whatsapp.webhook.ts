@@ -3,6 +3,18 @@
 // - POST: receives inbound messages, routes by phone_number_id to the matching account,
 //   upserts the contact and stores the incoming message.
 import { createFileRoute } from "@tanstack/react-router";
+import { createHmac, timingSafeEqual } from "crypto";
+
+// Verify Meta's X-Hub-Signature-256 HMAC so only genuine deliveries are accepted.
+function verifySignature(rawBody: string, signatureHeader: string | null, appSecret: string): boolean {
+  if (!signatureHeader?.startsWith("sha256=")) return false;
+  const provided = signatureHeader.slice("sha256=".length);
+  const expected = createHmac("sha256", appSecret).update(rawBody, "utf8").digest("hex");
+  const a = Buffer.from(provided, "hex");
+  const b = Buffer.from(expected, "hex");
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
 
 export const Route = createFileRoute("/api/public/whatsapp/webhook")({
   server: {
@@ -21,9 +33,22 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
       },
 
       POST: async ({ request }) => {
+        const appSecret = process.env.WHATSAPP_APP_SECRET;
+        if (!appSecret) {
+          console.error("[whatsapp.webhook] WHATSAPP_APP_SECRET not configured");
+          return new Response("Forbidden", { status: 403 });
+        }
+
+        // Read the raw body once to verify the HMAC signature before parsing.
+        const rawBody = await request.text();
+        const signature = request.headers.get("x-hub-signature-256");
+        if (!verifySignature(rawBody, signature, appSecret)) {
+          return new Response("Forbidden", { status: 403 });
+        }
+
         let payload: any;
         try {
-          payload = await request.json();
+          payload = JSON.parse(rawBody);
         } catch {
           return new Response("Bad request", { status: 400 });
         }
