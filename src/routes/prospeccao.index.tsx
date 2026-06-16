@@ -287,6 +287,32 @@ function Page() {
       </div>
 
       <Card className="mt-4 p-4">
+        {/* Daily goal + streak gamification */}
+        <div className="mb-4 rounded-lg border bg-gradient-to-r from-primary/10 to-transparent p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Target className="h-4 w-4 text-primary" />
+              <p className="text-sm font-semibold">Meta diária de chamadas</p>
+            </div>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="font-semibold tabular-nums">{chamadas}/{META_DIARIA}</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                <Flame className="h-3.5 w-3.5" /> {streak} {streak === 1 ? "dia" : "dias"} seguidos
+              </span>
+            </div>
+          </div>
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className={`h-full rounded-full transition-all ${chamadas >= META_DIARIA ? "bg-emerald-500" : "bg-primary"}`}
+              style={{ width: `${Math.min(100, Math.round((chamadas / META_DIARIA) * 100))}%` }}
+            />
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            {chamadas >= META_DIARIA
+              ? "🎉 Meta batida! Continue para manter sua sequência amanhã."
+              : `Faltam ${META_DIARIA - chamadas} chamadas para bater a meta de hoje.`}
+          </p>
+        </div>
         <div className="mb-3 flex items-center gap-2">
           <Target className="h-4 w-4 text-primary" />
           <p className="text-sm font-semibold">Minha produção de hoje</p>
