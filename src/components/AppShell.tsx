@@ -145,6 +145,32 @@ function useClock() {
   return now;
 }
 
+// Daily counter of completed calls, kept in localStorage and updated live via
+// the "chamadas-updated" event dispatched from the prospecção screens.
+function chamadasKey() {
+  return `prospeccao_chamadas_${new Date().toISOString().slice(0, 10)}`;
+}
+
+function useChamadas() {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const read = () => {
+      try {
+        const raw = window.localStorage.getItem(chamadasKey());
+        setCount(raw ? Number(raw) || 0 : 0);
+      } catch { /* ignore */ }
+    };
+    read();
+    window.addEventListener("chamadas-updated", read);
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener("chamadas-updated", read);
+      window.removeEventListener("storage", read);
+    };
+  }, []);
+  return count;
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { signOut, user } = useAuth();
   const now = useClock();
