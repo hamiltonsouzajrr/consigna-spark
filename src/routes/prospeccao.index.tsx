@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
-  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, PhoneCall, MapPin, MessageCircle, Video, DoorOpen, CheckCircle2, BarChart3,
+  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, PhoneCall, MapPin, MessageCircle, DoorOpen, CheckCircle2, BarChart3,
 } from "lucide-react";
 import {
   STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, whatsappLink, telLink, CALL_OUTCOMES, SITUACAO_TAGS,
@@ -267,9 +267,6 @@ function Page() {
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline">
               <Link to="/prospeccao/qualidade"><BarChart3 className="mr-2 h-4 w-4" /> Qualidade</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/prospeccao/gravacoes"><Video className="mr-2 h-4 w-4" /> Gravações</Link>
             </Button>
             <Button asChild variant="outline">
               <Link to="/prospeccao/admin"><Settings2 className="mr-2 h-4 w-4" /> Painel admin</Link>
