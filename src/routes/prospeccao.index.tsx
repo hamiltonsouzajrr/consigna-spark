@@ -73,15 +73,41 @@ function Page() {
   // Daily counter of completed calls (lead etiquetado + ligação registrada),
   // kept per-day in localStorage so it survives refreshes.
   const [chamadas, setChamadas] = useState(0);
+  const [streak, setStreak] = useState(0);
 
   const refill = useServerFn(refillMyQueue);
 
-  const chamadasKey = () => `prospeccao_chamadas_${new Date().toISOString().slice(0, 10)}`;
+  // Daily call goal used for gamification (progress bar + streak).
+  const META_DIARIA = 50;
+
+  const todayKey = () => new Date().toISOString().slice(0, 10);
+  const chamadasKey = () => `prospeccao_chamadas_${todayKey()}`;
+
+  // Recompute the streak: consecutive days (up to today) that hit META_DIARIA.
+  const computeStreak = () => {
+    if (typeof window === "undefined") return 0;
+    let count = 0;
+    const d = new Date();
+    for (let i = 0; i < 365; i++) {
+      const key = `prospeccao_chamadas_${d.toISOString().slice(0, 10)}`;
+      const val = Number(window.localStorage.getItem(key) ?? "0") || 0;
+      if (val >= META_DIARIA) {
+        count++;
+      } else if (i === 0) {
+        // Today not reached yet — keep counting previous days.
+      } else {
+        break;
+      }
+      d.setDate(d.getDate() - 1);
+    }
+    return count;
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const raw = window.localStorage.getItem(chamadasKey());
     setChamadas(raw ? Number(raw) || 0 : 0);
+    setStreak(computeStreak());
   }, []);
 
   const bumpChamadas = () => {
@@ -90,10 +116,15 @@ function Page() {
       try {
         window.localStorage.setItem(chamadasKey(), String(next));
         window.dispatchEvent(new Event("chamadas-updated"));
+        if (next === META_DIARIA) {
+          setStreak(computeStreak());
+          toast.success(`🎯 Meta diária de ${META_DIARIA} chamadas atingida! Mandou bem!`);
+        }
       } catch { /* ignore */ }
       return next;
     });
   };
+
 
   // Productivity panel: counts the consultant's own effort today.
   const loadProd = async (uid: string) => {
