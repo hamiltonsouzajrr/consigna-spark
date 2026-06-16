@@ -269,9 +269,6 @@ function Page() {
               <Link to="/prospeccao/qualidade"><BarChart3 className="mr-2 h-4 w-4" /> Qualidade</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link to="/prospeccao/gravacoes"><Video className="mr-2 h-4 w-4" /> Gravações</Link>
-            </Button>
-            <Button asChild variant="outline">
               <Link to="/prospeccao/admin"><Settings2 className="mr-2 h-4 w-4" /> Painel admin</Link>
             </Button>
           </div>
