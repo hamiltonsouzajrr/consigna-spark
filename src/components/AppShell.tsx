@@ -174,6 +174,7 @@ function useChamadas() {
 export function AppShell({ children }: { children: ReactNode }) {
   const { signOut, user } = useAuth();
   const now = useClock();
+  const chamadas = useChamadas();
   const { isAdmin, hasAnyAccess } = useRhAccess();
   const sections = navSections
     .map((s) => ({
