@@ -469,17 +469,6 @@ function Page() {
             </div>
           </Card>
 
-          {/* AI assistant */}
-          <Card className="p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> Assistente IA</p>
-              <Button size="sm" variant="outline" onClick={askAi} disabled={aiBusy}>
-                {aiBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Analisar"}
-              </Button>
-            </div>
-            {aiText && <div className="mt-3 whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-sm">{aiText}</div>}
-            {!aiText && !aiBusy && <p className="mt-2 text-xs text-muted-foreground">Resume o histórico, identifica objeções e sugere a próxima ação.</p>}
-          </Card>
         </div>
 
         {/* Right: playbook, actions, timeline */}
