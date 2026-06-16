@@ -54,7 +54,7 @@ function ChatBody({ onClose, onMinimize }: { onClose: () => void; onMinimize: ()
     messages: initial ?? [],
     transport: new DefaultChatTransport({
       api: "/api/positiva-coach",
-      headers: async () => {
+      headers: async (): Promise<Record<string, string>> => {
         const { data } = await supabase.auth.getSession();
         const token = data.session?.access_token;
         return token ? { Authorization: `Bearer ${token}` } : {};
