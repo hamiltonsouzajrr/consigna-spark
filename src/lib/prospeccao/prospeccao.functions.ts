@@ -755,3 +755,133 @@ export const adminDeleteSystemUser = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------------------------------------------------------------------------
+// Admin call-quality analytics: last 7 days of calls, qualified leads, and a
+// daily series for the weekly average chart.
+// ---------------------------------------------------------------------------
+export type CallQualityStats = {
+  totalCalls7d: number;
+  avgPerDay: number;
+  answered7d: number;
+  answerRate: number;
+  qualifiedLeads: number;
+  qualifiedRate: number;
+  outcomes: { outcome: string; count: number }[];
+  daily: { date: string; label: string; total: number; answered: number }[];
+  byConsultant: { email: string; calls: number; answered: number; qualified: number }[];
+};
+
+const ANSWERED_OUTCOMES = ["Atendeu", "Pediu pra retornar", "Agendou simulação"];
+
+function parseOutcome(body: string | null): string {
+  if (!body) return "Outro";
+  const m = body.match(/Resultado:\s*(.+)/i);
+  return (m ? m[1] : body).trim();
+}
+
+export const getCallQualityStats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<CallQualityStats> => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - 6); // last 7 calendar days (incl. today)
+    const startIso = start.toISOString();
+
+    const { data: events, error } = await supabaseAdmin
+      .from("lead_events")
+      .select("consultant_id, body, created_at")
+      .eq("kind", "ligacao")
+      .gte("created_at", startIso);
+    if (error) throw new Error(error.message);
+
+    const { data: leads, error: lerr } = await supabaseAdmin
+      .from("prospect_leads")
+      .select("status, consultant_id");
+    if (lerr) throw new Error(lerr.message);
+
+    const { data: usersData } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const emailById = new Map<string, string>();
+    for (const u of usersData?.users ?? []) emailById.set(u.id, u.email ?? "(sem e-mail)");
+
+    const evs = (events ?? []) as any[];
+    const totalCalls7d = evs.length;
+
+    // Daily buckets for the last 7 days.
+    const dayMap = new Map<string, { total: number; answered: number }>();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      dayMap.set(d.toISOString().slice(0, 10), { total: 0, answered: 0 });
+    }
+
+    const outcomeMap = new Map<string, number>();
+    const consultMap = new Map<string, { calls: number; answered: number; qualified: number }>();
+    let answered7d = 0;
+
+    for (const e of evs) {
+      const outcome = parseOutcome(e.body);
+      const isAnswered = ANSWERED_OUTCOMES.includes(outcome);
+      if (isAnswered) answered7d++;
+      outcomeMap.set(outcome, (outcomeMap.get(outcome) ?? 0) + 1);
+
+      const key = (e.created_at as string).slice(0, 10);
+      const bucket = dayMap.get(key);
+      if (bucket) { bucket.total++; if (isAnswered) bucket.answered++; }
+
+      const ck = e.consultant_id ?? "__none__";
+      const c = consultMap.get(ck) ?? { calls: 0, answered: 0, qualified: 0 };
+      c.calls++; if (isAnswered) c.answered++;
+      consultMap.set(ck, c);
+    }
+
+    const QUALIFIED = ["qualificado", "proposta", "ganho"];
+    let qualifiedLeads = 0;
+    for (const l of (leads ?? []) as any[]) {
+      if (QUALIFIED.includes(l.status)) {
+        qualifiedLeads++;
+        const ck = l.consultant_id ?? "__none__";
+        const c = consultMap.get(ck) ?? { calls: 0, answered: 0, qualified: 0 };
+        c.qualified++;
+        consultMap.set(ck, c);
+      }
+    }
+
+    const daily = [...dayMap.entries()].map(([date, v]) => ({
+      date,
+      label: new Date(date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" }),
+      total: v.total,
+      answered: v.answered,
+    }));
+
+    const outcomes = [...outcomeMap.entries()]
+      .map(([outcome, count]) => ({ outcome, count }))
+      .sort((a, b) => b.count - a.count);
+
+    const byConsultant = [...consultMap.entries()]
+      .map(([cid, v]) => ({
+        email: cid === "__none__" ? "Não atribuído" : emailById.get(cid) ?? cid,
+        calls: v.calls,
+        answered: v.answered,
+        qualified: v.qualified,
+      }))
+      .filter((c) => c.calls > 0 || c.qualified > 0)
+      .sort((a, b) => b.calls - a.calls || b.qualified - a.qualified);
+
+    return {
+      totalCalls7d,
+      avgPerDay: Math.round((totalCalls7d / 7) * 10) / 10,
+      answered7d,
+      answerRate: totalCalls7d ? Math.round((answered7d / totalCalls7d) * 100) : 0,
+      qualifiedLeads,
+      qualifiedRate: totalCalls7d ? Math.round((qualifiedLeads / totalCalls7d) * 100) : 0,
+      outcomes,
+      daily,
+      byConsultant,
+    };
+  });

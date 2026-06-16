@@ -55,6 +55,7 @@ import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
 import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
 import { Route as RhAcessosRouteImport } from './routes/rh.acessos'
 import { Route as ProspeccaoRecentesRouteImport } from './routes/prospeccao.recentes'
+import { Route as ProspeccaoQualidadeRouteImport } from './routes/prospeccao.qualidade'
 import { Route as ProspeccaoGravacoesRouteImport } from './routes/prospeccao.gravacoes'
 import { Route as ProspeccaoFollowupsRouteImport } from './routes/prospeccao.followups'
 import { Route as ProspeccaoAdminRouteImport } from './routes/prospeccao.admin'
@@ -300,6 +301,11 @@ const ProspeccaoRecentesRoute = ProspeccaoRecentesRouteImport.update({
   path: '/prospeccao/recentes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProspeccaoQualidadeRoute = ProspeccaoQualidadeRouteImport.update({
+  id: '/prospeccao/qualidade',
+  path: '/prospeccao/qualidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProspeccaoGravacoesRoute = ProspeccaoGravacoesRouteImport.update({
   id: '/prospeccao/gravacoes',
   path: '/prospeccao/gravacoes',
@@ -401,6 +407,7 @@ export interface FileRoutesByFullPath {
   '/prospeccao/admin': typeof ProspeccaoAdminRoute
   '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
   '/prospeccao/gravacoes': typeof ProspeccaoGravacoesRoute
+  '/prospeccao/qualidade': typeof ProspeccaoQualidadeRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -462,6 +469,7 @@ export interface FileRoutesByTo {
   '/prospeccao/admin': typeof ProspeccaoAdminRoute
   '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
   '/prospeccao/gravacoes': typeof ProspeccaoGravacoesRoute
+  '/prospeccao/qualidade': typeof ProspeccaoQualidadeRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -524,6 +532,7 @@ export interface FileRoutesById {
   '/prospeccao/admin': typeof ProspeccaoAdminRoute
   '/prospeccao/followups': typeof ProspeccaoFollowupsRoute
   '/prospeccao/gravacoes': typeof ProspeccaoGravacoesRoute
+  '/prospeccao/qualidade': typeof ProspeccaoQualidadeRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
@@ -588,6 +597,7 @@ export interface FileRouteTypes {
     | '/prospeccao/admin'
     | '/prospeccao/followups'
     | '/prospeccao/gravacoes'
+    | '/prospeccao/qualidade'
     | '/prospeccao/recentes'
     | '/rh/acessos'
     | '/rh/avaliacoes'
@@ -649,6 +659,7 @@ export interface FileRouteTypes {
     | '/prospeccao/admin'
     | '/prospeccao/followups'
     | '/prospeccao/gravacoes'
+    | '/prospeccao/qualidade'
     | '/prospeccao/recentes'
     | '/rh/acessos'
     | '/rh/avaliacoes'
@@ -710,6 +721,7 @@ export interface FileRouteTypes {
     | '/prospeccao/admin'
     | '/prospeccao/followups'
     | '/prospeccao/gravacoes'
+    | '/prospeccao/qualidade'
     | '/prospeccao/recentes'
     | '/rh/acessos'
     | '/rh/avaliacoes'
@@ -772,6 +784,7 @@ export interface RootRouteChildren {
   ProspeccaoAdminRoute: typeof ProspeccaoAdminRoute
   ProspeccaoFollowupsRoute: typeof ProspeccaoFollowupsRoute
   ProspeccaoGravacoesRoute: typeof ProspeccaoGravacoesRoute
+  ProspeccaoQualidadeRoute: typeof ProspeccaoQualidadeRoute
   ProspeccaoRecentesRoute: typeof ProspeccaoRecentesRoute
   ProspeccaoIndexRoute: typeof ProspeccaoIndexRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
@@ -1101,6 +1114,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProspeccaoRecentesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/prospeccao/qualidade': {
+      id: '/prospeccao/qualidade'
+      path: '/prospeccao/qualidade'
+      fullPath: '/prospeccao/qualidade'
+      preLoaderRoute: typeof ProspeccaoQualidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/prospeccao/gravacoes': {
       id: '/prospeccao/gravacoes'
       path: '/prospeccao/gravacoes'
@@ -1328,6 +1348,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProspeccaoAdminRoute: ProspeccaoAdminRoute,
   ProspeccaoFollowupsRoute: ProspeccaoFollowupsRoute,
   ProspeccaoGravacoesRoute: ProspeccaoGravacoesRoute,
+  ProspeccaoQualidadeRoute: ProspeccaoQualidadeRoute,
   ProspeccaoRecentesRoute: ProspeccaoRecentesRoute,
   ProspeccaoIndexRoute: ProspeccaoIndexRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,

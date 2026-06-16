@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
-  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, PhoneCall, MapPin, MessageCircle, Video, DoorOpen, CheckCircle2,
+  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, PhoneCall, MapPin, MessageCircle, Video, DoorOpen, CheckCircle2, BarChart3,
 } from "lucide-react";
 import {
   STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, whatsappLink, telLink, CALL_OUTCOMES, SITUACAO_TAGS,
@@ -73,15 +73,41 @@ function Page() {
   // Daily counter of completed calls (lead etiquetado + ligação registrada),
   // kept per-day in localStorage so it survives refreshes.
   const [chamadas, setChamadas] = useState(0);
+  const [streak, setStreak] = useState(0);
 
   const refill = useServerFn(refillMyQueue);
 
-  const chamadasKey = () => `prospeccao_chamadas_${new Date().toISOString().slice(0, 10)}`;
+  // Daily call goal used for gamification (progress bar + streak).
+  const META_DIARIA = 50;
+
+  const todayKey = () => new Date().toISOString().slice(0, 10);
+  const chamadasKey = () => `prospeccao_chamadas_${todayKey()}`;
+
+  // Recompute the streak: consecutive days (up to today) that hit META_DIARIA.
+  const computeStreak = () => {
+    if (typeof window === "undefined") return 0;
+    let count = 0;
+    const d = new Date();
+    for (let i = 0; i < 365; i++) {
+      const key = `prospeccao_chamadas_${d.toISOString().slice(0, 10)}`;
+      const val = Number(window.localStorage.getItem(key) ?? "0") || 0;
+      if (val >= META_DIARIA) {
+        count++;
+      } else if (i === 0) {
+        // Today not reached yet — keep counting previous days.
+      } else {
+        break;
+      }
+      d.setDate(d.getDate() - 1);
+    }
+    return count;
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const raw = window.localStorage.getItem(chamadasKey());
     setChamadas(raw ? Number(raw) || 0 : 0);
+    setStreak(computeStreak());
   }, []);
 
   const bumpChamadas = () => {
@@ -90,10 +116,15 @@ function Page() {
       try {
         window.localStorage.setItem(chamadasKey(), String(next));
         window.dispatchEvent(new Event("chamadas-updated"));
+        if (next === META_DIARIA) {
+          setStreak(computeStreak());
+          toast.success(`🎯 Meta diária de ${META_DIARIA} chamadas atingida! Mandou bem!`);
+        }
       } catch { /* ignore */ }
       return next;
     });
   };
+
 
   // Productivity panel: counts the consultant's own effort today.
   const loadProd = async (uid: string) => {
@@ -235,6 +266,9 @@ function Page() {
         {isAdmin && (
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline">
+              <Link to="/prospeccao/qualidade"><BarChart3 className="mr-2 h-4 w-4" /> Qualidade</Link>
+            </Button>
+            <Button asChild variant="outline">
               <Link to="/prospeccao/gravacoes"><Video className="mr-2 h-4 w-4" /> Gravações</Link>
             </Button>
             <Button asChild variant="outline">
@@ -253,6 +287,32 @@ function Page() {
       </div>
 
       <Card className="mt-4 p-4">
+        {/* Daily goal + streak gamification */}
+        <div className="mb-4 rounded-lg border bg-gradient-to-r from-primary/10 to-transparent p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Target className="h-4 w-4 text-primary" />
+              <p className="text-sm font-semibold">Meta diária de chamadas</p>
+            </div>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="font-semibold tabular-nums">{chamadas}/{META_DIARIA}</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                <Flame className="h-3.5 w-3.5" /> {streak} {streak === 1 ? "dia" : "dias"} seguidos
+              </span>
+            </div>
+          </div>
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className={`h-full rounded-full transition-all ${chamadas >= META_DIARIA ? "bg-emerald-500" : "bg-primary"}`}
+              style={{ width: `${Math.min(100, Math.round((chamadas / META_DIARIA) * 100))}%` }}
+            />
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            {chamadas >= META_DIARIA
+              ? "🎉 Meta batida! Continue para manter sua sequência amanhã."
+              : `Faltam ${META_DIARIA - chamadas} chamadas para bater a meta de hoje.`}
+          </p>
+        </div>
         <div className="mb-3 flex items-center gap-2">
           <Target className="h-4 w-4 text-primary" />
           <p className="text-sm font-semibold">Minha produção de hoje</p>
