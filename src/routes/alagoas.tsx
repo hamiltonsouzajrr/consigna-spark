@@ -56,7 +56,7 @@ const PRODUTOS: Produto[] = [
   { nome: "KardBank", tipo: "cartao_credito", prazo: "96x", multiplicador: 22, highlight: true },
   { nome: "Nossa Gente", tipo: "cartao_credito", prazo: "96x", multiplicador: 21.5 },
   { nome: "Amigoz", tipo: "cartao_beneficio", prazo: "84x", multiplicador: 21, highlight: true },
-  { nome: "Aki Capital", tipo: "cartao_beneficio", prazo: "84x", multiplicador: 21 },
+  { nome: "Aki Capital", tipo: "cartao_beneficio", prazo: "84x", coeficiente: 0.0517504 },
 ];
 
 const brl = (n: number) =>
