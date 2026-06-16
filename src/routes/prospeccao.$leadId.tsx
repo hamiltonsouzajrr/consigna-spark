@@ -312,7 +312,6 @@ function Page() {
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               <Badge variant="outline" className={STATUS_TONE[lead.status]}>{STATUS_LABEL[lead.status]}</Badge>
               <Badge variant="outline" className={SLA_TONE[lead.sla_status]}>{lead.sla_status === "ok" ? "Ainda não prospectado" : SLA_LABEL[lead.sla_status]}</Badge>
-              <Badge variant="outline" className={scoreTone(lead.score)}>{scoreLabel(lead.score)} · {lead.score}</Badge>
               {lead.situacao && <Badge variant="secondary"><Tag className="mr-1 h-3 w-3" />{lead.situacao}</Badge>}
             </div>
           </div>
