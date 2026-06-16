@@ -254,7 +254,8 @@ function Page() {
           <Target className="h-4 w-4 text-primary" />
           <p className="text-sm font-semibold">Minha produção de hoje</p>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
+          <RhStatCard label="Chamadas concluídas" value={chamadas} icon={PhoneCall} tone="rose" />
           <RhStatCard label="Leads abertos" value={prod.abertos} icon={DoorOpen} tone="sky" />
           <RhStatCard label="Qualificados" value={prod.qualificados} icon={CheckCircle2} tone="violet" />
           <RhStatCard label="Ligações feitas" value={prod.ligacoes} icon={PhoneCall} tone="emerald" />
