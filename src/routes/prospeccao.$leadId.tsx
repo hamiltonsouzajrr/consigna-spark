@@ -16,16 +16,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Phone, PhoneCall, MessageCircle, StickyNote, CalendarClock, Sparkles, Loader2, CheckCircle2,
+  ArrowLeft, Phone, PhoneCall, MessageCircle, StickyNote, CalendarClock, CheckCircle2,
   Copy, SkipForward, Tag, ChevronDown, ChevronUp, AlertTriangle, MapPin, Activity,
 } from "lucide-react";
 import {
   STATUS_FLOW, STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, EVENT_LABEL, LOSS_REASONS,
-  PLAYBOOK, whatsappLink, telLink, CALL_OUTCOMES, SITUACAO_TAGS, scoreTone, scoreLabel,
+  PLAYBOOK, whatsappLink, telLink, CALL_OUTCOMES, SITUACAO_TAGS,
   type LeadStatus, type SlaStatus, type EventKind,
 } from "@/lib/prospeccao/constants";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
-import { aiLeadAssist, markLeadOpened } from "@/lib/prospeccao/prospeccao.functions";
+import { markLeadOpened } from "@/lib/prospeccao/prospeccao.functions";
 
 import { useRhAccess } from "@/hooks/use-rh-access";
 
