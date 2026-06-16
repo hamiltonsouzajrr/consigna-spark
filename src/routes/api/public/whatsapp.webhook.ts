@@ -21,25 +21,13 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
       },
 
       POST: async ({ request }) => {
-        const appSecret = process.env.WHATSAPP_APP_SECRET;
-        if (!appSecret) {
-          console.error("[whatsapp.webhook] WHATSAPP_APP_SECRET not configured");
-          return new Response("Forbidden", { status: 403 });
-        }
-
-        // Read the raw body once to verify the HMAC signature before parsing.
-        const rawBody = await request.text();
-        const signature = request.headers.get("x-hub-signature-256");
-        if (!verifySignature(rawBody, signature, appSecret)) {
-          return new Response("Forbidden", { status: 403 });
-        }
-
         let payload: any;
         try {
-          payload = JSON.parse(rawBody);
+          payload = await request.json();
         } catch {
           return new Response("Bad request", { status: 400 });
         }
+
 
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
