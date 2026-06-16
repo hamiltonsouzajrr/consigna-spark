@@ -55,7 +55,7 @@ const PRODUTOS: Produto[] = [
   { nome: "Caixa Econômica — Prefeitura Maceió", tipo: "principal", prazo: "96x", coeficiente: 0.023015 },
   { nome: "KardBank", tipo: "cartao_credito", prazo: "96x", multiplicador: 22, highlight: true },
   { nome: "Nossa Gente", tipo: "cartao_credito", prazo: "96x", multiplicador: 21.5 },
-  { nome: "Amigoz", tipo: "cartao_beneficio", prazo: "84x", multiplicador: 21, highlight: true },
+  { nome: "Amigoz", tipo: "cartao_beneficio", prazo: "84x", coeficiente: 0.0512953, highlight: true },
   { nome: "Aki Capital", tipo: "cartao_beneficio", prazo: "84x", coeficiente: 0.0517504 },
 ];
 
