@@ -259,6 +259,20 @@ function Page() {
     if (filter === "atrasados") list = list.filter((l) => l.sla_status === "atrasado" && !["ganho", "perdido"].includes(l.status));
     const term = q.trim().toLowerCase();
     if (term) list = list.filter((l) => l.nome.toLowerCase().includes(term) || (l.telefone ?? "").includes(term) || (l.cidade ?? "").toLowerCase().includes(term));
+    // Sexo
+    if (sexoFilter !== "todos") {
+      list = list.filter((l) => (l.sexo ?? "").toLowerCase().startsWith(sexoFilter[0]));
+    }
+    // Idade range
+    const iMin = idadeMin ? Number(idadeMin) : null;
+    const iMax = idadeMax ? Number(idadeMax) : null;
+    if (iMin !== null) list = list.filter((l) => l.idade != null && l.idade >= iMin);
+    if (iMax !== null) list = list.filter((l) => l.idade != null && l.idade <= iMax);
+    // Score range
+    const sMin = scoreMin ? Number(scoreMin) : null;
+    const sMax = scoreMax ? Number(scoreMax) : null;
+    if (sMin !== null) list = list.filter((l) => l.score >= sMin);
+    if (sMax !== null) list = list.filter((l) => l.score <= sMax);
     return list;
   }, [leads, filter, q]);
 
