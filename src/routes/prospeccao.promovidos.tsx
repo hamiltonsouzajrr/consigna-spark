@@ -413,16 +413,28 @@ function Page() {
     }
   };
 
+  const cargoOptions = useMemo(
+    () => Array.from(new Set(list.map((p) => p.cargo).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [list],
+  );
+  const mesOptions = useMemo(
+    () => Array.from(new Set(list.map((p) => p.mes_referencia))).sort((a, b) => b.localeCompare(a)),
+    [list],
+  );
+
   const visible = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return list;
-    return list.filter(
-      (p) =>
+    return list.filter((p) => {
+      if (cargoFilter !== "todos" && p.cargo !== cargoFilter) return false;
+      if (mesFilter !== "todos" && p.mes_referencia !== mesFilter) return false;
+      if (term && !(
         p.nome.toLowerCase().includes(term) ||
         p.cpf.includes(term) ||
-        p.cargo.toLowerCase().includes(term),
-    );
-  }, [list, q]);
+        p.cargo.toLowerCase().includes(term)
+      )) return false;
+      return true;
+    });
+  }, [list, q, cargoFilter, mesFilter]);
 
   // Group by month for display.
   const grouped = useMemo(() => {
