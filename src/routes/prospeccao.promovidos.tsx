@@ -32,6 +32,32 @@ type Draft = { nome: string; cpf: string; cargo: string };
 const CPF_RE = /(\d{3}\.?\s?\d{3}\.?\s?\d{3}\s?-?\s?\d{2})/;
 const HEADER_RE = /^(nome|cpf|cargo|matr[ií]cula|servidor|colaborador|promo[cç][aã]o|refer[eê]ncia|p[aá]gina|folha)$/i;
 
+// Common job/role keywords to recognize a "cargo" line even when it is on its own.
+const CARGO_RE = /(analista|assistente|auxiliar|gerente|gestor|coordenad|supervisor|diretor|t[eé]cnic|especialista|consultor|operador|estagi[aá]rio|aprendiz|secret[aá]ri|advogad|engenheir|m[eé]dic|enfermeir|professor|vendedor|atendente|caixa|escritur|cargo|fun[cç][aã]o|n[ií]vel|s[eê]nior|j[uú]nior|pleno|i{1,3}\b)/i;
+
+// Format a raw CPF (digits with optional separators) to 000.000.000-00.
+function formatCpf(raw: string): string {
+  const d = raw.replace(/\D/g, "");
+  if (d.length !== 11) return raw.replace(/\s/g, "");
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+
+// A line that looks like a person's name: 2+ alphabetic words, no digits.
+function looksLikeName(s: string): boolean {
+  const t = s.trim();
+  if (!t || /\d/.test(t) || HEADER_RE.test(t)) return false;
+  const words = t.split(/\s+/).filter((w) => w.length > 1);
+  return words.length >= 2 && /^[A-Za-zÀ-ÿ'.\s-]+$/.test(t);
+}
+
+// Clean a candidate name: strip leading numbers (matrícula), trailing separators.
+function cleanName(s: string): string {
+  return s
+    .replace(/^\s*\d+\s*[-–.)]?\s*/, "")
+    .replace(/[-–:|,;]+$/, "")
+    .trim();
+}
+
 type TextItem = { str?: string; transform?: number[] };
 
 async function readTextContentWithoutSafariAsyncIterator(page: any): Promise<{ items: TextItem[] }> {
@@ -135,8 +161,9 @@ async function extractPdfLines(file: File): Promise<string[]> {
 }
 
 
-// Heuristic: turn lines into {nome, cpf, cargo}. Any line containing a CPF
-// is treated as one promotion record. Admin reviews/edits afterwards.
+// Heuristic: turn lines into {nome, cpf, cargo}, prioritizing the three target
+// fields in order — CPF (anchor), Nome, Cargo. Each line containing a CPF is a
+// record; name and cargo are resolved from the same line or adjacent lines.
 function parseLines(lines: string[]): Draft[] {
   const out: Draft[] = [];
   const usefulLines = lines.map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
@@ -145,17 +172,35 @@ function parseLines(lines: string[]): Draft[] {
     const line = usefulLines[i];
     const m = line.match(CPF_RE);
     if (!m) continue;
-    const cpf = m[1].replace(/\s/g, "");
-    const before = line.slice(0, m.index).trim().replace(/[-–:|]+$/, "").trim();
+
+    // 1) CPF — the anchor, always normalized.
+    const cpf = formatCpf(m[1]);
+
+    const before = cleanName(line.slice(0, m.index).trim().replace(/[-–:|]+$/, "").trim());
     const after = line.slice((m.index ?? 0) + m[0].length).trim().replace(/^[-–:|]+/, "").trim();
-    const previous = usefulLines[i - 1]?.trim() ?? "";
-    const next = usefulLines[i + 1]?.trim() ?? "";
-    const nome = before || (!CPF_RE.test(previous) && !HEADER_RE.test(previous) ? previous : "");
-    const cargo = after || (!CPF_RE.test(next) && !HEADER_RE.test(next) ? next : "");
+    const previous = cleanName(usefulLines[i - 1]?.trim() ?? "");
+    const nextRaw = usefulLines[i + 1]?.trim() ?? "";
+
+    // 2) Nome — prefer text before the CPF, then the previous line, requiring it to look like a name.
+    let nome = "";
+    if (looksLikeName(before)) nome = before;
+    else if (looksLikeName(previous)) nome = previous;
+    else if (before && !CPF_RE.test(before)) nome = before;
+
+    // 3) Cargo — prefer text after the CPF, then a cargo-like next line, then remaining next line.
+    let cargo = "";
+    if (after && !CPF_RE.test(after)) cargo = after;
+    else if (CARGO_RE.test(nextRaw) && !CPF_RE.test(nextRaw)) cargo = nextRaw;
+    else if (nextRaw && !CPF_RE.test(nextRaw) && !HEADER_RE.test(nextRaw) && !looksLikeName(nextRaw)) cargo = nextRaw;
+
+    // If the "before" text actually looked like a cargo and we lacked one, swap.
+    if (!cargo && before && CARGO_RE.test(before) && nome !== before) cargo = before;
+
     out.push({ nome, cpf, cargo });
   }
   return out;
 }
+
 
 function Page() {
   const { user, loading } = useAuth();
