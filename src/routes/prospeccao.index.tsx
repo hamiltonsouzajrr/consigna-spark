@@ -263,16 +263,21 @@ function Page() {
           <h1 className="text-2xl font-bold">Prospecção</h1>
           <p className="text-sm text-muted-foreground">Sua fila de leads priorizada por score e prazo de atendimento.</p>
         </div>
-        {isAdmin && (
-          <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline">
-              <Link to="/prospeccao/qualidade"><BarChart3 className="mr-2 h-4 w-4" /> Qualidade</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/prospeccao/admin"><Settings2 className="mr-2 h-4 w-4" /> Painel admin</Link>
-            </Button>
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link to="/prospeccao/promovidos"><Award className="mr-2 h-4 w-4" /> Recém promovidos</Link>
+          </Button>
+          {isAdmin && (
+            <>
+              <Button asChild variant="outline">
+                <Link to="/prospeccao/qualidade"><BarChart3 className="mr-2 h-4 w-4" /> Qualidade</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/prospeccao/admin"><Settings2 className="mr-2 h-4 w-4" /> Painel admin</Link>
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
