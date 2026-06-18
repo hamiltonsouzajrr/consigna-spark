@@ -484,11 +484,15 @@ function Page() {
               <div className="hidden gap-2 px-1 text-xs font-medium text-muted-foreground sm:grid sm:grid-cols-[1.5fr_1fr_1.2fr_auto]">
                 <span>Nome completo</span><span>CPF</span><span>Cargo de promoção</span><span></span>
               </div>
-              {drafts.map((d, i) => (
+              {drafts.map((d, i) => {
+                const cpfFilled = d.cpf.trim().length > 0;
+                const cpfBad = cpfFilled && !isValidCpf(d.cpf);
+                return (
                 <div key={i} className="grid gap-2 sm:grid-cols-[1.5fr_1fr_1.2fr_auto]">
-                  <Input placeholder="Nome completo" value={d.nome} onChange={(e) => updateDraft(i, "nome", e.target.value)} />
-                  <Input placeholder="CPF" value={d.cpf} onChange={(e) => updateDraft(i, "cpf", e.target.value)} />
-                  <Input placeholder="Cargo" value={d.cargo} onChange={(e) => updateDraft(i, "cargo", e.target.value)} />
+                  <Input placeholder="Nome completo" value={d.nome} onChange={(e) => updateDraft(i, "nome", e.target.value)} className={!d.nome.trim() ? "border-amber-500 focus-visible:ring-amber-500" : undefined} />
+                  <Input placeholder="CPF" value={d.cpf} onChange={(e) => updateDraft(i, "cpf", e.target.value)} className={cpfBad ? "border-rose-500 focus-visible:ring-rose-500" : !cpfFilled ? "border-amber-500 focus-visible:ring-amber-500" : undefined} title={cpfBad ? "CPF inválido" : undefined} />
+                  <Input placeholder="Cargo" value={d.cargo} onChange={(e) => updateDraft(i, "cargo", e.target.value)} className={!d.cargo.trim() ? "border-amber-500 focus-visible:ring-amber-500" : undefined} />
+
                   <Button variant="ghost" size="icon" onClick={() => removeDraft(i)}>
                     <Trash2 className="h-4 w-4 text-rose-500" />
                   </Button>
