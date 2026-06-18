@@ -304,6 +304,8 @@ function Page() {
   const [list, setList] = useState<Promovido[]>([]);
   const [loadingList, setLoadingList] = useState(true);
   const [q, setQ] = useState("");
+  const [cargoFilter, setCargoFilter] = useState("todos");
+  const [mesFilter, setMesFilter] = useState("todos");
 
   // Upload / review state (admin only).
   const [mes, setMes] = useState(currentMonth());
