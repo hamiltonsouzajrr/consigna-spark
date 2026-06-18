@@ -634,6 +634,39 @@ export type Database = {
         }
         Relationships: []
       }
+      promovidos: {
+        Row: {
+          cargo: string
+          cpf: string
+          created_at: string
+          created_by: string | null
+          id: string
+          mes_referencia: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          cargo: string
+          cpf: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mes_referencia: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          cargo?: string
+          cpf?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mes_referencia?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       prospect_leads: {
         Row: {
           cidade: string | null
