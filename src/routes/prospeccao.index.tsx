@@ -441,8 +441,12 @@ function Page() {
                       ));
                     })()}
                     {l.cidade && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{l.cidade}</span>}
+                    {l.idade != null && <span>{l.idade} anos</span>}
+                    {l.sexo && <span>{l.sexo}</span>}
+                    <span className="rounded bg-muted px-1.5 py-0.5 font-medium">Score {l.score}</span>
 
                     <span>Follow-up: {fmtWhen(l.next_follow_up_at)}</span>
+
                   </div>
                 </div>
               </div>
