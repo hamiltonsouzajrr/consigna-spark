@@ -32,8 +32,14 @@ type Draft = { nome: string; cpf: string; cargo: string };
 const CPF_RE = /(\d{3}\.?\s?\d{3}\.?\s?\d{3}\s?-?\s?\d{2})/;
 const HEADER_RE = /^(nome|cpf|cargo|matr[ií]cula|servidor|colaborador|promo[cç][aã]o|refer[eê]ncia|p[aá]gina|folha)$/i;
 
-// Common job/role keywords to recognize a "cargo" line even when it is on its own.
-const CARGO_RE = /(analista|assistente|auxiliar|gerente|gestor|coordenad|supervisor|diretor|t[eé]cnic|especialista|consultor|operador|estagi[aá]rio|aprendiz|secret[aá]ri|advogad|engenheir|m[eé]dic|enfermeir|professor|vendedor|atendente|caixa|escritur|cargo|fun[cç][aã]o|n[ií]vel|s[eê]nior|j[uú]nior|pleno|i{1,3}\b)/i;
+// Common job/role keywords to recognize a "cargo" line/segment.
+const CARGO_RE = /(analista|assistente|auxiliar|gerente|gestor|coordenad|supervisor|diretor|t[eé]cnic|especialista|consultor|operador|estagi[aá]ri|aprendiz|secret[aá]ri|advogad|engenheir|arquitet|contad|economist|administrad|programad|desenvolvedor|design|m[eé]dic|enfermeir|professor|vendedor|atendente|caixa|escritur|gerencial|chefe|encarregad|l[ií]der|cargo|fun[cç][aã]o)/i;
+
+// Seniority/level qualifiers that complete a cargo (never a name on their own).
+const NIVEL_RE = /\b(s[eê]nior|j[uú]nior|pleno|n[ií]vel\s*[ivx]+|i{1,3}\b|iv\b|trainee)\b/i;
+
+// Honorific/title prefixes that should be stripped from a name.
+const HONORIFIC_RE = /^(sr\.?|sra\.?|dr\.?|dra\.?|exmo\.?|exma\.?|prof\.?)\s+/i;
 
 // Format a raw CPF (digits with optional separators) to 000.000.000-00.
 function formatCpf(raw: string): string {
@@ -42,20 +48,57 @@ function formatCpf(raw: string): string {
   return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
 }
 
-// A line that looks like a person's name: 2+ alphabetic words, no digits.
+// Title-case a name, keeping common Portuguese connectors lowercase.
+function titleCaseName(s: string): string {
+  const lower = new Set(["da", "de", "do", "das", "dos", "e"]);
+  return s
+    .toLocaleLowerCase("pt-BR")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w, idx) =>
+      lower.has(w) && idx > 0 ? w : w.charAt(0).toLocaleUpperCase("pt-BR") + w.slice(1),
+    )
+    .join(" ");
+}
+
+// A line that looks like a person's name: 2+ alphabetic words, no digits, not a cargo.
 function looksLikeName(s: string): boolean {
   const t = s.trim();
   if (!t || /\d/.test(t) || HEADER_RE.test(t)) return false;
+  if (!/^[A-Za-zÀ-ÿ'.\s-]+$/.test(t)) return false;
   const words = t.split(/\s+/).filter((w) => w.length > 1);
-  return words.length >= 2 && /^[A-Za-zÀ-ÿ'.\s-]+$/.test(t);
+  if (words.length < 2) return false;
+  // A pure cargo (e.g. "Analista Júnior") should not be treated as a name.
+  if (CARGO_RE.test(t) && words.length <= 3) return false;
+  return true;
 }
 
-// Clean a candidate name: strip leading numbers (matrícula), trailing separators.
+// Clean a candidate name: strip matrícula, honorifics, trailing separators,
+// and any trailing cargo segment that got glued onto the name.
 function cleanName(s: string): string {
-  return s
+  let v = s
     .replace(/^\s*\d+\s*[-–.)]?\s*/, "")
     .replace(/[-–:|,;]+$/, "")
+    .replace(HONORIFIC_RE, "")
     .trim();
+  // If a cargo keyword appears mid-string, keep only the part before it.
+  const cargoMatch = v.match(CARGO_RE);
+  if (cargoMatch && cargoMatch.index && cargoMatch.index > 0) {
+    const head = v.slice(0, cargoMatch.index).trim().replace(/[-–:|,;]+$/, "").trim();
+    if (looksLikeName(head)) v = head;
+  }
+  return v.trim();
+}
+
+// Extract a cargo from a free-text segment (keeps from the cargo keyword onward).
+function extractCargo(s: string): string {
+  const t = s.replace(/^[-–:|,;]+/, "").trim();
+  if (!t || CPF_RE.test(t) || HEADER_RE.test(t)) return "";
+  const m = t.match(CARGO_RE);
+  if (m && typeof m.index === "number") {
+    return t.slice(m.index).replace(/[-–:|,;]+$/, "").trim();
+  }
+  return "";
 }
 
 type TextItem = { str?: string; transform?: number[] };
