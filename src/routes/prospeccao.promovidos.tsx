@@ -219,27 +219,38 @@ function parseLines(lines: string[]): Draft[] {
     // 1) CPF — the anchor, always normalized.
     const cpf = formatCpf(m[1]);
 
-    const before = cleanName(line.slice(0, m.index).trim().replace(/[-–:|]+$/, "").trim());
-    const after = line.slice((m.index ?? 0) + m[0].length).trim().replace(/^[-–:|]+/, "").trim();
+    const beforeRaw = line.slice(0, m.index).trim().replace(/[-–:|]+$/, "").trim();
+    const afterRaw = line.slice((m.index ?? 0) + m[0].length).trim().replace(/^[-–:|]+/, "").trim();
+    const before = cleanName(beforeRaw);
+    const after = afterRaw;
     const previous = cleanName(usefulLines[i - 1]?.trim() ?? "");
     const nextRaw = usefulLines[i + 1]?.trim() ?? "";
 
-    // 2) Nome — prefer text before the CPF, then the previous line, requiring it to look like a name.
+    // 2) Nome — prioritize, in order: text before the CPF, the previous line,
+    //    then any plausible before/previous text that is not itself a CPF.
     let nome = "";
     if (looksLikeName(before)) nome = before;
     else if (looksLikeName(previous)) nome = previous;
-    else if (before && !CPF_RE.test(before)) nome = before;
+    else if (before && !CPF_RE.test(before) && !CARGO_RE.test(before)) nome = before;
+    else if (previous && !CPF_RE.test(previous) && !CARGO_RE.test(previous)) nome = previous;
+    if (nome) nome = titleCaseName(nome);
 
-    // 3) Cargo — prefer text after the CPF, then a cargo-like next line, then remaining next line.
-    let cargo = "";
-    if (after && !CPF_RE.test(after)) cargo = after;
-    else if (CARGO_RE.test(nextRaw) && !CPF_RE.test(nextRaw)) cargo = nextRaw;
-    else if (nextRaw && !CPF_RE.test(nextRaw) && !HEADER_RE.test(nextRaw) && !looksLikeName(nextRaw)) cargo = nextRaw;
+    // 3) Cargo — prioritize, in order: cargo segment after the CPF, then in the
+    //    before text, then the next line, then any non-name leftover after the CPF.
+    let cargo =
+      extractCargo(after) ||
+      extractCargo(beforeRaw) ||
+      extractCargo(nextRaw);
+    if (!cargo) {
+      if (after && !CPF_RE.test(after) && !HEADER_RE.test(after)) cargo = after;
+      else if (nextRaw && !CPF_RE.test(nextRaw) && !HEADER_RE.test(nextRaw) && !looksLikeName(nextRaw)) cargo = nextRaw;
+    }
+    // Apply level/seniority qualifier from the next line when missing.
+    if (cargo && !NIVEL_RE.test(cargo) && NIVEL_RE.test(nextRaw) && nextRaw.length <= 20) {
+      cargo = `${cargo} ${nextRaw}`.replace(/\s+/g, " ").trim();
+    }
 
-    // If the "before" text actually looked like a cargo and we lacked one, swap.
-    if (!cargo && before && CARGO_RE.test(before) && nome !== before) cargo = before;
-
-    out.push({ nome, cpf, cargo });
+    out.push({ nome, cpf, cargo: cargo.trim() });
   }
   return out;
 }
