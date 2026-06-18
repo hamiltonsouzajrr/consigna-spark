@@ -135,13 +135,20 @@ async function extractPdfLines(file: File): Promise<string[]> {
 // is treated as one promotion record. Admin reviews/edits afterwards.
 function parseLines(lines: string[]): Draft[] {
   const out: Draft[] = [];
-  for (const line of lines) {
+  const usefulLines = lines.map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
+
+  for (let i = 0; i < usefulLines.length; i++) {
+    const line = usefulLines[i];
     const m = line.match(CPF_RE);
     if (!m) continue;
     const cpf = m[1].replace(/\s/g, "");
     const before = line.slice(0, m.index).trim().replace(/[-–:|]+$/, "").trim();
     const after = line.slice((m.index ?? 0) + m[0].length).trim().replace(/^[-–:|]+/, "").trim();
-    out.push({ nome: before, cpf, cargo: after });
+    const previous = usefulLines[i - 1]?.trim() ?? "";
+    const next = usefulLines[i + 1]?.trim() ?? "";
+    const nome = before || (!CPF_RE.test(previous) && !HEADER_RE.test(previous) ? previous : "");
+    const cargo = after || (!CPF_RE.test(next) && !HEADER_RE.test(next) ? next : "");
+    out.push({ nome, cpf, cargo });
   }
   return out;
 }
