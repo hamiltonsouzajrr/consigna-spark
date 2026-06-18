@@ -153,23 +153,26 @@ function Page() {
   const onPickFile = async (file: File | undefined) => {
     if (!file) return;
     setParsing(true);
+    const toastId = toast.loading("Lendo PDF… (PDFs escaneados usam OCR e podem demorar)");
     try {
       const lines = await extractPdfLines(file);
       const parsed = parseLines(lines);
       if (parsed.length === 0) {
-        toast.warning("Nenhum CPF reconhecido no PDF. Adicione os registros manualmente.");
+        toast.warning("Nenhum CPF reconhecido no PDF. Adicione os registros manualmente.", { id: toastId });
         setDrafts((d) => (d.length ? d : [{ nome: "", cpf: "", cargo: "" }]));
       } else {
         setDrafts(parsed);
-        toast.success(`${parsed.length} registro(s) extraído(s). Revise antes de salvar.`);
+        toast.success(`${parsed.length} registro(s) extraído(s). Revise antes de salvar.`, { id: toastId });
       }
     } catch (e: any) {
-      toast.error("Não foi possível ler o PDF. Verifique se ele contém texto selecionável.");
+      console.error("[promovidos] erro ao ler PDF:", e);
+      toast.error(`Não foi possível ler o PDF: ${e?.message ?? "erro desconhecido"}`, { id: toastId });
     } finally {
       setParsing(false);
       if (fileRef.current) fileRef.current.value = "";
     }
   };
+
 
   const updateDraft = (i: number, field: keyof Draft, value: string) => {
     setDrafts((d) => d.map((row, idx) => (idx === i ? { ...row, [field]: value } : row)));
