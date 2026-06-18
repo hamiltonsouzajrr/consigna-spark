@@ -161,8 +161,9 @@ async function extractPdfLines(file: File): Promise<string[]> {
 }
 
 
-// Heuristic: turn lines into {nome, cpf, cargo}. Any line containing a CPF
-// is treated as one promotion record. Admin reviews/edits afterwards.
+// Heuristic: turn lines into {nome, cpf, cargo}, prioritizing the three target
+// fields in order — CPF (anchor), Nome, Cargo. Each line containing a CPF is a
+// record; name and cargo are resolved from the same line or adjacent lines.
 function parseLines(lines: string[]): Draft[] {
   const out: Draft[] = [];
   const usefulLines = lines.map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
@@ -171,17 +172,35 @@ function parseLines(lines: string[]): Draft[] {
     const line = usefulLines[i];
     const m = line.match(CPF_RE);
     if (!m) continue;
-    const cpf = m[1].replace(/\s/g, "");
-    const before = line.slice(0, m.index).trim().replace(/[-–:|]+$/, "").trim();
+
+    // 1) CPF — the anchor, always normalized.
+    const cpf = formatCpf(m[1]);
+
+    const before = cleanName(line.slice(0, m.index).trim().replace(/[-–:|]+$/, "").trim());
     const after = line.slice((m.index ?? 0) + m[0].length).trim().replace(/^[-–:|]+/, "").trim();
-    const previous = usefulLines[i - 1]?.trim() ?? "";
-    const next = usefulLines[i + 1]?.trim() ?? "";
-    const nome = before || (!CPF_RE.test(previous) && !HEADER_RE.test(previous) ? previous : "");
-    const cargo = after || (!CPF_RE.test(next) && !HEADER_RE.test(next) ? next : "");
+    const previous = cleanName(usefulLines[i - 1]?.trim() ?? "");
+    const nextRaw = usefulLines[i + 1]?.trim() ?? "";
+
+    // 2) Nome — prefer text before the CPF, then the previous line, requiring it to look like a name.
+    let nome = "";
+    if (looksLikeName(before)) nome = before;
+    else if (looksLikeName(previous)) nome = previous;
+    else if (before && !CPF_RE.test(before)) nome = before;
+
+    // 3) Cargo — prefer text after the CPF, then a cargo-like next line, then remaining next line.
+    let cargo = "";
+    if (after && !CPF_RE.test(after)) cargo = after;
+    else if (CARGO_RE.test(nextRaw) && !CPF_RE.test(nextRaw)) cargo = nextRaw;
+    else if (nextRaw && !CPF_RE.test(nextRaw) && !HEADER_RE.test(nextRaw) && !looksLikeName(nextRaw)) cargo = nextRaw;
+
+    // If the "before" text actually looked like a cargo and we lacked one, swap.
+    if (!cargo && before && CARGO_RE.test(before) && nome !== before) cargo = before;
+
     out.push({ nome, cpf, cargo });
   }
   return out;
 }
+
 
 function Page() {
   const { user, loading } = useAuth();
