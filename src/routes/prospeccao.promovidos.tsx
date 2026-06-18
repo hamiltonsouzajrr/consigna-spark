@@ -79,7 +79,6 @@ async function extractPdfLines(file: File): Promise<string[]> {
   const buf = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({ data: buf }).promise;
   const lines: string[] = [];
-  const pageImages: { canvas: HTMLCanvasElement }[] = [];
 
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);
@@ -103,15 +102,6 @@ async function extractPdfLines(file: File): Promise<string[]> {
     } catch (error) {
       console.warn(`[promovidos] extração de texto falhou na página ${p}; tentando OCR`, error);
     }
-
-    // Render page to canvas in case we need OCR afterwards.
-    const viewport = page.getViewport({ scale: 2 });
-    const canvas = document.createElement("canvas");
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    const ctx = canvas.getContext("2d")!;
-    await page.render({ canvasContext: ctx, viewport }).promise;
-    pageImages.push({ canvas });
   }
 
   // If the PDF had selectable text, we're done.
@@ -120,7 +110,15 @@ async function extractPdfLines(file: File): Promise<string[]> {
   // Scanned PDF: run OCR on each rendered page.
   const { default: Tesseract } = await import("tesseract.js");
   const ocrLines: string[] = [];
-  for (const { canvas } of pageImages) {
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const viewport = page.getViewport({ scale: 1.75 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) continue;
+    await page.render({ canvasContext: ctx, viewport }).promise;
     const { data } = await Tesseract.recognize(canvas, "por");
     for (const raw of (data.text ?? "").split("\n")) {
       const line = raw.replace(/\s+/g, " ").trim();
