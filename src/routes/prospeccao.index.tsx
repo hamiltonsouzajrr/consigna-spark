@@ -50,6 +50,8 @@ type Lead = {
   status: LeadStatus;
   situacao: string | null;
   score: number;
+  idade: number | null;
+  sexo: string | null;
   sla_status: SlaStatus;
   next_follow_up_at: string | null;
   last_contact_at: string | null;
