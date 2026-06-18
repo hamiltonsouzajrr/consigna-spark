@@ -71,6 +71,13 @@ function Page() {
   const [loadingLeads, setLoadingLeads] = useState(true);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"todos" | "hoje" | "quentes" | "atrasados">("todos");
+  // Advanced filters the consultant controls freely.
+  const [sexoFilter, setSexoFilter] = useState<"todos" | "masculino" | "feminino">("todos");
+  const [idadeMin, setIdadeMin] = useState("");
+  const [idadeMax, setIdadeMax] = useState("");
+  const [scoreMin, setScoreMin] = useState("");
+  const [scoreMax, setScoreMax] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [prod, setProd] = useState({ abertos: 0, qualificados: 0, ligacoes: 0, whats: 0, followups: 0 });
   // Daily counter of completed calls (lead etiquetado + ligação registrada),
   // kept per-day in localStorage so it survives refreshes.
