@@ -30,6 +30,30 @@ export const Route = createFileRoute("/prospeccao/promovidos")({
 type Draft = { nome: string; cpf: string; cargo: string };
 
 const CPF_RE = /(\d{3}\.?\s?\d{3}\.?\s?\d{3}\s?-?\s?\d{2})/;
+const HEADER_RE = /^(nome|cpf|cargo|matr[ií]cula|servidor|colaborador|promo[cç][aã]o|refer[eê]ncia|p[aá]gina|folha)$/i;
+
+type TextItem = { str?: string; transform?: number[] };
+
+async function readTextContentWithoutSafariAsyncIterator(page: any): Promise<{ items: TextItem[] }> {
+  const textContent = { items: [] as TextItem[] };
+  const stream = typeof page.streamTextContent === "function" ? page.streamTextContent() : null;
+
+  if (stream && typeof stream.getReader === "function") {
+    const reader = stream.getReader();
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (value?.items?.length) textContent.items.push(...value.items);
+      }
+    } finally {
+      reader.releaseLock?.();
+    }
+    return textContent;
+  }
+
+  return page.getTextContent();
+}
 
 function currentMonth(): string {
   return new Date().toISOString().slice(0, 7);
@@ -59,20 +83,25 @@ async function extractPdfLines(file: File): Promise<string[]> {
 
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);
-    const content = await page.getTextContent();
-    // Group text items by their vertical position to reconstruct lines.
-    const rows = new Map<number, { x: number; str: string }[]>();
-    for (const item of content.items as any[]) {
-      const y = Math.round(item.transform[5]);
-      const x = item.transform[4];
-      if (!rows.has(y)) rows.set(y, []);
-      rows.get(y)!.push({ x, str: item.str });
-    }
-    const sortedY = Array.from(rows.keys()).sort((a, b) => b - a);
-    for (const y of sortedY) {
-      const parts = rows.get(y)!.sort((a, b) => a.x - b.x).map((r) => r.str);
-      const line = parts.join(" ").replace(/\s+/g, " ").trim();
-      if (line) lines.push(line);
+    try {
+      const content = await readTextContentWithoutSafariAsyncIterator(page);
+      // Group text items by their vertical position to reconstruct lines.
+      const rows = new Map<number, { x: number; str: string }[]>();
+      for (const item of content.items) {
+        if (!item.str || !item.transform) continue;
+        const y = Math.round(item.transform[5]);
+        const x = item.transform[4];
+        if (!rows.has(y)) rows.set(y, []);
+        rows.get(y)!.push({ x, str: item.str });
+      }
+      const sortedY = Array.from(rows.keys()).sort((a, b) => b - a);
+      for (const y of sortedY) {
+        const parts = rows.get(y)!.sort((a, b) => a.x - b.x).map((r) => r.str);
+        const line = parts.join(" ").replace(/\s+/g, " ").trim();
+        if (line) lines.push(line);
+      }
+    } catch (error) {
+      console.warn(`[promovidos] extração de texto falhou na página ${p}; tentando OCR`, error);
     }
 
     // Render page to canvas in case we need OCR afterwards.
