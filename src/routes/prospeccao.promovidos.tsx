@@ -43,14 +43,20 @@ function fmtMonth(iso: string): string {
 }
 
 // Extract text lines from a PDF (browser-side) using pdfjs.
+// Falls back to OCR (tesseract) when the PDF has no selectable text (scanned).
 async function extractPdfLines(file: File): Promise<string[]> {
   const pdfjs: any = await import("pdfjs-dist");
-  const workerSrc = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default;
-  pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+  // Resolve the worker bundled with the app (reliable across dev + build).
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/build/pdf.worker.min.mjs",
+    import.meta.url,
+  ).href;
 
   const buf = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({ data: buf }).promise;
   const lines: string[] = [];
+  const pageImages: { canvas: HTMLCanvasElement }[] = [];
+
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);
     const content = await page.getTextContent();
@@ -68,9 +74,33 @@ async function extractPdfLines(file: File): Promise<string[]> {
       const line = parts.join(" ").replace(/\s+/g, " ").trim();
       if (line) lines.push(line);
     }
+
+    // Render page to canvas in case we need OCR afterwards.
+    const viewport = page.getViewport({ scale: 2 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext("2d")!;
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    pageImages.push({ canvas });
   }
-  return lines;
+
+  // If the PDF had selectable text, we're done.
+  if (lines.length > 0) return lines;
+
+  // Scanned PDF: run OCR on each rendered page.
+  const { default: Tesseract } = await import("tesseract.js");
+  const ocrLines: string[] = [];
+  for (const { canvas } of pageImages) {
+    const { data } = await Tesseract.recognize(canvas, "por");
+    for (const raw of (data.text ?? "").split("\n")) {
+      const line = raw.replace(/\s+/g, " ").trim();
+      if (line) ocrLines.push(line);
+    }
+  }
+  return ocrLines;
 }
+
 
 // Heuristic: turn lines into {nome, cpf, cargo}. Any line containing a CPF
 // is treated as one promotion record. Admin reviews/edits afterwards.
@@ -123,23 +153,26 @@ function Page() {
   const onPickFile = async (file: File | undefined) => {
     if (!file) return;
     setParsing(true);
+    const toastId = toast.loading("Lendo PDF… (PDFs escaneados usam OCR e podem demorar)");
     try {
       const lines = await extractPdfLines(file);
       const parsed = parseLines(lines);
       if (parsed.length === 0) {
-        toast.warning("Nenhum CPF reconhecido no PDF. Adicione os registros manualmente.");
+        toast.warning("Nenhum CPF reconhecido no PDF. Adicione os registros manualmente.", { id: toastId });
         setDrafts((d) => (d.length ? d : [{ nome: "", cpf: "", cargo: "" }]));
       } else {
         setDrafts(parsed);
-        toast.success(`${parsed.length} registro(s) extraído(s). Revise antes de salvar.`);
+        toast.success(`${parsed.length} registro(s) extraído(s). Revise antes de salvar.`, { id: toastId });
       }
     } catch (e: any) {
-      toast.error("Não foi possível ler o PDF. Verifique se ele contém texto selecionável.");
+      console.error("[promovidos] erro ao ler PDF:", e);
+      toast.error(`Não foi possível ler o PDF: ${e?.message ?? "erro desconhecido"}`, { id: toastId });
     } finally {
       setParsing(false);
       if (fileRef.current) fileRef.current.value = "";
     }
   };
+
 
   const updateDraft = (i: number, field: keyof Draft, value: string) => {
     setDrafts((d) => d.map((row, idx) => (idx === i ? { ...row, [field]: value } : row)));
