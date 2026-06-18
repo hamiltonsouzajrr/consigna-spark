@@ -79,9 +79,11 @@ async function extractPdfLines(file: File): Promise<string[]> {
   const buf = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({ data: buf }).promise;
   const lines: string[] = [];
+  const ocrPages: number[] = [];
 
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);
+    let pageLineCount = 0;
     try {
       const content = await readTextContentWithoutSafariAsyncIterator(page);
       // Group text items by their vertical position to reconstruct lines.
@@ -97,20 +99,24 @@ async function extractPdfLines(file: File): Promise<string[]> {
       for (const y of sortedY) {
         const parts = rows.get(y)!.sort((a, b) => a.x - b.x).map((r) => r.str);
         const line = parts.join(" ").replace(/\s+/g, " ").trim();
-        if (line) lines.push(line);
+        if (line) {
+          lines.push(line);
+          pageLineCount += 1;
+        }
       }
     } catch (error) {
       console.warn(`[promovidos] extração de texto falhou na página ${p}; tentando OCR`, error);
     }
+    if (pageLineCount === 0) ocrPages.push(p);
   }
 
-  // If the PDF had selectable text, we're done.
-  if (lines.length > 0) return lines;
+  // If every page had selectable text, we're done.
+  if (ocrPages.length === 0) return lines;
 
-  // Scanned PDF: run OCR on each rendered page.
+  // Scanned/mixed PDF: run OCR only on pages without selectable text.
   const { default: Tesseract } = await import("tesseract.js");
   const ocrLines: string[] = [];
-  for (let p = 1; p <= doc.numPages; p++) {
+  for (const p of ocrPages) {
     const page = await doc.getPage(p);
     const viewport = page.getViewport({ scale: 1.75 });
     const canvas = document.createElement("canvas");
