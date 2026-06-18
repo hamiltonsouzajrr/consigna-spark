@@ -51,7 +51,7 @@ export const savePromovidos = createServerFn({ method: "POST" })
     z
       .object({
         mes_referencia: z.string().regex(/^\d{4}-\d{2}$/, "Mês inválido (use AAAA-MM)"),
-        entries: z.array(entry).min(1).max(1000),
+        entries: z.array(entry).min(1).max(20000),
       })
       .parse(data),
   )
