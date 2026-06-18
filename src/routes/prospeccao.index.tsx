@@ -363,11 +363,53 @@ function Page() {
             {f === "todos" ? "Todos" : f === "hoje" ? "Hoje" : f === "quentes" ? "Quentes" : "Atrasados"}
           </Button>
         ))}
+        <Button size="sm" variant={showFilters || activeAdvanced ? "default" : "outline"} onClick={() => setShowFilters((v) => !v)}>
+          <SlidersHorizontal className="mr-2 h-3.5 w-3.5" /> Filtros{activeAdvanced ? " •" : ""}
+        </Button>
         <div className="relative ml-auto w-full max-w-xs">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input className="pl-9" placeholder="Buscar nome, telefone, cidade" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
       </div>
+
+      {showFilters && (
+        <Card className="mt-3 p-4">
+          <div className="flex flex-wrap items-end gap-4">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Sexo</label>
+              <div className="flex gap-1">
+                {(["todos", "masculino", "feminino"] as const).map((s) => (
+                  <Button key={s} size="sm" variant={sexoFilter === s ? "default" : "outline"} onClick={() => setSexoFilter(s)}>
+                    {s === "todos" ? "Todos" : s === "masculino" ? "Masculino" : "Feminino"}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Idade</label>
+              <div className="flex items-center gap-2">
+                <Input type="number" min={0} placeholder="mín" value={idadeMin} onChange={(e) => setIdadeMin(e.target.value)} className="w-20" />
+                <span className="text-muted-foreground">–</span>
+                <Input type="number" min={0} placeholder="máx" value={idadeMax} onChange={(e) => setIdadeMax(e.target.value)} className="w-20" />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Score</label>
+              <div className="flex items-center gap-2">
+                <Input type="number" min={0} max={100} placeholder="mín" value={scoreMin} onChange={(e) => setScoreMin(e.target.value)} className="w-20" />
+                <span className="text-muted-foreground">–</span>
+                <Input type="number" min={0} max={100} placeholder="máx" value={scoreMax} onChange={(e) => setScoreMax(e.target.value)} className="w-20" />
+              </div>
+            </div>
+            {activeAdvanced && (
+              <Button size="sm" variant="ghost" onClick={clearAdvanced}>
+                <X className="mr-1 h-3.5 w-3.5" /> Limpar
+              </Button>
+            )}
+            <p className="ml-auto self-center text-xs text-muted-foreground">{visible.length} lead(s)</p>
+          </div>
+        </Card>
+      )}
 
       <div className="mt-4 space-y-2">
         {loadingLeads && <p className="text-sm text-muted-foreground">Carregando fila…</p>}
