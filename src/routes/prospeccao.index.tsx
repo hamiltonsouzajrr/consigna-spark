@@ -274,7 +274,12 @@ function Page() {
     if (sMin !== null) list = list.filter((l) => l.score >= sMin);
     if (sMax !== null) list = list.filter((l) => l.score <= sMax);
     return list;
-  }, [leads, filter, q]);
+  }, [leads, filter, q, sexoFilter, idadeMin, idadeMax, scoreMin, scoreMax]);
+
+  const activeAdvanced = sexoFilter !== "todos" || !!idadeMin || !!idadeMax || !!scoreMin || !!scoreMax;
+  const clearAdvanced = () => {
+    setSexoFilter("todos"); setIdadeMin(""); setIdadeMax(""); setScoreMin(""); setScoreMax("");
+  };
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
