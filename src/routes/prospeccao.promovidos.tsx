@@ -497,7 +497,8 @@ function Page() {
                     <Trash2 className="h-4 w-4 text-rose-500" />
                   </Button>
                 </div>
-              ))}
+                );
+              })}
               <div className="flex items-center justify-between pt-2">
                 <p className="text-xs text-muted-foreground">{drafts.length} registro(s) na revisão</p>
                 <Button onClick={handleSave} disabled={saving}>
