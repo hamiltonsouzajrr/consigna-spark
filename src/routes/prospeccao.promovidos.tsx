@@ -48,6 +48,32 @@ function formatCpf(raw: string): string {
   return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
 }
 
+// Validate a CPF using its check digits (rejects 000..., 111..., etc.).
+function isValidCpf(raw: string): boolean {
+  const d = raw.replace(/\D/g, "");
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+  const calc = (len: number) => {
+    let sum = 0;
+    for (let i = 0; i < len; i++) sum += Number(d[i]) * (len + 1 - i);
+    const r = (sum * 10) % 11;
+    return r === 10 ? 0 : r;
+  };
+  return calc(9) === Number(d[9]) && calc(10) === Number(d[10]);
+}
+
+// Title-case a cargo for consistent display.
+function titleCaseCargo(s: string): string {
+  const lower = new Set(["da", "de", "do", "das", "dos", "e"]);
+  return s
+    .toLocaleLowerCase("pt-BR")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w, idx) =>
+      lower.has(w) && idx > 0 ? w : w.charAt(0).toLocaleUpperCase("pt-BR") + w.slice(1),
+    )
+    .join(" ");
+}
+
 // Title-case a name, keeping common Portuguese connectors lowercase.
 function titleCaseName(s: string): string {
   const lower = new Set(["da", "de", "do", "das", "dos", "e"]);
