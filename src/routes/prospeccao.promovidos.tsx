@@ -171,6 +171,7 @@ function Page() {
   // Upload / review state (admin only).
   const [mes, setMes] = useState(currentMonth());
   const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [rawLines, setRawLines] = useState<string[]>([]);
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -196,6 +197,7 @@ function Page() {
     const toastId = toast.loading("Lendo PDF… (PDFs escaneados usam OCR e podem demorar)");
     try {
       const lines = await extractPdfLines(file);
+      setRawLines(lines);
       const parsed = parseLines(lines);
       if (parsed.length === 0) {
         toast.warning("Nenhum CPF reconhecido no PDF. Adicione os registros manualmente.", { id: toastId });
@@ -206,6 +208,7 @@ function Page() {
       }
     } catch (e: any) {
       console.error("[promovidos] erro ao ler PDF:", e);
+      setRawLines([]);
       toast.error(`Não foi possível ler o PDF: ${e?.message ?? "erro desconhecido"}`, { id: toastId });
     } finally {
       setParsing(false);
