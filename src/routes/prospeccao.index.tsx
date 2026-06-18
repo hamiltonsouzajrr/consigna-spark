@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
-  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, PhoneCall, MapPin, MessageCircle, DoorOpen, CheckCircle2, BarChart3, Award,
+  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, PhoneCall, MapPin, MessageCircle, DoorOpen, CheckCircle2, BarChart3, Award, SlidersHorizontal, X,
 } from "lucide-react";
 import {
   STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, whatsappLink, telLink, CALL_OUTCOMES, SITUACAO_TAGS,
@@ -50,6 +50,8 @@ type Lead = {
   status: LeadStatus;
   situacao: string | null;
   score: number;
+  idade: number | null;
+  sexo: string | null;
   sla_status: SlaStatus;
   next_follow_up_at: string | null;
   last_contact_at: string | null;
@@ -69,6 +71,13 @@ function Page() {
   const [loadingLeads, setLoadingLeads] = useState(true);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"todos" | "hoje" | "quentes" | "atrasados">("todos");
+  // Advanced filters the consultant controls freely.
+  const [sexoFilter, setSexoFilter] = useState<"todos" | "masculino" | "feminino">("todos");
+  const [idadeMin, setIdadeMin] = useState("");
+  const [idadeMax, setIdadeMax] = useState("");
+  const [scoreMin, setScoreMin] = useState("");
+  const [scoreMax, setScoreMax] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [prod, setProd] = useState({ abertos: 0, qualificados: 0, ligacoes: 0, whats: 0, followups: 0 });
   // Daily counter of completed calls (lead etiquetado + ligação registrada),
   // kept per-day in localStorage so it survives refreshes.
@@ -151,7 +160,7 @@ function Page() {
       // drop out automatically and are replaced by fresh ones.
       const { data } = await supabase
         .from("prospect_leads")
-        .select("id,nome,telefone,telefones,cpf,cidade,origem,orcamento,urgencia,status,situacao,score,sla_status,next_follow_up_at,last_contact_at,first_response_at,created_at")
+        .select("id,nome,telefone,telefones,cpf,cidade,origem,orcamento,urgencia,status,situacao,score,idade,sexo,sla_status,next_follow_up_at,last_contact_at,first_response_at,created_at")
         .eq("status", "novo")
         .is("first_response_at", null)
         .is("opened_at", null)
@@ -250,8 +259,27 @@ function Page() {
     if (filter === "atrasados") list = list.filter((l) => l.sla_status === "atrasado" && !["ganho", "perdido"].includes(l.status));
     const term = q.trim().toLowerCase();
     if (term) list = list.filter((l) => l.nome.toLowerCase().includes(term) || (l.telefone ?? "").includes(term) || (l.cidade ?? "").toLowerCase().includes(term));
+    // Sexo
+    if (sexoFilter !== "todos") {
+      list = list.filter((l) => (l.sexo ?? "").toLowerCase().startsWith(sexoFilter[0]));
+    }
+    // Idade range
+    const iMin = idadeMin ? Number(idadeMin) : null;
+    const iMax = idadeMax ? Number(idadeMax) : null;
+    if (iMin !== null) list = list.filter((l) => l.idade != null && l.idade >= iMin);
+    if (iMax !== null) list = list.filter((l) => l.idade != null && l.idade <= iMax);
+    // Score range
+    const sMin = scoreMin ? Number(scoreMin) : null;
+    const sMax = scoreMax ? Number(scoreMax) : null;
+    if (sMin !== null) list = list.filter((l) => l.score >= sMin);
+    if (sMax !== null) list = list.filter((l) => l.score <= sMax);
     return list;
-  }, [leads, filter, q]);
+  }, [leads, filter, q, sexoFilter, idadeMin, idadeMax, scoreMin, scoreMax]);
+
+  const activeAdvanced = sexoFilter !== "todos" || !!idadeMin || !!idadeMax || !!scoreMin || !!scoreMax;
+  const clearAdvanced = () => {
+    setSexoFilter("todos"); setIdadeMin(""); setIdadeMax(""); setScoreMin(""); setScoreMax("");
+  };
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
@@ -335,11 +363,53 @@ function Page() {
             {f === "todos" ? "Todos" : f === "hoje" ? "Hoje" : f === "quentes" ? "Quentes" : "Atrasados"}
           </Button>
         ))}
+        <Button size="sm" variant={showFilters || activeAdvanced ? "default" : "outline"} onClick={() => setShowFilters((v) => !v)}>
+          <SlidersHorizontal className="mr-2 h-3.5 w-3.5" /> Filtros{activeAdvanced ? " •" : ""}
+        </Button>
         <div className="relative ml-auto w-full max-w-xs">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input className="pl-9" placeholder="Buscar nome, telefone, cidade" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
       </div>
+
+      {showFilters && (
+        <Card className="mt-3 p-4">
+          <div className="flex flex-wrap items-end gap-4">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Sexo</label>
+              <div className="flex gap-1">
+                {(["todos", "masculino", "feminino"] as const).map((s) => (
+                  <Button key={s} size="sm" variant={sexoFilter === s ? "default" : "outline"} onClick={() => setSexoFilter(s)}>
+                    {s === "todos" ? "Todos" : s === "masculino" ? "Masculino" : "Feminino"}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Idade</label>
+              <div className="flex items-center gap-2">
+                <Input type="number" min={0} placeholder="mín" value={idadeMin} onChange={(e) => setIdadeMin(e.target.value)} className="w-20" />
+                <span className="text-muted-foreground">–</span>
+                <Input type="number" min={0} placeholder="máx" value={idadeMax} onChange={(e) => setIdadeMax(e.target.value)} className="w-20" />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Score</label>
+              <div className="flex items-center gap-2">
+                <Input type="number" min={0} max={100} placeholder="mín" value={scoreMin} onChange={(e) => setScoreMin(e.target.value)} className="w-20" />
+                <span className="text-muted-foreground">–</span>
+                <Input type="number" min={0} max={100} placeholder="máx" value={scoreMax} onChange={(e) => setScoreMax(e.target.value)} className="w-20" />
+              </div>
+            </div>
+            {activeAdvanced && (
+              <Button size="sm" variant="ghost" onClick={clearAdvanced}>
+                <X className="mr-1 h-3.5 w-3.5" /> Limpar
+              </Button>
+            )}
+            <p className="ml-auto self-center text-xs text-muted-foreground">{visible.length} lead(s)</p>
+          </div>
+        </Card>
+      )}
 
       <div className="mt-4 space-y-2">
         {loadingLeads && <p className="text-sm text-muted-foreground">Carregando fila…</p>}
@@ -371,8 +441,12 @@ function Page() {
                       ));
                     })()}
                     {l.cidade && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{l.cidade}</span>}
+                    {l.idade != null && <span>{l.idade} anos</span>}
+                    {l.sexo && <span>{l.sexo}</span>}
+                    <span className="rounded bg-muted px-1.5 py-0.5 font-medium">Score {l.score}</span>
 
                     <span>Follow-up: {fmtWhen(l.next_follow_up_at)}</span>
+
                   </div>
                 </div>
               </div>

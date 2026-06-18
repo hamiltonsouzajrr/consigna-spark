@@ -676,6 +676,7 @@ export type Database = {
           created_by: string | null
           first_response_at: string | null
           id: string
+          idade: number | null
           import_batch: string | null
           last_contact_at: string | null
           loss_reason: string | null
@@ -688,6 +689,7 @@ export type Database = {
           quality_score: number
           respondeu_whatsapp: boolean
           score: number
+          sexo: string | null
           situacao: string | null
           sla_status: Database["public"]["Enums"]["prospect_sla_status"]
           status: Database["public"]["Enums"]["prospect_status"]
@@ -704,6 +706,7 @@ export type Database = {
           created_by?: string | null
           first_response_at?: string | null
           id?: string
+          idade?: number | null
           import_batch?: string | null
           last_contact_at?: string | null
           loss_reason?: string | null
@@ -716,6 +719,7 @@ export type Database = {
           quality_score?: number
           respondeu_whatsapp?: boolean
           score?: number
+          sexo?: string | null
           situacao?: string | null
           sla_status?: Database["public"]["Enums"]["prospect_sla_status"]
           status?: Database["public"]["Enums"]["prospect_status"]
@@ -732,6 +736,7 @@ export type Database = {
           created_by?: string | null
           first_response_at?: string | null
           id?: string
+          idade?: number | null
           import_batch?: string | null
           last_contact_at?: string | null
           loss_reason?: string | null
@@ -744,6 +749,7 @@ export type Database = {
           quality_score?: number
           respondeu_whatsapp?: boolean
           score?: number
+          sexo?: string | null
           situacao?: string | null
           sla_status?: Database["public"]["Enums"]["prospect_sla_status"]
           status?: Database["public"]["Enums"]["prospect_status"]
