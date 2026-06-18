@@ -362,16 +362,37 @@ function Page() {
 
   const handleSave = async () => {
     const clean = drafts
-      .map((d) => ({ nome: d.nome.trim(), cpf: d.cpf.trim(), cargo: d.cargo.trim() }))
+      .map((d) => ({ nome: d.nome.trim(), cpf: formatCpf(d.cpf.trim()), cargo: d.cargo.trim() }))
       .filter((d) => d.nome && d.cpf && d.cargo);
     if (clean.length === 0) {
       toast.warning("Preencha nome, CPF e cargo de pelo menos um registro.");
       return;
     }
+    const invalid = clean.filter((d) => !isValidCpf(d.cpf));
+    if (invalid.length > 0) {
+      toast.error(`${invalid.length} CPF(s) inválido(s). Corrija os campos destacados antes de salvar.`);
+      return;
+    }
+    // Drop duplicate CPFs (against this batch and the already-saved list).
+    const existingCpfs = new Set(list.map((p) => p.cpf.replace(/\D/g, "")));
+    const seen = new Set<string>();
+    const deduped = clean.filter((d) => {
+      const key = d.cpf.replace(/\D/g, "");
+      if (seen.has(key) || existingCpfs.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const skipped = clean.length - deduped.length;
+    if (deduped.length === 0) {
+      toast.warning("Todos os CPFs já estão cadastrados.");
+      return;
+    }
     setSaving(true);
     try {
-      const { inserted } = await saveFn({ data: { mes_referencia: mes, entries: clean } });
-      toast.success(`${inserted} promovido(s) salvo(s).`);
+      const { inserted } = await saveFn({ data: { mes_referencia: mes, entries: deduped } });
+      toast.success(
+        `${inserted} promovido(s) salvo(s).${skipped > 0 ? ` ${skipped} duplicado(s) ignorado(s).` : ""}`,
+      );
       setDrafts([]);
       setRawLines([]);
       load();
