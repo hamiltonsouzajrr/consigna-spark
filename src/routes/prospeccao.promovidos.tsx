@@ -345,6 +345,15 @@ function Page() {
             </div>
           )}
 
+          {rawLines.length > 0 && (
+            <details className="mt-4 rounded-md border bg-muted/30 p-3 text-sm">
+              <summary className="cursor-pointer font-medium">Ver texto extraído do PDF</summary>
+              <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap text-xs text-muted-foreground">
+                {rawLines.join("\n")}
+              </pre>
+            </details>
+          )}
+
           {drafts.length === 0 && (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <FileText className="h-4 w-4" /> Importe um PDF com nome, CPF e cargo para revisar e salvar.
