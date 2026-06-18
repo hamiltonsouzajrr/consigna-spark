@@ -32,6 +32,32 @@ type Draft = { nome: string; cpf: string; cargo: string };
 const CPF_RE = /(\d{3}\.?\s?\d{3}\.?\s?\d{3}\s?-?\s?\d{2})/;
 const HEADER_RE = /^(nome|cpf|cargo|matr[ií]cula|servidor|colaborador|promo[cç][aã]o|refer[eê]ncia|p[aá]gina|folha)$/i;
 
+// Common job/role keywords to recognize a "cargo" line even when it is on its own.
+const CARGO_RE = /(analista|assistente|auxiliar|gerente|gestor|coordenad|supervisor|diretor|t[eé]cnic|especialista|consultor|operador|estagi[aá]rio|aprendiz|secret[aá]ri|advogad|engenheir|m[eé]dic|enfermeir|professor|vendedor|atendente|caixa|escritur|cargo|fun[cç][aã]o|n[ií]vel|s[eê]nior|j[uú]nior|pleno|i{1,3}\b)/i;
+
+// Format a raw CPF (digits with optional separators) to 000.000.000-00.
+function formatCpf(raw: string): string {
+  const d = raw.replace(/\D/g, "");
+  if (d.length !== 11) return raw.replace(/\s/g, "");
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+
+// A line that looks like a person's name: 2+ alphabetic words, no digits.
+function looksLikeName(s: string): boolean {
+  const t = s.trim();
+  if (!t || /\d/.test(t) || HEADER_RE.test(t)) return false;
+  const words = t.split(/\s+/).filter((w) => w.length > 1);
+  return words.length >= 2 && /^[A-Za-zÀ-ÿ'.\s-]+$/.test(t);
+}
+
+// Clean a candidate name: strip leading numbers (matrícula), trailing separators.
+function cleanName(s: string): string {
+  return s
+    .replace(/^\s*\d+\s*[-–.)]?\s*/, "")
+    .replace(/[-–:|,;]+$/, "")
+    .trim();
+}
+
 type TextItem = { str?: string; transform?: number[] };
 
 async function readTextContentWithoutSafariAsyncIterator(page: any): Promise<{ items: TextItem[] }> {
