@@ -30,6 +30,30 @@ export const Route = createFileRoute("/prospeccao/promovidos")({
 type Draft = { nome: string; cpf: string; cargo: string };
 
 const CPF_RE = /(\d{3}\.?\s?\d{3}\.?\s?\d{3}\s?-?\s?\d{2})/;
+const HEADER_RE = /^(nome|cpf|cargo|matr[ií]cula|servidor|colaborador|promo[cç][aã]o|refer[eê]ncia|p[aá]gina|folha)$/i;
+
+type TextItem = { str?: string; transform?: number[] };
+
+async function readTextContentWithoutSafariAsyncIterator(page: any): Promise<{ items: TextItem[] }> {
+  const textContent = { items: [] as TextItem[] };
+  const stream = typeof page.streamTextContent === "function" ? page.streamTextContent() : null;
+
+  if (stream && typeof stream.getReader === "function") {
+    const reader = stream.getReader();
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (value?.items?.length) textContent.items.push(...value.items);
+      }
+    } finally {
+      reader.releaseLock?.();
+    }
+    return textContent;
+  }
+
+  return page.getTextContent();
+}
 
 function currentMonth(): string {
   return new Date().toISOString().slice(0, 7);
@@ -55,43 +79,52 @@ async function extractPdfLines(file: File): Promise<string[]> {
   const buf = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({ data: buf }).promise;
   const lines: string[] = [];
-  const pageImages: { canvas: HTMLCanvasElement }[] = [];
+  const ocrPages: number[] = [];
 
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);
-    const content = await page.getTextContent();
-    // Group text items by their vertical position to reconstruct lines.
-    const rows = new Map<number, { x: number; str: string }[]>();
-    for (const item of content.items as any[]) {
-      const y = Math.round(item.transform[5]);
-      const x = item.transform[4];
-      if (!rows.has(y)) rows.set(y, []);
-      rows.get(y)!.push({ x, str: item.str });
+    let pageLineCount = 0;
+    try {
+      const content = await readTextContentWithoutSafariAsyncIterator(page);
+      // Group text items by their vertical position to reconstruct lines.
+      const rows = new Map<number, { x: number; str: string }[]>();
+      for (const item of content.items) {
+        if (!item.str || !item.transform) continue;
+        const y = Math.round(item.transform[5]);
+        const x = item.transform[4];
+        if (!rows.has(y)) rows.set(y, []);
+        rows.get(y)!.push({ x, str: item.str });
+      }
+      const sortedY = Array.from(rows.keys()).sort((a, b) => b - a);
+      for (const y of sortedY) {
+        const parts = rows.get(y)!.sort((a, b) => a.x - b.x).map((r) => r.str);
+        const line = parts.join(" ").replace(/\s+/g, " ").trim();
+        if (line) {
+          lines.push(line);
+          pageLineCount += 1;
+        }
+      }
+    } catch (error) {
+      console.warn(`[promovidos] extração de texto falhou na página ${p}; tentando OCR`, error);
     }
-    const sortedY = Array.from(rows.keys()).sort((a, b) => b - a);
-    for (const y of sortedY) {
-      const parts = rows.get(y)!.sort((a, b) => a.x - b.x).map((r) => r.str);
-      const line = parts.join(" ").replace(/\s+/g, " ").trim();
-      if (line) lines.push(line);
-    }
+    if (pageLineCount === 0) ocrPages.push(p);
+  }
 
-    // Render page to canvas in case we need OCR afterwards.
-    const viewport = page.getViewport({ scale: 2 });
+  // If every page had selectable text, we're done.
+  if (ocrPages.length === 0) return lines;
+
+  // Scanned/mixed PDF: run OCR only on pages without selectable text.
+  const { default: Tesseract } = await import("tesseract.js");
+  const ocrLines: string[] = [];
+  for (const p of ocrPages) {
+    const page = await doc.getPage(p);
+    const viewport = page.getViewport({ scale: 1.75 });
     const canvas = document.createElement("canvas");
     canvas.width = viewport.width;
     canvas.height = viewport.height;
-    const ctx = canvas.getContext("2d")!;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) continue;
     await page.render({ canvasContext: ctx, viewport }).promise;
-    pageImages.push({ canvas });
-  }
-
-  // If the PDF had selectable text, we're done.
-  if (lines.length > 0) return lines;
-
-  // Scanned PDF: run OCR on each rendered page.
-  const { default: Tesseract } = await import("tesseract.js");
-  const ocrLines: string[] = [];
-  for (const { canvas } of pageImages) {
     const { data } = await Tesseract.recognize(canvas, "por");
     for (const raw of (data.text ?? "").split("\n")) {
       const line = raw.replace(/\s+/g, " ").trim();
@@ -106,13 +139,20 @@ async function extractPdfLines(file: File): Promise<string[]> {
 // is treated as one promotion record. Admin reviews/edits afterwards.
 function parseLines(lines: string[]): Draft[] {
   const out: Draft[] = [];
-  for (const line of lines) {
+  const usefulLines = lines.map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
+
+  for (let i = 0; i < usefulLines.length; i++) {
+    const line = usefulLines[i];
     const m = line.match(CPF_RE);
     if (!m) continue;
     const cpf = m[1].replace(/\s/g, "");
     const before = line.slice(0, m.index).trim().replace(/[-–:|]+$/, "").trim();
     const after = line.slice((m.index ?? 0) + m[0].length).trim().replace(/^[-–:|]+/, "").trim();
-    out.push({ nome: before, cpf, cargo: after });
+    const previous = usefulLines[i - 1]?.trim() ?? "";
+    const next = usefulLines[i + 1]?.trim() ?? "";
+    const nome = before || (!CPF_RE.test(previous) && !HEADER_RE.test(previous) ? previous : "");
+    const cargo = after || (!CPF_RE.test(next) && !HEADER_RE.test(next) ? next : "");
+    out.push({ nome, cpf, cargo });
   }
   return out;
 }
@@ -131,6 +171,7 @@ function Page() {
   // Upload / review state (admin only).
   const [mes, setMes] = useState(currentMonth());
   const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [rawLines, setRawLines] = useState<string[]>([]);
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -156,6 +197,7 @@ function Page() {
     const toastId = toast.loading("Lendo PDF… (PDFs escaneados usam OCR e podem demorar)");
     try {
       const lines = await extractPdfLines(file);
+      setRawLines(lines);
       const parsed = parseLines(lines);
       if (parsed.length === 0) {
         toast.warning("Nenhum CPF reconhecido no PDF. Adicione os registros manualmente.", { id: toastId });
@@ -166,6 +208,7 @@ function Page() {
       }
     } catch (e: any) {
       console.error("[promovidos] erro ao ler PDF:", e);
+      setRawLines([]);
       toast.error(`Não foi possível ler o PDF: ${e?.message ?? "erro desconhecido"}`, { id: toastId });
     } finally {
       setParsing(false);
@@ -193,6 +236,7 @@ function Page() {
       const { inserted } = await saveFn({ data: { mes_referencia: mes, entries: clean } });
       toast.success(`${inserted} promovido(s) salvo(s).`);
       setDrafts([]);
+      setRawLines([]);
       load();
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao salvar.");
@@ -300,6 +344,15 @@ function Page() {
                 </Button>
               </div>
             </div>
+          )}
+
+          {rawLines.length > 0 && (
+            <details className="mt-4 rounded-md border bg-muted/30 p-3 text-sm">
+              <summary className="cursor-pointer font-medium">Ver texto extraído do PDF</summary>
+              <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap text-xs text-muted-foreground">
+                {rawLines.join("\n")}
+              </pre>
+            </details>
           )}
 
           {drafts.length === 0 && (
