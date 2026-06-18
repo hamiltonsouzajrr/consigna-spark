@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
-  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, PhoneCall, MapPin, MessageCircle, DoorOpen, CheckCircle2, BarChart3,
+  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, PhoneCall, MapPin, MessageCircle, DoorOpen, CheckCircle2, BarChart3, Award,
 } from "lucide-react";
 import {
   STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, whatsappLink, telLink, CALL_OUTCOMES, SITUACAO_TAGS,
