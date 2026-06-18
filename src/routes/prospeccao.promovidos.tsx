@@ -236,6 +236,7 @@ function Page() {
       const { inserted } = await saveFn({ data: { mes_referencia: mes, entries: clean } });
       toast.success(`${inserted} promovido(s) salvo(s).`);
       setDrafts([]);
+      setRawLines([]);
       load();
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao salvar.");
