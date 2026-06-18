@@ -48,6 +48,32 @@ function formatCpf(raw: string): string {
   return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
 }
 
+// Validate a CPF using its check digits (rejects 000..., 111..., etc.).
+function isValidCpf(raw: string): boolean {
+  const d = raw.replace(/\D/g, "");
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+  const calc = (len: number) => {
+    let sum = 0;
+    for (let i = 0; i < len; i++) sum += Number(d[i]) * (len + 1 - i);
+    const r = (sum * 10) % 11;
+    return r === 10 ? 0 : r;
+  };
+  return calc(9) === Number(d[9]) && calc(10) === Number(d[10]);
+}
+
+// Title-case a cargo for consistent display.
+function titleCaseCargo(s: string): string {
+  const lower = new Set(["da", "de", "do", "das", "dos", "e"]);
+  return s
+    .toLocaleLowerCase("pt-BR")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w, idx) =>
+      lower.has(w) && idx > 0 ? w : w.charAt(0).toLocaleUpperCase("pt-BR") + w.slice(1),
+    )
+    .join(" ");
+}
+
 // Title-case a name, keeping common Portuguese connectors lowercase.
 function titleCaseName(s: string): string {
   const lower = new Set(["da", "de", "do", "das", "dos", "e"]);
@@ -250,9 +276,21 @@ function parseLines(lines: string[]): Draft[] {
       cargo = `${cargo} ${nextRaw}`.replace(/\s+/g, " ").trim();
     }
 
-    out.push({ nome, cpf, cargo: cargo.trim() });
+    out.push({ nome, cpf, cargo: cargo ? titleCaseCargo(cargo.trim()) : "" });
   }
-  return out;
+  // Deduplicate by CPF (digits only), merging missing fields when possible.
+  const byCpf = new Map<string, Draft>();
+  for (const d of out) {
+    const key = d.cpf.replace(/\D/g, "");
+    const existing = byCpf.get(key);
+    if (!existing) {
+      byCpf.set(key, d);
+    } else {
+      if (!existing.nome && d.nome) existing.nome = d.nome;
+      if (!existing.cargo && d.cargo) existing.cargo = d.cargo;
+    }
+  }
+  return Array.from(byCpf.values());
 }
 
 
@@ -324,16 +362,37 @@ function Page() {
 
   const handleSave = async () => {
     const clean = drafts
-      .map((d) => ({ nome: d.nome.trim(), cpf: d.cpf.trim(), cargo: d.cargo.trim() }))
+      .map((d) => ({ nome: d.nome.trim(), cpf: formatCpf(d.cpf.trim()), cargo: d.cargo.trim() }))
       .filter((d) => d.nome && d.cpf && d.cargo);
     if (clean.length === 0) {
       toast.warning("Preencha nome, CPF e cargo de pelo menos um registro.");
       return;
     }
+    const invalid = clean.filter((d) => !isValidCpf(d.cpf));
+    if (invalid.length > 0) {
+      toast.error(`${invalid.length} CPF(s) inválido(s). Corrija os campos destacados antes de salvar.`);
+      return;
+    }
+    // Drop duplicate CPFs (against this batch and the already-saved list).
+    const existingCpfs = new Set(list.map((p) => p.cpf.replace(/\D/g, "")));
+    const seen = new Set<string>();
+    const deduped = clean.filter((d) => {
+      const key = d.cpf.replace(/\D/g, "");
+      if (seen.has(key) || existingCpfs.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const skipped = clean.length - deduped.length;
+    if (deduped.length === 0) {
+      toast.warning("Todos os CPFs já estão cadastrados.");
+      return;
+    }
     setSaving(true);
     try {
-      const { inserted } = await saveFn({ data: { mes_referencia: mes, entries: clean } });
-      toast.success(`${inserted} promovido(s) salvo(s).`);
+      const { inserted } = await saveFn({ data: { mes_referencia: mes, entries: deduped } });
+      toast.success(
+        `${inserted} promovido(s) salvo(s).${skipped > 0 ? ` ${skipped} duplicado(s) ignorado(s).` : ""}`,
+      );
       setDrafts([]);
       setRawLines([]);
       load();
@@ -425,16 +484,21 @@ function Page() {
               <div className="hidden gap-2 px-1 text-xs font-medium text-muted-foreground sm:grid sm:grid-cols-[1.5fr_1fr_1.2fr_auto]">
                 <span>Nome completo</span><span>CPF</span><span>Cargo de promoção</span><span></span>
               </div>
-              {drafts.map((d, i) => (
+              {drafts.map((d, i) => {
+                const cpfFilled = d.cpf.trim().length > 0;
+                const cpfBad = cpfFilled && !isValidCpf(d.cpf);
+                return (
                 <div key={i} className="grid gap-2 sm:grid-cols-[1.5fr_1fr_1.2fr_auto]">
-                  <Input placeholder="Nome completo" value={d.nome} onChange={(e) => updateDraft(i, "nome", e.target.value)} />
-                  <Input placeholder="CPF" value={d.cpf} onChange={(e) => updateDraft(i, "cpf", e.target.value)} />
-                  <Input placeholder="Cargo" value={d.cargo} onChange={(e) => updateDraft(i, "cargo", e.target.value)} />
+                  <Input placeholder="Nome completo" value={d.nome} onChange={(e) => updateDraft(i, "nome", e.target.value)} className={!d.nome.trim() ? "border-amber-500 focus-visible:ring-amber-500" : undefined} />
+                  <Input placeholder="CPF" value={d.cpf} onChange={(e) => updateDraft(i, "cpf", e.target.value)} className={cpfBad ? "border-rose-500 focus-visible:ring-rose-500" : !cpfFilled ? "border-amber-500 focus-visible:ring-amber-500" : undefined} title={cpfBad ? "CPF inválido" : undefined} />
+                  <Input placeholder="Cargo" value={d.cargo} onChange={(e) => updateDraft(i, "cargo", e.target.value)} className={!d.cargo.trim() ? "border-amber-500 focus-visible:ring-amber-500" : undefined} />
+
                   <Button variant="ghost" size="icon" onClick={() => removeDraft(i)}>
                     <Trash2 className="h-4 w-4 text-rose-500" />
                   </Button>
                 </div>
-              ))}
+                );
+              })}
               <div className="flex items-center justify-between pt-2">
                 <p className="text-xs text-muted-foreground">{drafts.length} registro(s) na revisão</p>
                 <Button onClick={handleSave} disabled={saving}>
