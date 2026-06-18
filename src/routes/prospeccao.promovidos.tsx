@@ -276,9 +276,21 @@ function parseLines(lines: string[]): Draft[] {
       cargo = `${cargo} ${nextRaw}`.replace(/\s+/g, " ").trim();
     }
 
-    out.push({ nome, cpf, cargo: cargo.trim() });
+    out.push({ nome, cpf, cargo: cargo ? titleCaseCargo(cargo.trim()) : "" });
   }
-  return out;
+  // Deduplicate by CPF (digits only), merging missing fields when possible.
+  const byCpf = new Map<string, Draft>();
+  for (const d of out) {
+    const key = d.cpf.replace(/\D/g, "");
+    const existing = byCpf.get(key);
+    if (!existing) {
+      byCpf.set(key, d);
+    } else {
+      if (!existing.nome && d.nome) existing.nome = d.nome;
+      if (!existing.cargo && d.cargo) existing.cargo = d.cargo;
+    }
+  }
+  return Array.from(byCpf.values());
 }
 
 
