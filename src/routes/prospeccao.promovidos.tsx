@@ -540,10 +540,40 @@ function Page() {
         </Card>
       )}
 
-      <div className="mb-4 relative w-full max-w-xs">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input className="pl-9" placeholder="Buscar nome, CPF ou cargo" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="mb-4 flex flex-wrap items-end gap-3">
+        <div className="relative w-full max-w-xs">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="pl-9" placeholder="Buscar nome, CPF ou cargo" value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Cargo</label>
+          <select
+            value={cargoFilter}
+            onChange={(e) => setCargoFilter(e.target.value)}
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+          >
+            <option value="todos">Todos os cargos</option>
+            {cargoOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Mês</label>
+          <select
+            value={mesFilter}
+            onChange={(e) => setMesFilter(e.target.value)}
+            className="h-9 rounded-md border bg-background px-2 text-sm capitalize"
+          >
+            <option value="todos">Todos os meses</option>
+            {mesOptions.map((m) => <option key={m} value={m}>{fmtMonth(m)}</option>)}
+          </select>
+        </div>
+        {(cargoFilter !== "todos" || mesFilter !== "todos") && (
+          <Button size="sm" variant="ghost" onClick={() => { setCargoFilter("todos"); setMesFilter("todos"); }}>
+            Limpar
+          </Button>
+        )}
       </div>
+
 
       {loadingList && <p className="text-sm text-muted-foreground">Carregando…</p>}
       {!loadingList && grouped.length === 0 && (
