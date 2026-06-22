@@ -140,7 +140,7 @@ function RegistrosPage() {
       if (data && r.data_publicacao !== data) return false;
       return true;
     });
-  }, [list, q, orgao, tipo, status, data]);
+  }, [list, q, orgao, tipo, status, potencial, data]);
 
   const setStatusFor = async (id: string, novo: string) => {
     setList((l) => l.map((r) => (r.id === id ? { ...r, status_revisao: novo } : r)));
