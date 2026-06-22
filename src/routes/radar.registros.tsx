@@ -235,6 +235,13 @@ function RegistrosPage() {
               {STATUS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={potencial} onValueChange={setPotencial}>
+            <SelectTrigger><SelectValue placeholder="Potencial" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os potenciais</SelectItem>
+              {POTENCIAIS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-44" />
