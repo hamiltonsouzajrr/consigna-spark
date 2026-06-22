@@ -224,3 +224,17 @@ export const reprocessarFonteFn = createServerFn({ method: "POST" })
     const { reprocessarFonte } = await import("./diario-scheduler.server");
     return reprocessarFonte(data.id);
   });
+
+// Extrai todas as edições de um mês de 2026 (retroativo). O botão "Extrair todo
+// 2026" chama esta função mês a mês (janeiro a junho), pois processar o ano
+// inteiro em uma única requisição estouraria o tempo limite do servidor.
+export const extrairMes2026 = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ mes: z.number().int().min(1).max(12) }).parse(data),
+  )
+  .handler(async ({ context, data }): Promise<ResultadoBuscaDTO> => {
+    await assertAdmin(context.supabase, context.userId);
+    const { executarBuscaMes } = await import("./diario-scheduler.server");
+    return executarBuscaMes(2026, data.mes);
+  });
