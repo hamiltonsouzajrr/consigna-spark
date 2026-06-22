@@ -24,6 +24,22 @@ export const Route = createFileRoute("/radar/registros")({
 });
 
 const STATUS = ["Novo", "Revisado", "Aprovado", "Ignorado", "Duplicado"];
+const POTENCIAIS = ["Alto", "Médio", "Baixo", "Ignorar"];
+
+function potencialTone(p: string): string {
+  switch (p) {
+    case "Alto":
+      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200";
+    case "Médio":
+      return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200";
+    case "Baixo":
+      return "bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-300";
+    case "Ignorar":
+      return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200";
+    default:
+      return "bg-muted text-muted-foreground";
+  }
+}
 
 function statusTone(s: string): string {
   switch (s) {
@@ -48,6 +64,8 @@ const EXPORT_FIELDS: { key: keyof DoRegistro; label: string }[] = [
   { key: "orgao", label: "Órgão" },
   { key: "tipo_movimentacao", label: "Tipo" },
   { key: "categoria", label: "Categoria" },
+  { key: "potencial_financeiro", label: "Potencial financeiro" },
+  { key: "motivo_classificacao", label: "Motivo" },
   { key: "data_publicacao", label: "Data publicação" },
   { key: "data_ato", label: "Data do ato" },
   { key: "pagina", label: "Página" },
@@ -77,6 +95,7 @@ function RegistrosPage() {
   const [orgao, setOrgao] = useState("todos");
   const [tipo, setTipo] = useState("todos");
   const [status, setStatus] = useState("todos");
+  const [potencial, setPotencial] = useState("todos");
   const [data, setData] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [exportFields, setExportFields] = useState<Set<string>>(
@@ -117,10 +136,11 @@ function RegistrosPage() {
       if (orgao !== "todos" && r.orgao !== orgao) return false;
       if (tipo !== "todos" && (r.categoria || r.tipo_movimentacao) !== tipo) return false;
       if (status !== "todos" && r.status_revisao !== status) return false;
+      if (potencial !== "todos" && (r.potencial_financeiro || "") !== potencial) return false;
       if (data && r.data_publicacao !== data) return false;
       return true;
     });
-  }, [list, q, orgao, tipo, status, data]);
+  }, [list, q, orgao, tipo, status, potencial, data]);
 
   const setStatusFor = async (id: string, novo: string) => {
     setList((l) => l.map((r) => (r.id === id ? { ...r, status_revisao: novo } : r)));
@@ -189,7 +209,7 @@ function RegistrosPage() {
   return (
     <div className="space-y-4">
       <Card className="p-4">
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-6">
           <div className="relative lg:col-span-2">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input className="pl-9" placeholder="Buscar por nome…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -213,6 +233,13 @@ function RegistrosPage() {
             <SelectContent>
               <SelectItem value="todos">Todos os status</SelectItem>
               {STATUS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={potencial} onValueChange={setPotencial}>
+            <SelectTrigger><SelectValue placeholder="Potencial" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os potenciais</SelectItem>
+              {POTENCIAIS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -287,6 +314,11 @@ function RegistrosPage() {
                       </p>
                     </div>
                   </button>
+                  {r.potencial_financeiro && (
+                    <Badge className={`text-xs ${potencialTone(r.potencial_financeiro)}`}>
+                      {r.potencial_financeiro}
+                    </Badge>
+                  )}
                   {r.data_publicacao && <Badge variant="outline" className="text-xs">{r.data_publicacao}</Badge>}
                   {r.duplicado_possivel && <Badge className="bg-orange-500 text-white">duplicado?</Badge>}
                   <Badge className={`text-xs ${statusTone(r.status_revisao)}`}>{r.status_revisao}</Badge>
@@ -301,10 +333,18 @@ function RegistrosPage() {
                       <Info label="Nº ato" value={r.numero_ato} />
                       <Info label="Data do ato" value={r.data_ato} />
                       <Info label="Confiança IA" value={r.confianca_ia} />
+                      <Info label="Categoria" value={r.categoria} />
+                      <Info label="Potencial financeiro" value={r.potencial_financeiro} />
                       <Info label="Classe" value={join(r.classe_anterior, r.classe_nova)} />
                       <Info label="Nível" value={join(r.nivel_anterior, r.nivel_novo)} />
                       <Info label="Referência" value={join(r.referencia_anterior, r.referencia_nova)} />
                     </div>
+                    {r.motivo_classificacao && (
+                      <div className="mt-3 rounded-md border bg-background p-3 text-sm">
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Motivo da classificação: </span>
+                        {r.motivo_classificacao}
+                      </div>
+                    )}
                     {r.trecho_original && (
                       <div className="mt-3 rounded-md border bg-background p-3 text-sm italic text-muted-foreground">
                         “{r.trecho_original}”

@@ -182,12 +182,14 @@ export type Database = {
           duplicado_possivel: boolean
           id: string
           matricula: string | null
+          motivo_classificacao: string | null
           nivel_anterior: string | null
           nivel_novo: string | null
           nome_servidor: string
           numero_ato: string | null
           orgao: string | null
           pagina: string | null
+          potencial_financeiro: string | null
           referencia_anterior: string | null
           referencia_nova: string | null
           status_revisao: string
@@ -209,12 +211,14 @@ export type Database = {
           duplicado_possivel?: boolean
           id?: string
           matricula?: string | null
+          motivo_classificacao?: string | null
           nivel_anterior?: string | null
           nivel_novo?: string | null
           nome_servidor: string
           numero_ato?: string | null
           orgao?: string | null
           pagina?: string | null
+          potencial_financeiro?: string | null
           referencia_anterior?: string | null
           referencia_nova?: string | null
           status_revisao?: string
@@ -236,12 +240,14 @@ export type Database = {
           duplicado_possivel?: boolean
           id?: string
           matricula?: string | null
+          motivo_classificacao?: string | null
           nivel_anterior?: string | null
           nivel_novo?: string | null
           nome_servidor?: string
           numero_ato?: string | null
           orgao?: string | null
           pagina?: string | null
+          potencial_financeiro?: string | null
           referencia_anterior?: string | null
           referencia_nova?: string | null
           status_revisao?: string

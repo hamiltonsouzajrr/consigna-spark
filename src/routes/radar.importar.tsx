@@ -14,6 +14,7 @@ import {
   analisarDiarioAI,
   criarArquivo,
   salvarRegistros,
+  SECOES_RADAR,
   type RegistroAI,
 } from "@/lib/radar/radar.functions";
 
@@ -39,6 +40,7 @@ function ImportarPage() {
   const [busy, setBusy] = useState(false);
   const [batches, setBatches] = useState<Batch[]>([]);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [secoes, setSecoes] = useState<Set<string>>(new Set(SECOES_RADAR));
   const fileRef = useRef<HTMLInputElement>(null);
 
   const onPick = async (files: FileList | null) => {
@@ -80,7 +82,12 @@ function ImportarPage() {
 
         toast.loading(`Analisando ${file.name} com IA…`, { id: toastId });
         const { registros } = await aiFn({
-          data: { text: res.text, data_publicacao: res.data_publicacao, orgao: res.orgao },
+          data: {
+            text: res.text,
+            data_publicacao: res.data_publicacao,
+            orgao: res.orgao,
+            secoes: Array.from(secoes),
+          },
         });
 
         setBatches((b) => [
@@ -159,11 +166,45 @@ function ImportarPage() {
           className="hidden"
           onChange={(e) => onPick(e.target.files)}
         />
+
+        <div className="mb-4 rounded-lg border p-3">
+          <p className="mb-2 text-sm font-medium">Seções a analisar (prioridade)</p>
+          <p className="mb-3 text-xs text-muted-foreground">
+            A IA prioriza estas seções e ignora orçamento, contratos, ICMS, licitações e particulares.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {SECOES_RADAR.map((s) => {
+              const on = secoes.has(s);
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    setSecoes((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(s)) next.delete(s);
+                      else next.add(s);
+                      return next;
+                    })
+                  }
+                  className={`rounded-full border px-3 py-1 text-xs transition ${
+                    on ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground"
+                  }`}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <Button onClick={() => fileRef.current?.click()} disabled={busy}>
           {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
           {busy ? "Processando…" : "Selecionar arquivos"}
         </Button>
       </Card>
+
 
       {batches.map((batch, bi) => (
         <Card key={batch.arquivoId} className="p-5">
@@ -198,7 +239,10 @@ function ImportarPage() {
                     <Field label="Órgão" value={r.orgao} onChange={(v) => updateReg(bi, ri, "orgao", v)} />
                     <Field label="Tipo" value={r.tipo_movimentacao} onChange={(v) => updateReg(bi, ri, "tipo_movimentacao", v)} />
                     <Field label="Categoria" value={r.categoria} onChange={(v) => updateReg(bi, ri, "categoria", v)} />
+                    <Field label="Potencial financeiro" value={r.potencial_financeiro} onChange={(v) => updateReg(bi, ri, "potencial_financeiro", v)} />
+                    <Field label="Motivo da classificação" value={r.motivo_classificacao} onChange={(v) => updateReg(bi, ri, "motivo_classificacao", v)} />
                   </div>
+
                   <div className="mt-2 flex items-center justify-between gap-3">
                     <p className="line-clamp-2 flex-1 text-xs italic text-muted-foreground">
                       {r.trecho_original || "Sem trecho original."}

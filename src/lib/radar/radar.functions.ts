@@ -40,7 +40,22 @@ export type RegistroAI = {
   trecho_original: string;
   confianca_ia: string;
   categoria: string;
+  potencial_financeiro: string;
+  motivo_classificacao: string;
 };
+
+// Seções do Diário Oficial priorizadas para busca de movimentações funcionais.
+export const SECOES_RADAR = [
+  "Eventos Funcionais",
+  "Atos e despachos do Governador",
+  "Gabinete Civil",
+  "SEPLAG",
+  "Polícia Militar",
+  "Corpo de Bombeiros",
+  "Polícia Civil",
+  "Secretaria de Educação",
+  "Secretaria de Saúde",
+] as const;
 
 export type DoArquivo = {
   id: string;
@@ -80,6 +95,8 @@ export type DoRegistro = {
   trecho_original: string | null;
   confianca_ia: string | null;
   categoria: string | null;
+  potencial_financeiro: string | null;
+  motivo_classificacao: string | null;
   status_revisao: string;
   duplicado_possivel: boolean;
   created_at: string;
@@ -89,21 +106,51 @@ export type DoRegistro = {
 // AI extraction
 // ---------------------------------------------------------------------------
 
-const SYSTEM_PROMPT = `Você é um extrator de dados especializado em Diários Oficiais brasileiros.
+const SYSTEM_PROMPT = `Você é um analista especializado em Diários Oficiais brasileiros. Seu objetivo é separar SERVIDORES PÚBLICOS (pessoas físicas) com MOVIMENTAÇÃO FUNCIONAL REAL de meras citações de nomes. A meta final é encontrar pessoas com possível melhora salarial.
 
-Sua tarefa é analisar textos de publicações oficiais e identificar servidores públicos (pessoas físicas) que tiveram promoção, progressão funcional, enquadramento, reenquadramento, mudança de classe, nível, referência, padrão, cargo ou situação funcional.
+PRIORIZE trechos que indiquem alteração funcional real, como:
+- promoção na carreira, promovido(a) ao posto/cargo
+- promoção por merecimento, promoção por antiguidade
+- progressão funcional, concessão/deferimento de progressão
+- enquadramento, reenquadramento, reposicionamento
+- mudança de classe, nível, referência ou padrão; elevação de padrão
+- nomeação para cargo SUPERIOR ao anterior
+- aposentadoria com promoção
+- publicação do ato de promoção
 
-Considere termos como: promovido(a), promoção, progressão, progressão funcional, enquadramento, reenquadramento, elevação, alteração de nível/classe/padrão, mudança de referência, passa a ocupar, fica promovido(a), concessão de progressão, deferimento de progressão, reposicionamento, avanço funcional, nomeação para cargo superior.
+CHECAGEM DE FALSO POSITIVO — antes de classificar como promoção confirmada, pergunte internamente:
+1. O texto fala de uma pessoa física (servidor)?
+2. O texto indica alteração real de cargo, posto, classe, nível, padrão ou referência?
+3. Existe sinal de impacto funcional ou remuneratório?
+4. O trecho NÃO é sobre medalha, honraria, evento, festival, contrato, orçamento, ICMS ou licitação?
+Se a resposta da pergunta 2 for "não", NÃO classifique como promoção confirmada.
+
+NÃO considere como promoção de servidor (e use categoria/potencial corretos) quando o texto tratar de:
+- promoção de eventos, promoção cultural, apoio a festivais
+- medalhas, honrarias, comendas, homenagens, outorga de medalha
+- licitações, contratos, índices municipais, ICMS, orçamento, crédito suplementar
+- publicações de empresas ou particulares
+- exonerações, demissões, licenças, férias, falecimentos, pessoas jurídicas
+Exemplo de falso positivo a IGNORAR: "PROMOÇÃO E APOIO AOS FESTIVAIS CULTURAIS".
+Exemplo a classificar como HONRARIA (não promoção): "Fica outorgada ao 2º Sargento BM a Medalha do Mérito".
 
 REGRAS:
-- Extraia apenas informações presentes no texto. NÃO invente dados.
-- Não preencha matrícula, cargo, órgão ou datas por suposição. Deixe vazio quando não houver.
-- Quando o texto for confuso, incompleto ou ambíguo, defina tipo_movimentacao como "Possível promoção, precisa revisar".
-- Sempre preserve em trecho_original o trecho exato do texto que justifica a extração.
-- Ignore exonerações, demissões, aposentadorias, licenças, férias, falecimentos e pessoas jurídicas.
+- Extraia apenas informações presentes no texto. NÃO invente dados. Deixe vazio o que não houver.
+- Sempre preserve em trecho_original o trecho exato que justifica a extração.
 
 CLASSIFICAÇÃO (campo categoria) — escolha uma:
-"Promoção confirmada", "Progressão funcional", "Enquadramento", "Mudança de cargo", "Nomeação", "Possível promoção, precisa revisar", "Informação insuficiente".
+"Promoção confirmada", "Progressão funcional", "Enquadramento", "Mudança de cargo", "Nomeação", "Possível promoção, precisa revisar", "Processo relacionado, precisa revisar", "Promoção publicada anteriormente, precisa localizar ato original", "Honraria, sem promoção funcional confirmada", "Informação insuficiente".
+- Quando citar apenas nome/processo/despacho sem confirmar a promoção: "Processo relacionado, precisa revisar".
+- Quando disser "considerando a publicação do ato de promoção": "Promoção publicada anteriormente, precisa localizar ato original".
+- Quando for medalha/honraria: "Honraria, sem promoção funcional confirmada".
+
+POTENCIAL FINANCEIRO (campo potencial_financeiro) — escolha uma:
+- "Alto": promoção funcional confirmada, mudança de posto/classe, progressão ou aumento remuneratório claro.
+- "Médio": despacho ou processo relacionado a promoção, aposentadoria, revisão funcional ou alteração de carreira.
+- "Baixo": nomeação, medalha, honraria, publicação sem impacto salarial claro.
+- "Ignorar": contratos, empresas, municípios, orçamento, ICMS, festivais, licitações e assuntos sem servidor pessoa física.
+
+MOTIVO (campo motivo_classificacao) — uma frase curta explicando por que classificou assim. Ex.: "Texto informa publicação de ato de promoção"; "Texto trata apenas de medalha/honraria"; "Texto cita promoção cultural, não servidor"; "Texto cita processo administrativo, mas não confirma alteração funcional".
 
 CONFIANÇA (campo confianca_ia) — "alta", "media" ou "baixa".`;
 
@@ -134,6 +181,7 @@ export const analisarDiarioAI = createServerFn({ method: "POST" })
         text: z.string().min(1).max(2_000_000),
         data_publicacao: z.string().optional(),
         orgao: z.string().optional(),
+        secoes: z.array(z.string().max(120)).max(30).optional(),
       })
       .parse(data),
   )
@@ -165,8 +213,15 @@ export const analisarDiarioAI = createServerFn({ method: "POST" })
       trecho_original: z.string(),
       confianca_ia: z.string(),
       categoria: z.string(),
+      potencial_financeiro: z.string(),
+      motivo_classificacao: z.string(),
     });
     const schema = z.object({ registros: z.array(itemSchema).max(300) });
+
+    const secoes = (data.secoes ?? []).filter(Boolean);
+    const secoesHint = secoes.length
+      ? `\n\nPRIORIZE as seguintes seções do Diário Oficial (nesta ordem) e ignore conteúdo de orçamento, contratos, ICMS, licitações e particulares:\n${secoes.map((s, i) => `${i + 1}. ${s}`).join("\n")}`
+      : "";
 
     const chunks = chunkText(data.text, 24_000).slice(0, 25);
     const out: RegistroAI[] = [];
@@ -177,7 +232,7 @@ export const analisarDiarioAI = createServerFn({ method: "POST" })
           model,
           output: Output.object({ schema }),
           system: SYSTEM_PROMPT,
-          prompt: `Analise o texto abaixo extraído de um Diário Oficial e retorne os servidores com movimentação funcional.\n\nTexto:\n${chunk}`,
+          prompt: `Analise o texto abaixo extraído de um Diário Oficial e retorne os servidores com movimentação funcional.${secoesHint}\n\nTexto:\n${chunk}`,
         });
         for (const r of output?.registros ?? []) {
           const nome = str(r.nome_servidor);
@@ -202,6 +257,8 @@ export const analisarDiarioAI = createServerFn({ method: "POST" })
             trecho_original: str(r.trecho_original),
             confianca_ia: str(r.confianca_ia) || "baixa",
             categoria: str(r.categoria) || "Possível promoção, precisa revisar",
+            potencial_financeiro: str(r.potencial_financeiro) || "Médio",
+            motivo_classificacao: str(r.motivo_classificacao),
           });
         }
       } catch (e: any) {
@@ -280,6 +337,8 @@ const registroEntry = z.object({
   trecho_original: z.string().trim().max(4000).optional().default(""),
   confianca_ia: z.string().trim().max(20).optional().default(""),
   categoria: z.string().trim().max(120).optional().default(""),
+  potencial_financeiro: z.string().trim().max(40).optional().default(""),
+  motivo_classificacao: z.string().trim().max(400).optional().default(""),
 });
 
 export const salvarRegistros = createServerFn({ method: "POST" })
@@ -341,6 +400,8 @@ export const salvarRegistros = createServerFn({ method: "POST" })
         trecho_original: r.trecho_original || null,
         confianca_ia: r.confianca_ia || null,
         categoria: r.categoria || null,
+        potencial_financeiro: r.potencial_financeiro || null,
+        motivo_classificacao: r.motivo_classificacao || null,
         status_revisao: dup ? "Duplicado" : "Novo",
         duplicado_possivel: dup,
       };
@@ -407,6 +468,8 @@ export const atualizarRegistro = createServerFn({ method: "POST" })
             orgao: z.string().trim().max(300).optional(),
             tipo_movimentacao: z.string().trim().max(120).optional(),
             categoria: z.string().trim().max(120).optional(),
+            potencial_financeiro: z.string().trim().max(40).optional(),
+            motivo_classificacao: z.string().trim().max(400).optional(),
             pagina: z.string().trim().max(40).optional(),
           })
           .refine((p) => Object.keys(p).length > 0, "Nada para atualizar"),
