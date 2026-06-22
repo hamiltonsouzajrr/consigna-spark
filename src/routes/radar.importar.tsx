@@ -82,7 +82,12 @@ function ImportarPage() {
 
         toast.loading(`Analisando ${file.name} com IA…`, { id: toastId });
         const { registros } = await aiFn({
-          data: { text: res.text, data_publicacao: res.data_publicacao, orgao: res.orgao },
+          data: {
+            text: res.text,
+            data_publicacao: res.data_publicacao,
+            orgao: res.orgao,
+            secoes: Array.from(secoes),
+          },
         });
 
         setBatches((b) => [
