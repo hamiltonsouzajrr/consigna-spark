@@ -122,6 +122,7 @@ function RegistrosPage() {
   const [orgao, setOrgao] = useState("todos");
   const [tipo, setTipo] = useState("todos");
   const [status, setStatus] = useState("todos");
+  const [abordagem, setAbordagem] = useState("todos");
   const [potencial, setPotencial] = useState("todos");
   const [data, setData] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
