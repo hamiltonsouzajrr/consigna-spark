@@ -621,7 +621,7 @@ export const getDashboard = createServerFn({ method: "GET" })
       supabase.from("do_arquivos").select("id", { count: "exact", head: true }),
       supabase
         .from("do_registros")
-        .select("categoria,tipo_movimentacao,data_publicacao,orgao,status_revisao")
+        .select("categoria,tipo_movimentacao,data_publicacao,orgao,status_revisao,status_abordagem,potencial_financeiro")
         .limit(20000),
     ]);
 
