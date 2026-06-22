@@ -430,6 +430,13 @@ export const salvarRegistros = createServerFn({ method: "POST" })
       })
       .eq("id", data.arquivo_id);
 
+    // Distribuição AUTOMÁTICA (round-robin) dos novos leads elegíveis.
+    try {
+      await distribuirRoundRobin(supabase);
+    } catch (e) {
+      console.error("Falha na distribuição automática de leads:", e);
+    }
+
     return { inserted: rows.length, duplicados };
   });
 
@@ -523,51 +530,141 @@ export const marcarAbordagem = createServerFn({ method: "POST" })
   });
 
 // ---------------------------------------------------------------------------
-// Distribuição de leads por consultora (lotes de 10, sem duplicação)
+// Distribuição AUTOMÁTICA de leads por consultora (round-robin, sem duplicação)
 // ---------------------------------------------------------------------------
 
 const POTENCIAL_RANK: Record<string, number> = { Alto: 0, Médio: 1 };
 
-// Atribui os próximos N leads disponíveis (novo + alto/médio + sem consultora)
-// a uma consultora. Ordena por potencial e data de publicação.
-export const atribuirLeads = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data) =>
-    z
-      .object({
-        consultora: z.string().trim().min(1).max(120),
-        quantidade: z.number().int().min(1).max(50).optional().default(10),
-      })
-      .parse(data),
-  )
-  .handler(async ({ context, data }): Promise<{ atribuidos: number }> => {
-    const { supabase } = context;
-    const { data: rows, error } = await supabase
-      .from("do_registros")
-      .select("id,potencial_financeiro,data_publicacao")
-      .eq("status_abordagem", "novo")
-      .in("potencial_financeiro", ["Alto", "Médio"])
-      .is("consultora_responsavel", null)
-      .limit(2000);
-    if (error) throw new Error(error.message);
+export type Consultora = { id: string; nome: string; ativo: boolean };
 
-    const sorted = [...(rows ?? [])].sort((a: any, b: any) => {
-      const ra = POTENCIAL_RANK[String(a.potencial_financeiro)] ?? 9;
-      const rb = POTENCIAL_RANK[String(b.potencial_financeiro)] ?? 9;
-      if (ra !== rb) return ra - rb;
-      return String(b.data_publicacao ?? "").localeCompare(String(a.data_publicacao ?? ""));
-    });
+// Núcleo da distribuição round-robin. Atribui todos os leads elegíveis
+// (status novo + potencial alto/médio + sem consultora) às consultoras ATIVAS,
+// equilibrando o total acumulado de cada uma (rodízio igual).
+async function distribuirRoundRobin(supabase: any): Promise<{ atribuidos: number; consultoras: number }> {
+  const { data: consultoras, error: cErr } = await supabase
+    .from("radar_consultoras")
+    .select("nome")
+    .eq("ativo", true);
+  if (cErr) throw new Error(cErr.message);
 
-    const lote = sorted.slice(0, data.quantidade).map((r: any) => r.id as string);
-    if (!lote.length) return { atribuidos: 0 };
+  const ativas = (consultoras ?? [])
+    .map((c: any) => String(c.nome ?? "").trim())
+    .filter(Boolean);
+  if (!ativas.length) return { atribuidos: 0, consultoras: 0 };
 
+  // Contagem atual por consultora (para manter o rodízio equilibrado).
+  const { data: atuais, error: aErr } = await supabase
+    .from("do_registros")
+    .select("consultora_responsavel")
+    .not("consultora_responsavel", "is", null)
+    .limit(50000);
+  if (aErr) throw new Error(aErr.message);
+  const counts = new Map<string, number>();
+  for (const nome of ativas) counts.set(nome, 0);
+  for (const row of atuais ?? []) {
+    const c = String((row as any).consultora_responsavel ?? "").trim();
+    if (counts.has(c)) counts.set(c, (counts.get(c) ?? 0) + 1);
+  }
+
+  // Leads elegíveis pendentes de distribuição.
+  const { data: rows, error } = await supabase
+    .from("do_registros")
+    .select("id,potencial_financeiro,data_publicacao")
+    .eq("status_abordagem", "novo")
+    .in("potencial_financeiro", ["Alto", "Médio"])
+    .is("consultora_responsavel", null)
+    .limit(5000);
+  if (error) throw new Error(error.message);
+
+  const sorted = [...(rows ?? [])].sort((a: any, b: any) => {
+    const ra = POTENCIAL_RANK[String(a.potencial_financeiro)] ?? 9;
+    const rb = POTENCIAL_RANK[String(b.potencial_financeiro)] ?? 9;
+    if (ra !== rb) return ra - rb;
+    return String(b.data_publicacao ?? "").localeCompare(String(a.data_publicacao ?? ""));
+  });
+  if (!sorted.length) return { atribuidos: 0, consultoras: ativas.length };
+
+  // Atribui cada lead à consultora ativa com menor total acumulado.
+  const buckets = new Map<string, string[]>();
+  for (const nome of ativas) buckets.set(nome, []);
+  for (const r of sorted) {
+    let alvo = ativas[0];
+    let menor = counts.get(alvo) ?? 0;
+    for (const nome of ativas) {
+      const c = counts.get(nome) ?? 0;
+      if (c < menor) { menor = c; alvo = nome; }
+    }
+    buckets.get(alvo)!.push((r as any).id as string);
+    counts.set(alvo, menor + 1);
+  }
+
+  let atribuidos = 0;
+  for (const [nome, ids] of buckets) {
+    if (!ids.length) continue;
     const { error: upErr } = await supabase
       .from("do_registros")
-      .update({ consultora_responsavel: data.consultora } as any)
-      .in("id", lote);
+      .update({ consultora_responsavel: nome } as any)
+      .in("id", ids);
     if (upErr) throw new Error(upErr.message);
+    atribuidos += ids.length;
+  }
 
-    return { atribuidos: lote.length };
+  return { atribuidos, consultoras: ativas.length };
+}
+
+// Distribuição manual sob demanda (reaproveita o mesmo núcleo round-robin).
+export const distribuirLeadsAutomatico = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ atribuidos: number; consultoras: number }> => {
+    return distribuirRoundRobin(context.supabase);
+  });
+
+// ---- Cadastro de consultoras ----
+
+export const getConsultoras = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<Consultora[]> => {
+    const { data, error } = await context.supabase
+      .from("radar_consultoras")
+      .select("id,nome,ativo")
+      .order("nome", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []) as Consultora[];
+  });
+
+export const adicionarConsultora = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ nome: z.string().trim().min(1).max(120) }).parse(data))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { error } = await context.supabase
+      .from("radar_consultoras")
+      .insert({ nome: data.nome } as any);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const toggleConsultora = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id: z.string().uuid(), ativo: z.boolean() }).parse(data))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { error } = await context.supabase
+      .from("radar_consultoras")
+      .update({ ativo: data.ativo } as any)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const removerConsultora = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { error } = await context.supabase
+      .from("radar_consultoras")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 // Resumo de quantos leads cada consultora possui atribuídos.
