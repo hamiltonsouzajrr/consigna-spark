@@ -122,8 +122,12 @@ function RegistrosPage() {
   const updateFn = useServerFn(atualizarRegistro);
   const abordagemFn = useServerFn(marcarAbordagem);
   const urlFn = useServerFn(getArquivoUrl);
-  const atribuirFn = useServerFn(atribuirLeads);
   const distribuicaoFn = useServerFn(getDistribuicaoConsultoras);
+  const consultorasFn = useServerFn(getConsultoras);
+  const addConsultoraFn = useServerFn(adicionarConsultora);
+  const toggleConsultoraFn = useServerFn(toggleConsultora);
+  const removerConsultoraFn = useServerFn(removerConsultora);
+  const distribuirFn = useServerFn(distribuirLeadsAutomatico);
 
   const [list, setList] = useState<DoRegistro[]>([]);
   const [arquivos, setArquivos] = useState<Record<string, DoArquivo>>({});
