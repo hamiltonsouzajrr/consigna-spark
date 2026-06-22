@@ -551,6 +551,11 @@ function RegistrosPage() {
 
                 {open && (
                   <div className="border-t bg-muted/30 p-4">
+                    {r.data_publicacao && (
+                      <div className="mb-3 inline-flex items-center gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200">
+                        🎉 Promovido em {fmtBR(r.data_publicacao)}
+                      </div>
+                    )}
                     <div className="grid gap-2 text-sm md:grid-cols-2">
                       <div>🧑 <span className="text-muted-foreground">Nome:</span> <strong>{r.nome_servidor}</strong></div>
                       <div>🪪 <span className="text-muted-foreground">CPF:</span> <strong>{r.cpf_parcial || "—"}</strong></div>
