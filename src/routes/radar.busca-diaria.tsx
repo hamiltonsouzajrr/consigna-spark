@@ -72,6 +72,7 @@ function BuscaDiariaPage() {
   const fnReprocessar = useServerFn(reprocessarFonteFn);
   const fnMarcarLido = useServerFn(marcarAlertaLido);
   const fnPdfUrl = useServerFn(getFontePdfUrl);
+  const fnExtrairMes = useServerFn(extrairMes2026);
 
   const [dash, setDash] = useState<BuscaDiariaDashboard | null>(null);
   const [fontes, setFontes] = useState<Fonte[]>([]);
@@ -80,6 +81,7 @@ function BuscaDiariaPage() {
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState<string | null>(null);
   const [dataEspecifica, setDataEspecifica] = useState("");
+  const [anoProgresso, setAnoProgresso] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     try {
