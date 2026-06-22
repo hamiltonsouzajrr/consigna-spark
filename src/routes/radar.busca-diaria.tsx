@@ -60,8 +60,7 @@ function Kpi({ label, value, icon: Icon, tone }: { label: string; value: number 
 }
 
 function BuscaDiariaPage() {
-  const { role } = useAuth();
-  const isAdmin = role === "admin";
+  const { isAdmin } = useRhAccess();
 
   const fnDashboard = useServerFn(getBuscaDiariaDashboard);
   const fnFontes = useServerFn(getFontes);
