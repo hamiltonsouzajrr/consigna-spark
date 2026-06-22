@@ -144,7 +144,7 @@ export const extractPromovidosAI = createServerFn({ method: "POST" })
     return { pessoas: [...byCpf.values(), ...noCpf] };
   });
 
-
+const entry = z.object({
   nome: z.string().trim().min(1).max(200),
   cpf: z.string().trim().min(1).max(20),
   cargo: z.string().trim().min(1).max(160),
