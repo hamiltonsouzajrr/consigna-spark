@@ -200,15 +200,17 @@ function Page() {
         >
           Meus leads
         </button>
-        <button
-          onClick={() => setTab("pdf")}
-          className={`-mb-px flex items-center gap-1 border-b-2 px-4 py-2 text-sm font-medium ${tab === "pdf" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-        >
-          <FileText className="h-3.5 w-3.5" /> Importar PDF
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setTab("pdf")}
+            className={`-mb-px flex items-center gap-1 border-b-2 px-4 py-2 text-sm font-medium ${tab === "pdf" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+          >
+            <FileText className="h-3.5 w-3.5" /> Importar PDF
+          </button>
+        )}
       </div>
 
-      {tab === "pdf" && <PromovidosPdfImport />}
+      {tab === "pdf" && isAdmin && <PromovidosPdfImport />}
 
       {tab === "leads" && (
         <>
