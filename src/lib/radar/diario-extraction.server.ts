@@ -116,6 +116,35 @@ function chunkText(text: string, maxChars: number): string[] {
 
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 
+// Extrai o objeto JSON da resposta da IA (texto), tolerando cercas markdown e
+// texto extra ao redor. Valida com o schema e retorna { registros } ou null.
+function parseRegistros(
+  text: string,
+  schema: z.ZodType<{ registros: any[] }>,
+): { registros: any[] } | null {
+  if (!text) return null;
+  let raw = text.trim();
+  // Remove cercas de código ```json ... ```
+  const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence) raw = fence[1].trim();
+  // Recorta do primeiro "{" até o último "}".
+  const first = raw.indexOf("{");
+  const last = raw.lastIndexOf("}");
+  if (first === -1 || last === -1 || last <= first) return null;
+  const candidate = raw.slice(first, last + 1);
+  try {
+    const obj = JSON.parse(candidate);
+    const parsed = schema.safeParse(obj);
+    if (parsed.success) return parsed.data;
+    // Validação flexível: aceita registros parciais preenchendo o que faltar.
+    if (obj && Array.isArray(obj.registros)) return { registros: obj.registros };
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+
 // Analisa o texto extraído e retorna registros de movimentação funcional.
 // Server-only (não requer usuário autenticado) — usado pelo scheduler/cron.
 export async function analisarTextoServidor(input: {
