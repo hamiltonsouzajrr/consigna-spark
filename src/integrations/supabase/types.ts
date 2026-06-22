@@ -110,6 +110,155 @@ export type Database = {
         }
         Relationships: []
       }
+      do_arquivos: {
+        Row: {
+          caminho_arquivo: string | null
+          created_at: string
+          data_publicacao: string | null
+          data_upload: string
+          id: string
+          nome_arquivo: string
+          numero_edicao: string | null
+          orgao_detectado: string | null
+          status_processamento: string
+          texto_extraido: string | null
+          tipo_arquivo: string
+          total_aprovados: number
+          total_erros: number
+          total_registros_extraidos: number
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          caminho_arquivo?: string | null
+          created_at?: string
+          data_publicacao?: string | null
+          data_upload?: string
+          id?: string
+          nome_arquivo: string
+          numero_edicao?: string | null
+          orgao_detectado?: string | null
+          status_processamento?: string
+          texto_extraido?: string | null
+          tipo_arquivo: string
+          total_aprovados?: number
+          total_erros?: number
+          total_registros_extraidos?: number
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          caminho_arquivo?: string | null
+          created_at?: string
+          data_publicacao?: string | null
+          data_upload?: string
+          id?: string
+          nome_arquivo?: string
+          numero_edicao?: string | null
+          orgao_detectado?: string | null
+          status_processamento?: string
+          texto_extraido?: string | null
+          tipo_arquivo?: string
+          total_aprovados?: number
+          total_erros?: number
+          total_registros_extraidos?: number
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
+      do_registros: {
+        Row: {
+          arquivo_id: string
+          cargo: string | null
+          categoria: string | null
+          classe_anterior: string | null
+          classe_nova: string | null
+          confianca_ia: string | null
+          cpf_parcial: string | null
+          created_at: string
+          data_ato: string | null
+          data_publicacao: string | null
+          duplicado_possivel: boolean
+          id: string
+          matricula: string | null
+          nivel_anterior: string | null
+          nivel_novo: string | null
+          nome_servidor: string
+          numero_ato: string | null
+          orgao: string | null
+          pagina: string | null
+          referencia_anterior: string | null
+          referencia_nova: string | null
+          status_revisao: string
+          tipo_movimentacao: string | null
+          trecho_original: string | null
+          updated_at: string
+        }
+        Insert: {
+          arquivo_id: string
+          cargo?: string | null
+          categoria?: string | null
+          classe_anterior?: string | null
+          classe_nova?: string | null
+          confianca_ia?: string | null
+          cpf_parcial?: string | null
+          created_at?: string
+          data_ato?: string | null
+          data_publicacao?: string | null
+          duplicado_possivel?: boolean
+          id?: string
+          matricula?: string | null
+          nivel_anterior?: string | null
+          nivel_novo?: string | null
+          nome_servidor: string
+          numero_ato?: string | null
+          orgao?: string | null
+          pagina?: string | null
+          referencia_anterior?: string | null
+          referencia_nova?: string | null
+          status_revisao?: string
+          tipo_movimentacao?: string | null
+          trecho_original?: string | null
+          updated_at?: string
+        }
+        Update: {
+          arquivo_id?: string
+          cargo?: string | null
+          categoria?: string | null
+          classe_anterior?: string | null
+          classe_nova?: string | null
+          confianca_ia?: string | null
+          cpf_parcial?: string | null
+          created_at?: string
+          data_ato?: string | null
+          data_publicacao?: string | null
+          duplicado_possivel?: boolean
+          id?: string
+          matricula?: string | null
+          nivel_anterior?: string | null
+          nivel_novo?: string | null
+          nome_servidor?: string
+          numero_ato?: string | null
+          orgao?: string | null
+          pagina?: string | null
+          referencia_anterior?: string | null
+          referencia_nova?: string | null
+          status_revisao?: string
+          tipo_movimentacao?: string | null
+          trecho_original?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "do_registros_arquivo_id_fkey"
+            columns: ["arquivo_id"]
+            isOneToOne: false
+            referencedRelation: "do_arquivos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_events: {
         Row: {
           body: string | null
