@@ -631,6 +631,14 @@ export const getDashboard = createServerFn({ method: "GET" })
     const progressoes = rows.filter((r) => norm(r.categoria) === "Progressão funcional").length;
     const pendentes = rows.filter((r) => ["Novo", "Revisado"].includes(norm(r.status_revisao))).length;
 
+    const ab = (r: any) => norm((r as any).status_abordagem) || "novo";
+    const pipeline = {
+      oportunidadesNovas: rows.filter((r) => ab(r) === "novo" && norm((r as any).potencial_financeiro) === "Alto").length,
+      emContato: rows.filter((r) => ["contatado", "proposta_enviada"].includes(ab(r))).length,
+      convertidos: rows.filter((r) => ab(r) === "convertido").length,
+      semInteresse: rows.filter((r) => ab(r) === "sem_interesse").length,
+    };
+
     const tally = (arr: any[], key: (r: any) => string) => {
       const m = new Map<string, number>();
       for (const r of arr) {
