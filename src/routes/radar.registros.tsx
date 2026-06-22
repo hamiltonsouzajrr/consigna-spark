@@ -535,6 +535,7 @@ function RegistrosPage() {
                   >
                     <span className={`inline-block h-2 w-2 rounded-full ${c.ativo ? "bg-green-500" : "bg-muted-foreground"}`} />
                     {c.nome}
+                    {c.email && <span className="font-normal text-muted-foreground">· {c.email}</span>}
                   </button>
                   <Badge variant="secondary" className="text-[10px]">{total} lead{total === 1 ? "" : "s"}</Badge>
                   <button
