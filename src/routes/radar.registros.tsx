@@ -603,6 +603,9 @@ function RegistrosPage() {
                         )}
                       </div>
                     )}
+
+                    <Roteiro nome={r.nome_servidor} data={r.data_publicacao} />
+
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setStatusFor(r.id, "Aprovado")}>
                         <Check className="mr-1 h-4 w-4" /> Aprovar
