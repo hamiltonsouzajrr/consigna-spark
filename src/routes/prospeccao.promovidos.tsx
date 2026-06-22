@@ -87,6 +87,13 @@ function Page() {
   const [statusFiltro, setStatusFiltro] = useState("todos");
   const [expandido, setExpandido] = useState<Set<string>>(new Set());
 
+  // Garante que não-admins nunca fiquem na aba de importação de PDF.
+  useEffect(() => {
+    if (!isAdmin && tab === "pdf") setTab("leads");
+  }, [isAdmin, tab]);
+
+
+
   // Identifica a consultora logada: 1) vínculo por e-mail (tabela consultoras);
   // 2) escolha salva anteriormente; 3) seleção manual.
   useEffect(() => {
@@ -200,15 +207,17 @@ function Page() {
         >
           Meus leads
         </button>
-        <button
-          onClick={() => setTab("pdf")}
-          className={`-mb-px flex items-center gap-1 border-b-2 px-4 py-2 text-sm font-medium ${tab === "pdf" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-        >
-          <FileText className="h-3.5 w-3.5" /> Importar PDF
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setTab("pdf")}
+            className={`-mb-px flex items-center gap-1 border-b-2 px-4 py-2 text-sm font-medium ${tab === "pdf" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+          >
+            <FileText className="h-3.5 w-3.5" /> Importar PDF
+          </button>
+        )}
       </div>
 
-      {tab === "pdf" && <PromovidosPdfImport />}
+      {tab === "pdf" && isAdmin && <PromovidosPdfImport />}
 
       {tab === "leads" && (
         <>
