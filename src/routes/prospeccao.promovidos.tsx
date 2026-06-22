@@ -1,5 +1,5 @@
 import { createFileRoute, Navigate, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { useRhAccess } from "@/hooks/use-rh-access";
@@ -7,14 +7,13 @@ import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
-  Award, ArrowLeft, Search, Loader2, Building2, UserCheck, Copy,
+  Award, ArrowLeft, Loader2, Building2, UserCheck, Copy,
   ChevronDown, ChevronUp, PartyPopper, FileText,
 } from "lucide-react";
 import {
-  getConsultoras, getMinhaConsultora, getMeusLeadsRadar, marcarAbordagem,
+  getConsultoras, getLeadsPromovidos, marcarAbordagem,
   type Consultora, type DoRegistro,
 } from "@/lib/radar/radar.functions";
 import { PromovidosPdfImport } from "@/components/prospeccao/PromovidosPdfImport";
@@ -30,7 +29,7 @@ export const Route = createFileRoute("/prospeccao/promovidos")({
   component: Page,
 });
 
-const STORAGE_KEY = "radar.consultora.selecionada";
+const PAGE_SIZE = 10;
 
 const ABORDAGEM_OPTS: { value: DoRegistro["status_abordagem"]; label: string }[] = [
   { value: "novo", label: "Novo" },
@@ -54,13 +53,6 @@ function fmtData(iso: string | null): string {
   if (!y || !m || !d) return iso;
   return `${d}/${m}/${y}`;
 }
-function mesDe(iso: string | null): string {
-  return iso ? String(iso).slice(0, 7) : "";
-}
-function fmtMes(ym: string): string {
-  const [y, m] = ym.split("-");
-  return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
-}
 function potencialBadge(p: string | null) {
   const v = String(p ?? "").trim().toLowerCase();
   if (v === "alto") return <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">Alto potencial</Badge>;
@@ -72,19 +64,25 @@ function Page() {
   const { user, loading } = useAuth();
   const { isAdmin } = useRhAccess();
   const fetchConsultoras = useServerFn(getConsultoras);
-  const fetchMinha = useServerFn(getMinhaConsultora);
-  const fetchLeads = useServerFn(getMeusLeadsRadar);
+  const fetchLeads = useServerFn(getLeadsPromovidos);
   const abordagemFn = useServerFn(marcarAbordagem);
 
   const [tab, setTab] = useState<"leads" | "pdf">("leads");
-  const [consultoras, setConsultoras] = useState<Consultora[]>([]);
-  const [consultora, setConsultora] = useState<string>("");
-  const [vinculada, setVinculada] = useState(false); // true quando casou por e-mail
+
+  // Estado dos leads paginados.
   const [leads, setLeads] = useState<DoRegistro[]>([]);
-  const [loadingLeads, setLoadingLeads] = useState(false);
-  const [q, setQ] = useState("");
-  const [mesFiltro, setMesFiltro] = useState("todos");
-  const [statusFiltro, setStatusFiltro] = useState("todos");
+  const [total, setTotal] = useState(0);
+  const [loadingLeads, setLoadingLeads] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // Identificação.
+  const [consultoraNome, setConsultoraNome] = useState<string | null>(null);
+  const [vinculada, setVinculada] = useState(false);
+
+  // Admin: filtro opcional por consultora.
+  const [consultoras, setConsultoras] = useState<Consultora[]>([]);
+  const [filtroConsultora, setFiltroConsultora] = useState<string>("");
+
   const [expandido, setExpandido] = useState<Set<string>>(new Set());
 
   // Garante que não-admins nunca fiquem na aba de importação de PDF.
@@ -92,49 +90,55 @@ function Page() {
     if (!isAdmin && tab === "pdf") setTab("leads");
   }, [isAdmin, tab]);
 
-
-
-  // Identifica a consultora logada: 1) vínculo por e-mail (tabela consultoras);
-  // 2) escolha salva anteriormente; 3) seleção manual.
+  // Admin: carrega lista de consultoras para o seletor opcional.
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isAdmin) return;
     (async () => {
       try {
-        const [cs, minha] = await Promise.all([fetchConsultoras(), fetchMinha()]);
-        setConsultoras(cs);
-        if (minha?.nome) {
-          setConsultora(minha.nome);
-          setVinculada(true);
-        } else {
-          const saved = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null;
-          if (saved && cs.some((c) => c.nome === saved)) setConsultora(saved);
-        }
-      } catch (e: any) {
-        toast.error(e?.message ?? "Erro ao carregar consultoras.");
+        setConsultoras(await fetchConsultoras());
+      } catch {
+        /* silencioso: seletor é opcional */
       }
     })();
-  }, [user]);
+  }, [user, isAdmin]);
 
-  const loadLeads = async (nome: string) => {
-    if (!nome) { setLeads([]); return; }
+  // Carga inicial (primeiros 10) sempre que muda o filtro de consultora (admin).
+  const carregarInicial = useCallback(async () => {
+    if (!user) return;
     setLoadingLeads(true);
     try {
-      setLeads(await fetchLeads({ data: { consultora: nome } }));
+      const res = await fetchLeads({
+        data: { offset: 0, limit: PAGE_SIZE, consultora: filtroConsultora || undefined },
+      });
+      setLeads(res.rows);
+      setTotal(res.total);
+      setConsultoraNome(res.consultoraNome);
+      setVinculada(res.vinculada);
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao carregar leads.");
     } finally {
       setLoadingLeads(false);
     }
-  };
+  }, [user, filtroConsultora]);
 
   useEffect(() => {
-    if (consultora) {
-      if (!vinculada && typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY, consultora);
-      loadLeads(consultora);
-    } else {
-      setLeads([]);
+    carregarInicial();
+  }, [carregarInicial]);
+
+  const carregarMais = async () => {
+    setLoadingMore(true);
+    try {
+      const res = await fetchLeads({
+        data: { offset: leads.length, limit: PAGE_SIZE, consultora: filtroConsultora || undefined },
+      });
+      setLeads((prev) => [...prev, ...res.rows]);
+      setTotal(res.total);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao carregar mais leads.");
+    } finally {
+      setLoadingMore(false);
     }
-  }, [consultora]);
+  };
 
   const handleAbordagem = async (id: string, status: DoRegistro["status_abordagem"]) => {
     try {
@@ -153,34 +157,12 @@ function Page() {
       return n;
     });
 
-  const mesOptions = useMemo(
-    () => Array.from(new Set(leads.map((r) => mesDe(r.data_publicacao)).filter(Boolean))).sort((a, b) => b.localeCompare(a)),
-    [leads],
-  );
-
-  const visible = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    return leads.filter((r) => {
-      if (mesFiltro !== "todos" && mesDe(r.data_publicacao) !== mesFiltro) return false;
-      if (statusFiltro !== "todos" && (r.status_abordagem || "novo") !== statusFiltro) return false;
-      if (term && !(
-        String(r.nome_servidor).toLowerCase().includes(term) ||
-        String(r.cargo ?? "").toLowerCase().includes(term) ||
-        String(r.orgao ?? "").toLowerCase().includes(term) ||
-        String(r.cpf_parcial ?? "").includes(term)
-      )) return false;
-      return true;
-    });
-  }, [leads, q, mesFiltro, statusFiltro]);
-
-  const stats = useMemo(() => {
-    const total = leads.length;
-    const abordados = leads.filter((r) => (r.status_abordagem || "novo") !== "novo").length;
-    return { total, abordados };
-  }, [leads]);
-
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
+
+  // Consultora não cadastrada (sem vínculo e não-admin).
+  const semCadastro = !isAdmin && !vinculada && !loadingLeads;
+  const temMais = leads.length < total;
 
   return (
     <AppShell>
@@ -226,79 +208,61 @@ function Page() {
               <label className="mb-1 flex items-center gap-1 text-xs font-medium text-muted-foreground">
                 <UserCheck className="h-3.5 w-3.5" /> Consultora
               </label>
-              {vinculada ? (
-                <div className="flex h-9 items-center gap-2 rounded-md border bg-primary/5 px-3 text-sm font-medium">
-                  {consultora}
-                  <Badge variant="secondary" className="text-[10px]">vinculada ao seu login</Badge>
-                </div>
-              ) : (
+              {isAdmin ? (
                 <select
-                  value={consultora}
-                  onChange={(e) => setConsultora(e.target.value)}
+                  value={filtroConsultora}
+                  onChange={(e) => setFiltroConsultora(e.target.value)}
                   className="h-9 min-w-56 rounded-md border bg-background px-2 text-sm"
                 >
-                  <option value="">Selecione seu nome…</option>
+                  <option value="">Todas as consultoras (admin)</option>
                   {consultoras.map((c) => (
                     <option key={c.id} value={c.nome}>{c.nome}{!c.ativo ? " (inativa)" : ""}</option>
                   ))}
                 </select>
+              ) : (
+                <div className="flex h-9 items-center gap-2 rounded-md border bg-primary/5 px-3 text-sm font-medium">
+                  {consultoraNome ?? "—"}
+                  {vinculada && <Badge variant="secondary" className="text-[10px]">vinculada ao seu login</Badge>}
+                </div>
               )}
             </div>
-            {consultora && (
+            {!semCadastro && (
               <div className="flex gap-5 text-sm">
-                <div><span className="text-lg font-bold">{stats.total}</span> <span className="text-muted-foreground">leads atribuídos a você</span></div>
-                <div><span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{stats.abordados}</span> <span className="text-muted-foreground">já abordados</span></div>
+                <div>
+                  <span className="text-lg font-bold">{total}</span>{" "}
+                  <span className="text-muted-foreground">leads {isAdmin && !filtroConsultora ? "no total" : "atribuídos"}</span>
+                </div>
               </div>
             )}
           </Card>
 
-          {!consultora && (
+          {loadingLeads && (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Carregando leads…
+            </p>
+          )}
+
+          {semCadastro && (
             <Card className="p-8 text-center text-sm text-muted-foreground">
-              Selecione seu nome acima para ver os leads atribuídos a você.
-              {!vinculada && " Peça ao administrador para cadastrar seu e-mail na consultora para o vínculo automático."}
+              Você ainda não possui leads atribuídos. Aguarde o administrador cadastrar seu e-mail.
             </Card>
           )}
 
-          {consultora && (
+          {!loadingLeads && !semCadastro && leads.length === 0 && (
+            <Card className="p-8 text-center text-sm text-muted-foreground">
+              Nenhum lead encontrado. Novos leads aparecem automaticamente conforme o rodízio.
+            </Card>
+          )}
+
+          {!loadingLeads && leads.length > 0 && (
             <>
-              <div className="mb-4 flex flex-wrap items-end gap-3">
-                <div className="relative w-full max-w-xs">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input className="pl-9" placeholder="Buscar nome, cargo, órgão ou CPF" value={q} onChange={(e) => setQ(e.target.value)} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Mês</label>
-                  <select value={mesFiltro} onChange={(e) => setMesFiltro(e.target.value)} className="h-9 rounded-md border bg-background px-2 text-sm capitalize">
-                    <option value="todos">Todos os meses</option>
-                    {mesOptions.map((m) => <option key={m} value={m}>{fmtMes(m)}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Status</label>
-                  <select value={statusFiltro} onChange={(e) => setStatusFiltro(e.target.value)} className="h-9 rounded-md border bg-background px-2 text-sm">
-                    <option value="todos">Todos os status</option>
-                    {ABORDAGEM_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                </div>
-                {(mesFiltro !== "todos" || statusFiltro !== "todos" || q) && (
-                  <Button size="sm" variant="ghost" onClick={() => { setMesFiltro("todos"); setStatusFiltro("todos"); setQ(""); }}>Limpar</Button>
-                )}
-              </div>
-
-              {loadingLeads && (
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Carregando leads…
-                </p>
-              )}
-
-              {!loadingLeads && visible.length === 0 && (
-                <Card className="p-8 text-center text-sm text-muted-foreground">
-                  Nenhum lead encontrado. Novos leads aparecem automaticamente conforme o rodízio.
-                </Card>
-              )}
+              <p className="mb-3 text-sm text-muted-foreground">
+                Exibindo <strong className="text-foreground">{leads.length}</strong> de{" "}
+                <strong className="text-foreground">{total}</strong> leads
+              </p>
 
               <div className="space-y-3">
-                {visible.map((r) => {
+                {leads.map((r) => {
                   const st = r.status_abordagem || "novo";
                   const open = expandido.has(r.id);
                   return (
@@ -306,7 +270,7 @@ function Page() {
                       {r.data_publicacao && (
                         <div className="mb-2">
                           <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                            <PartyPopper className="mr-1 h-3.5 w-3.5" /> Promovido em {fmtData(r.data_publicacao)}
+                            <PartyPopper className="mr-1 h-3.5 w-3.5" /> 🎉 Promovido em {fmtData(r.data_publicacao)}
                           </Badge>
                         </div>
                       )}
@@ -315,13 +279,16 @@ function Page() {
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="text-base font-semibold">{r.nome_servidor}</p>
                             {potencialBadge(r.potencial_financeiro)}
+                            {isAdmin && r.consultora_responsavel && (
+                              <Badge variant="outline" className="text-[10px]">{r.consultora_responsavel}</Badge>
+                            )}
                           </div>
                           {r.cargo && <p className="text-sm text-muted-foreground">{r.cargo}</p>}
                           <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                             {r.cpf_parcial && <span>CPF: {r.cpf_parcial}</span>}
                             {r.orgao && <span className="flex items-center gap-1"><Building2 className="h-3.5 w-3.5" /> {r.orgao}</span>}
-                            {(r.categoria || r.tipo_movimentacao) && (
-                              <Badge variant="secondary" className="text-[10px]">{r.categoria || r.tipo_movimentacao}</Badge>
+                            {r.tipo_movimentacao && (
+                              <Badge variant="secondary" className="text-[10px]">{r.tipo_movimentacao}</Badge>
                             )}
                           </div>
                         </div>
@@ -329,14 +296,22 @@ function Page() {
                       </div>
 
                       <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t pt-3">
-                        {ABORDAGEM_OPTS.map((o) => (
+                        <Button
+                          size="sm"
+                          variant={st === "contatado" ? "default" : "default"}
+                          onClick={() => handleAbordagem(r.id, "contatado")}
+                          className="font-semibold"
+                        >
+                          ABORDAR
+                        </Button>
+                        {ABORDAGEM_OPTS.filter((o) => o.value !== "contatado").map((o) => (
                           <Button
                             key={o.value}
                             size="sm"
                             variant={st === o.value ? "default" : "outline"}
                             onClick={() => handleAbordagem(r.id, o.value)}
                           >
-                            {o.value === "contatado" ? "Abordar" : o.label}
+                            {o.label}
                           </Button>
                         ))}
                         <Button size="sm" variant="ghost" className="ml-auto" onClick={() => toggleExpand(r.id)}>
@@ -349,6 +324,15 @@ function Page() {
                   );
                 })}
               </div>
+
+              {temMais && (
+                <div className="mt-6 flex justify-center">
+                  <Button variant="outline" onClick={carregarMais} disabled={loadingMore}>
+                    {loadingMore ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Carregar mais 10 leads →
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </>
