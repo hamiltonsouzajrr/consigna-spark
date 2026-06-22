@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, FileText, Users, BadgeCheck, TrendingUp, Clock } from "lucide-react";
+import { Loader2, FileText, Users, BadgeCheck, TrendingUp, Clock, Target, Phone, CheckCircle2, XCircle } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
