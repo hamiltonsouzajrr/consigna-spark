@@ -607,6 +607,7 @@ export type DashboardData = {
   promocoesConfirmadas: number;
   progressoes: number;
   pendentes: number;
+  pipeline: { oportunidadesNovas: number; emContato: number; convertidos: number; semInteresse: number };
   porTipo: { tipo: string; total: number }[];
   porData: { data: string; total: number }[];
   topOrgaos: { orgao: string; total: number }[];
