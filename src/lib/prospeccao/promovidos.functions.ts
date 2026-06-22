@@ -1,5 +1,6 @@
 // Server functions for the "Recém promovidos" area inside the CRM.
 // - getPromovidos: authenticated; lists promoted people (most recent first).
+// - extractPromovidosAI: authenticated; AI reads PDF text and deduces promotions.
 // - savePromovidos: admin-only; bulk-inserts reviewed entries from a PDF.
 // - deletePromovido: admin-only; removes a single entry.
 
