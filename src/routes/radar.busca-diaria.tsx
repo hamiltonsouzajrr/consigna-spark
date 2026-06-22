@@ -118,6 +118,46 @@ function BuscaDiariaPage() {
     }
   };
 
+  // Extrai todo o ano de 2026 retroativamente, mês a mês (jan-jun). Cada mês é
+  // uma requisição separada para não estourar o tempo limite do servidor. Como
+  // edições já baixadas são puladas (dedup), pode ser re-executado para retomar.
+  const MESES_2026 = [
+    { n: 1, nome: "Janeiro" }, { n: 2, nome: "Fevereiro" }, { n: 3, nome: "Março" },
+    { n: 4, nome: "Abril" }, { n: 5, nome: "Maio" }, { n: 6, nome: "Junho" },
+  ];
+  const extrairTodo2026 = async () => {
+    setRunning("ano2026");
+    const total: ResultadoBuscaDTO = {
+      arquivos_encontrados: 0, arquivos_baixados: 0, registros_extraidos: 0,
+      duracao_ms: 0, duplicados: 0, requer_ocr: 0, erros: [], fontes: [],
+    };
+    try {
+      for (const m of MESES_2026) {
+        setAnoProgresso(`Processando ${m.nome}/2026… (${m.n} de ${MESES_2026.length})`);
+        try {
+          const r = await fnExtrairMes({ data: { mes: m.n } });
+          total.arquivos_encontrados += r.arquivos_encontrados;
+          total.arquivos_baixados += r.arquivos_baixados;
+          total.registros_extraidos += r.registros_extraidos;
+          total.requer_ocr += r.requer_ocr;
+          total.erros.push(...r.erros);
+        } catch (e: any) {
+          total.erros.push(`${m.nome}: ${e?.message ?? "falha"}`);
+          toast.error(`Falha em ${m.nome}/2026: ${e?.message ?? "erro"}`);
+        }
+        await carregar();
+      }
+      toast.success(
+        `2026 concluído: ${total.arquivos_baixados} PDF(s) novo(s), ${total.registros_extraidos} registro(s).`,
+      );
+      if (total.requer_ocr > 0) toast.info(`${total.requer_ocr} edição(ões) exigem OCR (processar pela aba Importar).`);
+      if (total.erros.length) toast.error(`${total.erros.length} erro(s) durante a extração do ano.`);
+    } finally {
+      setAnoProgresso(null);
+      setRunning(null);
+    }
+  };
+
   const abrirPdf = async (caminho: string | null) => {
     if (!caminho) { toast.error("PDF não disponível."); return; }
     try {
