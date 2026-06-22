@@ -494,10 +494,18 @@ function RegistrosPage() {
         {/* Cadastro de consultoras */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Input
-            className="w-64"
+            className="w-56"
             placeholder="Nome da consultora…"
             value={novaConsultora}
             onChange={(e) => setNovaConsultora(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleAddConsultora(); }}
+          />
+          <Input
+            className="w-64"
+            type="email"
+            placeholder="E-mail de login (opcional)…"
+            value={novaConsultoraEmail}
+            onChange={(e) => setNovaConsultoraEmail(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleAddConsultora(); }}
           />
           <Button onClick={handleAddConsultora} disabled={savingConsultora} variant="secondary">
