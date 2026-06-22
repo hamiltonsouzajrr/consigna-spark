@@ -14,7 +14,7 @@ import {
 import {
   getBuscaDiariaDashboard, getFontes, getAlertas, getLogsAutomacao,
   rodarBuscaAgora, buscarPorData, buscarIntervaloDias, reprocessarFonteFn,
-  marcarAlertaLido, getFontePdfUrl,
+  marcarAlertaLido, getFontePdfUrl, extrairMes2026,
   type BuscaDiariaDashboard, type Fonte, type Alerta, type LogAutomacao, type ResultadoBuscaDTO,
 } from "@/lib/radar/diario.functions";
 
@@ -72,6 +72,7 @@ function BuscaDiariaPage() {
   const fnReprocessar = useServerFn(reprocessarFonteFn);
   const fnMarcarLido = useServerFn(marcarAlertaLido);
   const fnPdfUrl = useServerFn(getFontePdfUrl);
+  const fnExtrairMes = useServerFn(extrairMes2026);
 
   const [dash, setDash] = useState<BuscaDiariaDashboard | null>(null);
   const [fontes, setFontes] = useState<Fonte[]>([]);
@@ -80,6 +81,7 @@ function BuscaDiariaPage() {
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState<string | null>(null);
   const [dataEspecifica, setDataEspecifica] = useState("");
+  const [anoProgresso, setAnoProgresso] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     try {
@@ -112,6 +114,46 @@ function BuscaDiariaPage() {
     } catch (e: any) {
       toast.error(e?.message ?? "Falha na execução.");
     } finally {
+      setRunning(null);
+    }
+  };
+
+  // Extrai todo o ano de 2026 retroativamente, mês a mês (jan-jun). Cada mês é
+  // uma requisição separada para não estourar o tempo limite do servidor. Como
+  // edições já baixadas são puladas (dedup), pode ser re-executado para retomar.
+  const MESES_2026 = [
+    { n: 1, nome: "Janeiro" }, { n: 2, nome: "Fevereiro" }, { n: 3, nome: "Março" },
+    { n: 4, nome: "Abril" }, { n: 5, nome: "Maio" }, { n: 6, nome: "Junho" },
+  ];
+  const extrairTodo2026 = async () => {
+    setRunning("ano2026");
+    const total: ResultadoBuscaDTO = {
+      arquivos_encontrados: 0, arquivos_baixados: 0, registros_extraidos: 0,
+      duracao_ms: 0, duplicados: 0, requer_ocr: 0, erros: [], fontes: [],
+    };
+    try {
+      for (const m of MESES_2026) {
+        setAnoProgresso(`Processando ${m.nome}/2026… (${m.n} de ${MESES_2026.length})`);
+        try {
+          const r = await fnExtrairMes({ data: { mes: m.n } });
+          total.arquivos_encontrados += r.arquivos_encontrados;
+          total.arquivos_baixados += r.arquivos_baixados;
+          total.registros_extraidos += r.registros_extraidos;
+          total.requer_ocr += r.requer_ocr;
+          total.erros.push(...r.erros);
+        } catch (e: any) {
+          total.erros.push(`${m.nome}: ${e?.message ?? "falha"}`);
+          toast.error(`Falha em ${m.nome}/2026: ${e?.message ?? "erro"}`);
+        }
+        await carregar();
+      }
+      toast.success(
+        `2026 concluído: ${total.arquivos_baixados} PDF(s) novo(s), ${total.registros_extraidos} registro(s).`,
+      );
+      if (total.requer_ocr > 0) toast.info(`${total.requer_ocr} edição(ões) exigem OCR (processar pela aba Importar).`);
+      if (total.erros.length) toast.error(`${total.erros.length} erro(s) durante a extração do ano.`);
+    } finally {
+      setAnoProgresso(null);
       setRunning(null);
     }
   };
@@ -213,11 +255,38 @@ function BuscaDiariaPage() {
             <RefreshCw className="h-4 w-4" /> Atualizar
           </Button>
         </div>
+
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">Extração retroativa de 2026</p>
+              <p className="text-xs text-muted-foreground">
+                Percorre janeiro a junho de 2026 e baixa/processa todas as edições. Edições já
+                baixadas são puladas — pode rodar de novo para retomar.
+              </p>
+            </div>
+            <Button
+              variant="default"
+              disabled={!isAdmin || !!running}
+              onClick={extrairTodo2026}
+            >
+              {running === "ano2026" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarSearch className="h-4 w-4" />}
+              EXTRAIR TODO 2026
+            </Button>
+          </div>
+          {anoProgresso && (
+            <p className="mt-2 flex items-center gap-2 text-xs font-medium text-primary">
+              <Loader2 className="h-3 w-3 animate-spin" /> {anoProgresso}
+            </p>
+          )}
+        </div>
+
         <p className="text-xs text-muted-foreground">
           Os registros extraídos aparecem em{" "}
           <Link to="/radar/registros" className="font-medium text-primary underline">Registros</Link>, com filtros e exportação.
         </p>
       </Card>
+
 
       {/* Alertas */}
       {alertas.length > 0 && (
