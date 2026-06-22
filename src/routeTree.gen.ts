@@ -59,6 +59,7 @@ import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
 import { Route as RhAcessosRouteImport } from './routes/rh.acessos'
 import { Route as RadarRegistrosRouteImport } from './routes/radar.registros'
 import { Route as RadarImportarRouteImport } from './routes/radar.importar'
+import { Route as RadarBuscaDiariaRouteImport } from './routes/radar.busca-diaria'
 import { Route as RadarArquivosRouteImport } from './routes/radar.arquivos'
 import { Route as ProspeccaoRecentesRouteImport } from './routes/prospeccao.recentes'
 import { Route as ProspeccaoQualidadeRouteImport } from './routes/prospeccao.qualidade'
@@ -328,6 +329,11 @@ const RadarImportarRoute = RadarImportarRouteImport.update({
   path: '/importar',
   getParentRoute: () => RadarRoute,
 } as any)
+const RadarBuscaDiariaRoute = RadarBuscaDiariaRouteImport.update({
+  id: '/busca-diaria',
+  path: '/busca-diaria',
+  getParentRoute: () => RadarRoute,
+} as any)
 const RadarArquivosRoute = RadarArquivosRouteImport.update({
   id: '/arquivos',
   path: '/arquivos',
@@ -455,6 +461,7 @@ export interface FileRoutesByFullPath {
   '/prospeccao/qualidade': typeof ProspeccaoQualidadeRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/radar/arquivos': typeof RadarArquivosRoute
+  '/radar/busca-diaria': typeof RadarBuscaDiariaRoute
   '/radar/importar': typeof RadarImportarRoute
   '/radar/registros': typeof RadarRegistrosRoute
   '/rh/acessos': typeof RhAcessosRoute
@@ -523,6 +530,7 @@ export interface FileRoutesByTo {
   '/prospeccao/qualidade': typeof ProspeccaoQualidadeRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/radar/arquivos': typeof RadarArquivosRoute
+  '/radar/busca-diaria': typeof RadarBuscaDiariaRoute
   '/radar/importar': typeof RadarImportarRoute
   '/radar/registros': typeof RadarRegistrosRoute
   '/rh/acessos': typeof RhAcessosRoute
@@ -593,6 +601,7 @@ export interface FileRoutesById {
   '/prospeccao/qualidade': typeof ProspeccaoQualidadeRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/radar/arquivos': typeof RadarArquivosRoute
+  '/radar/busca-diaria': typeof RadarBuscaDiariaRoute
   '/radar/importar': typeof RadarImportarRoute
   '/radar/registros': typeof RadarRegistrosRoute
   '/rh/acessos': typeof RhAcessosRoute
@@ -665,6 +674,7 @@ export interface FileRouteTypes {
     | '/prospeccao/qualidade'
     | '/prospeccao/recentes'
     | '/radar/arquivos'
+    | '/radar/busca-diaria'
     | '/radar/importar'
     | '/radar/registros'
     | '/rh/acessos'
@@ -733,6 +743,7 @@ export interface FileRouteTypes {
     | '/prospeccao/qualidade'
     | '/prospeccao/recentes'
     | '/radar/arquivos'
+    | '/radar/busca-diaria'
     | '/radar/importar'
     | '/radar/registros'
     | '/rh/acessos'
@@ -802,6 +813,7 @@ export interface FileRouteTypes {
     | '/prospeccao/qualidade'
     | '/prospeccao/recentes'
     | '/radar/arquivos'
+    | '/radar/busca-diaria'
     | '/radar/importar'
     | '/radar/registros'
     | '/rh/acessos'
@@ -1228,6 +1240,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RadarImportarRouteImport
       parentRoute: typeof RadarRoute
     }
+    '/radar/busca-diaria': {
+      id: '/radar/busca-diaria'
+      path: '/busca-diaria'
+      fullPath: '/radar/busca-diaria'
+      preLoaderRoute: typeof RadarBuscaDiariaRouteImport
+      parentRoute: typeof RadarRoute
+    }
     '/radar/arquivos': {
       id: '/radar/arquivos'
       path: '/arquivos'
@@ -1371,6 +1390,7 @@ const PositivaIaRouteWithChildren = PositivaIaRoute._addFileChildren(
 
 interface RadarRouteChildren {
   RadarArquivosRoute: typeof RadarArquivosRoute
+  RadarBuscaDiariaRoute: typeof RadarBuscaDiariaRoute
   RadarImportarRoute: typeof RadarImportarRoute
   RadarRegistrosRoute: typeof RadarRegistrosRoute
   RadarIndexRoute: typeof RadarIndexRoute
@@ -1378,6 +1398,7 @@ interface RadarRouteChildren {
 
 const RadarRouteChildren: RadarRouteChildren = {
   RadarArquivosRoute: RadarArquivosRoute,
+  RadarBuscaDiariaRoute: RadarBuscaDiariaRoute,
   RadarImportarRoute: RadarImportarRoute,
   RadarRegistrosRoute: RadarRegistrosRoute,
   RadarIndexRoute: RadarIndexRoute,
