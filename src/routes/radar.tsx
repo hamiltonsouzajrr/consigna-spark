@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useLocation, Navigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
-import { Radar, LayoutDashboard, Upload, List, FileText, ShieldAlert, Loader2 } from "lucide-react";
+import { Radar, LayoutDashboard, Upload, List, FileText, ShieldAlert, Loader2, CalendarClock } from "lucide-react";
 
 export const Route = createFileRoute("/radar")({
   head: () => ({
