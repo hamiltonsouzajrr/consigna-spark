@@ -14,7 +14,7 @@ import {
 import {
   getBuscaDiariaDashboard, getFontes, getAlertas, getLogsAutomacao,
   rodarBuscaAgora, buscarPorData, buscarIntervaloDias, reprocessarFonteFn,
-  marcarAlertaLido, getFontePdfUrl,
+  marcarAlertaLido, getFontePdfUrl, extrairMes2026,
   type BuscaDiariaDashboard, type Fonte, type Alerta, type LogAutomacao, type ResultadoBuscaDTO,
 } from "@/lib/radar/diario.functions";
 
