@@ -431,6 +431,42 @@ function RegistrosPage() {
         )}
       </Card>
 
+      {/* Distribuição de Leads */}
+      <Card className="p-4">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-semibold">Distribuição de Leads</h3>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Atribui os próximos 10 leads disponíveis (novos, potencial alto/médio e ainda sem consultora)
+          à consultora informada, sem duplicar.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Input
+            className="w-64"
+            placeholder="Nome da consultora…"
+            value={novaConsultora}
+            onChange={(e) => setNovaConsultora(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") atribuirDez(); }}
+          />
+          <Button onClick={atribuirDez} disabled={atribuindo}>
+            {atribuindo ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <UserPlus className="mr-1 h-4 w-4" />}
+            ATRIBUIR 10 LEADS
+          </Button>
+        </div>
+        {distribuicao.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {distribuicao.map((d) => (
+              <Badge key={d.consultora} variant="secondary" className="text-xs">
+                {d.consultora}: {d.total} lead{d.total === 1 ? "" : "s"}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </Card>
+
+
+
       {loading ? (
         <div className="flex min-h-[30vh] items-center justify-center text-muted-foreground">
           <Loader2 className="h-6 w-6 animate-spin" />
