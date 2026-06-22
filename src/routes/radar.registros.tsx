@@ -391,44 +391,81 @@ function RegistrosPage() {
         <div className="space-y-2">
           {visible.map((r) => {
             const open = expanded === r.id;
+            const ab = r.status_abordagem || "novo";
+            const potText =
+              r.potencial_financeiro === "Alto" ? "🟢 ALTO" :
+              r.potencial_financeiro === "Médio" ? "🟡 MÉDIO" :
+              r.potencial_financeiro || "";
+            const showFullTrecho = trechoOpen.has(r.id);
             return (
-              <Card key={r.id} className="overflow-hidden">
-                <div className="flex flex-wrap items-center gap-3 p-3">
-                  <button
-                    className="flex flex-1 items-center gap-3 text-left"
-                    onClick={() => setExpanded(open ? null : r.id)}
-                  >
-                    {open ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{r.nome_servidor}</p>
-                      {r.cpf_parcial && (
-                        <p className="truncate text-xs font-semibold text-primary">CPF: {r.cpf_parcial}</p>
-                      )}
-                      <p className="truncate text-xs text-muted-foreground">
-                        {[r.orgao, r.categoria || r.tipo_movimentacao, r.cpf_parcial ? `CPF: ${r.cpf_parcial}` : ""].filter(Boolean).join(" · ")}
-                      </p>
-                    </div>
-                  </button>
-                  {r.potencial_financeiro && (
-                    <Badge className={`text-xs ${potencialTone(r.potencial_financeiro)}`}>
-                      {r.potencial_financeiro}
-                    </Badge>
-                  )}
-                  {r.data_publicacao && <Badge variant="outline" className="text-xs">{r.data_publicacao}</Badge>}
-                  {r.duplicado_possivel && <Badge className="bg-orange-500 text-white">duplicado?</Badge>}
-                  <Badge className={`text-xs ${statusTone(r.status_revisao)}`}>{r.status_revisao}</Badge>
+              <Card key={r.id} className={`overflow-hidden border-2 ${abordagemBorder(ab)}`}>
+                <div className="p-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      className="flex flex-1 items-center gap-3 text-left"
+                      onClick={() => setExpanded(open ? null : r.id)}
+                    >
+                      {open ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <span className="font-semibold">{r.nome_servidor}</span>
+                          {r.orgao && <span className="truncate text-xs text-muted-foreground">{r.orgao}</span>}
+                          {(r.categoria || r.tipo_movimentacao) && (
+                            <span className="truncate text-xs text-muted-foreground">· {r.categoria || r.tipo_movimentacao}</span>
+                          )}
+                          {r.data_publicacao && <span className="text-xs text-muted-foreground">· {r.data_publicacao}</span>}
+                        </div>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {r.cpf_parcial && <span className="font-semibold text-primary">CPF: {r.cpf_parcial}</span>}
+                          {r.cpf_parcial && r.matricula && "   "}
+                          {r.matricula && <span>Matrícula: {r.matricula}</span>}
+                        </p>
+                      </div>
+                    </button>
+                    {potText && (
+                      <Badge className={`text-xs ${potencialTone(r.potencial_financeiro || "")}`}>{potText}</Badge>
+                    )}
+                    {ab !== "novo" && (
+                      <Badge variant="outline" className="text-xs">{ABORDAGEM_LABEL[ab] ?? ab}</Badge>
+                    )}
+                    {r.duplicado_possivel && <Badge className="bg-orange-500 text-white">duplicado?</Badge>}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700"
+                      disabled={ab === "contatado"}
+                      onClick={() => setAbordagemFor(r.id, "contatado")}
+                    >
+                      <Phone className="mr-1 h-4 w-4" /> ABORDAR
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setStatusFor(r.id, "Revisado")}>
+                      <Check className="mr-1 h-4 w-4" /> REVISADO
+                    </Button>
+                    <Select value={ab} onValueChange={(v) => setAbordagemFor(r.id, v)}>
+                      <SelectTrigger className="h-8 w-[160px] text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {ABORDAGEM_OPTIONS.map((a) => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {open && (
                   <div className="border-t bg-muted/30 p-4">
-                    <div className="grid gap-2 text-sm md:grid-cols-2 lg:grid-cols-3">
-                      <Info label="Matrícula" value={r.matricula} />
-                      <Info label="CPF parcial" value={r.cpf_parcial} />
+                    <div className="grid gap-2 text-sm md:grid-cols-2">
+                      <div>🧑 <span className="text-muted-foreground">Nome:</span> <strong>{r.nome_servidor}</strong></div>
+                      <div>🪪 <span className="text-muted-foreground">CPF:</span> <strong>{r.cpf_parcial || "—"}</strong></div>
+                      <div>🏛️ <span className="text-muted-foreground">Órgão:</span> <strong>{r.orgao || "—"}</strong></div>
+                      <div>💼 <span className="text-muted-foreground">Tipo:</span> <strong>{r.categoria || r.tipo_movimentacao || "—"}</strong></div>
+                      <div>📅 <span className="text-muted-foreground">Data do ato:</span> <strong>{r.data_ato || r.data_publicacao || "—"}</strong></div>
+                      <div>🏷️ <span className="text-muted-foreground">Matrícula:</span> <strong>{r.matricula || "—"}</strong></div>
+                    </div>
+
+                    <div className="mt-3 grid gap-2 text-sm md:grid-cols-2 lg:grid-cols-3">
                       <Info label="Página" value={r.pagina} />
                       <Info label="Nº ato" value={r.numero_ato} />
-                      <Info label="Data do ato" value={r.data_ato} />
                       <Info label="Confiança IA" value={r.confianca_ia} />
-                      <Info label="Categoria" value={r.categoria} />
                       <Info label="Potencial financeiro" value={r.potencial_financeiro} />
                       <Info label="Classe" value={join(r.classe_anterior, r.classe_nova)} />
                       <Info label="Nível" value={join(r.nivel_anterior, r.nivel_novo)} />
@@ -441,8 +478,26 @@ function RegistrosPage() {
                       </div>
                     )}
                     {r.trecho_original && (
-                      <div className="mt-3 rounded-md border bg-background p-3 text-sm italic text-muted-foreground">
-                        “{r.trecho_original}”
+                      <div className="mt-3">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            setTrechoOpen((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(r.id)) next.delete(r.id);
+                              else next.add(r.id);
+                              return next;
+                            })
+                          }
+                        >
+                          {showFullTrecho ? "ocultar trecho" : "ver trecho completo"}
+                        </Button>
+                        {showFullTrecho && (
+                          <div className="mt-2 rounded-md border bg-background p-3 text-sm italic text-muted-foreground">
+                            “{r.trecho_original}”
+                          </div>
+                        )}
                       </div>
                     )}
                     <div className="mt-3 flex flex-wrap gap-2">
