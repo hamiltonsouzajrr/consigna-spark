@@ -379,6 +379,13 @@ function RegistrosPage() {
               {ABORDAGEM_OPTIONS.map((a) => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={consultora} onValueChange={setConsultora}>
+            <SelectTrigger><SelectValue placeholder="Consultora" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas as consultoras</SelectItem>
+              {consultoraOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-44" />
