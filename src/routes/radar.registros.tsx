@@ -225,7 +225,11 @@ function RegistrosPage() {
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-6">
           <div className="relative lg:col-span-2">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-9" placeholder="Buscar por nome…" value={q} onChange={(e) => setQ(e.target.value)} />
+            <Input className="pl-9" placeholder="Buscar por nome ou CPF…" value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
+          <div className="relative lg:col-span-2">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input className="pl-9" placeholder="Filtrar por CPF…" value={cpfQ} onChange={(e) => setCpfQ(e.target.value)} />
           </div>
           <Select value={orgao} onValueChange={setOrgao}>
             <SelectTrigger><SelectValue placeholder="Órgão" /></SelectTrigger>
