@@ -89,14 +89,14 @@ function BuscaDiariaPage() {
 
   const carregar = useCallback(async () => {
     try {
-      const [d, f, a, l] = await Promise.all([fnDashboard(), fnFontes(), fnAlertas(), fnLogs()]);
-      setDash(d); setFontes(f); setAlertas(a); setLogs(l);
+      const [d, f, a, l, c] = await Promise.all([fnDashboard(), fnFontes(), fnAlertas(), fnLogs(), fnCobertura()]);
+      setDash(d); setFontes(f); setAlertas(a); setLogs(l); setCobertura(c);
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao carregar painel.");
     } finally {
       setLoading(false);
     }
-  }, [fnDashboard, fnFontes, fnAlertas, fnLogs]);
+  }, [fnDashboard, fnFontes, fnAlertas, fnLogs, fnCobertura]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
