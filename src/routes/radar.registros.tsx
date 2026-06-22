@@ -224,6 +224,7 @@ function RegistrosPage() {
       if (status !== "todos" && r.status_revisao !== status) return false;
       if (abordagem !== "todos" && ab(r) !== abordagem) return false;
       if (potencial !== "todos" && (r.potencial_financeiro || "") !== potencial) return false;
+      if (consultora !== "todos" && (r.consultora_responsavel || "") !== consultora) return false;
       if (data && r.data_publicacao !== data) return false;
       return true;
     });
