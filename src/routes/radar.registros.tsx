@@ -48,6 +48,8 @@ const EXPORT_FIELDS: { key: keyof DoRegistro; label: string }[] = [
   { key: "orgao", label: "Órgão" },
   { key: "tipo_movimentacao", label: "Tipo" },
   { key: "categoria", label: "Categoria" },
+  { key: "potencial_financeiro", label: "Potencial financeiro" },
+  { key: "motivo_classificacao", label: "Motivo" },
   { key: "data_publicacao", label: "Data publicação" },
   { key: "data_ato", label: "Data do ato" },
   { key: "pagina", label: "Página" },
