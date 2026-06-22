@@ -87,6 +87,13 @@ function Page() {
   const [statusFiltro, setStatusFiltro] = useState("todos");
   const [expandido, setExpandido] = useState<Set<string>>(new Set());
 
+  // Garante que não-admins nunca fiquem na aba de importação de PDF.
+  useEffect(() => {
+    if (!isAdmin && tab === "pdf") setTab("leads");
+  }, [isAdmin, tab]);
+
+
+
   // Identifica a consultora logada: 1) vínculo por e-mail (tabela consultoras);
   // 2) escolha salva anteriormente; 3) seleção manual.
   useEffect(() => {
