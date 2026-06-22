@@ -92,6 +92,7 @@ function RegistrosPage() {
   const [arquivos, setArquivos] = useState<Record<string, DoArquivo>>({});
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [cpfQ, setCpfQ] = useState("");
   const [orgao, setOrgao] = useState("todos");
   const [tipo, setTipo] = useState("todos");
   const [status, setStatus] = useState("todos");
