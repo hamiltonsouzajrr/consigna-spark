@@ -13,7 +13,7 @@ import {
   Award, ArrowLeft, Upload, Trash2, Plus, Save, FileText, Search, Loader2,
 } from "lucide-react";
 import {
-  getPromovidos, savePromovidos, deletePromovido, type Promovido,
+  getPromovidos, savePromovidos, deletePromovido, extractPromovidosAI, type Promovido,
 } from "@/lib/prospeccao/promovidos.functions";
 
 export const Route = createFileRoute("/prospeccao/promovidos")({
