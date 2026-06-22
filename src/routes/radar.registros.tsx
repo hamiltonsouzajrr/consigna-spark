@@ -326,6 +326,13 @@ function RegistrosPage() {
               {POTENCIAIS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={abordagem} onValueChange={setAbordagem}>
+            <SelectTrigger><SelectValue placeholder="Abordagem" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Toda abordagem</SelectItem>
+              {ABORDAGEM_OPTIONS.map((a) => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-44" />
