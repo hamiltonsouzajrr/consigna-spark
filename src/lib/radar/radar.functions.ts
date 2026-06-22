@@ -549,7 +549,7 @@ export const marcarAbordagem = createServerFn({ method: "POST" })
 
 const POTENCIAL_RANK: Record<string, number> = { Alto: 0, Médio: 1 };
 
-export type Consultora = { id: string; nome: string; ativo: boolean; total_leads_atribuidos: number };
+export type Consultora = { id: string; nome: string; email: string | null; ativo: boolean; total_leads_atribuidos: number };
 
 // Redistribui os leads PENDENTES (status novo + potencial alto/médio + sem
 // consultora) entre as consultoras ATIVAS, em rodízio (least-loaded), usando o
