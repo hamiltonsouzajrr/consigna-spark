@@ -137,6 +137,7 @@ Exemplo a classificar como HONRARIA (não promoção): "Fica outorgada ao 2º Sa
 REGRAS:
 - Extraia apenas informações presentes no texto. NÃO invente dados. Deixe vazio o que não houver.
 - Sempre preserve em trecho_original o trecho exato que justifica a extração.
+- CPF (campo cpf_parcial) — extraia o número de CPF do servidor se presente no texto. Formatos aceitos: "CPF: 123.456.789-00", "CPF nº 123.456.789-00", "portador(a) do CPF 123.456.789-00". Retorne apenas os dígitos e pontuação (ex: "082.478.484-73"). Se não houver CPF no texto, retorne "".
 
 CLASSIFICAÇÃO (campo categoria) — escolha uma:
 "Promoção confirmada", "Progressão funcional", "Enquadramento", "Mudança de cargo", "Nomeação", "Possível promoção, precisa revisar", "Processo relacionado, precisa revisar", "Promoção publicada anteriormente, precisa localizar ato original", "Honraria, sem promoção funcional confirmada", "Informação insuficiente".
