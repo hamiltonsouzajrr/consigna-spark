@@ -642,6 +642,54 @@ function Info({ label, value }: { label: string; value: string | null }) {
     </div>
   );
 }
+
+// Roteiro de abordagem comercial fixo, exibido no card expandido.
+function Roteiro({ nome, data }: { nome: string; data: string | null }) {
+  const dataFmt = fmtBR(data);
+  const copiarNome = async () => {
+    try {
+      await navigator.clipboard.writeText(nome);
+      toast.success("Nome copiado.");
+    } catch {
+      toast.error("Não foi possível copiar.");
+    }
+  };
+  return (
+    <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900/40 dark:bg-blue-950/20">
+      <h4 className="mb-3 text-sm font-semibold">📋 Roteiro de Abordagem</h4>
+      <div className="space-y-3 text-sm">
+        <div>
+          <p className="font-semibold">PASSO 1 — Localizar no Nova Vida</p>
+          <p className="mt-1 flex flex-wrap items-center gap-1 text-muted-foreground">
+            → Abrir sistema Nova Vida e buscar pelo nome:{" "}
+            <strong className="text-foreground">{nome}</strong>
+            <Button size="sm" variant="ghost" className="h-6 px-2" onClick={copiarNome}>
+              <Copy className="h-3 w-3" />
+            </Button>
+          </p>
+          <p className="text-muted-foreground">→ Verificar estado/situação atual da pessoa</p>
+        </div>
+        <div>
+          <p className="font-semibold">PASSO 2 — Verificar margem disponível</p>
+          <p className="mt-1 text-muted-foreground">→ Checar margem consignável atual no sistema</p>
+          <p className="text-muted-foreground">
+            → Confirmar aumento de margem pela promoção de{" "}
+            <strong className="text-foreground">{dataFmt || "—"}</strong>
+          </p>
+        </div>
+        <div>
+          <p className="font-semibold">PASSO 3 — Abordar o servidor</p>
+          <p className="mt-1 text-muted-foreground">
+            → Parabenizar pela promoção: "Vi que você foi promovido(a) em {dataFmt || "—"}"
+          </p>
+          <p className="text-muted-foreground">
+            → Apresentar oferta de crédito consignado com nova margem ampliada
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 function join(a: string | null, b: string | null): string {
   if (!a && !b) return "";
   return `${a || "—"} → ${b || "—"}`;
