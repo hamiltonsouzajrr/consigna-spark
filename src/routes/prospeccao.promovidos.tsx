@@ -559,7 +559,7 @@ function Page() {
 
           {drafts.length === 0 && (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <FileText className="h-4 w-4" /> Importe um PDF com nome, CPF e cargo para revisar e salvar.
+              <FileText className="h-4 w-4" /> Importe um PDF (ex.: Diário Oficial). A IA lê o documento e identifica quem foi promovido ou subiu de cargo, mesmo com palavras diferentes (promoção, progressão, ascensão, nomeação para cargo superior…).
             </p>
           )}
         </Card>
