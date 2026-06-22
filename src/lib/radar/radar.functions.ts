@@ -101,6 +101,7 @@ export type DoRegistro = {
   status_abordagem: string;
   contatado_em: string | null;
   contatado_por: string | null;
+  consultora_responsavel: string | null;
   duplicado_possivel: boolean;
   created_at: string;
 };
