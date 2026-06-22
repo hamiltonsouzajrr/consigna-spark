@@ -111,6 +111,7 @@ function RegistrosPage() {
   const fetchRegs = useServerFn(getRegistros);
   const fetchArqs = useServerFn(getArquivos);
   const updateFn = useServerFn(atualizarRegistro);
+  const abordagemFn = useServerFn(marcarAbordagem);
   const urlFn = useServerFn(getArquivoUrl);
 
   const [list, setList] = useState<DoRegistro[]>([]);
