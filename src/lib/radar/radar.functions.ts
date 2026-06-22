@@ -40,7 +40,22 @@ export type RegistroAI = {
   trecho_original: string;
   confianca_ia: string;
   categoria: string;
+  potencial_financeiro: string;
+  motivo_classificacao: string;
 };
+
+// Seções do Diário Oficial priorizadas para busca de movimentações funcionais.
+export const SECOES_RADAR = [
+  "Eventos Funcionais",
+  "Atos e despachos do Governador",
+  "Gabinete Civil",
+  "SEPLAG",
+  "Polícia Militar",
+  "Corpo de Bombeiros",
+  "Polícia Civil",
+  "Secretaria de Educação",
+  "Secretaria de Saúde",
+] as const;
 
 export type DoArquivo = {
   id: string;
