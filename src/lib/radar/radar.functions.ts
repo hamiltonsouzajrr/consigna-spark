@@ -496,7 +496,63 @@ export const atualizarRegistro = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const getArquivoUrl = createServerFn({ method: "POST" })
+// Marca a situação comercial de abordagem de um registro (servidor promovido).
+export const marcarAbordagem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["novo", "contatado", "proposta_enviada", "convertido", "sem_interesse"]),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ ok: true; contatado_em: string | null }> => {
+    const { supabase, userId } = context;
+    const patch: Record<string, unknown> = { status_abordagem: data.status };
+    let contatadoEm: string | null = null;
+    if (data.status === "contatado") {
+      contatadoEm = new Date().toISOString();
+      patch.contatado_em = contatadoEm;
+      patch.contatado_por = userId;
+    }
+    const { error } = await supabase.from("do_registros").update(patch as any).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true, contatado_em: contatadoEm };
+  });
+
+// Cobertura mensal de 2026: quantas edições existem e quantas foram processadas.
+export type CoberturaMes = { mes: number; total: number; processadas: number };
+
+export const getCobertura2026 = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<CoberturaMes[]> => {
+    const { data, error } = await context.supabase
+      .from("do_arquivos")
+      .select("data_publicacao,status_processamento")
+      .gte("data_publicacao", "2026-01-01")
+      .lte("data_publicacao", "2026-12-31")
+      .limit(20000);
+    if (error) throw new Error(error.message);
+    const meses: CoberturaMes[] = Array.from({ length: 6 }, (_, i) => ({
+      mes: i + 1,
+      total: 0,
+      processadas: 0,
+    }));
+    for (const row of data ?? []) {
+      const dp = String((row as any).data_publicacao ?? "");
+      const m = Number(dp.slice(5, 7));
+      if (m >= 1 && m <= 6) {
+        const item = meses[m - 1];
+        item.total += 1;
+        const st = String((row as any).status_processamento ?? "").toLowerCase();
+        if (["processed", "concluido", "concluído"].includes(st)) item.processadas += 1;
+      }
+    }
+    return meses;
+  });
+
+
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ caminho: z.string().min(1) }).parse(data))
   .handler(async ({ context, data }): Promise<{ url: string }> => {
