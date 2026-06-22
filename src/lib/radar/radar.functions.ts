@@ -98,6 +98,9 @@ export type DoRegistro = {
   potencial_financeiro: string | null;
   motivo_classificacao: string | null;
   status_revisao: string;
+  status_abordagem: string;
+  contatado_em: string | null;
+  contatado_por: string | null;
   duplicado_possivel: boolean;
   created_at: string;
 };
@@ -493,6 +496,62 @@ export const atualizarRegistro = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Marca a situação comercial de abordagem de um registro (servidor promovido).
+export const marcarAbordagem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["novo", "contatado", "proposta_enviada", "convertido", "sem_interesse"]),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ ok: true; contatado_em: string | null }> => {
+    const { supabase, userId } = context;
+    const patch: Record<string, unknown> = { status_abordagem: data.status };
+    let contatadoEm: string | null = null;
+    if (data.status === "contatado") {
+      contatadoEm = new Date().toISOString();
+      patch.contatado_em = contatadoEm;
+      patch.contatado_por = userId;
+    }
+    const { error } = await supabase.from("do_registros").update(patch as any).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true, contatado_em: contatadoEm };
+  });
+
+// Cobertura mensal de 2026: quantas edições existem e quantas foram processadas.
+export type CoberturaMes = { mes: number; total: number; processadas: number };
+
+export const getCobertura2026 = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<CoberturaMes[]> => {
+    const { data, error } = await context.supabase
+      .from("do_arquivos")
+      .select("data_publicacao,status_processamento")
+      .gte("data_publicacao", "2026-01-01")
+      .lte("data_publicacao", "2026-12-31")
+      .limit(20000);
+    if (error) throw new Error(error.message);
+    const meses: CoberturaMes[] = Array.from({ length: 6 }, (_, i) => ({
+      mes: i + 1,
+      total: 0,
+      processadas: 0,
+    }));
+    for (const row of data ?? []) {
+      const dp = String((row as any).data_publicacao ?? "");
+      const m = Number(dp.slice(5, 7));
+      if (m >= 1 && m <= 6) {
+        const item = meses[m - 1];
+        item.total += 1;
+        const st = String((row as any).status_processamento ?? "").toLowerCase();
+        if (["processed", "concluido", "concluído"].includes(st)) item.processadas += 1;
+      }
+    }
+    return meses;
+  });
+
 export const getArquivoUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ caminho: z.string().min(1) }).parse(data))
@@ -548,6 +607,7 @@ export type DashboardData = {
   promocoesConfirmadas: number;
   progressoes: number;
   pendentes: number;
+  pipeline: { oportunidadesNovas: number; emContato: number; convertidos: number; semInteresse: number };
   porTipo: { tipo: string; total: number }[];
   porData: { data: string; total: number }[];
   topOrgaos: { orgao: string; total: number }[];
@@ -561,7 +621,7 @@ export const getDashboard = createServerFn({ method: "GET" })
       supabase.from("do_arquivos").select("id", { count: "exact", head: true }),
       supabase
         .from("do_registros")
-        .select("categoria,tipo_movimentacao,data_publicacao,orgao,status_revisao")
+        .select("categoria,tipo_movimentacao,data_publicacao,orgao,status_revisao,status_abordagem,potencial_financeiro")
         .limit(20000),
     ]);
 
@@ -570,6 +630,14 @@ export const getDashboard = createServerFn({ method: "GET" })
     const promocoesConfirmadas = rows.filter((r) => norm(r.categoria) === "Promoção confirmada").length;
     const progressoes = rows.filter((r) => norm(r.categoria) === "Progressão funcional").length;
     const pendentes = rows.filter((r) => ["Novo", "Revisado"].includes(norm(r.status_revisao))).length;
+
+    const ab = (r: any) => norm((r as any).status_abordagem) || "novo";
+    const pipeline = {
+      oportunidadesNovas: rows.filter((r) => ab(r) === "novo" && norm((r as any).potencial_financeiro) === "Alto").length,
+      emContato: rows.filter((r) => ["contatado", "proposta_enviada"].includes(ab(r))).length,
+      convertidos: rows.filter((r) => ab(r) === "convertido").length,
+      semInteresse: rows.filter((r) => ab(r) === "sem_interesse").length,
+    };
 
     const tally = (arr: any[], key: (r: any) => string) => {
       const m = new Map<string, number>();
@@ -598,6 +666,7 @@ export const getDashboard = createServerFn({ method: "GET" })
       promocoesConfirmadas,
       progressoes,
       pendentes,
+      pipeline,
       porTipo,
       porData,
       topOrgaos,

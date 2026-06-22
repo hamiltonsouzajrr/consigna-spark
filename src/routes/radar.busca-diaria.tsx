@@ -17,6 +17,7 @@ import {
   marcarAlertaLido, getFontePdfUrl, extrairMes2026,
   type BuscaDiariaDashboard, type Fonte, type Alerta, type LogAutomacao, type ResultadoBuscaDTO,
 } from "@/lib/radar/diario.functions";
+import { getCobertura2026, type CoberturaMes } from "@/lib/radar/radar.functions";
 
 export const Route = createFileRoute("/radar/busca-diaria")({
   component: BuscaDiariaPage,
@@ -73,6 +74,7 @@ function BuscaDiariaPage() {
   const fnMarcarLido = useServerFn(marcarAlertaLido);
   const fnPdfUrl = useServerFn(getFontePdfUrl);
   const fnExtrairMes = useServerFn(extrairMes2026);
+  const fnCobertura = useServerFn(getCobertura2026);
 
   const [dash, setDash] = useState<BuscaDiariaDashboard | null>(null);
   const [fontes, setFontes] = useState<Fonte[]>([]);
@@ -83,17 +85,18 @@ function BuscaDiariaPage() {
   const [dataEspecifica, setDataEspecifica] = useState("");
   const [anoProgresso, setAnoProgresso] = useState<string | null>(null);
   const [pendProgresso, setPendProgresso] = useState<string | null>(null);
+  const [cobertura, setCobertura] = useState<CoberturaMes[]>([]);
 
   const carregar = useCallback(async () => {
     try {
-      const [d, f, a, l] = await Promise.all([fnDashboard(), fnFontes(), fnAlertas(), fnLogs()]);
-      setDash(d); setFontes(f); setAlertas(a); setLogs(l);
+      const [d, f, a, l, c] = await Promise.all([fnDashboard(), fnFontes(), fnAlertas(), fnLogs(), fnCobertura()]);
+      setDash(d); setFontes(f); setAlertas(a); setLogs(l); setCobertura(c);
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao carregar painel.");
     } finally {
       setLoading(false);
     }
-  }, [fnDashboard, fnFontes, fnAlertas, fnLogs]);
+  }, [fnDashboard, fnFontes, fnAlertas, fnLogs, fnCobertura]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -254,6 +257,36 @@ function BuscaDiariaPage() {
           )}
         </Card>
       </div>
+
+      {/* Cobertura 2026 */}
+      <Card className="space-y-3 p-4">
+        <div>
+          <h3 className="text-sm font-semibold">Painel de Cobertura 2026</h3>
+          <p className="text-xs text-muted-foreground">
+            Edições do Diário Oficial baixadas e processadas por mês.
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+          {MESES_2026.map((m) => {
+            const c = cobertura.find((x) => x.mes === m.n) ?? { mes: m.n, total: 0, processadas: 0 };
+            const completo = c.total > 0 && c.processadas >= c.total;
+            const parcial = c.total > 0 && c.processadas < c.total;
+            const icon = completo ? "✅" : parcial ? "⏳" : "❌";
+            const tone = completo
+              ? "border-emerald-300 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-950/30"
+              : parcial
+              ? "border-amber-300 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30"
+              : "border-border bg-muted/40";
+            return (
+              <div key={m.n} className={`rounded-lg border p-3 text-center ${tone}`}>
+                <p className="text-xs font-semibold uppercase tracking-wide">{m.nome.slice(0, 3)}</p>
+                <p className="my-1 text-2xl leading-none">{icon}</p>
+                <p className="text-[11px] text-muted-foreground">{c.processadas}/{c.total} edições</p>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
 
       {/* Ações */}
       <Card className="space-y-3 p-4">

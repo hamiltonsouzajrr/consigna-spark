@@ -12,10 +12,10 @@ import {
 import { toast } from "sonner";
 import {
   Search, Loader2, Check, X, Copy, ChevronDown, ChevronUp, ExternalLink,
-  FileSpreadsheet, FileText, FileDown,
+  FileSpreadsheet, FileText, FileDown, Phone,
 } from "lucide-react";
 import {
-  getRegistros, getArquivos, atualizarRegistro, getArquivoUrl,
+  getRegistros, getArquivos, atualizarRegistro, getArquivoUrl, marcarAbordagem,
   type DoRegistro, type DoArquivo,
 } from "@/lib/radar/radar.functions";
 
@@ -25,6 +25,31 @@ export const Route = createFileRoute("/radar/registros")({
 
 const STATUS = ["Novo", "Revisado", "Aprovado", "Ignorado", "Duplicado"];
 const POTENCIAIS = ["Alto", "Médio", "Baixo", "Ignorar"];
+
+const ABORDAGEM_OPTIONS: { value: string; label: string }[] = [
+  { value: "novo", label: "Novo" },
+  { value: "contatado", label: "Contatado" },
+  { value: "proposta_enviada", label: "Proposta enviada" },
+  { value: "convertido", label: "Convertido" },
+  { value: "sem_interesse", label: "Sem interesse" },
+];
+const ABORDAGEM_LABEL: Record<string, string> = Object.fromEntries(
+  ABORDAGEM_OPTIONS.map((o) => [o.value, o.label]),
+);
+
+function abordagemBorder(s: string): string {
+  switch (s) {
+    case "contatado":
+    case "proposta_enviada":
+      return "border-blue-400 dark:border-blue-500/60";
+    case "convertido":
+      return "border-emerald-500 dark:border-emerald-500/60";
+    case "sem_interesse":
+      return "opacity-60 border-border";
+    default:
+      return "";
+  }
+}
 
 function potencialTone(p: string): string {
   switch (p) {
@@ -86,6 +111,7 @@ function RegistrosPage() {
   const fetchRegs = useServerFn(getRegistros);
   const fetchArqs = useServerFn(getArquivos);
   const updateFn = useServerFn(atualizarRegistro);
+  const abordagemFn = useServerFn(marcarAbordagem);
   const urlFn = useServerFn(getArquivoUrl);
 
   const [list, setList] = useState<DoRegistro[]>([]);
@@ -96,9 +122,11 @@ function RegistrosPage() {
   const [orgao, setOrgao] = useState("todos");
   const [tipo, setTipo] = useState("todos");
   const [status, setStatus] = useState("todos");
+  const [abordagem, setAbordagem] = useState("todos");
   const [potencial, setPotencial] = useState("todos");
   const [data, setData] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [trechoOpen, setTrechoOpen] = useState<Set<string>>(new Set());
   const [exportFields, setExportFields] = useState<Set<string>>(
     new Set(["nome_servidor", "matricula", "cargo", "orgao", "tipo_movimentacao", "data_publicacao", "pagina", "status_revisao"]),
   );
@@ -135,7 +163,8 @@ function RegistrosPage() {
     const termDigits = term.replace(/\D/g, "");
     const isNumericTerm = term.length > 0 && /^[\d.\-\s]+$/.test(term);
     const cpfTerm = cpfQ.replace(/\D/g, "");
-    return list.filter((r) => {
+    const ab = (r: DoRegistro) => (r.status_abordagem || "novo");
+    const filtered = list.filter((r) => {
       if (term) {
         const cpfDigits = (r.cpf_parcial || "").replace(/\D/g, "");
         const nameHit = r.nome_servidor.toLowerCase().includes(term);
@@ -149,11 +178,50 @@ function RegistrosPage() {
       if (orgao !== "todos" && r.orgao !== orgao) return false;
       if (tipo !== "todos" && (r.categoria || r.tipo_movimentacao) !== tipo) return false;
       if (status !== "todos" && r.status_revisao !== status) return false;
+      if (abordagem !== "todos" && ab(r) !== abordagem) return false;
       if (potencial !== "todos" && (r.potencial_financeiro || "") !== potencial) return false;
       if (data && r.data_publicacao !== data) return false;
       return true;
     });
-  }, [list, q, cpfQ, orgao, tipo, status, potencial, data]);
+
+    // Ordenação inteligente focada em abordagem comercial:
+    // 1) Alto + novo, 2) Médio + novo, 3) demais novos, 4) já trabalhados.
+    const rank = (r: DoRegistro) => {
+      const novo = ab(r) === "novo";
+      const pot = r.potencial_financeiro || "";
+      if (novo && pot === "Alto") return 0;
+      if (novo && pot === "Médio") return 1;
+      if (novo) return 2;
+      if (ab(r) === "contatado" || ab(r) === "proposta_enviada") return 3;
+      if (ab(r) === "convertido") return 4;
+      return 5; // sem_interesse
+    };
+    return [...filtered].sort((a, b) => {
+      const ra = rank(a);
+      const rb = rank(b);
+      if (ra !== rb) return ra - rb;
+      return (b.data_publicacao || "").localeCompare(a.data_publicacao || "");
+    });
+  }, [list, q, cpfQ, orgao, tipo, status, abordagem, potencial, data]);
+
+  const setAbordagemFor = async (id: string, novo: string) => {
+    const prev = list;
+    setList((l) =>
+      l.map((r) =>
+        r.id === id
+          ? { ...r, status_abordagem: novo, contatado_em: novo === "contatado" ? new Date().toISOString() : r.contatado_em }
+          : r,
+      ),
+    );
+    try {
+      await abordagemFn({ data: { id, status: novo as any } });
+      toast.success(`Marcado como ${ABORDAGEM_LABEL[novo] ?? novo}.`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao atualizar abordagem.");
+      setList(prev);
+    }
+  };
+
 
   const setStatusFor = async (id: string, novo: string) => {
     setList((l) => l.map((r) => (r.id === id ? { ...r, status_revisao: novo } : r)));
@@ -259,6 +327,13 @@ function RegistrosPage() {
               {POTENCIAIS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={abordagem} onValueChange={setAbordagem}>
+            <SelectTrigger><SelectValue placeholder="Abordagem" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Toda abordagem</SelectItem>
+              {ABORDAGEM_OPTIONS.map((a) => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-44" />
@@ -316,44 +391,81 @@ function RegistrosPage() {
         <div className="space-y-2">
           {visible.map((r) => {
             const open = expanded === r.id;
+            const ab = r.status_abordagem || "novo";
+            const potText =
+              r.potencial_financeiro === "Alto" ? "🟢 ALTO" :
+              r.potencial_financeiro === "Médio" ? "🟡 MÉDIO" :
+              r.potencial_financeiro || "";
+            const showFullTrecho = trechoOpen.has(r.id);
             return (
-              <Card key={r.id} className="overflow-hidden">
-                <div className="flex flex-wrap items-center gap-3 p-3">
-                  <button
-                    className="flex flex-1 items-center gap-3 text-left"
-                    onClick={() => setExpanded(open ? null : r.id)}
-                  >
-                    {open ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{r.nome_servidor}</p>
-                      {r.cpf_parcial && (
-                        <p className="truncate text-xs font-semibold text-primary">CPF: {r.cpf_parcial}</p>
-                      )}
-                      <p className="truncate text-xs text-muted-foreground">
-                        {[r.orgao, r.categoria || r.tipo_movimentacao, r.cpf_parcial ? `CPF: ${r.cpf_parcial}` : ""].filter(Boolean).join(" · ")}
-                      </p>
-                    </div>
-                  </button>
-                  {r.potencial_financeiro && (
-                    <Badge className={`text-xs ${potencialTone(r.potencial_financeiro)}`}>
-                      {r.potencial_financeiro}
-                    </Badge>
-                  )}
-                  {r.data_publicacao && <Badge variant="outline" className="text-xs">{r.data_publicacao}</Badge>}
-                  {r.duplicado_possivel && <Badge className="bg-orange-500 text-white">duplicado?</Badge>}
-                  <Badge className={`text-xs ${statusTone(r.status_revisao)}`}>{r.status_revisao}</Badge>
+              <Card key={r.id} className={`overflow-hidden border-2 ${abordagemBorder(ab)}`}>
+                <div className="p-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      className="flex flex-1 items-center gap-3 text-left"
+                      onClick={() => setExpanded(open ? null : r.id)}
+                    >
+                      {open ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <span className="font-semibold">{r.nome_servidor}</span>
+                          {r.orgao && <span className="truncate text-xs text-muted-foreground">{r.orgao}</span>}
+                          {(r.categoria || r.tipo_movimentacao) && (
+                            <span className="truncate text-xs text-muted-foreground">· {r.categoria || r.tipo_movimentacao}</span>
+                          )}
+                          {r.data_publicacao && <span className="text-xs text-muted-foreground">· {r.data_publicacao}</span>}
+                        </div>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {r.cpf_parcial && <span className="font-semibold text-primary">CPF: {r.cpf_parcial}</span>}
+                          {r.cpf_parcial && r.matricula && "   "}
+                          {r.matricula && <span>Matrícula: {r.matricula}</span>}
+                        </p>
+                      </div>
+                    </button>
+                    {potText && (
+                      <Badge className={`text-xs ${potencialTone(r.potencial_financeiro || "")}`}>{potText}</Badge>
+                    )}
+                    {ab !== "novo" && (
+                      <Badge variant="outline" className="text-xs">{ABORDAGEM_LABEL[ab] ?? ab}</Badge>
+                    )}
+                    {r.duplicado_possivel && <Badge className="bg-orange-500 text-white">duplicado?</Badge>}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700"
+                      disabled={ab === "contatado"}
+                      onClick={() => setAbordagemFor(r.id, "contatado")}
+                    >
+                      <Phone className="mr-1 h-4 w-4" /> ABORDAR
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setStatusFor(r.id, "Revisado")}>
+                      <Check className="mr-1 h-4 w-4" /> REVISADO
+                    </Button>
+                    <Select value={ab} onValueChange={(v) => setAbordagemFor(r.id, v)}>
+                      <SelectTrigger className="h-8 w-[160px] text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {ABORDAGEM_OPTIONS.map((a) => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {open && (
                   <div className="border-t bg-muted/30 p-4">
-                    <div className="grid gap-2 text-sm md:grid-cols-2 lg:grid-cols-3">
-                      <Info label="Matrícula" value={r.matricula} />
-                      <Info label="CPF parcial" value={r.cpf_parcial} />
+                    <div className="grid gap-2 text-sm md:grid-cols-2">
+                      <div>🧑 <span className="text-muted-foreground">Nome:</span> <strong>{r.nome_servidor}</strong></div>
+                      <div>🪪 <span className="text-muted-foreground">CPF:</span> <strong>{r.cpf_parcial || "—"}</strong></div>
+                      <div>🏛️ <span className="text-muted-foreground">Órgão:</span> <strong>{r.orgao || "—"}</strong></div>
+                      <div>💼 <span className="text-muted-foreground">Tipo:</span> <strong>{r.categoria || r.tipo_movimentacao || "—"}</strong></div>
+                      <div>📅 <span className="text-muted-foreground">Data do ato:</span> <strong>{r.data_ato || r.data_publicacao || "—"}</strong></div>
+                      <div>🏷️ <span className="text-muted-foreground">Matrícula:</span> <strong>{r.matricula || "—"}</strong></div>
+                    </div>
+
+                    <div className="mt-3 grid gap-2 text-sm md:grid-cols-2 lg:grid-cols-3">
                       <Info label="Página" value={r.pagina} />
                       <Info label="Nº ato" value={r.numero_ato} />
-                      <Info label="Data do ato" value={r.data_ato} />
                       <Info label="Confiança IA" value={r.confianca_ia} />
-                      <Info label="Categoria" value={r.categoria} />
                       <Info label="Potencial financeiro" value={r.potencial_financeiro} />
                       <Info label="Classe" value={join(r.classe_anterior, r.classe_nova)} />
                       <Info label="Nível" value={join(r.nivel_anterior, r.nivel_novo)} />
@@ -366,8 +478,26 @@ function RegistrosPage() {
                       </div>
                     )}
                     {r.trecho_original && (
-                      <div className="mt-3 rounded-md border bg-background p-3 text-sm italic text-muted-foreground">
-                        “{r.trecho_original}”
+                      <div className="mt-3">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            setTrechoOpen((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(r.id)) next.delete(r.id);
+                              else next.add(r.id);
+                              return next;
+                            })
+                          }
+                        >
+                          {showFullTrecho ? "ocultar trecho" : "ver trecho completo"}
+                        </Button>
+                        {showFullTrecho && (
+                          <div className="mt-2 rounded-md border bg-background p-3 text-sm italic text-muted-foreground">
+                            “{r.trecho_original}”
+                          </div>
+                        )}
                       </div>
                     )}
                     <div className="mt-3 flex flex-wrap gap-2">

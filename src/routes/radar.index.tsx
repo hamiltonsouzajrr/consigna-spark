@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, FileText, Users, BadgeCheck, TrendingUp, Clock } from "lucide-react";
+import { Loader2, FileText, Users, BadgeCheck, TrendingUp, Clock, Target, Phone, CheckCircle2, XCircle } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
@@ -50,6 +50,13 @@ function DashboardPage() {
     { label: "Pendentes de revisão", value: data.pendentes, icon: Clock },
   ];
 
+  const pipeline = [
+    { label: "Oportunidades novas", value: data.pipeline.oportunidadesNovas, icon: Target, emoji: "🎯", tone: "text-emerald-600 dark:text-emerald-400" },
+    { label: "Em contato", value: data.pipeline.emContato, icon: Phone, emoji: "📞", tone: "text-blue-600 dark:text-blue-400" },
+    { label: "Convertidos", value: data.pipeline.convertidos, icon: CheckCircle2, emoji: "✅", tone: "text-emerald-600 dark:text-emerald-400" },
+    { label: "Sem interesse", value: data.pipeline.semInteresse, icon: XCircle, emoji: "❌", tone: "text-muted-foreground" },
+  ];
+
   return (
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -66,6 +73,22 @@ function DashboardPage() {
           );
         })}
       </div>
+
+      <Card className="p-4">
+        <h3 className="mb-3 text-sm font-semibold">Pipeline de Abordagem</h3>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {pipeline.map((p) => (
+            <div key={p.label} className="rounded-lg border p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{p.label}</p>
+                <span className="text-lg leading-none">{p.emoji}</span>
+              </div>
+              <p className={`mt-2 text-3xl font-bold tabular-nums ${p.tone}`}>{p.value}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
+
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="p-4">

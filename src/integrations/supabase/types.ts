@@ -258,6 +258,8 @@ export type Database = {
           classe_anterior: string | null
           classe_nova: string | null
           confianca_ia: string | null
+          contatado_em: string | null
+          contatado_por: string | null
           cpf_parcial: string | null
           created_at: string
           data_ato: string | null
@@ -275,6 +277,7 @@ export type Database = {
           potencial_financeiro: string | null
           referencia_anterior: string | null
           referencia_nova: string | null
+          status_abordagem: string
           status_revisao: string
           tipo_movimentacao: string | null
           trecho_original: string | null
@@ -287,6 +290,8 @@ export type Database = {
           classe_anterior?: string | null
           classe_nova?: string | null
           confianca_ia?: string | null
+          contatado_em?: string | null
+          contatado_por?: string | null
           cpf_parcial?: string | null
           created_at?: string
           data_ato?: string | null
@@ -304,6 +309,7 @@ export type Database = {
           potencial_financeiro?: string | null
           referencia_anterior?: string | null
           referencia_nova?: string | null
+          status_abordagem?: string
           status_revisao?: string
           tipo_movimentacao?: string | null
           trecho_original?: string | null
@@ -316,6 +322,8 @@ export type Database = {
           classe_anterior?: string | null
           classe_nova?: string | null
           confianca_ia?: string | null
+          contatado_em?: string | null
+          contatado_por?: string | null
           cpf_parcial?: string | null
           created_at?: string
           data_ato?: string | null
@@ -333,6 +341,7 @@ export type Database = {
           potencial_financeiro?: string | null
           referencia_anterior?: string | null
           referencia_nova?: string | null
+          status_abordagem?: string
           status_revisao?: string
           tipo_movimentacao?: string | null
           trecho_original?: string | null
