@@ -255,11 +255,38 @@ function BuscaDiariaPage() {
             <RefreshCw className="h-4 w-4" /> Atualizar
           </Button>
         </div>
+
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">Extração retroativa de 2026</p>
+              <p className="text-xs text-muted-foreground">
+                Percorre janeiro a junho de 2026 e baixa/processa todas as edições. Edições já
+                baixadas são puladas — pode rodar de novo para retomar.
+              </p>
+            </div>
+            <Button
+              variant="default"
+              disabled={!isAdmin || !!running}
+              onClick={extrairTodo2026}
+            >
+              {running === "ano2026" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarSearch className="h-4 w-4" />}
+              EXTRAIR TODO 2026
+            </Button>
+          </div>
+          {anoProgresso && (
+            <p className="mt-2 flex items-center gap-2 text-xs font-medium text-primary">
+              <Loader2 className="h-3 w-3 animate-spin" /> {anoProgresso}
+            </p>
+          )}
+        </div>
+
         <p className="text-xs text-muted-foreground">
           Os registros extraídos aparecem em{" "}
           <Link to="/radar/registros" className="font-medium text-primary underline">Registros</Link>, com filtros e exportação.
         </p>
       </Card>
+
 
       {/* Alertas */}
       {alertas.length > 0 && (
