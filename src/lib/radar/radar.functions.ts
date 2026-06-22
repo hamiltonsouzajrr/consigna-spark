@@ -430,12 +430,8 @@ export const salvarRegistros = createServerFn({ method: "POST" })
       })
       .eq("id", data.arquivo_id);
 
-    // Distribuição AUTOMÁTICA (round-robin) dos novos leads elegíveis.
-    try {
-      await distribuirRoundRobin(supabase);
-    } catch (e) {
-      console.error("Falha na distribuição automática de leads:", e);
-    }
+    // A distribuição automática (rodízio) acontece no banco via trigger
+    // BEFORE INSERT (atribuir_consultora_automatico) a cada registro inserido.
 
     return { inserted: rows.length, duplicados };
   });
@@ -535,36 +531,22 @@ export const marcarAbordagem = createServerFn({ method: "POST" })
 
 const POTENCIAL_RANK: Record<string, number> = { Alto: 0, Médio: 1 };
 
-export type Consultora = { id: string; nome: string; ativo: boolean };
+export type Consultora = { id: string; nome: string; ativo: boolean; total_leads_atribuidos: number };
 
-// Núcleo da distribuição round-robin. Atribui todos os leads elegíveis
-// (status novo + potencial alto/médio + sem consultora) às consultoras ATIVAS,
-// equilibrando o total acumulado de cada uma (rodízio igual).
+// Redistribui os leads PENDENTES (status novo + potencial alto/médio + sem
+// consultora) entre as consultoras ATIVAS, em rodízio (least-loaded), usando o
+// contador total_leads_atribuidos como base — espelhando a lógica do trigger.
 async function distribuirRoundRobin(supabase: any): Promise<{ atribuidos: number; consultoras: number }> {
   const { data: consultoras, error: cErr } = await supabase
     .from("radar_consultoras")
-    .select("nome")
+    .select("id,nome,total_leads_atribuidos")
     .eq("ativo", true);
   if (cErr) throw new Error(cErr.message);
 
   const ativas = (consultoras ?? [])
-    .map((c: any) => String(c.nome ?? "").trim())
-    .filter(Boolean);
+    .map((c: any) => ({ id: String(c.id), nome: String(c.nome ?? "").trim(), total: Number(c.total_leads_atribuidos ?? 0) }))
+    .filter((c: any) => c.nome);
   if (!ativas.length) return { atribuidos: 0, consultoras: 0 };
-
-  // Contagem atual por consultora (para manter o rodízio equilibrado).
-  const { data: atuais, error: aErr } = await supabase
-    .from("do_registros")
-    .select("consultora_responsavel")
-    .not("consultora_responsavel", "is", null)
-    .limit(50000);
-  if (aErr) throw new Error(aErr.message);
-  const counts = new Map<string, number>();
-  for (const nome of ativas) counts.set(nome, 0);
-  for (const row of atuais ?? []) {
-    const c = String((row as any).consultora_responsavel ?? "").trim();
-    if (counts.has(c)) counts.set(c, (counts.get(c) ?? 0) + 1);
-  }
 
   // Leads elegíveis pendentes de distribuição.
   const { data: rows, error } = await supabase
@@ -585,34 +567,38 @@ async function distribuirRoundRobin(supabase: any): Promise<{ atribuidos: number
   if (!sorted.length) return { atribuidos: 0, consultoras: ativas.length };
 
   // Atribui cada lead à consultora ativa com menor total acumulado.
-  const buckets = new Map<string, string[]>();
-  for (const nome of ativas) buckets.set(nome, []);
+  const buckets = new Map<string, string[]>(); // id -> registro ids
+  for (const c of ativas) buckets.set(c.id, []);
   for (const r of sorted) {
     let alvo = ativas[0];
-    let menor = counts.get(alvo) ?? 0;
-    for (const nome of ativas) {
-      const c = counts.get(nome) ?? 0;
-      if (c < menor) { menor = c; alvo = nome; }
-    }
-    buckets.get(alvo)!.push((r as any).id as string);
-    counts.set(alvo, menor + 1);
+    for (const c of ativas) if (c.total < alvo.total) alvo = c;
+    buckets.get(alvo.id)!.push((r as any).id as string);
+    alvo.total += 1;
   }
 
   let atribuidos = 0;
-  for (const [nome, ids] of buckets) {
+  for (const c of ativas) {
+    const ids = buckets.get(c.id)!;
     if (!ids.length) continue;
     const { error: upErr } = await supabase
       .from("do_registros")
-      .update({ consultora_responsavel: nome } as any)
+      .update({ consultora_responsavel: c.nome } as any)
       .in("id", ids);
     if (upErr) throw new Error(upErr.message);
+    const { error: cntErr } = await supabase
+      .from("radar_consultoras")
+      .update({ total_leads_atribuidos: c.total } as any)
+      .eq("id", c.id);
+    if (cntErr) throw new Error(cntErr.message);
     atribuidos += ids.length;
   }
 
   return { atribuidos, consultoras: ativas.length };
 }
 
-// Distribuição manual sob demanda (reaproveita o mesmo núcleo round-robin).
+// Redistribuição manual sob demanda dos leads pendentes (botão "Redistribuir
+// pendentes"). A distribuição normal acontece automaticamente via trigger no
+// banco a cada novo registro inserido.
 export const distribuirLeadsAutomatico = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ atribuidos: number; consultoras: number }> => {
@@ -626,7 +612,7 @@ export const getConsultoras = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<Consultora[]> => {
     const { data, error } = await context.supabase
       .from("radar_consultoras")
-      .select("id,nome,ativo")
+      .select("id,nome,ativo,total_leads_atribuidos")
       .order("nome", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []) as Consultora[];

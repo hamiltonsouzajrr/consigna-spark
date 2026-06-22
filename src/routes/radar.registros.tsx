@@ -483,8 +483,9 @@ function RegistrosPage() {
           <h3 className="text-sm font-semibold">Distribuição automática de Leads</h3>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Os leads elegíveis (novos, potencial alto/médio e ainda sem consultora) são distribuídos
-          automaticamente em rodízio igual entre as consultoras <strong>ativas</strong> a cada nova importação.
+          Cada novo registro elegível (potencial alto/médio e ainda não abordado) é atribuído
+          <strong> automaticamente</strong>, em rodízio, à consultora ativa com menos leads — direto no banco,
+          assim que o registro é inserido. Use <strong>Redistribuir pendentes</strong> para leads que ficaram sem consultora.
         </p>
 
         {/* Cadastro de consultoras */}
@@ -498,18 +499,18 @@ function RegistrosPage() {
           />
           <Button onClick={handleAddConsultora} disabled={savingConsultora} variant="secondary">
             {savingConsultora ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <UserPlus className="mr-1 h-4 w-4" />}
-            Cadastrar consultora
+            Adicionar consultora
           </Button>
           <Button onClick={distribuirAgora} disabled={atribuindo}>
             {atribuindo ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Users className="mr-1 h-4 w-4" />}
-            Distribuir agora
+            Redistribuir pendentes
           </Button>
         </div>
 
         {consultoras.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
             {consultoras.map((c) => {
-              const total = distribuicao.find((d) => d.consultora === c.nome)?.total ?? 0;
+              const total = c.total_leads_atribuidos ?? 0;
               return (
                 <div
                   key={c.id}
