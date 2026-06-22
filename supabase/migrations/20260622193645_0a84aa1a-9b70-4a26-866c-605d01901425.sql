@@ -1,0 +1,1 @@
+ALTER TABLE public.do_registros ADD COLUMN IF NOT EXISTS consultora_responsavel text DEFAULT NULL;

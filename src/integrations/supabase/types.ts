@@ -258,6 +258,7 @@ export type Database = {
           classe_anterior: string | null
           classe_nova: string | null
           confianca_ia: string | null
+          consultora_responsavel: string | null
           contatado_em: string | null
           contatado_por: string | null
           cpf_parcial: string | null
@@ -290,6 +291,7 @@ export type Database = {
           classe_anterior?: string | null
           classe_nova?: string | null
           confianca_ia?: string | null
+          consultora_responsavel?: string | null
           contatado_em?: string | null
           contatado_por?: string | null
           cpf_parcial?: string | null
@@ -322,6 +324,7 @@ export type Database = {
           classe_anterior?: string | null
           classe_nova?: string | null
           confianca_ia?: string | null
+          consultora_responsavel?: string | null
           contatado_em?: string | null
           contatado_por?: string | null
           cpf_parcial?: string | null

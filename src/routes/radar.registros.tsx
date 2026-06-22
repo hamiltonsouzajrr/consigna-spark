@@ -12,11 +12,12 @@ import {
 import { toast } from "sonner";
 import {
   Search, Loader2, Check, X, Copy, ChevronDown, ChevronUp, ExternalLink,
-  FileSpreadsheet, FileText, FileDown, Phone,
+  FileSpreadsheet, FileText, FileDown, Phone, Users, UserPlus,
 } from "lucide-react";
 import {
   getRegistros, getArquivos, atualizarRegistro, getArquivoUrl, marcarAbordagem,
-  type DoRegistro, type DoArquivo,
+  atribuirLeads, getDistribuicaoConsultoras,
+  type DoRegistro, type DoArquivo, type DistribuicaoConsultora,
 } from "@/lib/radar/radar.functions";
 
 export const Route = createFileRoute("/radar/registros")({
@@ -66,6 +67,13 @@ function potencialTone(p: string): string {
   }
 }
 
+// Formata "2026-06-17" → "17/06/2026". Aceita também data com horário.
+function fmtBR(s: string | null | undefined): string {
+  if (!s) return "";
+  const m = String(s).slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : String(s);
+}
+
 function statusTone(s: string): string {
   switch (s) {
     case "Aprovado":
@@ -113,6 +121,8 @@ function RegistrosPage() {
   const updateFn = useServerFn(atualizarRegistro);
   const abordagemFn = useServerFn(marcarAbordagem);
   const urlFn = useServerFn(getArquivoUrl);
+  const atribuirFn = useServerFn(atribuirLeads);
+  const distribuicaoFn = useServerFn(getDistribuicaoConsultoras);
 
   const [list, setList] = useState<DoRegistro[]>([]);
   const [arquivos, setArquivos] = useState<Record<string, DoArquivo>>({});
@@ -124,9 +134,13 @@ function RegistrosPage() {
   const [status, setStatus] = useState("todos");
   const [abordagem, setAbordagem] = useState("todos");
   const [potencial, setPotencial] = useState("todos");
+  const [consultora, setConsultora] = useState("todos");
   const [data, setData] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [trechoOpen, setTrechoOpen] = useState<Set<string>>(new Set());
+  const [distribuicao, setDistribuicao] = useState<DistribuicaoConsultora[]>([]);
+  const [novaConsultora, setNovaConsultora] = useState("");
+  const [atribuindo, setAtribuindo] = useState(false);
   const [exportFields, setExportFields] = useState<Set<string>>(
     new Set(["nome_servidor", "matricula", "cargo", "orgao", "tipo_movimentacao", "data_publicacao", "pagina", "status_revisao"]),
   );
@@ -135,9 +149,10 @@ function RegistrosPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const [regs, arqs] = await Promise.all([fetchRegs(), fetchArqs()]);
+      const [regs, arqs, dist] = await Promise.all([fetchRegs(), fetchArqs(), distribuicaoFn()]);
       setList(regs);
       setArquivos(Object.fromEntries(arqs.map((a) => [a.id, a])));
+      setDistribuicao(dist);
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao carregar registros.");
     } finally {
@@ -148,6 +163,35 @@ function RegistrosPage() {
     if (user) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const atribuirDez = async () => {
+    const nome = novaConsultora.trim();
+    if (!nome) {
+      toast.warning("Digite o nome da consultora.");
+      return;
+    }
+    setAtribuindo(true);
+    try {
+      const { atribuidos } = await atribuirFn({ data: { consultora: nome, quantidade: 10 } });
+      if (atribuidos === 0) {
+        toast.info("Nenhum lead disponível para atribuir.");
+      } else {
+        toast.success(`${atribuidos} lead(s) atribuído(s) a ${nome}.`);
+        setNovaConsultora("");
+      }
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao atribuir leads.");
+    } finally {
+      setAtribuindo(false);
+    }
+  };
+
+  const consultoraOptions = useMemo(
+    () => distribuicao.map((d) => d.consultora),
+    [distribuicao],
+  );
+
 
   const orgaoOptions = useMemo(
     () => Array.from(new Set(list.map((r) => r.orgao).filter(Boolean))) as string[],
@@ -180,6 +224,7 @@ function RegistrosPage() {
       if (status !== "todos" && r.status_revisao !== status) return false;
       if (abordagem !== "todos" && ab(r) !== abordagem) return false;
       if (potencial !== "todos" && (r.potencial_financeiro || "") !== potencial) return false;
+      if (consultora !== "todos" && (r.consultora_responsavel || "") !== consultora) return false;
       if (data && r.data_publicacao !== data) return false;
       return true;
     });
@@ -202,7 +247,7 @@ function RegistrosPage() {
       if (ra !== rb) return ra - rb;
       return (b.data_publicacao || "").localeCompare(a.data_publicacao || "");
     });
-  }, [list, q, cpfQ, orgao, tipo, status, abordagem, potencial, data]);
+  }, [list, q, cpfQ, orgao, tipo, status, abordagem, potencial, consultora, data]);
 
   const setAbordagemFor = async (id: string, novo: string) => {
     const prev = list;
@@ -334,6 +379,13 @@ function RegistrosPage() {
               {ABORDAGEM_OPTIONS.map((a) => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={consultora} onValueChange={setConsultora}>
+            <SelectTrigger><SelectValue placeholder="Consultora" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas as consultoras</SelectItem>
+              {consultoraOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-44" />
@@ -379,6 +431,42 @@ function RegistrosPage() {
         )}
       </Card>
 
+      {/* Distribuição de Leads */}
+      <Card className="p-4">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-semibold">Distribuição de Leads</h3>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Atribui os próximos 10 leads disponíveis (novos, potencial alto/médio e ainda sem consultora)
+          à consultora informada, sem duplicar.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Input
+            className="w-64"
+            placeholder="Nome da consultora…"
+            value={novaConsultora}
+            onChange={(e) => setNovaConsultora(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") atribuirDez(); }}
+          />
+          <Button onClick={atribuirDez} disabled={atribuindo}>
+            {atribuindo ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <UserPlus className="mr-1 h-4 w-4" />}
+            ATRIBUIR 10 LEADS
+          </Button>
+        </div>
+        {distribuicao.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {distribuicao.map((d) => (
+              <Badge key={d.consultora} variant="secondary" className="text-xs">
+                {d.consultora}: {d.total} lead{d.total === 1 ? "" : "s"}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </Card>
+
+
+
       {loading ? (
         <div className="flex min-h-[30vh] items-center justify-center text-muted-foreground">
           <Loader2 className="h-6 w-6 animate-spin" />
@@ -415,6 +503,11 @@ function RegistrosPage() {
                           )}
                           {r.data_publicacao && <span className="text-xs text-muted-foreground">· {r.data_publicacao}</span>}
                         </div>
+                        {r.data_publicacao && (
+                          <p className="mt-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                            📅 {fmtBR(r.data_publicacao)}
+                          </p>
+                        )}
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {r.cpf_parcial && <span className="font-semibold text-primary">CPF: {r.cpf_parcial}</span>}
                           {r.cpf_parcial && r.matricula && "   "}
@@ -429,6 +522,11 @@ function RegistrosPage() {
                       <Badge variant="outline" className="text-xs">{ABORDAGEM_LABEL[ab] ?? ab}</Badge>
                     )}
                     {r.duplicado_possivel && <Badge className="bg-orange-500 text-white">duplicado?</Badge>}
+                    {r.consultora_responsavel && (
+                      <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200 text-xs">
+                        <Users className="mr-1 h-3 w-3" /> {r.consultora_responsavel}
+                      </Badge>
+                    )}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <Button
@@ -453,6 +551,11 @@ function RegistrosPage() {
 
                 {open && (
                   <div className="border-t bg-muted/30 p-4">
+                    {r.data_publicacao && (
+                      <div className="mb-3 inline-flex items-center gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200">
+                        🎉 Promovido em {fmtBR(r.data_publicacao)}
+                      </div>
+                    )}
                     <div className="grid gap-2 text-sm md:grid-cols-2">
                       <div>🧑 <span className="text-muted-foreground">Nome:</span> <strong>{r.nome_servidor}</strong></div>
                       <div>🪪 <span className="text-muted-foreground">CPF:</span> <strong>{r.cpf_parcial || "—"}</strong></div>
@@ -500,6 +603,9 @@ function RegistrosPage() {
                         )}
                       </div>
                     )}
+
+                    <Roteiro nome={r.nome_servidor} data={r.data_publicacao} />
+
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setStatusFor(r.id, "Aprovado")}>
                         <Check className="mr-1 h-4 w-4" /> Aprovar
@@ -533,6 +639,54 @@ function Info({ label, value }: { label: string; value: string | null }) {
     <div>
       <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}: </span>
       <span>{value || "—"}</span>
+    </div>
+  );
+}
+
+// Roteiro de abordagem comercial fixo, exibido no card expandido.
+function Roteiro({ nome, data }: { nome: string; data: string | null }) {
+  const dataFmt = fmtBR(data);
+  const copiarNome = async () => {
+    try {
+      await navigator.clipboard.writeText(nome);
+      toast.success("Nome copiado.");
+    } catch {
+      toast.error("Não foi possível copiar.");
+    }
+  };
+  return (
+    <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900/40 dark:bg-blue-950/20">
+      <h4 className="mb-3 text-sm font-semibold">📋 Roteiro de Abordagem</h4>
+      <div className="space-y-3 text-sm">
+        <div>
+          <p className="font-semibold">PASSO 1 — Localizar no Nova Vida</p>
+          <p className="mt-1 flex flex-wrap items-center gap-1 text-muted-foreground">
+            → Abrir sistema Nova Vida e buscar pelo nome:{" "}
+            <strong className="text-foreground">{nome}</strong>
+            <Button size="sm" variant="ghost" className="h-6 px-2" onClick={copiarNome}>
+              <Copy className="h-3 w-3" />
+            </Button>
+          </p>
+          <p className="text-muted-foreground">→ Verificar estado/situação atual da pessoa</p>
+        </div>
+        <div>
+          <p className="font-semibold">PASSO 2 — Verificar margem disponível</p>
+          <p className="mt-1 text-muted-foreground">→ Checar margem consignável atual no sistema</p>
+          <p className="text-muted-foreground">
+            → Confirmar aumento de margem pela promoção de{" "}
+            <strong className="text-foreground">{dataFmt || "—"}</strong>
+          </p>
+        </div>
+        <div>
+          <p className="font-semibold">PASSO 3 — Abordar o servidor</p>
+          <p className="mt-1 text-muted-foreground">
+            → Parabenizar pela promoção: "Vi que você foi promovido(a) em {dataFmt || "—"}"
+          </p>
+          <p className="text-muted-foreground">
+            → Apresentar oferta de crédito consignado com nova margem ampliada
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
