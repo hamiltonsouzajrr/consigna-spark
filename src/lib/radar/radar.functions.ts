@@ -174,6 +174,11 @@ function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
 }
 
+function extractCpf(trecho: string): string {
+  const m = trecho.match(/CPF\s*(?:n[oº°]?\s*\.?\s*|:\s*)?(\d{3}\.?\d{3}\.?\d{3}-?\d{2})/i);
+  return m ? m[1] : "";
+}
+
 export const analisarDiarioAI = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
