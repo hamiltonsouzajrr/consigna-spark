@@ -503,6 +503,11 @@ function RegistrosPage() {
                           )}
                           {r.data_publicacao && <span className="text-xs text-muted-foreground">· {r.data_publicacao}</span>}
                         </div>
+                        {r.data_publicacao && (
+                          <p className="mt-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                            📅 {fmtBR(r.data_publicacao)}
+                          </p>
+                        )}
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {r.cpf_parcial && <span className="font-semibold text-primary">CPF: {r.cpf_parcial}</span>}
                           {r.cpf_parcial && r.matricula && "   "}
