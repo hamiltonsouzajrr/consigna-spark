@@ -14,6 +14,7 @@ import {
   analisarDiarioAI,
   criarArquivo,
   salvarRegistros,
+  SECOES_RADAR,
   type RegistroAI,
 } from "@/lib/radar/radar.functions";
 
