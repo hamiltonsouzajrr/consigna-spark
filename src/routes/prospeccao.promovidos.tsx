@@ -13,7 +13,7 @@ import {
   Award, ArrowLeft, Upload, Trash2, Plus, Save, FileText, Search, Loader2,
 } from "lucide-react";
 import {
-  getPromovidos, savePromovidos, deletePromovido, type Promovido,
+  getPromovidos, savePromovidos, deletePromovido, extractPromovidosAI, type Promovido,
 } from "@/lib/prospeccao/promovidos.functions";
 
 export const Route = createFileRoute("/prospeccao/promovidos")({
@@ -300,6 +300,7 @@ function Page() {
   const fetchAll = useServerFn(getPromovidos);
   const saveFn = useServerFn(savePromovidos);
   const delFn = useServerFn(deletePromovido);
+  const aiExtractFn = useServerFn(extractPromovidosAI);
 
   const [list, setList] = useState<Promovido[]>([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -337,13 +338,36 @@ function Page() {
     try {
       const lines = await extractPdfLines(file);
       setRawLines(lines);
-      const parsed = parseLines(lines);
-      if (parsed.length === 0) {
-        toast.warning("Nenhum CPF reconhecido no PDF. Adicione os registros manualmente.", { id: toastId });
+      const text = lines.join("\n").trim();
+      if (!text) {
+        toast.warning("Nenhum texto reconhecido no PDF. Adicione os registros manualmente.", { id: toastId });
+        setDrafts((d) => (d.length ? d : [{ nome: "", cpf: "", cargo: "" }]));
+        return;
+      }
+
+      // IA: lê o texto e deduz quem foi promovido (entende sinônimos de promoção).
+      toast.loading("Analisando promoções com IA…", { id: toastId });
+      let aiDrafts: Draft[] = [];
+      try {
+        const { pessoas } = await aiExtractFn({ data: { text } });
+        aiDrafts = pessoas.map((p) => ({
+          nome: p.nome ? titleCaseName(p.nome) : "",
+          cpf: p.cpf ? formatCpf(p.cpf) : "",
+          cargo: p.cargo ? titleCaseCargo(p.cargo) : "",
+        }));
+      } catch (aiErr: any) {
+        // Se a IA falhar, cai para o reconhecimento por heurística (regex).
+        console.error("[promovidos] IA falhou, usando heurística:", aiErr);
+        toast.message("IA indisponível — usando leitura automática simples.", { id: toastId });
+        aiDrafts = parseLines(lines);
+      }
+
+      if (aiDrafts.length === 0) {
+        toast.warning("Nenhuma promoção identificada no PDF. Adicione os registros manualmente.", { id: toastId });
         setDrafts((d) => (d.length ? d : [{ nome: "", cpf: "", cargo: "" }]));
       } else {
-        setDrafts(parsed);
-        toast.success(`${parsed.length} registro(s) extraído(s). Revise antes de salvar.`, { id: toastId });
+        setDrafts(aiDrafts);
+        toast.success(`${aiDrafts.length} promoção(ões) identificada(s). Revise antes de salvar.`, { id: toastId });
       }
     } catch (e: any) {
       console.error("[promovidos] erro ao ler PDF:", e);
@@ -354,6 +378,7 @@ function Page() {
       if (fileRef.current) fileRef.current.value = "";
     }
   };
+
 
 
   const updateDraft = (i: number, field: keyof Draft, value: string) => {
@@ -534,7 +559,7 @@ function Page() {
 
           {drafts.length === 0 && (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <FileText className="h-4 w-4" /> Importe um PDF com nome, CPF e cargo para revisar e salvar.
+              <FileText className="h-4 w-4" /> Importe um PDF (ex.: Diário Oficial). A IA lê o documento e identifica quem foi promovido ou subiu de cargo, mesmo com palavras diferentes (promoção, progressão, ascensão, nomeação para cargo superior…).
             </p>
           )}
         </Card>
