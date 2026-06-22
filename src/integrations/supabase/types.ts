@@ -110,6 +110,89 @@ export type Database = {
         }
         Relationships: []
       }
+      diario_alertas: {
+        Row: {
+          criado_em: string
+          fonte_id: string | null
+          id: string
+          lido: boolean
+          mensagem: string | null
+          severidade: string
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          criado_em?: string
+          fonte_id?: string | null
+          id?: string
+          lido?: boolean
+          mensagem?: string | null
+          severidade?: string
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          criado_em?: string
+          fonte_id?: string | null
+          id?: string
+          lido?: boolean
+          mensagem?: string | null
+          severidade?: string
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diario_alertas_fonte_id_fkey"
+            columns: ["fonte_id"]
+            isOneToOne: false
+            referencedRelation: "fontes_diario_oficial"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diario_automacao_logs: {
+        Row: {
+          arquivos_baixados: number
+          arquivos_encontrados: number
+          criado_em: string
+          detalhe: Json | null
+          duracao_ms: number
+          erros: string | null
+          executado_em: string
+          gatilho: string
+          id: string
+          registros_extraidos: number
+          url_consultada: string | null
+        }
+        Insert: {
+          arquivos_baixados?: number
+          arquivos_encontrados?: number
+          criado_em?: string
+          detalhe?: Json | null
+          duracao_ms?: number
+          erros?: string | null
+          executado_em?: string
+          gatilho?: string
+          id?: string
+          registros_extraidos?: number
+          url_consultada?: string | null
+        }
+        Update: {
+          arquivos_baixados?: number
+          arquivos_encontrados?: number
+          criado_em?: string
+          detalhe?: Json | null
+          duracao_ms?: number
+          erros?: string | null
+          executado_em?: string
+          gatilho?: string
+          id?: string
+          registros_extraidos?: number
+          url_consultada?: string | null
+        }
+        Relationships: []
+      }
       do_arquivos: {
         Row: {
           caminho_arquivo: string | null
@@ -258,6 +341,92 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "do_registros_arquivo_id_fkey"
+            columns: ["arquivo_id"]
+            isOneToOne: false
+            referencedRelation: "do_arquivos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fontes_diario_oficial: {
+        Row: {
+          arquivo_id: string | null
+          atualizado_em: string
+          caminho_arquivo: string | null
+          criado_em: string
+          criado_por: string | null
+          data_consulta: string
+          data_publicacao: string | null
+          edition_id: string | null
+          erro_processamento: string | null
+          hash_arquivo: string | null
+          id: string
+          nome_arquivo: string | null
+          numero_edicao: string | null
+          requer_ocr: boolean
+          status_download: string
+          status_processamento: string
+          suplemento: boolean
+          tipo_edicao: string | null
+          titulo: string | null
+          total_paginas: number
+          total_registros_extraidos: number
+          url_origem: string | null
+          url_pdf: string | null
+        }
+        Insert: {
+          arquivo_id?: string | null
+          atualizado_em?: string
+          caminho_arquivo?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          data_consulta?: string
+          data_publicacao?: string | null
+          edition_id?: string | null
+          erro_processamento?: string | null
+          hash_arquivo?: string | null
+          id?: string
+          nome_arquivo?: string | null
+          numero_edicao?: string | null
+          requer_ocr?: boolean
+          status_download?: string
+          status_processamento?: string
+          suplemento?: boolean
+          tipo_edicao?: string | null
+          titulo?: string | null
+          total_paginas?: number
+          total_registros_extraidos?: number
+          url_origem?: string | null
+          url_pdf?: string | null
+        }
+        Update: {
+          arquivo_id?: string | null
+          atualizado_em?: string
+          caminho_arquivo?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          data_consulta?: string
+          data_publicacao?: string | null
+          edition_id?: string | null
+          erro_processamento?: string | null
+          hash_arquivo?: string | null
+          id?: string
+          nome_arquivo?: string | null
+          numero_edicao?: string | null
+          requer_ocr?: boolean
+          status_download?: string
+          status_processamento?: string
+          suplemento?: boolean
+          tipo_edicao?: string | null
+          titulo?: string | null
+          total_paginas?: number
+          total_registros_extraidos?: number
+          url_origem?: string | null
+          url_pdf?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fontes_diario_oficial_arquivo_id_fkey"
             columns: ["arquivo_id"]
             isOneToOne: false
             referencedRelation: "do_arquivos"

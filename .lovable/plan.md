@@ -1,88 +1,83 @@
-# Radar Diário Oficial
+# Radar Diário Oficial — Busca Diária Automática (Alagoas)
 
-> Encontre promoções, progressões e movimentações de servidores em poucos segundos.
-
-Sistema para importar arquivos do Diário Oficial (PDF/TXT/HTML/DOCX), extrair texto, identificar via IA servidores promovidos, revisar manualmente, evitar duplicidades, exportar e acompanhar por dashboard. Será construído sobre a infraestrutura já existente em `/prospeccao/promovidos` (extração de PDF no navegador + IA via Lovable AI Gateway).
-
-## Estrutura de navegação
-
-Novas rotas sob `/radar` (área dedicada), reaproveitando `AppShell` e o controle de acesso já existente (`useRhAccess` / `has_role`):
+Boa notícia técnica: o site **expõe uma API JSON oficial**, então não preciso fazer scraping frágil de HTML.
 
 ```text
-/radar               Dashboard (KPIs + gráficos)
-/radar/importar      Upload + processamento de arquivos
-/radar/registros     Painel de resultados (tabela + filtros + revisão)
-/radar/arquivos      Histórico de arquivos importados
+Listar edições:  GET /apinova/api/editions/published?page=1
+  → { editions: [ { id, number, edition_type_name, suplement, publication_date } ] }
+Baixar PDF:      GET /apinova/api/editions/downloadPdf/{id}
 ```
+
+A automação roda **toda a cadeia no servidor** (Cloudflare Workers): consulta a API, baixa o PDF, extrai o texto e aplica a IA já existente (`analisarDiarioAI`, com as regras anti-falso-positivo e priorização de seções que acabamos de implementar).
+
+## Arquitetura (3 serviços)
+
+```text
+diarioCrawlerService     → consulta a API, detecta novas edições, baixa PDFs + suplementos, salva no storage
+diarioExtractionService  → extrai texto do PDF (server-side), roda IA, classifica e grava registros
+diarioSchedulerService   → orquestra a execução diária, grava logs, evita duplicidade, dispara alertas
+```
+
+Arquivos:
+- `src/lib/radar/diario-crawler.server.ts` — busca na API + download.
+- `src/lib/radar/diario-extraction.server.ts` — extração de texto (lib `unpdf`, compatível com Workers) + chamada da IA.
+- `src/lib/radar/diario-scheduler.server.ts` — pipeline completo (crawler → extração → registros → logs → alertas).
+- `src/lib/radar/diario.functions.ts` — server functions autenticadas (admin) para os botões manuais e leitura do painel.
+- `src/routes/api/public/hooks/radar-diario.ts` — endpoint chamado pelo cron diário (autenticado por `apikey`).
+
+> Limitação honesta: OCR de PDF escaneado **não** roda no agendamento (Workers não suporta Tesseract). Se um PDF vier sem texto extraível, o sistema marca a edição como "Requer OCR" e gera um alerta para o admin processar manualmente pela aba Importar (que já tem OCR no navegador).
 
 ## Banco de dados
 
-Três tabelas novas (migração com GRANTs + RLS conforme padrão):
+**`fontes_diario_oficial`** (registro de cada PDF encontrado/baixado):
+`data_consulta, data_publicacao, numero_edicao, tipo_edicao, titulo, suplemento, edition_id, url_origem, url_pdf, nome_arquivo, caminho_arquivo (storage), hash_arquivo, status_download, status_processamento, total_paginas, total_registros_extraidos, requer_ocr, erro_processamento, arquivo_id (FK→do_arquivos), criado_em, atualizado_em`
 
-**`do_arquivos`** — arquivos importados
-- nome_arquivo, tipo_arquivo, data_upload, data_publicacao, numero_edicao, orgao_detectado, caminho_arquivo (storage), status_processamento, total_registros_extraidos, total_aprovados, total_erros, uploaded_by
+Duplicidade: índice único em `(data_publicacao, numero_edicao, tipo_edicao, suplemento)` + verificação por `hash_arquivo`/`url_pdf`. Já baixado não reprocessa, exceto via botão "Reprocessar".
 
-**`do_registros`** — registros extraídos
-- arquivo_id (FK), nome_servidor, matricula, cpf_parcial, cargo, orgao, tipo_movimentacao, data_publicacao, data_ato, pagina, classe_anterior, classe_nova, nivel_anterior, nivel_novo, referencia_anterior, referencia_nova, numero_ato, trecho_original, confianca_ia, categoria, status_revisao, duplicado_possivel, created_at, updated_at
+**`diario_automacao_logs`** (log de cada execução):
+`executado_em, gatilho (cron/manual/data/intervalo), url_consultada, arquivos_encontrados, arquivos_baixados, registros_extraidos, duracao_ms, erros, detalhe(jsonb)`
 
-Perfis (Administrador / Analista / Visualizador) reusam o sistema atual de papéis (`user_roles` + `has_role`); admin = Administrador. Analista/Visualizador serão tratados como usuários autenticados (todos podem ver/revisar; só admin exclui arquivos e exporta listas grandes). Não criaremos tabela `usuarios` separada — papéis já vivem em `user_roles` (evita escalonamento de privilégio).
+**`diario_alertas`** (avisos ao admin, lidos no painel):
+`tipo, titulo, mensagem, fonte_id (FK), severidade, lido, criado_em`. Tipos: nova edição baixada, promoção confirmada encontrada, +10 registros numa edição, falha de download, site fora do ar, PDF requer OCR.
 
-**Storage**: bucket privado `diario-oficial` para guardar os arquivos originais.
+Os registros extraídos continuam indo para as tabelas existentes **`do_arquivos`/`do_registros`**, reaproveitando a aba Registros, filtros (potencial, status) e exportação já prontos.
 
-### RLS
-- `do_arquivos` / `do_registros`: SELECT/INSERT/UPDATE para `authenticated`; DELETE só admin (`has_role`); `service_role` ALL.
+RLS: leitura/edição para `authenticated`; ações destrutivas e "rodar agora" restritas a admin (`has_role`); `service_role` total.
 
-## Extração de texto (cliente)
+## Painel "Busca Diária do Diário Oficial"
 
-Reaproveita `extractPdfLines` (pdfjs + OCR tesseract). Adiciona:
-- **TXT**: leitura direta.
-- **HTML**: `DOMParser` → `innerText`.
-- **DOCX**: `mammoth` (browser build) → texto.
+Nova aba em `/radar/busca-diaria` (`src/routes/radar.busca-diaria.tsx`), adicionada ao menu do Radar.
 
-Detecção heurística no cliente: órgão (linhas com "SECRETARIA/PREFEITURA/GOVERNO…"), data de publicação (regex de datas pt-BR), número da edição ("Edição nº", "Nº ...").
+KPIs: última consulta, última edição encontrada, PDFs baixados hoje, PDFs aguardando processamento, registros encontrados hoje, promoções confirmadas, pendentes de revisão, possíveis falsos positivos.
 
-## Processamento com IA
+Ações:
+- **Rodar busca agora** (admin) — executa o pipeline para hoje.
+- **Buscar edição de data específica** (date picker).
+- **Buscar últimos 7 dias** / **Buscar últimos 30 dias**.
+- Por fonte na lista: **Reprocessar edição**, **Abrir PDF original** (URL assinada do storage).
 
-Estende `src/lib/prospeccao/promovidos.functions.ts` (ou novo `radar.functions.ts`) com `analisarDiarioAI`:
-- Usa `google/gemini-2.5-flash` via gateway, em chunks (como já feito).
-- Prompt do extrator especializado fornecido pelo usuário; retorna JSON estruturado com todos os campos, `confianca_ia`, `categoria` e `tipo_movimentacao` ("Possível promoção, precisa revisar" quando ambíguo).
-- Schema Zod enxuto (campos curtos) para evitar limite de estados do Gemini; validação/normalização em código.
+Seções: lista de edições/fontes (data, nº, tipo, suplemento, status download/processamento, nº registros), painel de alertas não lidos e histórico de logs da automação.
 
-## Fluxo de importação
+## Agendamento
 
-1. Admin envia arquivo(s) em `/radar/importar`.
-2. Cliente extrai texto + metadados (órgão, data, edição).
-3. Upload do original ao storage; cria linha em `do_arquivos`.
-4. IA analisa o texto → registros estruturados.
-5. Dedup (nome+matrícula+órgão+data+tipo) → marca `duplicado_possivel`.
-6. Insere registros com `status_revisao = 'Novo'`; atualiza contadores do arquivo.
+`pg_cron` + `pg_net` chamando `POST /api/public/hooks/radar-diario` **de segunda a sexta às 06:30** (`30 9 * * 1-5` em UTC, equivalente a 06:30 BRT). Configurado via tool de inserção (contém URL + apikey, fora de migração).
 
-## Painel de resultados `/radar/registros`
+## Boas práticas de acesso (implementadas)
+- Intervalo entre requisições (delay) ao baixar múltiplos PDFs.
+- Baixa apenas edições ainda não salvas; não repete download (checa hash/edition_id).
+- Mantém `url_origem`/`url_pdf` no histórico.
+- Reprocessamento sempre manual.
+- User-Agent e timeout definidos; se a API falhar, grava log + alerta "site fora do ar".
 
-Tabela com: Nome, Matrícula, Cargo, Órgão, Tipo, Data publicação, Página, Status, Confiança.
-- Busca por nome; filtros por órgão, data, tipo, status; ordenar por data recente.
-- Linha expansível: trecho original + dados completos + botões Aprovar / Editar / Ignorar / Marcar duplicado / Abrir arquivo original (signed URL).
-- Cores: verde aprovado, amarelo pendente, vermelho ignorado/erro.
+## Ordem de execução
+1. Migração: 3 tabelas + GRANTs + RLS + índice de duplicidade.
+2. `bun add unpdf`.
+3. Serviços server-side (crawler, extraction, scheduler) + server functions.
+4. Rota pública do cron.
+5. Painel `/radar/busca-diaria` + item no menu.
+6. Agendamento `pg_cron` (06:30, dias úteis).
+7. Verificação: rodar o pipeline manualmente uma vez e validar download + extração + registros.
 
-## Histórico `/radar/arquivos`
-Lista de arquivos com métricas (encontrados, aprovados, erros), quem enviou, botão reprocessar (re-roda IA sobre texto salvo) e excluir (admin).
-
-## Dashboard `/radar`
-KPIs (arquivos, pessoas, promoções confirmadas, progressões, pendentes) + gráficos (por data de publicação e por tipo de movimentação) usando `recharts`. Órgãos com mais movimentações.
-
-## Exportação
-`/radar/registros`: exportar seleção em CSV, Excel (`xlsx`/SheetJS) e PDF (jsPDF), com escolha de campos. Listas grandes (acima de limite) só para admin.
-
-## LGPD / segurança
-Aviso fixo no rodapé das telas do Radar:
-"Este sistema organiza informações públicas extraídas de publicações oficiais. O uso dos dados deve respeitar a LGPD, finalidade legítima, transparência e boas práticas de tratamento de dados."
-
-## Detalhes técnicos
-- Funções de servidor em `src/lib/radar/radar.functions.ts` (CRUD + IA), todas com `requireSupabaseAuth`; mutações destrutivas e export grande verificam `has_role(admin)`.
-- Upload ao storage via server function (`supabase` do usuário) ou client storage com RLS no bucket.
-- Novas libs: `mammoth` (DOCX), `xlsx` (Excel), `jspdf` (+autotable), `recharts` (se ainda não houver).
-- Fases de entrega: (1) DB + storage + importar + IA + registros básicos; (2) revisão/dedup/abrir original; (3) histórico + dashboard + exportação.
-
-## Não incluído / pressupostos
-- Reusa papéis existentes em vez de nova tabela `usuarios`.
-- Mantém a aba atual `/prospeccao/promovidos` intacta; o Radar é uma área nova e mais completa.
+## Pontos a confirmar
+- **Alertas ao admin**: começo com **alertas in-app** no painel (sino/lista). Quer também **e-mail**? Posso adicionar depois via conector de e-mail.
+- Mantém os registros nas tabelas atuais (`do_registros`) — recomendado, para reaproveitar a tela de Registros. Confirma?

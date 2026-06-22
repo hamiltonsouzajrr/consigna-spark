@@ -59,6 +59,7 @@ import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
 import { Route as RhAcessosRouteImport } from './routes/rh.acessos'
 import { Route as RadarRegistrosRouteImport } from './routes/radar.registros'
 import { Route as RadarImportarRouteImport } from './routes/radar.importar'
+import { Route as RadarBuscaDiariaRouteImport } from './routes/radar.busca-diaria'
 import { Route as RadarArquivosRouteImport } from './routes/radar.arquivos'
 import { Route as ProspeccaoRecentesRouteImport } from './routes/prospeccao.recentes'
 import { Route as ProspeccaoQualidadeRouteImport } from './routes/prospeccao.qualidade'
@@ -76,6 +77,7 @@ import { Route as RhPortalIndexRouteImport } from './routes/rh.portal.index'
 import { Route as RhPortalKpiRouteImport } from './routes/rh.portal.$kpi'
 import { Route as RhColaboradoresIdRouteImport } from './routes/rh.colaboradores.$id'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp.webhook'
+import { Route as ApiPublicHooksRadarDiarioRouteImport } from './routes/api/public/hooks/radar-diario'
 
 const WhatsappRoute = WhatsappRouteImport.update({
   id: '/whatsapp',
@@ -327,6 +329,11 @@ const RadarImportarRoute = RadarImportarRouteImport.update({
   path: '/importar',
   getParentRoute: () => RadarRoute,
 } as any)
+const RadarBuscaDiariaRoute = RadarBuscaDiariaRouteImport.update({
+  id: '/busca-diaria',
+  path: '/busca-diaria',
+  getParentRoute: () => RadarRoute,
+} as any)
 const RadarArquivosRoute = RadarArquivosRouteImport.update({
   id: '/arquivos',
   path: '/arquivos',
@@ -413,6 +420,12 @@ const ApiPublicWhatsappWebhookRoute =
     path: '/api/public/whatsapp/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksRadarDiarioRoute =
+  ApiPublicHooksRadarDiarioRouteImport.update({
+    id: '/api/public/hooks/radar-diario',
+    path: '/api/public/hooks/radar-diario',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -448,6 +461,7 @@ export interface FileRoutesByFullPath {
   '/prospeccao/qualidade': typeof ProspeccaoQualidadeRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/radar/arquivos': typeof RadarArquivosRoute
+  '/radar/busca-diaria': typeof RadarBuscaDiariaRoute
   '/radar/importar': typeof RadarImportarRoute
   '/radar/registros': typeof RadarRegistrosRoute
   '/rh/acessos': typeof RhAcessosRoute
@@ -481,6 +495,7 @@ export interface FileRoutesByFullPath {
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof RhPortalKpiRoute
   '/rh/portal/': typeof RhPortalIndexRoute
+  '/api/public/hooks/radar-diario': typeof ApiPublicHooksRadarDiarioRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -515,6 +530,7 @@ export interface FileRoutesByTo {
   '/prospeccao/qualidade': typeof ProspeccaoQualidadeRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/radar/arquivos': typeof RadarArquivosRoute
+  '/radar/busca-diaria': typeof RadarBuscaDiariaRoute
   '/radar/importar': typeof RadarImportarRoute
   '/radar/registros': typeof RadarRegistrosRoute
   '/rh/acessos': typeof RhAcessosRoute
@@ -547,6 +563,7 @@ export interface FileRoutesByTo {
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof RhPortalKpiRoute
   '/rh/portal': typeof RhPortalIndexRoute
+  '/api/public/hooks/radar-diario': typeof ApiPublicHooksRadarDiarioRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesById {
@@ -584,6 +601,7 @@ export interface FileRoutesById {
   '/prospeccao/qualidade': typeof ProspeccaoQualidadeRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
   '/radar/arquivos': typeof RadarArquivosRoute
+  '/radar/busca-diaria': typeof RadarBuscaDiariaRoute
   '/radar/importar': typeof RadarImportarRoute
   '/radar/registros': typeof RadarRegistrosRoute
   '/rh/acessos': typeof RhAcessosRoute
@@ -617,6 +635,7 @@ export interface FileRoutesById {
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof RhPortalKpiRoute
   '/rh/portal/': typeof RhPortalIndexRoute
+  '/api/public/hooks/radar-diario': typeof ApiPublicHooksRadarDiarioRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRouteTypes {
@@ -655,6 +674,7 @@ export interface FileRouteTypes {
     | '/prospeccao/qualidade'
     | '/prospeccao/recentes'
     | '/radar/arquivos'
+    | '/radar/busca-diaria'
     | '/radar/importar'
     | '/radar/registros'
     | '/rh/acessos'
@@ -688,6 +708,7 @@ export interface FileRouteTypes {
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
     | '/rh/portal/'
+    | '/api/public/hooks/radar-diario'
     | '/api/public/whatsapp/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -722,6 +743,7 @@ export interface FileRouteTypes {
     | '/prospeccao/qualidade'
     | '/prospeccao/recentes'
     | '/radar/arquivos'
+    | '/radar/busca-diaria'
     | '/radar/importar'
     | '/radar/registros'
     | '/rh/acessos'
@@ -754,6 +776,7 @@ export interface FileRouteTypes {
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
     | '/rh/portal'
+    | '/api/public/hooks/radar-diario'
     | '/api/public/whatsapp/webhook'
   id:
     | '__root__'
@@ -790,6 +813,7 @@ export interface FileRouteTypes {
     | '/prospeccao/qualidade'
     | '/prospeccao/recentes'
     | '/radar/arquivos'
+    | '/radar/busca-diaria'
     | '/radar/importar'
     | '/radar/registros'
     | '/rh/acessos'
@@ -823,6 +847,7 @@ export interface FileRouteTypes {
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
     | '/rh/portal/'
+    | '/api/public/hooks/radar-diario'
     | '/api/public/whatsapp/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -859,6 +884,7 @@ export interface RootRouteChildren {
   ProspeccaoQualidadeRoute: typeof ProspeccaoQualidadeRoute
   ProspeccaoRecentesRoute: typeof ProspeccaoRecentesRoute
   ProspeccaoIndexRoute: typeof ProspeccaoIndexRoute
+  ApiPublicHooksRadarDiarioRoute: typeof ApiPublicHooksRadarDiarioRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
@@ -1214,6 +1240,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RadarImportarRouteImport
       parentRoute: typeof RadarRoute
     }
+    '/radar/busca-diaria': {
+      id: '/radar/busca-diaria'
+      path: '/busca-diaria'
+      fullPath: '/radar/busca-diaria'
+      preLoaderRoute: typeof RadarBuscaDiariaRouteImport
+      parentRoute: typeof RadarRoute
+    }
     '/radar/arquivos': {
       id: '/radar/arquivos'
       path: '/arquivos'
@@ -1333,6 +1366,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/radar-diario': {
+      id: '/api/public/hooks/radar-diario'
+      path: '/api/public/hooks/radar-diario'
+      fullPath: '/api/public/hooks/radar-diario'
+      preLoaderRoute: typeof ApiPublicHooksRadarDiarioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1350,6 +1390,7 @@ const PositivaIaRouteWithChildren = PositivaIaRoute._addFileChildren(
 
 interface RadarRouteChildren {
   RadarArquivosRoute: typeof RadarArquivosRoute
+  RadarBuscaDiariaRoute: typeof RadarBuscaDiariaRoute
   RadarImportarRoute: typeof RadarImportarRoute
   RadarRegistrosRoute: typeof RadarRegistrosRoute
   RadarIndexRoute: typeof RadarIndexRoute
@@ -1357,6 +1398,7 @@ interface RadarRouteChildren {
 
 const RadarRouteChildren: RadarRouteChildren = {
   RadarArquivosRoute: RadarArquivosRoute,
+  RadarBuscaDiariaRoute: RadarBuscaDiariaRoute,
   RadarImportarRoute: RadarImportarRoute,
   RadarRegistrosRoute: RadarRegistrosRoute,
   RadarIndexRoute: RadarIndexRoute,
@@ -1483,6 +1525,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProspeccaoQualidadeRoute: ProspeccaoQualidadeRoute,
   ProspeccaoRecentesRoute: ProspeccaoRecentesRoute,
   ProspeccaoIndexRoute: ProspeccaoIndexRoute,
+  ApiPublicHooksRadarDiarioRoute: ApiPublicHooksRadarDiarioRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport
