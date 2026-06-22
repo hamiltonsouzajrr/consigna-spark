@@ -12,10 +12,10 @@ import {
 import { toast } from "sonner";
 import {
   Search, Loader2, Check, X, Copy, ChevronDown, ChevronUp, ExternalLink,
-  FileSpreadsheet, FileText, FileDown,
+  FileSpreadsheet, FileText, FileDown, Phone,
 } from "lucide-react";
 import {
-  getRegistros, getArquivos, atualizarRegistro, getArquivoUrl,
+  getRegistros, getArquivos, atualizarRegistro, getArquivoUrl, marcarAbordagem,
   type DoRegistro, type DoArquivo,
 } from "@/lib/radar/radar.functions";
 
@@ -25,6 +25,31 @@ export const Route = createFileRoute("/radar/registros")({
 
 const STATUS = ["Novo", "Revisado", "Aprovado", "Ignorado", "Duplicado"];
 const POTENCIAIS = ["Alto", "Médio", "Baixo", "Ignorar"];
+
+const ABORDAGEM_OPTIONS: { value: string; label: string }[] = [
+  { value: "novo", label: "Novo" },
+  { value: "contatado", label: "Contatado" },
+  { value: "proposta_enviada", label: "Proposta enviada" },
+  { value: "convertido", label: "Convertido" },
+  { value: "sem_interesse", label: "Sem interesse" },
+];
+const ABORDAGEM_LABEL: Record<string, string> = Object.fromEntries(
+  ABORDAGEM_OPTIONS.map((o) => [o.value, o.label]),
+);
+
+function abordagemBorder(s: string): string {
+  switch (s) {
+    case "contatado":
+    case "proposta_enviada":
+      return "border-blue-400 dark:border-blue-500/60";
+    case "convertido":
+      return "border-emerald-500 dark:border-emerald-500/60";
+    case "sem_interesse":
+      return "opacity-60 border-border";
+    default:
+      return "";
+  }
+}
 
 function potencialTone(p: string): string {
   switch (p) {
