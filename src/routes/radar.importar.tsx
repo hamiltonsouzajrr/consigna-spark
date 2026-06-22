@@ -239,7 +239,10 @@ function ImportarPage() {
                     <Field label="Órgão" value={r.orgao} onChange={(v) => updateReg(bi, ri, "orgao", v)} />
                     <Field label="Tipo" value={r.tipo_movimentacao} onChange={(v) => updateReg(bi, ri, "tipo_movimentacao", v)} />
                     <Field label="Categoria" value={r.categoria} onChange={(v) => updateReg(bi, ri, "categoria", v)} />
+                    <Field label="Potencial financeiro" value={r.potencial_financeiro} onChange={(v) => updateReg(bi, ri, "potencial_financeiro", v)} />
+                    <Field label="Motivo da classificação" value={r.motivo_classificacao} onChange={(v) => updateReg(bi, ri, "motivo_classificacao", v)} />
                   </div>
+
                   <div className="mt-2 flex items-center justify-between gap-3">
                     <p className="line-clamp-2 flex-1 text-xs italic text-muted-foreground">
                       {r.trecho_original || "Sem trecho original."}
