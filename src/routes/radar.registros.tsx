@@ -522,6 +522,11 @@ function RegistrosPage() {
                       <Badge variant="outline" className="text-xs">{ABORDAGEM_LABEL[ab] ?? ab}</Badge>
                     )}
                     {r.duplicado_possivel && <Badge className="bg-orange-500 text-white">duplicado?</Badge>}
+                    {r.consultora_responsavel && (
+                      <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200 text-xs">
+                        <Users className="mr-1 h-3 w-3" /> {r.consultora_responsavel}
+                      </Badge>
+                    )}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <Button
