@@ -102,6 +102,30 @@ export async function listarEdicoes(opts: {
   return out;
 }
 
+// Lista todas as edições de um mês de 2026 usando o endpoint mensal da API:
+//   GET /apinova/api/editions/published/{ano}/{mes}
+// Retorna a lista normalizada e ordenada por data (mais antiga primeiro).
+export async function listarEdicoesPorMes(opts: {
+  ano: number;
+  mes: number; // 1-12
+}): Promise<EdicaoNormalizada[]> {
+  const mes2 = String(opts.mes).padStart(2, "0");
+  const res = await fetch(`${DIARIO_API}/editions/published/${opts.ano}/${mes2}`, {
+    headers: { Accept: "application/json", "User-Agent": UA },
+    signal: AbortSignal.timeout(25000),
+  });
+  if (!res.ok) {
+    throw new Error(`Falha ao consultar edições de ${mes2}/${opts.ano} (HTTP ${res.status}).`);
+  }
+  const json = (await res.json()) as { status?: string; editions?: EdicaoApi[] };
+  const editions = json.editions ?? [];
+  const out = editions
+    .filter((e) => toYmd(e.publication_date).startsWith(`${opts.ano}-`))
+    .map(normalize);
+  out.sort((a, b) => a.data_publicacao.localeCompare(b.data_publicacao));
+  return out;
+}
+
 export type DownloadResult = {
   buffer: Uint8Array;
   hash: string;
