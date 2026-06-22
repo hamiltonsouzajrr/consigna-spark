@@ -12,11 +12,12 @@ import {
 import { toast } from "sonner";
 import {
   Search, Loader2, Check, X, Copy, ChevronDown, ChevronUp, ExternalLink,
-  FileSpreadsheet, FileText, FileDown, Phone,
+  FileSpreadsheet, FileText, FileDown, Phone, Users, UserPlus,
 } from "lucide-react";
 import {
   getRegistros, getArquivos, atualizarRegistro, getArquivoUrl, marcarAbordagem,
-  type DoRegistro, type DoArquivo,
+  atribuirLeads, getDistribuicaoConsultoras,
+  type DoRegistro, type DoArquivo, type DistribuicaoConsultora,
 } from "@/lib/radar/radar.functions";
 
 export const Route = createFileRoute("/radar/registros")({
