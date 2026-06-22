@@ -552,7 +552,7 @@ export const getCobertura2026 = createServerFn({ method: "GET" })
     return meses;
   });
 
-
+export const getArquivoUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ caminho: z.string().min(1) }).parse(data))
   .handler(async ({ context, data }): Promise<{ url: string }> => {
