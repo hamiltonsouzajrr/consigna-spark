@@ -522,6 +522,79 @@ export const marcarAbordagem = createServerFn({ method: "POST" })
     return { ok: true, contatado_em: contatadoEm };
   });
 
+// ---------------------------------------------------------------------------
+// Distribuição de leads por consultora (lotes de 10, sem duplicação)
+// ---------------------------------------------------------------------------
+
+const POTENCIAL_RANK: Record<string, number> = { Alto: 0, Médio: 1 };
+
+// Atribui os próximos N leads disponíveis (novo + alto/médio + sem consultora)
+// a uma consultora. Ordena por potencial e data de publicação.
+export const atribuirLeads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        consultora: z.string().trim().min(1).max(120),
+        quantidade: z.number().int().min(1).max(50).optional().default(10),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ atribuidos: number }> => {
+    const { supabase } = context;
+    const { data: rows, error } = await supabase
+      .from("do_registros")
+      .select("id,potencial_financeiro,data_publicacao")
+      .eq("status_abordagem", "novo")
+      .in("potencial_financeiro", ["Alto", "Médio"])
+      .is("consultora_responsavel", null)
+      .limit(2000);
+    if (error) throw new Error(error.message);
+
+    const sorted = [...(rows ?? [])].sort((a: any, b: any) => {
+      const ra = POTENCIAL_RANK[String(a.potencial_financeiro)] ?? 9;
+      const rb = POTENCIAL_RANK[String(b.potencial_financeiro)] ?? 9;
+      if (ra !== rb) return ra - rb;
+      return String(b.data_publicacao ?? "").localeCompare(String(a.data_publicacao ?? ""));
+    });
+
+    const lote = sorted.slice(0, data.quantidade).map((r: any) => r.id as string);
+    if (!lote.length) return { atribuidos: 0 };
+
+    const { error: upErr } = await supabase
+      .from("do_registros")
+      .update({ consultora_responsavel: data.consultora } as any)
+      .in("id", lote);
+    if (upErr) throw new Error(upErr.message);
+
+    return { atribuidos: lote.length };
+  });
+
+// Resumo de quantos leads cada consultora possui atribuídos.
+export type DistribuicaoConsultora = { consultora: string; total: number };
+
+export const getDistribuicaoConsultoras = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<DistribuicaoConsultora[]> => {
+    const { data, error } = await context.supabase
+      .from("do_registros")
+      .select("consultora_responsavel")
+      .not("consultora_responsavel", "is", null)
+      .limit(20000);
+    if (error) throw new Error(error.message);
+    const m = new Map<string, number>();
+    for (const row of data ?? []) {
+      const c = String((row as any).consultora_responsavel ?? "").trim();
+      if (!c) continue;
+      m.set(c, (m.get(c) ?? 0) + 1);
+    }
+    return Array.from(m.entries())
+      .map(([consultora, total]) => ({ consultora, total }))
+      .sort((a, b) => b.total - a.total);
+  });
+
+
+
 // Cobertura mensal de 2026: quantas edições existem e quantas foram processadas.
 export type CoberturaMes = { mes: number; total: number; processadas: number };
 
