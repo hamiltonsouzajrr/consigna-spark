@@ -146,6 +146,7 @@ function RegistrosPage() {
   const [distribuicao, setDistribuicao] = useState<DistribuicaoConsultora[]>([]);
   const [consultoras, setConsultoras] = useState<Consultora[]>([]);
   const [novaConsultora, setNovaConsultora] = useState("");
+  const [novaConsultoraEmail, setNovaConsultoraEmail] = useState("");
   const [savingConsultora, setSavingConsultora] = useState(false);
   const [atribuindo, setAtribuindo] = useState(false);
   const [exportFields, setExportFields] = useState<Set<string>>(
