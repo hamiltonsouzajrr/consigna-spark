@@ -85,6 +85,7 @@ function BuscaDiariaPage() {
   const [dataEspecifica, setDataEspecifica] = useState("");
   const [anoProgresso, setAnoProgresso] = useState<string | null>(null);
   const [pendProgresso, setPendProgresso] = useState<string | null>(null);
+  const [cobertura, setCobertura] = useState<CoberturaMes[]>([]);
 
   const carregar = useCallback(async () => {
     try {
