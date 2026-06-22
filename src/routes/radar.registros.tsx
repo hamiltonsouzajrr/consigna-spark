@@ -476,39 +476,75 @@ function RegistrosPage() {
         )}
       </Card>
 
-      {/* Distribuição de Leads */}
+      {/* Distribuição automática de Leads */}
       <Card className="p-4">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-semibold">Distribuição de Leads</h3>
+          <h3 className="text-sm font-semibold">Distribuição automática de Leads</h3>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Atribui os próximos 10 leads disponíveis (novos, potencial alto/médio e ainda sem consultora)
-          à consultora informada, sem duplicar.
+          Os leads elegíveis (novos, potencial alto/médio e ainda sem consultora) são distribuídos
+          automaticamente em rodízio igual entre as consultoras <strong>ativas</strong> a cada nova importação.
         </p>
+
+        {/* Cadastro de consultoras */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Input
             className="w-64"
             placeholder="Nome da consultora…"
             value={novaConsultora}
             onChange={(e) => setNovaConsultora(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") atribuirDez(); }}
+            onKeyDown={(e) => { if (e.key === "Enter") handleAddConsultora(); }}
           />
-          <Button onClick={atribuirDez} disabled={atribuindo}>
-            {atribuindo ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <UserPlus className="mr-1 h-4 w-4" />}
-            ATRIBUIR 10 LEADS
+          <Button onClick={handleAddConsultora} disabled={savingConsultora} variant="secondary">
+            {savingConsultora ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <UserPlus className="mr-1 h-4 w-4" />}
+            Cadastrar consultora
+          </Button>
+          <Button onClick={distribuirAgora} disabled={atribuindo}>
+            {atribuindo ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Users className="mr-1 h-4 w-4" />}
+            Distribuir agora
           </Button>
         </div>
-        {distribuicao.length > 0 && (
+
+        {consultoras.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
-            {distribuicao.map((d) => (
-              <Badge key={d.consultora} variant="secondary" className="text-xs">
-                {d.consultora}: {d.total} lead{d.total === 1 ? "" : "s"}
-              </Badge>
-            ))}
+            {consultoras.map((c) => {
+              const total = distribuicao.find((d) => d.consultora === c.nome)?.total ?? 0;
+              return (
+                <div
+                  key={c.id}
+                  className={`flex items-center gap-2 rounded-md border px-2 py-1 text-xs ${c.ativo ? "border-primary/40 bg-primary/5" : "border-muted bg-muted/30 opacity-60"}`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleToggleConsultora(c)}
+                    title={c.ativo ? "Ativa — clique para pausar" : "Pausada — clique para ativar"}
+                    className="flex items-center gap-1 font-medium"
+                  >
+                    <span className={`inline-block h-2 w-2 rounded-full ${c.ativo ? "bg-green-500" : "bg-muted-foreground"}`} />
+                    {c.nome}
+                  </button>
+                  <Badge variant="secondary" className="text-[10px]">{total} lead{total === 1 ? "" : "s"}</Badge>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoverConsultora(c)}
+                    title="Remover consultora"
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
+        {consultoras.length === 0 && (
+          <p className="mt-3 text-xs text-amber-600">
+            Nenhuma consultora cadastrada. Cadastre consultoras para ativar a distribuição automática.
+          </p>
+        )}
       </Card>
+
 
 
 
