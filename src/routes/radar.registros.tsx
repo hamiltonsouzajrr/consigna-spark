@@ -149,9 +149,10 @@ function RegistrosPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const [regs, arqs] = await Promise.all([fetchRegs(), fetchArqs()]);
+      const [regs, arqs, dist] = await Promise.all([fetchRegs(), fetchArqs(), distribuicaoFn()]);
       setList(regs);
       setArquivos(Object.fromEntries(arqs.map((a) => [a.id, a])));
+      setDistribuicao(dist);
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao carregar registros.");
     } finally {
@@ -162,6 +163,35 @@ function RegistrosPage() {
     if (user) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const atribuirDez = async () => {
+    const nome = novaConsultora.trim();
+    if (!nome) {
+      toast.warning("Digite o nome da consultora.");
+      return;
+    }
+    setAtribuindo(true);
+    try {
+      const { atribuidos } = await atribuirFn({ data: { consultora: nome, quantidade: 10 } });
+      if (atribuidos === 0) {
+        toast.info("Nenhum lead disponível para atribuir.");
+      } else {
+        toast.success(`${atribuidos} lead(s) atribuído(s) a ${nome}.`);
+        setNovaConsultora("");
+      }
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao atribuir leads.");
+    } finally {
+      setAtribuindo(false);
+    }
+  };
+
+  const consultoraOptions = useMemo(
+    () => distribuicao.map((d) => d.consultora),
+    [distribuicao],
+  );
+
 
   const orgaoOptions = useMemo(
     () => Array.from(new Set(list.map((r) => r.orgao).filter(Boolean))) as string[],
