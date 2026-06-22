@@ -95,6 +95,8 @@ export type DoRegistro = {
   trecho_original: string | null;
   confianca_ia: string | null;
   categoria: string | null;
+  potencial_financeiro: string | null;
+  motivo_classificacao: string | null;
   status_revisao: string;
   duplicado_possivel: boolean;
   created_at: string;
