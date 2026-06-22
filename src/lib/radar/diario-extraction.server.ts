@@ -128,7 +128,7 @@ export async function analisarTextoServidor(input: {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("IA indisponível: LOVABLE_API_KEY ausente.");
 
-  const { generateText, Output } = await import("ai");
+  const { generateText } = await import("ai");
   const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
   const gateway = createLovableAiGatewayProvider(apiKey);
   const model = gateway("google/gemini-2.5-flash");
