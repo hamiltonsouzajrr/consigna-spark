@@ -244,10 +244,11 @@ export const analisarDiarioAI = createServerFn({ method: "POST" })
         for (const r of output?.registros ?? []) {
           const nome = str(r.nome_servidor);
           if (!nome) continue;
+          const trecho = str(r.trecho_original);
           out.push({
             nome_servidor: nome,
             matricula: str(r.matricula),
-            cpf_parcial: str(r.cpf_parcial),
+            cpf_parcial: str(r.cpf_parcial) || extractCpf(trecho),
             cargo: str(r.cargo),
             orgao: str(r.orgao) || str(data.orgao),
             tipo_movimentacao: str(r.tipo_movimentacao) || "Possível promoção, precisa revisar",
