@@ -478,6 +478,7 @@ export const getMeusLeadsRadar = createServerFn({ method: "POST" })
       .from("do_registros")
       .select("*")
       .eq("consultora_responsavel", data.consultora)
+      .in("potencial_financeiro", ["Alto", "Médio"])
       .order("data_publicacao", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(5000);
