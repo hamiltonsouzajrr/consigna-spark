@@ -67,6 +67,13 @@ function potencialTone(p: string): string {
   }
 }
 
+// Formata "2026-06-17" → "17/06/2026". Aceita também data com horário.
+function fmtBR(s: string | null | undefined): string {
+  if (!s) return "";
+  const m = String(s).slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : String(s);
+}
+
 function statusTone(s: string): string {
   switch (s) {
     case "Aprovado":
