@@ -126,6 +126,7 @@ function RegistrosPage() {
   const [potencial, setPotencial] = useState("todos");
   const [data, setData] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [trechoOpen, setTrechoOpen] = useState<Set<string>>(new Set());
   const [exportFields, setExportFields] = useState<Set<string>>(
     new Set(["nome_servidor", "matricula", "cargo", "orgao", "tipo_movimentacao", "data_publicacao", "pagina", "status_revisao"]),
   );
