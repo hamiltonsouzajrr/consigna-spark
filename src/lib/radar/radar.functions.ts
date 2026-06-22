@@ -189,8 +189,9 @@ export const analisarDiarioAI = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("IA indisponível: LOVABLE_API_KEY ausente.");
 
-    const { generateText, Output } = await import("ai");
+    const { generateText } = await import("ai");
     const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
+    const { parseRegistros } = await import("./diario-extraction.server");
     const gateway = createLovableAiGatewayProvider(apiKey);
     const model = gateway("google/gemini-2.5-flash");
 
@@ -228,12 +229,12 @@ export const analisarDiarioAI = createServerFn({ method: "POST" })
 
     for (const chunk of chunks) {
       try {
-        const { output } = await generateText({
+        const { text } = await generateText({
           model,
-          output: Output.object({ schema }),
           system: SYSTEM_PROMPT,
-          prompt: `Analise o texto abaixo extraído de um Diário Oficial e retorne os servidores com movimentação funcional.${secoesHint}\n\nTexto:\n${chunk}`,
+          prompt: `Analise o texto abaixo extraído de um Diário Oficial e retorne os servidores com movimentação funcional.${secoesHint}\n\nResponda SOMENTE com JSON válido, sem markdown, no formato {"registros":[{...}]}. Se não houver nenhum servidor com movimentação, retorne {"registros":[]}.\n\nTexto:\n${chunk}`,
         });
+        const output = parseRegistros(text, schema);
         for (const r of output?.registros ?? []) {
           const nome = str(r.nome_servidor);
           if (!nome) continue;
