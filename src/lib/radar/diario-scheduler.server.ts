@@ -385,3 +385,50 @@ export async function reprocessarFonte(fonteId: string): Promise<ResultadoBusca>
 
   return res;
 }
+
+// Extrai TODAS as edições de um mês de 2026 (retroativo). Usa o endpoint mensal
+// da API. Edições já existentes são puladas (dedup), então pode ser re-executado
+// com segurança para retomar de onde parou.
+export async function executarBuscaMes(ano: number, mes: number): Promise<ResultadoBusca> {
+  const inicio = Date.now();
+  const res: ResultadoBusca = {
+    arquivos_encontrados: 0,
+    arquivos_baixados: 0,
+    registros_extraidos: 0,
+    duracao_ms: 0,
+    duplicados: 0,
+    requer_ocr: 0,
+    erros: [],
+    fontes: [],
+  };
+
+  let edicoes: EdicaoNormalizada[] = [];
+  try {
+    edicoes = await listarEdicoesPorMes({ ano, mes });
+    res.arquivos_encontrados = edicoes.length;
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    res.erros.push(`Listagem ${mes}/${ano}: ${msg}`);
+    await criarAlerta("site_fora", "Diário Oficial indisponível", `Falha ao consultar ${mes}/${ano}: ${msg}`, "erro");
+  }
+
+  for (let i = 0; i < edicoes.length; i++) {
+    await processarEdicao(edicoes[i], res, {});
+    if (i < edicoes.length - 1) await sleep(1000);
+  }
+
+  res.duracao_ms = Date.now() - inicio;
+
+  await supabaseAdmin.from("diario_automacao_logs").insert({
+    gatilho: "intervalo",
+    url_consultada: `${DIARIO_BASE}/edicoes (${String(mes).padStart(2, "0")}/${ano})`,
+    arquivos_encontrados: res.arquivos_encontrados,
+    arquivos_baixados: res.arquivos_baixados,
+    registros_extraidos: res.registros_extraidos,
+    duracao_ms: res.duracao_ms,
+    erros: res.erros.length ? res.erros.join(" | ") : null,
+    detalhe: { mes, ano, fontes: res.fontes, duplicados: res.duplicados, requer_ocr: res.requer_ocr },
+  });
+
+  return res;
+}
