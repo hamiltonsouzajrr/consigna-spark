@@ -86,6 +86,7 @@ Exemplo a classificar como HONRARIA: "Fica outorgada ao 2º Sargento BM a Medalh
 REGRAS:
 - Extraia apenas informações presentes no texto. NÃO invente dados. Deixe vazio o que não houver.
 - Sempre preserve em trecho_original o trecho exato que justifica a extração.
+- CPF (campo cpf_parcial) — extraia o número de CPF do servidor se presente no texto. Formatos aceitos: "CPF: 123.456.789-00", "CPF nº 123.456.789-00", "portador(a) do CPF 123.456.789-00". Retorne apenas os dígitos e pontuação (ex: "082.478.484-73"). Se não houver CPF no texto, retorne "".
 
 CLASSIFICAÇÃO (campo categoria) — escolha uma:
 "Promoção confirmada", "Progressão funcional", "Enquadramento", "Reenquadramento", "Mudança de classe", "Mudança de nível", "Mudança de referência", "Nomeação", "Aposentadoria", "Reserva remunerada", "Processo relacionado, precisa revisar", "Promoção publicada anteriormente, precisa localizar ato original", "Honraria, sem promoção funcional confirmada", "Falso positivo", "Informação insuficiente".
@@ -115,6 +116,13 @@ function chunkText(text: string, maxChars: number): string[] {
 }
 
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+
+// Fallback por regex: extrai o primeiro CPF presente no trecho.
+function extractCpf(trecho: string): string {
+  if (!trecho) return "";
+  const m = trecho.match(/CPF\s*(?:n[oº°]?\s*\.?\s*|:\s*)?(\d{3}\.?\d{3}\.?\d{3}-?\d{2})/i);
+  return m ? m[1] : "";
+}
 
 // Extrai o objeto JSON da resposta da IA (texto), tolerando cercas markdown e
 // texto extra ao redor. Valida com o schema e retorna { registros } ou null.
@@ -210,7 +218,7 @@ export async function analisarTextoServidor(input: {
         out.push({
           nome_servidor: nome,
           matricula: str(r.matricula),
-          cpf_parcial: str(r.cpf_parcial),
+          cpf_parcial: str(r.cpf_parcial) || extractCpf(str(r.trecho_original)),
           cargo: str(r.cargo),
           orgao: str(r.orgao) || str(input.orgao),
           tipo_movimentacao: str(r.tipo_movimentacao) || "Possível promoção, precisa revisar",
