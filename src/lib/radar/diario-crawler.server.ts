@@ -13,6 +13,9 @@ export const DIARIO_API = `${DIARIO_BASE}/apinova/api`;
 const UA =
   "Mozilla/5.0 (compatible; RadarDiarioOficial/1.0; +https://lovable.dev) AppleWebKit/537.36";
 
+// A busca diária deve usar apenas as edições do Diário Oficial do ano de 2026.
+export const ANO_ALVO = 2026;
+
 export type EdicaoApi = {
   id: number;
   number: number;
@@ -85,6 +88,8 @@ export async function listarEdicoes(opts: {
     for (const e of editions) {
       const d = toYmd(e.publication_date);
       if (d < oldestInPage) oldestInPage = d;
+      // A busca diária considera apenas edições do ano de 2026.
+      if (!d.startsWith(`${ANO_ALVO}-`)) continue;
       if (d >= opts.dateFrom && d <= opts.dateTo) out.push(normalize(e));
     }
 
