@@ -16,8 +16,9 @@ import {
 } from "lucide-react";
 import {
   getRegistros, getArquivos, atualizarRegistro, getArquivoUrl, marcarAbordagem,
-  atribuirLeads, getDistribuicaoConsultoras,
-  type DoRegistro, type DoArquivo, type DistribuicaoConsultora,
+  getDistribuicaoConsultoras, getConsultoras, adicionarConsultora,
+  toggleConsultora, removerConsultora, distribuirLeadsAutomatico,
+  type DoRegistro, type DoArquivo, type DistribuicaoConsultora, type Consultora,
 } from "@/lib/radar/radar.functions";
 
 export const Route = createFileRoute("/radar/registros")({
