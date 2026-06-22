@@ -478,6 +478,7 @@ export const getMeusLeadsRadar = createServerFn({ method: "POST" })
       .from("do_registros")
       .select("*")
       .eq("consultora_responsavel", data.consultora)
+      .in("potencial_financeiro", ["Alto", "Médio"])
       .order("data_publicacao", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(5000);
@@ -549,7 +550,7 @@ export const marcarAbordagem = createServerFn({ method: "POST" })
 
 const POTENCIAL_RANK: Record<string, number> = { Alto: 0, Médio: 1 };
 
-export type Consultora = { id: string; nome: string; ativo: boolean; total_leads_atribuidos: number };
+export type Consultora = { id: string; nome: string; email: string | null; ativo: boolean; total_leads_atribuidos: number };
 
 // Redistribui os leads PENDENTES (status novo + potencial alto/médio + sem
 // consultora) entre as consultoras ATIVAS, em rodízio (least-loaded), usando o
@@ -630,19 +631,39 @@ export const getConsultoras = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<Consultora[]> => {
     const { data, error } = await context.supabase
       .from("radar_consultoras")
-      .select("id,nome,ativo,total_leads_atribuidos")
+      .select("id,nome,email,ativo,total_leads_atribuidos")
       .order("nome", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []) as Consultora[];
   });
 
+// Identifica a consultora vinculada ao usuário logado pelo e-mail (auth.email()).
+export const getMinhaConsultora = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<Consultora | null> => {
+    const email = String((context.claims as any)?.email ?? "").trim().toLowerCase();
+    if (!email) return null;
+    const { data, error } = await context.supabase
+      .from("radar_consultoras")
+      .select("id,nome,email,ativo,total_leads_atribuidos")
+      .ilike("email", email)
+      .limit(1);
+    if (error) throw new Error(error.message);
+    return ((data ?? [])[0] as Consultora) ?? null;
+  });
+
 export const adicionarConsultora = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ nome: z.string().trim().min(1).max(120) }).parse(data))
+  .inputValidator((data) =>
+    z.object({
+      nome: z.string().trim().min(1).max(120),
+      email: z.string().trim().email().max(200).optional().or(z.literal("")),
+    }).parse(data),
+  )
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     const { error } = await context.supabase
       .from("radar_consultoras")
-      .insert({ nome: data.nome } as any);
+      .insert({ nome: data.nome, email: data.email ? data.email.toLowerCase() : null } as any);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

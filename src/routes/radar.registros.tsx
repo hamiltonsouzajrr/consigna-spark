@@ -146,6 +146,7 @@ function RegistrosPage() {
   const [distribuicao, setDistribuicao] = useState<DistribuicaoConsultora[]>([]);
   const [consultoras, setConsultoras] = useState<Consultora[]>([]);
   const [novaConsultora, setNovaConsultora] = useState("");
+  const [novaConsultoraEmail, setNovaConsultoraEmail] = useState("");
   const [savingConsultora, setSavingConsultora] = useState(false);
   const [atribuindo, setAtribuindo] = useState(false);
   const [exportFields, setExportFields] = useState<Set<string>>(
@@ -176,15 +177,17 @@ function RegistrosPage() {
 
   const handleAddConsultora = async () => {
     const nome = novaConsultora.trim();
+    const email = novaConsultoraEmail.trim();
     if (!nome) {
       toast.warning("Digite o nome da consultora.");
       return;
     }
     setSavingConsultora(true);
     try {
-      await addConsultoraFn({ data: { nome } });
+      await addConsultoraFn({ data: { nome, email } });
       toast.success(`Consultora ${nome} cadastrada.`);
       setNovaConsultora("");
+      setNovaConsultoraEmail("");
       await load();
     } catch (e: any) {
       toast.error(e?.message?.includes("duplicate") ? "Consultora já cadastrada." : (e?.message ?? "Erro ao cadastrar consultora."));
@@ -491,10 +494,18 @@ function RegistrosPage() {
         {/* Cadastro de consultoras */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Input
-            className="w-64"
+            className="w-56"
             placeholder="Nome da consultora…"
             value={novaConsultora}
             onChange={(e) => setNovaConsultora(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleAddConsultora(); }}
+          />
+          <Input
+            className="w-64"
+            type="email"
+            placeholder="E-mail de login (opcional)…"
+            value={novaConsultoraEmail}
+            onChange={(e) => setNovaConsultoraEmail(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleAddConsultora(); }}
           />
           <Button onClick={handleAddConsultora} disabled={savingConsultora} variant="secondary">
@@ -524,6 +535,7 @@ function RegistrosPage() {
                   >
                     <span className={`inline-block h-2 w-2 rounded-full ${c.ativo ? "bg-green-500" : "bg-muted-foreground"}`} />
                     {c.nome}
+                    {c.email && <span className="font-normal text-muted-foreground">· {c.email}</span>}
                   </button>
                   <Badge variant="secondary" className="text-[10px]">{total} lead{total === 1 ? "" : "s"}</Badge>
                   <button
