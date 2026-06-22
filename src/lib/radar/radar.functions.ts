@@ -468,6 +468,8 @@ export const atualizarRegistro = createServerFn({ method: "POST" })
             orgao: z.string().trim().max(300).optional(),
             tipo_movimentacao: z.string().trim().max(120).optional(),
             categoria: z.string().trim().max(120).optional(),
+            potencial_financeiro: z.string().trim().max(40).optional(),
+            motivo_classificacao: z.string().trim().max(400).optional(),
             pagina: z.string().trim().max(40).optional(),
           })
           .refine((p) => Object.keys(p).length > 0, "Nada para atualizar"),
