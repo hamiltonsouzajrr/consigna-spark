@@ -666,6 +666,7 @@ export const getDashboard = createServerFn({ method: "GET" })
       promocoesConfirmadas,
       progressoes,
       pendentes,
+      pipeline,
       porTipo,
       porData,
       topOrgaos,
