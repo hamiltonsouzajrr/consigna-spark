@@ -36,6 +36,7 @@ const navSections: NavSection[] = [
       { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: Users, badge: "leads" },
       { to: "/prospeccao/recentes", label: "Recentes Prospectados", icon: Flame },
       { to: "/prospeccao/followups", label: "Follow-ups", icon: CalendarClock, badge: "followups" },
+      { to: "/radar", label: "Radar Diário Oficial", full: "RADAR DIÁRIO OFICIAL - PROMOÇÕES E PROGRESSÕES", icon: Radar },
     ],
   },
   {
