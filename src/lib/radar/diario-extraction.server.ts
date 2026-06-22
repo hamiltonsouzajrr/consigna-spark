@@ -118,7 +118,7 @@ const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 
 // Extrai o objeto JSON da resposta da IA (texto), tolerando cercas markdown e
 // texto extra ao redor. Valida com o schema e retorna { registros } ou null.
-function parseRegistros(
+export function parseRegistros(
   text: string,
   schema: z.ZodType<{ registros: any[] }>,
 ): { registros: any[] } | null {
