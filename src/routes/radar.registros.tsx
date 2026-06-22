@@ -121,6 +121,8 @@ function RegistrosPage() {
   const updateFn = useServerFn(atualizarRegistro);
   const abordagemFn = useServerFn(marcarAbordagem);
   const urlFn = useServerFn(getArquivoUrl);
+  const atribuirFn = useServerFn(atribuirLeads);
+  const distribuicaoFn = useServerFn(getDistribuicaoConsultoras);
 
   const [list, setList] = useState<DoRegistro[]>([]);
   const [arquivos, setArquivos] = useState<Record<string, DoArquivo>>({});
@@ -132,9 +134,13 @@ function RegistrosPage() {
   const [status, setStatus] = useState("todos");
   const [abordagem, setAbordagem] = useState("todos");
   const [potencial, setPotencial] = useState("todos");
+  const [consultora, setConsultora] = useState("todos");
   const [data, setData] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [trechoOpen, setTrechoOpen] = useState<Set<string>>(new Set());
+  const [distribuicao, setDistribuicao] = useState<DistribuicaoConsultora[]>([]);
+  const [novaConsultora, setNovaConsultora] = useState("");
+  const [atribuindo, setAtribuindo] = useState(false);
   const [exportFields, setExportFields] = useState<Set<string>>(
     new Set(["nome_servidor", "matricula", "cargo", "orgao", "tipo_movimentacao", "data_publicacao", "pagina", "status_revisao"]),
   );
