@@ -98,6 +98,9 @@ export type DoRegistro = {
   potencial_financeiro: string | null;
   motivo_classificacao: string | null;
   status_revisao: string;
+  status_abordagem: string;
+  contatado_em: string | null;
+  contatado_por: string | null;
   duplicado_possivel: boolean;
   created_at: string;
 };
