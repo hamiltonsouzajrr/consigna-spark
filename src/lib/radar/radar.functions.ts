@@ -467,6 +467,24 @@ export const getRegistros = createServerFn({ method: "GET" })
     return (data ?? []) as DoRegistro[];
   });
 
+// Leads do Radar atribuídos a uma consultora específica (a consultora logada).
+// Usado na tela /prospeccao/promovidos para que cada consultora veja apenas os
+// seus próprios leads distribuídos automaticamente pelo rodízio.
+export const getMeusLeadsRadar = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ consultora: z.string().trim().min(1).max(120) }).parse(data))
+  .handler(async ({ context, data }): Promise<DoRegistro[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("do_registros")
+      .select("*")
+      .eq("consultora_responsavel", data.consultora)
+      .order("data_publicacao", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as DoRegistro[];
+  });
+
 export const atualizarRegistro = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
