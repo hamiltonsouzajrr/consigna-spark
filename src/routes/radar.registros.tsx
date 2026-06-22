@@ -247,7 +247,7 @@ function RegistrosPage() {
       if (ra !== rb) return ra - rb;
       return (b.data_publicacao || "").localeCompare(a.data_publicacao || "");
     });
-  }, [list, q, cpfQ, orgao, tipo, status, abordagem, potencial, data]);
+  }, [list, q, cpfQ, orgao, tipo, status, abordagem, potencial, consultora, data]);
 
   const setAbordagemFor = async (id: string, novo: string) => {
     const prev = list;
