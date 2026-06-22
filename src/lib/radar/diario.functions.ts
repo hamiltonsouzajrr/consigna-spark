@@ -178,7 +178,6 @@ export const getFontePdfUrl = createServerFn({ method: "POST" })
 
 // ---- Ações administrativas (executam o pipeline) ----
 
-const resultadoShape = z.object({}).passthrough();
 export type ResultadoBuscaDTO = {
   arquivos_encontrados: number;
   arquivos_baixados: number;
