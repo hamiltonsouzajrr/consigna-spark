@@ -181,6 +181,7 @@ export const analisarDiarioAI = createServerFn({ method: "POST" })
         text: z.string().min(1).max(2_000_000),
         data_publicacao: z.string().optional(),
         orgao: z.string().optional(),
+        secoes: z.array(z.string().max(120)).max(30).optional(),
       })
       .parse(data),
   )
@@ -212,8 +213,15 @@ export const analisarDiarioAI = createServerFn({ method: "POST" })
       trecho_original: z.string(),
       confianca_ia: z.string(),
       categoria: z.string(),
+      potencial_financeiro: z.string(),
+      motivo_classificacao: z.string(),
     });
     const schema = z.object({ registros: z.array(itemSchema).max(300) });
+
+    const secoes = (data.secoes ?? []).filter(Boolean);
+    const secoesHint = secoes.length
+      ? `\n\nPRIORIZE as seguintes seções do Diário Oficial (nesta ordem) e ignore conteúdo de orçamento, contratos, ICMS, licitações e particulares:\n${secoes.map((s, i) => `${i + 1}. ${s}`).join("\n")}`
+      : "";
 
     const chunks = chunkText(data.text, 24_000).slice(0, 25);
     const out: RegistroAI[] = [];
@@ -224,7 +232,7 @@ export const analisarDiarioAI = createServerFn({ method: "POST" })
           model,
           output: Output.object({ schema }),
           system: SYSTEM_PROMPT,
-          prompt: `Analise o texto abaixo extraído de um Diário Oficial e retorne os servidores com movimentação funcional.\n\nTexto:\n${chunk}`,
+          prompt: `Analise o texto abaixo extraído de um Diário Oficial e retorne os servidores com movimentação funcional.${secoesHint}\n\nTexto:\n${chunk}`,
         });
         for (const r of output?.registros ?? []) {
           const nome = str(r.nome_servidor);
@@ -249,6 +257,8 @@ export const analisarDiarioAI = createServerFn({ method: "POST" })
             trecho_original: str(r.trecho_original),
             confianca_ia: str(r.confianca_ia) || "baixa",
             categoria: str(r.categoria) || "Possível promoção, precisa revisar",
+            potencial_financeiro: str(r.potencial_financeiro) || "Médio",
+            motivo_classificacao: str(r.motivo_classificacao),
           });
         }
       } catch (e: any) {
