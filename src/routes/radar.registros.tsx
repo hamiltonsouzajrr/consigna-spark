@@ -162,7 +162,8 @@ function RegistrosPage() {
     const termDigits = term.replace(/\D/g, "");
     const isNumericTerm = term.length > 0 && /^[\d.\-\s]+$/.test(term);
     const cpfTerm = cpfQ.replace(/\D/g, "");
-    return list.filter((r) => {
+    const ab = (r: DoRegistro) => (r.status_abordagem || "novo");
+    const filtered = list.filter((r) => {
       if (term) {
         const cpfDigits = (r.cpf_parcial || "").replace(/\D/g, "");
         const nameHit = r.nome_servidor.toLowerCase().includes(term);
@@ -176,11 +177,50 @@ function RegistrosPage() {
       if (orgao !== "todos" && r.orgao !== orgao) return false;
       if (tipo !== "todos" && (r.categoria || r.tipo_movimentacao) !== tipo) return false;
       if (status !== "todos" && r.status_revisao !== status) return false;
+      if (abordagem !== "todos" && ab(r) !== abordagem) return false;
       if (potencial !== "todos" && (r.potencial_financeiro || "") !== potencial) return false;
       if (data && r.data_publicacao !== data) return false;
       return true;
     });
-  }, [list, q, cpfQ, orgao, tipo, status, potencial, data]);
+
+    // Ordenação inteligente focada em abordagem comercial:
+    // 1) Alto + novo, 2) Médio + novo, 3) demais novos, 4) já trabalhados.
+    const rank = (r: DoRegistro) => {
+      const novo = ab(r) === "novo";
+      const pot = r.potencial_financeiro || "";
+      if (novo && pot === "Alto") return 0;
+      if (novo && pot === "Médio") return 1;
+      if (novo) return 2;
+      if (ab(r) === "contatado" || ab(r) === "proposta_enviada") return 3;
+      if (ab(r) === "convertido") return 4;
+      return 5; // sem_interesse
+    };
+    return [...filtered].sort((a, b) => {
+      const ra = rank(a);
+      const rb = rank(b);
+      if (ra !== rb) return ra - rb;
+      return (b.data_publicacao || "").localeCompare(a.data_publicacao || "");
+    });
+  }, [list, q, cpfQ, orgao, tipo, status, abordagem, potencial, data]);
+
+  const setAbordagemFor = async (id: string, novo: string) => {
+    const prev = list;
+    setList((l) =>
+      l.map((r) =>
+        r.id === id
+          ? { ...r, status_abordagem: novo, contatado_em: novo === "contatado" ? new Date().toISOString() : r.contatado_em }
+          : r,
+      ),
+    );
+    try {
+      await abordagemFn({ data: { id, status: novo as any } });
+      toast.success(`Marcado como ${ABORDAGEM_LABEL[novo] ?? novo}.`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao atualizar abordagem.");
+      setList(prev);
+    }
+  };
+
 
   const setStatusFor = async (id: string, novo: string) => {
     setList((l) => l.map((r) => (r.id === id ? { ...r, status_revisao: novo } : r)));
