@@ -1102,6 +1102,7 @@ export type Database = {
           created_at: string
           id: string
           nome: string
+          total_leads_atribuidos: number
           updated_at: string
         }
         Insert: {
@@ -1109,6 +1110,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome: string
+          total_leads_atribuidos?: number
           updated_at?: string
         }
         Update: {
@@ -1116,6 +1118,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome?: string
+          total_leads_atribuidos?: number
           updated_at?: string
         }
         Relationships: []
