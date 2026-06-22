@@ -82,6 +82,7 @@ function BuscaDiariaPage() {
   const [running, setRunning] = useState<string | null>(null);
   const [dataEspecifica, setDataEspecifica] = useState("");
   const [anoProgresso, setAnoProgresso] = useState<string | null>(null);
+  const [pendProgresso, setPendProgresso] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     try {
