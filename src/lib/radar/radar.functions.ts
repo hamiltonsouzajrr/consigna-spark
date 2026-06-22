@@ -137,6 +137,7 @@ Exemplo a classificar como HONRARIA (não promoção): "Fica outorgada ao 2º Sa
 REGRAS:
 - Extraia apenas informações presentes no texto. NÃO invente dados. Deixe vazio o que não houver.
 - Sempre preserve em trecho_original o trecho exato que justifica a extração.
+- CPF (campo cpf_parcial) — extraia o número de CPF do servidor se presente no texto. Formatos aceitos: "CPF: 123.456.789-00", "CPF nº 123.456.789-00", "portador(a) do CPF 123.456.789-00". Retorne apenas os dígitos e pontuação (ex: "082.478.484-73"). Se não houver CPF no texto, retorne "".
 
 CLASSIFICAÇÃO (campo categoria) — escolha uma:
 "Promoção confirmada", "Progressão funcional", "Enquadramento", "Mudança de cargo", "Nomeação", "Possível promoção, precisa revisar", "Processo relacionado, precisa revisar", "Promoção publicada anteriormente, precisa localizar ato original", "Honraria, sem promoção funcional confirmada", "Informação insuficiente".
@@ -171,6 +172,11 @@ function chunkText(text: string, maxChars: number): string[] {
 
 function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
+}
+
+function extractCpf(trecho: string): string {
+  const m = trecho.match(/CPF\s*(?:n[oº°]?\s*\.?\s*|:\s*)?(\d{3}\.?\d{3}\.?\d{3}-?\d{2})/i);
+  return m ? m[1] : "";
 }
 
 export const analisarDiarioAI = createServerFn({ method: "POST" })
@@ -238,10 +244,11 @@ export const analisarDiarioAI = createServerFn({ method: "POST" })
         for (const r of output?.registros ?? []) {
           const nome = str(r.nome_servidor);
           if (!nome) continue;
+          const trecho = str(r.trecho_original);
           out.push({
             nome_servidor: nome,
             matricula: str(r.matricula),
-            cpf_parcial: str(r.cpf_parcial),
+            cpf_parcial: str(r.cpf_parcial) || extractCpf(trecho),
             cargo: str(r.cargo),
             orgao: str(r.orgao) || str(data.orgao),
             tipo_movimentacao: str(r.tipo_movimentacao) || "Possível promoção, precisa revisar",

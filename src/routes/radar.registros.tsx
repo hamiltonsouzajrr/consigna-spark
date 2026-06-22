@@ -92,6 +92,7 @@ function RegistrosPage() {
   const [arquivos, setArquivos] = useState<Record<string, DoArquivo>>({});
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [cpfQ, setCpfQ] = useState("");
   const [orgao, setOrgao] = useState("todos");
   const [tipo, setTipo] = useState("todos");
   const [status, setStatus] = useState("todos");
@@ -131,8 +132,20 @@ function RegistrosPage() {
 
   const visible = useMemo(() => {
     const term = q.trim().toLowerCase();
+    const termDigits = term.replace(/\D/g, "");
+    const isNumericTerm = term.length > 0 && /^[\d.\-\s]+$/.test(term);
+    const cpfTerm = cpfQ.replace(/\D/g, "");
     return list.filter((r) => {
-      if (term && !r.nome_servidor.toLowerCase().includes(term)) return false;
+      if (term) {
+        const cpfDigits = (r.cpf_parcial || "").replace(/\D/g, "");
+        const nameHit = r.nome_servidor.toLowerCase().includes(term);
+        const cpfHit = isNumericTerm && termDigits.length > 0 && cpfDigits.includes(termDigits);
+        if (!nameHit && !cpfHit) return false;
+      }
+      if (cpfTerm) {
+        const cpfDigits = (r.cpf_parcial || "").replace(/\D/g, "");
+        if (!cpfDigits.includes(cpfTerm)) return false;
+      }
       if (orgao !== "todos" && r.orgao !== orgao) return false;
       if (tipo !== "todos" && (r.categoria || r.tipo_movimentacao) !== tipo) return false;
       if (status !== "todos" && r.status_revisao !== status) return false;
@@ -140,7 +153,7 @@ function RegistrosPage() {
       if (data && r.data_publicacao !== data) return false;
       return true;
     });
-  }, [list, q, orgao, tipo, status, potencial, data]);
+  }, [list, q, cpfQ, orgao, tipo, status, potencial, data]);
 
   const setStatusFor = async (id: string, novo: string) => {
     setList((l) => l.map((r) => (r.id === id ? { ...r, status_revisao: novo } : r)));
@@ -209,10 +222,14 @@ function RegistrosPage() {
   return (
     <div className="space-y-4">
       <Card className="p-4">
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-6">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
           <div className="relative lg:col-span-2">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-9" placeholder="Buscar por nome…" value={q} onChange={(e) => setQ(e.target.value)} />
+            <Input className="pl-9" placeholder="Buscar por nome ou CPF…" value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
+          <div className="relative lg:col-span-2">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input className="pl-9" placeholder="Filtrar por CPF…" value={cpfQ} onChange={(e) => setCpfQ(e.target.value)} />
           </div>
           <Select value={orgao} onValueChange={setOrgao}>
             <SelectTrigger><SelectValue placeholder="Órgão" /></SelectTrigger>
@@ -309,8 +326,11 @@ function RegistrosPage() {
                     {open ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{r.nome_servidor}</p>
+                      {r.cpf_parcial && (
+                        <p className="truncate text-xs font-semibold text-primary">CPF: {r.cpf_parcial}</p>
+                      )}
                       <p className="truncate text-xs text-muted-foreground">
-                        {[r.cargo, r.orgao, r.categoria || r.tipo_movimentacao].filter(Boolean).join(" · ")}
+                        {[r.orgao, r.categoria || r.tipo_movimentacao, r.cpf_parcial ? `CPF: ${r.cpf_parcial}` : ""].filter(Boolean).join(" · ")}
                       </p>
                     </div>
                   </button>

@@ -82,6 +82,7 @@ function BuscaDiariaPage() {
   const [running, setRunning] = useState<string | null>(null);
   const [dataEspecifica, setDataEspecifica] = useState("");
   const [anoProgresso, setAnoProgresso] = useState<string | null>(null);
+  const [pendProgresso, setPendProgresso] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     try {
@@ -154,6 +155,45 @@ function BuscaDiariaPage() {
       if (total.erros.length) toast.error(`${total.erros.length} erro(s) durante a extração do ano.`);
     } finally {
       setAnoProgresso(null);
+      setRunning(null);
+    }
+  };
+
+  // Processa todos os PDFs já baixados que ainda estão aguardando análise.
+  // Percorre fonte por fonte (cada uma é uma requisição) e mostra o progresso.
+  const processarPendentes = async () => {
+    const pend = fontes.filter(
+      (f) =>
+        f.caminho_arquivo &&
+        ["pendente", "processando", "requer_ocr", "erro"].includes(
+          (f.status_processamento ?? "").toLowerCase(),
+        ),
+    );
+    if (!pend.length) {
+      toast.info("Nenhum arquivo pendente para processar.");
+      return;
+    }
+    setRunning("pendentes");
+    let ok = 0;
+    let registros = 0;
+    const erros: string[] = [];
+    try {
+      for (let i = 0; i < pend.length; i++) {
+        setPendProgresso(`Processando ${i + 1} de ${pend.length}…`);
+        try {
+          const r = await fnReprocessar({ data: { id: pend[i].id } });
+          registros += r.registros_extraidos;
+          erros.push(...r.erros);
+          ok++;
+        } catch (e: any) {
+          erros.push(`${pend[i].numero_edicao ?? pend[i].id}: ${e?.message ?? "falha"}`);
+        }
+        await carregar();
+      }
+      toast.success(`Processados ${ok}/${pend.length} arquivo(s), ${registros} registro(s) extraído(s).`);
+      if (erros.length) toast.error(`${erros.length} erro(s) durante o processamento.`);
+    } finally {
+      setPendProgresso(null);
       setRunning(null);
     }
   };
@@ -251,10 +291,28 @@ function BuscaDiariaPage() {
               Buscar data
             </Button>
           </div>
+          <Button
+            variant="secondary"
+            disabled={!isAdmin || !!running}
+            onClick={processarPendentes}
+            title="Processa todos os PDFs já baixados que ainda não foram analisados"
+          >
+            {running === "pendentes" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ListChecks className="h-4 w-4" />}
+            PROCESSAR PENDENTES
+            {(dash?.aguardandoProcessamento ?? 0) > 0 && (
+              <Badge variant="outline" className="ml-1">{dash?.aguardandoProcessamento}</Badge>
+            )}
+          </Button>
           <Button variant="ghost" disabled={!!running} onClick={carregar}>
             <RefreshCw className="h-4 w-4" /> Atualizar
           </Button>
         </div>
+        {pendProgresso && (
+          <p className="flex items-center gap-2 text-xs font-medium text-primary">
+            <Loader2 className="h-3 w-3 animate-spin" /> {pendProgresso}
+          </p>
+        )}
+
 
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
