@@ -291,10 +291,28 @@ function BuscaDiariaPage() {
               Buscar data
             </Button>
           </div>
+          <Button
+            variant="secondary"
+            disabled={!isAdmin || !!running}
+            onClick={processarPendentes}
+            title="Processa todos os PDFs já baixados que ainda não foram analisados"
+          >
+            {running === "pendentes" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ListChecks className="h-4 w-4" />}
+            PROCESSAR PENDENTES
+            {(dash?.aguardandoProcessamento ?? 0) > 0 && (
+              <Badge variant="outline" className="ml-1">{dash?.aguardandoProcessamento}</Badge>
+            )}
+          </Button>
           <Button variant="ghost" disabled={!!running} onClick={carregar}>
             <RefreshCw className="h-4 w-4" /> Atualizar
           </Button>
         </div>
+        {pendProgresso && (
+          <p className="flex items-center gap-2 text-xs font-medium text-primary">
+            <Loader2 className="h-3 w-3 animate-spin" /> {pendProgresso}
+          </p>
+        )}
+
 
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
