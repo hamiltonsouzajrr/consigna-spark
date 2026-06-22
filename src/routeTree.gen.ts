@@ -17,6 +17,7 @@ import { Route as ServidoresSemAcessoRouteImport } from './routes/servidores-sem
 import { Route as SafeConsigRouteImport } from './routes/safe-consig'
 import { Route as RhRouteImport } from './routes/rh'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RadarRouteImport } from './routes/radar'
 import { Route as QrcodesRouteImport } from './routes/qrcodes'
 import { Route as PositivaIaRouteImport } from './routes/positiva-ia'
 import { Route as PesquisasRouteImport } from './routes/pesquisas'
@@ -29,6 +30,7 @@ import { Route as CalculadoraAlRouteImport } from './routes/calculadora-al'
 import { Route as AlagoasRouteImport } from './routes/alagoas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RhIndexRouteImport } from './routes/rh.index'
+import { Route as RadarIndexRouteImport } from './routes/radar.index'
 import { Route as ProspeccaoIndexRouteImport } from './routes/prospeccao.index'
 import { Route as RhTurnoverRouteImport } from './routes/rh.turnover'
 import { Route as RhTreinamentosRouteImport } from './routes/rh.treinamentos'
@@ -55,6 +57,9 @@ import { Route as RhCargosRouteImport } from './routes/rh.cargos'
 import { Route as RhBancoHorasRouteImport } from './routes/rh.banco-horas'
 import { Route as RhAvaliacoesRouteImport } from './routes/rh.avaliacoes'
 import { Route as RhAcessosRouteImport } from './routes/rh.acessos'
+import { Route as RadarRegistrosRouteImport } from './routes/radar.registros'
+import { Route as RadarImportarRouteImport } from './routes/radar.importar'
+import { Route as RadarArquivosRouteImport } from './routes/radar.arquivos'
 import { Route as ProspeccaoRecentesRouteImport } from './routes/prospeccao.recentes'
 import { Route as ProspeccaoQualidadeRouteImport } from './routes/prospeccao.qualidade'
 import { Route as ProspeccaoPromovidosRouteImport } from './routes/prospeccao.promovidos'
@@ -110,6 +115,11 @@ const RhRoute = RhRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RadarRoute = RadarRouteImport.update({
+  id: '/radar',
+  path: '/radar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QrcodesRoute = QrcodesRouteImport.update({
@@ -171,6 +181,11 @@ const RhIndexRoute = RhIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => RhRoute,
+} as any)
+const RadarIndexRoute = RadarIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RadarRoute,
 } as any)
 const ProspeccaoIndexRoute = ProspeccaoIndexRouteImport.update({
   id: '/prospeccao/',
@@ -302,6 +317,21 @@ const RhAcessosRoute = RhAcessosRouteImport.update({
   path: '/acessos',
   getParentRoute: () => RhRoute,
 } as any)
+const RadarRegistrosRoute = RadarRegistrosRouteImport.update({
+  id: '/registros',
+  path: '/registros',
+  getParentRoute: () => RadarRoute,
+} as any)
+const RadarImportarRoute = RadarImportarRouteImport.update({
+  id: '/importar',
+  path: '/importar',
+  getParentRoute: () => RadarRoute,
+} as any)
+const RadarArquivosRoute = RadarArquivosRouteImport.update({
+  id: '/arquivos',
+  path: '/arquivos',
+  getParentRoute: () => RadarRoute,
+} as any)
 const ProspeccaoRecentesRoute = ProspeccaoRecentesRouteImport.update({
   id: '/prospeccao/recentes',
   path: '/prospeccao/recentes',
@@ -396,6 +426,7 @@ export interface FileRoutesByFullPath {
   '/pesquisas': typeof PesquisasRoute
   '/positiva-ia': typeof PositivaIaRouteWithChildren
   '/qrcodes': typeof QrcodesRoute
+  '/radar': typeof RadarRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/rh': typeof RhRouteWithChildren
   '/safe-consig': typeof SafeConsigRoute
@@ -416,6 +447,9 @@ export interface FileRoutesByFullPath {
   '/prospeccao/promovidos': typeof ProspeccaoPromovidosRoute
   '/prospeccao/qualidade': typeof ProspeccaoQualidadeRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
+  '/radar/arquivos': typeof RadarArquivosRoute
+  '/radar/importar': typeof RadarImportarRoute
+  '/radar/registros': typeof RadarRegistrosRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
@@ -442,6 +476,7 @@ export interface FileRoutesByFullPath {
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/turnover': typeof RhTurnoverRoute
   '/prospeccao/': typeof ProspeccaoIndexRoute
+  '/radar/': typeof RadarIndexRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof RhPortalKpiRoute
@@ -479,6 +514,9 @@ export interface FileRoutesByTo {
   '/prospeccao/promovidos': typeof ProspeccaoPromovidosRoute
   '/prospeccao/qualidade': typeof ProspeccaoQualidadeRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
+  '/radar/arquivos': typeof RadarArquivosRoute
+  '/radar/importar': typeof RadarImportarRoute
+  '/radar/registros': typeof RadarRegistrosRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
@@ -504,6 +542,7 @@ export interface FileRoutesByTo {
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/turnover': typeof RhTurnoverRoute
   '/prospeccao': typeof ProspeccaoIndexRoute
+  '/radar': typeof RadarIndexRoute
   '/rh': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof RhPortalKpiRoute
@@ -523,6 +562,7 @@ export interface FileRoutesById {
   '/pesquisas': typeof PesquisasRoute
   '/positiva-ia': typeof PositivaIaRouteWithChildren
   '/qrcodes': typeof QrcodesRoute
+  '/radar': typeof RadarRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/rh': typeof RhRouteWithChildren
   '/safe-consig': typeof SafeConsigRoute
@@ -543,6 +583,9 @@ export interface FileRoutesById {
   '/prospeccao/promovidos': typeof ProspeccaoPromovidosRoute
   '/prospeccao/qualidade': typeof ProspeccaoQualidadeRoute
   '/prospeccao/recentes': typeof ProspeccaoRecentesRoute
+  '/radar/arquivos': typeof RadarArquivosRoute
+  '/radar/importar': typeof RadarImportarRoute
+  '/radar/registros': typeof RadarRegistrosRoute
   '/rh/acessos': typeof RhAcessosRoute
   '/rh/avaliacoes': typeof RhAvaliacoesRoute
   '/rh/banco-horas': typeof RhBancoHorasRoute
@@ -569,6 +612,7 @@ export interface FileRoutesById {
   '/rh/treinamentos': typeof RhTreinamentosRoute
   '/rh/turnover': typeof RhTurnoverRoute
   '/prospeccao/': typeof ProspeccaoIndexRoute
+  '/radar/': typeof RadarIndexRoute
   '/rh/': typeof RhIndexRoute
   '/rh/colaboradores/$id': typeof RhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof RhPortalKpiRoute
@@ -589,6 +633,7 @@ export interface FileRouteTypes {
     | '/pesquisas'
     | '/positiva-ia'
     | '/qrcodes'
+    | '/radar'
     | '/reset-password'
     | '/rh'
     | '/safe-consig'
@@ -609,6 +654,9 @@ export interface FileRouteTypes {
     | '/prospeccao/promovidos'
     | '/prospeccao/qualidade'
     | '/prospeccao/recentes'
+    | '/radar/arquivos'
+    | '/radar/importar'
+    | '/radar/registros'
     | '/rh/acessos'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
@@ -635,6 +683,7 @@ export interface FileRouteTypes {
     | '/rh/treinamentos'
     | '/rh/turnover'
     | '/prospeccao/'
+    | '/radar/'
     | '/rh/'
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
@@ -672,6 +721,9 @@ export interface FileRouteTypes {
     | '/prospeccao/promovidos'
     | '/prospeccao/qualidade'
     | '/prospeccao/recentes'
+    | '/radar/arquivos'
+    | '/radar/importar'
+    | '/radar/registros'
     | '/rh/acessos'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
@@ -697,6 +749,7 @@ export interface FileRouteTypes {
     | '/rh/treinamentos'
     | '/rh/turnover'
     | '/prospeccao'
+    | '/radar'
     | '/rh'
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
@@ -715,6 +768,7 @@ export interface FileRouteTypes {
     | '/pesquisas'
     | '/positiva-ia'
     | '/qrcodes'
+    | '/radar'
     | '/reset-password'
     | '/rh'
     | '/safe-consig'
@@ -735,6 +789,9 @@ export interface FileRouteTypes {
     | '/prospeccao/promovidos'
     | '/prospeccao/qualidade'
     | '/prospeccao/recentes'
+    | '/radar/arquivos'
+    | '/radar/importar'
+    | '/radar/registros'
     | '/rh/acessos'
     | '/rh/avaliacoes'
     | '/rh/banco-horas'
@@ -761,6 +818,7 @@ export interface FileRouteTypes {
     | '/rh/treinamentos'
     | '/rh/turnover'
     | '/prospeccao/'
+    | '/radar/'
     | '/rh/'
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
@@ -780,6 +838,7 @@ export interface RootRouteChildren {
   PesquisasRoute: typeof PesquisasRoute
   PositivaIaRoute: typeof PositivaIaRouteWithChildren
   QrcodesRoute: typeof QrcodesRoute
+  RadarRoute: typeof RadarRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
   RhRoute: typeof RhRouteWithChildren
   SafeConsigRoute: typeof SafeConsigRoute
@@ -859,6 +918,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/radar': {
+      id: '/radar'
+      path: '/radar'
+      fullPath: '/radar'
+      preLoaderRoute: typeof RadarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qrcodes': {
@@ -944,6 +1010,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rh/'
       preLoaderRoute: typeof RhIndexRouteImport
       parentRoute: typeof RhRoute
+    }
+    '/radar/': {
+      id: '/radar/'
+      path: '/'
+      fullPath: '/radar/'
+      preLoaderRoute: typeof RadarIndexRouteImport
+      parentRoute: typeof RadarRoute
     }
     '/prospeccao/': {
       id: '/prospeccao/'
@@ -1127,6 +1200,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RhAcessosRouteImport
       parentRoute: typeof RhRoute
     }
+    '/radar/registros': {
+      id: '/radar/registros'
+      path: '/registros'
+      fullPath: '/radar/registros'
+      preLoaderRoute: typeof RadarRegistrosRouteImport
+      parentRoute: typeof RadarRoute
+    }
+    '/radar/importar': {
+      id: '/radar/importar'
+      path: '/importar'
+      fullPath: '/radar/importar'
+      preLoaderRoute: typeof RadarImportarRouteImport
+      parentRoute: typeof RadarRoute
+    }
+    '/radar/arquivos': {
+      id: '/radar/arquivos'
+      path: '/arquivos'
+      fullPath: '/radar/arquivos'
+      preLoaderRoute: typeof RadarArquivosRouteImport
+      parentRoute: typeof RadarRoute
+    }
     '/prospeccao/recentes': {
       id: '/prospeccao/recentes'
       path: '/prospeccao/recentes'
@@ -1254,6 +1348,22 @@ const PositivaIaRouteWithChildren = PositivaIaRoute._addFileChildren(
   PositivaIaRouteChildren,
 )
 
+interface RadarRouteChildren {
+  RadarArquivosRoute: typeof RadarArquivosRoute
+  RadarImportarRoute: typeof RadarImportarRoute
+  RadarRegistrosRoute: typeof RadarRegistrosRoute
+  RadarIndexRoute: typeof RadarIndexRoute
+}
+
+const RadarRouteChildren: RadarRouteChildren = {
+  RadarArquivosRoute: RadarArquivosRoute,
+  RadarImportarRoute: RadarImportarRoute,
+  RadarRegistrosRoute: RadarRegistrosRoute,
+  RadarIndexRoute: RadarIndexRoute,
+}
+
+const RadarRouteWithChildren = RadarRoute._addFileChildren(RadarRouteChildren)
+
 interface RhColaboradoresRouteChildren {
   RhColaboradoresIdRoute: typeof RhColaboradoresIdRoute
 }
@@ -1352,6 +1462,7 @@ const rootRouteChildren: RootRouteChildren = {
   PesquisasRoute: PesquisasRoute,
   PositivaIaRoute: PositivaIaRouteWithChildren,
   QrcodesRoute: QrcodesRoute,
+  RadarRoute: RadarRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
   RhRoute: RhRouteWithChildren,
   SafeConsigRoute: SafeConsigRoute,

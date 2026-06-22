@@ -1,87 +1,88 @@
+# Radar Diário Oficial
 
-# Área de Prospecção (CRM inteligente)
+> Encontre promoções, progressões e movimentações de servidores em poucos segundos.
 
-Admin sobe planilha de leads; consultoras trabalham a carteira com fila priorizada, follow-ups, timeline e scripts. Entrego primeiro os **4 pilares** (timeline, follow-up, score, dashboard) e depois os complementos.
+Sistema para importar arquivos do Diário Oficial (PDF/TXT/HTML/DOCX), extrair texto, identificar via IA servidores promovidos, revisar manualmente, evitar duplicidades, exportar e acompanhar por dashboard. Será construído sobre a infraestrutura já existente em `/prospeccao/promovidos` (extração de PDF no navegador + IA via Lovable AI Gateway).
 
-## Modelo de dados
+## Estrutura de navegação
 
-No app, "consultora" = usuário autenticado. Roles já existem (`admin`/`user`); admin sobe e distribui, `user` (consultora) trabalha sua carteira.
-
-```text
-prospect_leads
-  id, nome, telefone, cpf, cidade, origem, orcamento,
-  status (novo|qualificado|proposta|ganho|perdido)
-  consultant_id (auth.users)      -- responsável
-  score int, quality_score int
-  loss_reason text
-  first_response_at, sla_status (ok|atencao|atrasado)
-  next_follow_up_at, last_contact_at
-  notes, created_by (admin), created_at, updated_at
-
-lead_events            -- TIMELINE (append-only)
-  id, lead_id, consultant_id, kind (ligacao|whatsapp|nota|status|followup|sistema)
-  body, meta jsonb, created_at
-
-lead_tasks             -- FOLLOW-UP
-  id, lead_id, consultant_id, title, due_at,
-  status (pending|done|canceled), created_at
-```
-
-RLS: admin gerencia tudo; consultora vê/edita apenas leads onde `consultant_id = auth.uid()` (e seus events/tasks). GRANTs para `authenticated` e `service_role`. Trigger de `updated_at`. Função `has_role` já existe.
-
-## Score automático (regras)
-
-Calculado em trigger no banco a cada insert/update de campos relevantes:
-- Origem (indicação > WhatsApp > planilha fria)
-- Orçamento / margem disponível
-- Cidade (lista prioritária configurável — começo com peso neutro)
-- Urgência declarada
-- Engajamento: respondeu WhatsApp, nº de eventos recentes
-- Recência do último contato
-Score 0–100 → ordena a fila (quente no topo).
-
-## SLA por etapa (trigger + cálculo)
-
-- Lead `novo` sem `first_response_at` há >5 min → `atencao`; agrava para `atrasado`.
-- Follow-up quente vencido no dia → `atrasado`.
-- Sem contato há 3 dias → `atrasado` (alerta vermelho).
-`sla_status` recalculado por trigger e na leitura (campo derivado por tempo).
-
-## Telas
+Novas rotas sob `/radar` (área dedicada), reaproveitando `AppShell` e o controle de acesso já existente (`useRhAccess` / `has_role`):
 
 ```text
-/prospeccao            -> Fila da consultora (cards priorizados por score + SLA)
-/prospeccao/$leadId    -> Detalhe: timeline, ações, follow-up, playbook do status
-/prospeccao/admin      -> Painel admin: ranking, gargalos, upload de planilha
+/radar               Dashboard (KPIs + gráficos)
+/radar/importar      Upload + processamento de arquivos
+/radar/registros     Painel de resultados (tabela + filtros + revisão)
+/radar/arquivos      Histórico de arquivos importados
 ```
 
-### Fila da consultora (`/prospeccao`)
-KPIs no topo: Leads de hoje · Follow-ups atrasados · Leads quentes · Taxa de conversão · Tempo médio 1ª resposta. Lista ordenada por score, com badge de SLA (verde/amarelo/vermelho) e botão de follow-up.
+## Banco de dados
 
-### Detalhe do lead (`/prospeccao/$leadId`)
-- **Timeline** cronológica (ligação, WhatsApp, nota, status, follow-up).
-- Ações rápidas: registrar contato, nota, agendar follow-up, mudar status.
-- Ao mudar para `perdido` → **motivo obrigatório** (Preço, Sem resposta, Fora do perfil, Comprou concorrente, Sem urgência).
-- **Playbook por status**: Novo=script de abordagem; Qualificado=checklist de necessidade; Proposta=objeções comuns; Perdido=motivo.
-- **IA assistente** (Lovable AI): resume histórico, sugere próxima mensagem, identifica objeção, sugere próxima ação.
+Três tabelas novas (migração com GRANTs + RLS conforme padrão):
 
-### Painel admin (`/prospeccao/admin`)
-Upload CSV/XLSX (reusa parser do `/upload`), atribuição a consultoras, ranking por consultora, leads sem tratativa, origem com melhor conversão, gargalo por etapa, leads esquecidos.
+**`do_arquivos`** — arquivos importados
+- nome_arquivo, tipo_arquivo, data_upload, data_publicacao, numero_edicao, orgao_detectado, caminho_arquivo (storage), status_processamento, total_registros_extraidos, total_aprovados, total_erros, uploaded_by
 
-## IA assistente
+**`do_registros`** — registros extraídos
+- arquivo_id (FK), nome_servidor, matricula, cpf_parcial, cargo, orgao, tipo_movimentacao, data_publicacao, data_ato, pagina, classe_anterior, classe_nova, nivel_anterior, nivel_novo, referencia_anterior, referencia_nova, numero_ato, trecho_original, confianca_ia, categoria, status_revisao, duplicado_possivel, created_at, updated_at
 
-Server function (`createServerFn`) → Lovable AI Gateway (`google/gemini-3-flash-preview`), recebe timeline + dados do lead, retorna resumo/sugestões. Sem chave do usuário.
+Perfis (Administrador / Analista / Visualizador) reusam o sistema atual de papéis (`user_roles` + `has_role`); admin = Administrador. Analista/Visualizador serão tratados como usuários autenticados (todos podem ver/revisar; só admin exclui arquivos e exporta listas grandes). Não criaremos tabela `usuarios` separada — papéis já vivem em `user_roles` (evita escalonamento de privilégio).
 
-## Ordem de entrega
+**Storage**: bucket privado `diario-oficial` para guardar os arquivos originais.
 
-1. **Fase 1 (pilares):** schema + RLS + score/SLA triggers; fila da consultora; detalhe com timeline + follow-up + status/motivo; dashboard da consultora. Item de menu em "Prospecção".
-2. **Fase 2:** painel admin completo (upload, atribuição, ranking, gargalos).
-3. **Fase 3:** playbooks ricos + IA assistente.
+### RLS
+- `do_arquivos` / `do_registros`: SELECT/INSERT/UPDATE para `authenticated`; DELETE só admin (`has_role`); `service_role` ALL.
 
-## Teste (cenário do pedido)
-Criar lead quente, atribuir a uma consultora, gerar follow-up e validar que aparece no topo da fila com alerta de prazo.
+## Extração de texto (cliente)
+
+Reaproveita `extractPdfLines` (pdfjs + OCR tesseract). Adiciona:
+- **TXT**: leitura direta.
+- **HTML**: `DOMParser` → `innerText`.
+- **DOCX**: `mammoth` (browser build) → texto.
+
+Detecção heurística no cliente: órgão (linhas com "SECRETARIA/PREFEITURA/GOVERNO…"), data de publicação (regex de datas pt-BR), número da edição ("Edição nº", "Nº ...").
+
+## Processamento com IA
+
+Estende `src/lib/prospeccao/promovidos.functions.ts` (ou novo `radar.functions.ts`) com `analisarDiarioAI`:
+- Usa `google/gemini-2.5-flash` via gateway, em chunks (como já feito).
+- Prompt do extrator especializado fornecido pelo usuário; retorna JSON estruturado com todos os campos, `confianca_ia`, `categoria` e `tipo_movimentacao` ("Possível promoção, precisa revisar" quando ambíguo).
+- Schema Zod enxuto (campos curtos) para evitar limite de estados do Gemini; validação/normalização em código.
+
+## Fluxo de importação
+
+1. Admin envia arquivo(s) em `/radar/importar`.
+2. Cliente extrai texto + metadados (órgão, data, edição).
+3. Upload do original ao storage; cria linha em `do_arquivos`.
+4. IA analisa o texto → registros estruturados.
+5. Dedup (nome+matrícula+órgão+data+tipo) → marca `duplicado_possivel`.
+6. Insere registros com `status_revisao = 'Novo'`; atualiza contadores do arquivo.
+
+## Painel de resultados `/radar/registros`
+
+Tabela com: Nome, Matrícula, Cargo, Órgão, Tipo, Data publicação, Página, Status, Confiança.
+- Busca por nome; filtros por órgão, data, tipo, status; ordenar por data recente.
+- Linha expansível: trecho original + dados completos + botões Aprovar / Editar / Ignorar / Marcar duplicado / Abrir arquivo original (signed URL).
+- Cores: verde aprovado, amarelo pendente, vermelho ignorado/erro.
+
+## Histórico `/radar/arquivos`
+Lista de arquivos com métricas (encontrados, aprovados, erros), quem enviou, botão reprocessar (re-roda IA sobre texto salvo) e excluir (admin).
+
+## Dashboard `/radar`
+KPIs (arquivos, pessoas, promoções confirmadas, progressões, pendentes) + gráficos (por data de publicação e por tipo de movimentação) usando `recharts`. Órgãos com mais movimentações.
+
+## Exportação
+`/radar/registros`: exportar seleção em CSV, Excel (`xlsx`/SheetJS) e PDF (jsPDF), com escolha de campos. Listas grandes (acima de limite) só para admin.
+
+## LGPD / segurança
+Aviso fixo no rodapé das telas do Radar:
+"Este sistema organiza informações públicas extraídas de publicações oficiais. O uso dos dados deve respeitar a LGPD, finalidade legítima, transparência e boas práticas de tratamento de dados."
 
 ## Detalhes técnicos
-- TanStack Start: leituras via `createServerFn`/queries client com RLS; mutações por componente. Rotas em `src/routes/prospeccao*.tsx`.
-- Migrations via ferramenta de migração (com GRANTs). Updates de dados via insert tool.
-- Realtime opcional na fila (como já feito em `safeconsig_leads`).
+- Funções de servidor em `src/lib/radar/radar.functions.ts` (CRUD + IA), todas com `requireSupabaseAuth`; mutações destrutivas e export grande verificam `has_role(admin)`.
+- Upload ao storage via server function (`supabase` do usuário) ou client storage com RLS no bucket.
+- Novas libs: `mammoth` (DOCX), `xlsx` (Excel), `jspdf` (+autotable), `recharts` (se ainda não houver).
+- Fases de entrega: (1) DB + storage + importar + IA + registros básicos; (2) revisão/dedup/abrir original; (3) histórico + dashboard + exportação.
+
+## Não incluído / pressupostos
+- Reusa papéis existentes em vez de nova tabela `usuarios`.
+- Mantém a aba atual `/prospeccao/promovidos` intacta; o Radar é uma área nova e mais completa.
