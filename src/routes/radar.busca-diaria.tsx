@@ -159,7 +159,45 @@ function BuscaDiariaPage() {
     }
   };
 
-  const abrirPdf = async (caminho: string | null) => {
+  // Processa todos os PDFs já baixados que ainda estão aguardando análise.
+  // Percorre fonte por fonte (cada uma é uma requisição) e mostra o progresso.
+  const processarPendentes = async () => {
+    const pend = fontes.filter(
+      (f) =>
+        f.caminho_arquivo &&
+        ["pendente", "processando", "requer_ocr", "erro"].includes(
+          (f.status_processamento ?? "").toLowerCase(),
+        ),
+    );
+    if (!pend.length) {
+      toast.info("Nenhum arquivo pendente para processar.");
+      return;
+    }
+    setRunning("pendentes");
+    let ok = 0;
+    let registros = 0;
+    const erros: string[] = [];
+    try {
+      for (let i = 0; i < pend.length; i++) {
+        setPendProgresso(`Processando ${i + 1} de ${pend.length}…`);
+        try {
+          const r = await fnReprocessar({ data: { id: pend[i].id } });
+          registros += r.registros_extraidos;
+          erros.push(...r.erros);
+          ok++;
+        } catch (e: any) {
+          erros.push(`${pend[i].numero_edicao ?? pend[i].id}: ${e?.message ?? "falha"}`);
+        }
+        await carregar();
+      }
+      toast.success(`Processados ${ok}/${pend.length} arquivo(s), ${registros} registro(s) extraído(s).`);
+      if (erros.length) toast.error(`${erros.length} erro(s) durante o processamento.`);
+    } finally {
+      setPendProgresso(null);
+      setRunning(null);
+    }
+  };
+
     if (!caminho) { toast.error("PDF não disponível."); return; }
     try {
       const { url } = await fnPdfUrl({ data: { caminho } });
