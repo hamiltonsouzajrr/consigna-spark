@@ -430,6 +430,13 @@ export const salvarRegistros = createServerFn({ method: "POST" })
       })
       .eq("id", data.arquivo_id);
 
+    // Distribuição AUTOMÁTICA (round-robin) dos novos leads elegíveis.
+    try {
+      await distribuirRoundRobin(supabase);
+    } catch (e) {
+      console.error("Falha na distribuição automática de leads:", e);
+    }
+
     return { inserted: rows.length, duplicados };
   });
 
