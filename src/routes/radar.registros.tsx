@@ -132,8 +132,20 @@ function RegistrosPage() {
 
   const visible = useMemo(() => {
     const term = q.trim().toLowerCase();
+    const termDigits = term.replace(/\D/g, "");
+    const isNumericTerm = term.length > 0 && /^[\d.\-\s]+$/.test(term);
+    const cpfTerm = cpfQ.replace(/\D/g, "");
     return list.filter((r) => {
-      if (term && !r.nome_servidor.toLowerCase().includes(term)) return false;
+      if (term) {
+        const cpfDigits = (r.cpf_parcial || "").replace(/\D/g, "");
+        const nameHit = r.nome_servidor.toLowerCase().includes(term);
+        const cpfHit = isNumericTerm && termDigits.length > 0 && cpfDigits.includes(termDigits);
+        if (!nameHit && !cpfHit) return false;
+      }
+      if (cpfTerm) {
+        const cpfDigits = (r.cpf_parcial || "").replace(/\D/g, "");
+        if (!cpfDigits.includes(cpfTerm)) return false;
+      }
       if (orgao !== "todos" && r.orgao !== orgao) return false;
       if (tipo !== "todos" && (r.categoria || r.tipo_movimentacao) !== tipo) return false;
       if (status !== "todos" && r.status_revisao !== status) return false;
@@ -141,7 +153,7 @@ function RegistrosPage() {
       if (data && r.data_publicacao !== data) return false;
       return true;
     });
-  }, [list, q, orgao, tipo, status, potencial, data]);
+  }, [list, q, cpfQ, orgao, tipo, status, potencial, data]);
 
   const setStatusFor = async (id: string, novo: string) => {
     setList((l) => l.map((r) => (r.id === id ? { ...r, status_revisao: novo } : r)));
