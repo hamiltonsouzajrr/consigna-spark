@@ -486,6 +486,85 @@ export const getMeusLeadsRadar = createServerFn({ method: "POST" })
     return (rows ?? []) as DoRegistro[];
   });
 
+// Leads promovidos paginados para a tela /prospeccao/promovidos.
+// - Consultora: identificada automaticamente pelo e-mail do login; vê apenas
+//   os leads atribuídos a ela (consultora_responsavel = nome dela).
+// - Admin: vê TODOS os leads; pode filtrar opcionalmente por consultora.
+export type LeadsPromovidosResult = {
+  rows: DoRegistro[];
+  total: number;
+  isAdmin: boolean;
+  consultoraNome: string | null;
+  vinculada: boolean;
+};
+
+export const getLeadsPromovidos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        consultora: z.string().trim().max(120).optional(),
+        offset: z.number().int().min(0).max(100000).optional(),
+        limit: z.number().int().min(1).max(50).optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }): Promise<LeadsPromovidosResult> => {
+    const offset = data.offset ?? 0;
+    const limit = data.limit ?? 10;
+
+    const { data: isAdminRaw } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    const isAdmin = !!isAdminRaw;
+
+    let nome: string | null = null;
+    let vinculada = false;
+
+    if (isAdmin) {
+      // Admin: filtro opcional por consultora.
+      nome = data.consultora && data.consultora.trim() ? data.consultora.trim() : null;
+    } else {
+      // Consultora: identificação automática pelo e-mail do login.
+      const email = String((context.claims as any)?.email ?? "").trim().toLowerCase();
+      if (email) {
+        const { data: c } = await context.supabase
+          .from("radar_consultoras")
+          .select("nome")
+          .ilike("email", email)
+          .limit(1);
+        nome = (c?.[0]?.nome as string | undefined) ?? null;
+      }
+      if (!nome) {
+        // Consultora ainda não cadastrada: sem leads.
+        return { rows: [], total: 0, isAdmin: false, consultoraNome: null, vinculada: false };
+      }
+      vinculada = true;
+    }
+
+    let query = context.supabase
+      .from("do_registros")
+      .select("*", { count: "exact" })
+      .in("potencial_financeiro", ["Alto", "Médio"]);
+    if (nome) query = query.eq("consultora_responsavel", nome);
+
+    const { data: rows, count, error } = await query
+      .order("data_publicacao", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) throw new Error(error.message);
+
+    return {
+      rows: (rows ?? []) as DoRegistro[],
+      total: count ?? 0,
+      isAdmin,
+      consultoraNome: nome,
+      vinculada,
+    };
+  });
+
+
 export const atualizarRegistro = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
