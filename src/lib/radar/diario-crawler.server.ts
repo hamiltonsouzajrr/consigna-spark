@@ -85,6 +85,8 @@ export async function listarEdicoes(opts: {
     for (const e of editions) {
       const d = toYmd(e.publication_date);
       if (d < oldestInPage) oldestInPage = d;
+      // A busca diária considera apenas edições do ano de 2026.
+      if (!d.startsWith(`${ANO_ALVO}-`)) continue;
       if (d >= opts.dateFrom && d <= opts.dateTo) out.push(normalize(e));
     }
 
