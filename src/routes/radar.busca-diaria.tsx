@@ -74,6 +74,7 @@ function BuscaDiariaPage() {
   const fnMarcarLido = useServerFn(marcarAlertaLido);
   const fnPdfUrl = useServerFn(getFontePdfUrl);
   const fnExtrairMes = useServerFn(extrairMes2026);
+  const fnCobertura = useServerFn(getCobertura2026);
 
   const [dash, setDash] = useState<BuscaDiariaDashboard | null>(null);
   const [fontes, setFontes] = useState<Fonte[]>([]);
