@@ -400,6 +400,8 @@ export const salvarRegistros = createServerFn({ method: "POST" })
         trecho_original: r.trecho_original || null,
         confianca_ia: r.confianca_ia || null,
         categoria: r.categoria || null,
+        potencial_financeiro: r.potencial_financeiro || null,
+        motivo_classificacao: r.motivo_classificacao || null,
         status_revisao: dup ? "Duplicado" : "Novo",
         duplicado_possivel: dup,
       };
