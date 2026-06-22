@@ -641,7 +641,7 @@ export const getConsultoras = createServerFn({ method: "GET" })
 export const getMinhaConsultora = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<Consultora | null> => {
-    const email = String(context.claims?.email ?? "").trim().toLowerCase();
+    const email = String((context.claims as any)?.email ?? "").trim().toLowerCase();
     if (!email) return null;
     const { data, error } = await context.supabase
       .from("radar_consultoras")
