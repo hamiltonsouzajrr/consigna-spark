@@ -300,6 +300,7 @@ function Page() {
   const fetchAll = useServerFn(getPromovidos);
   const saveFn = useServerFn(savePromovidos);
   const delFn = useServerFn(deletePromovido);
+  const aiExtractFn = useServerFn(extractPromovidosAI);
 
   const [list, setList] = useState<Promovido[]>([]);
   const [loadingList, setLoadingList] = useState(true);
