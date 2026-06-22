@@ -8,6 +8,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   listarEdicoes,
+  listarEdicoesPorMes,
   baixarPdf,
   sleep,
   DIARIO_BASE,
