@@ -326,8 +326,11 @@ function RegistrosPage() {
                     {open ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{r.nome_servidor}</p>
+                      {r.cpf_parcial && (
+                        <p className="truncate text-xs font-semibold text-primary">CPF: {r.cpf_parcial}</p>
+                      )}
                       <p className="truncate text-xs text-muted-foreground">
-                        {[r.cargo, r.orgao, r.categoria || r.tipo_movimentacao].filter(Boolean).join(" · ")}
+                        {[r.orgao, r.categoria || r.tipo_movimentacao, r.cpf_parcial ? `CPF: ${r.cpf_parcial}` : ""].filter(Boolean).join(" · ")}
                       </p>
                     </div>
                   </button>
