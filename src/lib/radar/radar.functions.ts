@@ -337,6 +337,8 @@ const registroEntry = z.object({
   trecho_original: z.string().trim().max(4000).optional().default(""),
   confianca_ia: z.string().trim().max(20).optional().default(""),
   categoria: z.string().trim().max(120).optional().default(""),
+  potencial_financeiro: z.string().trim().max(40).optional().default(""),
+  motivo_classificacao: z.string().trim().max(400).optional().default(""),
 });
 
 export const salvarRegistros = createServerFn({ method: "POST" })
