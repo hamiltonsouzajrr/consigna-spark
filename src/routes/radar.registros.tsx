@@ -136,6 +136,7 @@ function RegistrosPage() {
       if (orgao !== "todos" && r.orgao !== orgao) return false;
       if (tipo !== "todos" && (r.categoria || r.tipo_movimentacao) !== tipo) return false;
       if (status !== "todos" && r.status_revisao !== status) return false;
+      if (potencial !== "todos" && (r.potencial_financeiro || "") !== potencial) return false;
       if (data && r.data_publicacao !== data) return false;
       return true;
     });
