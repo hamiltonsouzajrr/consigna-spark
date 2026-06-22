@@ -333,10 +333,18 @@ function RegistrosPage() {
                       <Info label="Nº ato" value={r.numero_ato} />
                       <Info label="Data do ato" value={r.data_ato} />
                       <Info label="Confiança IA" value={r.confianca_ia} />
+                      <Info label="Categoria" value={r.categoria} />
+                      <Info label="Potencial financeiro" value={r.potencial_financeiro} />
                       <Info label="Classe" value={join(r.classe_anterior, r.classe_nova)} />
                       <Info label="Nível" value={join(r.nivel_anterior, r.nivel_novo)} />
                       <Info label="Referência" value={join(r.referencia_anterior, r.referencia_nova)} />
                     </div>
+                    {r.motivo_classificacao && (
+                      <div className="mt-3 rounded-md border bg-background p-3 text-sm">
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Motivo da classificação: </span>
+                        {r.motivo_classificacao}
+                      </div>
+                    )}
                     {r.trecho_original && (
                       <div className="mt-3 rounded-md border bg-background p-3 text-sm italic text-muted-foreground">
                         “{r.trecho_original}”
