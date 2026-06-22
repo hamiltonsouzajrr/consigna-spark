@@ -166,11 +166,45 @@ function ImportarPage() {
           className="hidden"
           onChange={(e) => onPick(e.target.files)}
         />
+
+        <div className="mb-4 rounded-lg border p-3">
+          <p className="mb-2 text-sm font-medium">Seções a analisar (prioridade)</p>
+          <p className="mb-3 text-xs text-muted-foreground">
+            A IA prioriza estas seções e ignora orçamento, contratos, ICMS, licitações e particulares.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {SECOES_RADAR.map((s) => {
+              const on = secoes.has(s);
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    setSecoes((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(s)) next.delete(s);
+                      else next.add(s);
+                      return next;
+                    })
+                  }
+                  className={`rounded-full border px-3 py-1 text-xs transition ${
+                    on ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground"
+                  }`}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <Button onClick={() => fileRef.current?.click()} disabled={busy}>
           {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
           {busy ? "Processando…" : "Selecionar arquivos"}
         </Button>
       </Card>
+
 
       {batches.map((batch, bi) => (
         <Card key={batch.arquivoId} className="p-5">
