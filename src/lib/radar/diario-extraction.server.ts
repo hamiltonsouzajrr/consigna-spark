@@ -169,12 +169,12 @@ export async function analisarTextoServidor(input: {
 
   for (const chunk of chunks) {
     try {
-      const { output } = await generateText({
+      const { text } = await generateText({
         model,
-        output: Output.object({ schema }),
         system: SYSTEM_PROMPT,
-        prompt: `Analise o texto abaixo extraído de um Diário Oficial e retorne os servidores com movimentação funcional.${secoesHint}\n\nTexto:\n${chunk}`,
+        prompt: `Analise o texto abaixo extraído de um Diário Oficial e retorne os servidores com movimentação funcional.${secoesHint}\n\nResponda SOMENTE com JSON válido, sem markdown, no formato {"registros":[{...}]}. Se não houver nenhum servidor com movimentação, retorne {"registros":[]}.\n\nTexto:\n${chunk}`,
       });
+      const output = parseRegistros(text, schema);
       for (const r of output?.registros ?? []) {
         const nome = str(r.nome_servidor);
         if (!nome) continue;
