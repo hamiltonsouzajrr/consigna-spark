@@ -198,6 +198,7 @@ function BuscaDiariaPage() {
     }
   };
 
+  const abrirPdf = async (caminho: string | null) => {
     if (!caminho) { toast.error("PDF não disponível."); return; }
     try {
       const { url } = await fnPdfUrl({ data: { caminho } });
