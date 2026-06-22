@@ -17,6 +17,7 @@ import {
   marcarAlertaLido, getFontePdfUrl, extrairMes2026,
   type BuscaDiariaDashboard, type Fonte, type Alerta, type LogAutomacao, type ResultadoBuscaDTO,
 } from "@/lib/radar/diario.functions";
+import { getCobertura2026, type CoberturaMes } from "@/lib/radar/radar.functions";
 
 export const Route = createFileRoute("/radar/busca-diaria")({
   component: BuscaDiariaPage,
