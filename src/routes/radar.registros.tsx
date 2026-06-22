@@ -177,15 +177,17 @@ function RegistrosPage() {
 
   const handleAddConsultora = async () => {
     const nome = novaConsultora.trim();
+    const email = novaConsultoraEmail.trim();
     if (!nome) {
       toast.warning("Digite o nome da consultora.");
       return;
     }
     setSavingConsultora(true);
     try {
-      await addConsultoraFn({ data: { nome } });
+      await addConsultoraFn({ data: { nome, email } });
       toast.success(`Consultora ${nome} cadastrada.`);
       setNovaConsultora("");
+      setNovaConsultoraEmail("");
       await load();
     } catch (e: any) {
       toast.error(e?.message?.includes("duplicate") ? "Consultora já cadastrada." : (e?.message ?? "Erro ao cadastrar consultora."));
