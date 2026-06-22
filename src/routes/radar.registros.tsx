@@ -156,10 +156,13 @@ function RegistrosPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const [regs, arqs, dist] = await Promise.all([fetchRegs(), fetchArqs(), distribuicaoFn()]);
+      const [regs, arqs, dist, cons] = await Promise.all([
+        fetchRegs(), fetchArqs(), distribuicaoFn(), consultorasFn(),
+      ]);
       setList(regs);
       setArquivos(Object.fromEntries(arqs.map((a) => [a.id, a])));
       setDistribuicao(dist);
+      setConsultoras(cons);
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao carregar registros.");
     } finally {
@@ -171,33 +174,68 @@ function RegistrosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const atribuirDez = async () => {
+  const handleAddConsultora = async () => {
     const nome = novaConsultora.trim();
     if (!nome) {
       toast.warning("Digite o nome da consultora.");
       return;
     }
+    setSavingConsultora(true);
+    try {
+      await addConsultoraFn({ data: { nome } });
+      toast.success(`Consultora ${nome} cadastrada.`);
+      setNovaConsultora("");
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message?.includes("duplicate") ? "Consultora já cadastrada." : (e?.message ?? "Erro ao cadastrar consultora."));
+    } finally {
+      setSavingConsultora(false);
+    }
+  };
+
+  const handleToggleConsultora = async (c: Consultora) => {
+    try {
+      await toggleConsultoraFn({ data: { id: c.id, ativo: !c.ativo } });
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao atualizar consultora.");
+    }
+  };
+
+  const handleRemoverConsultora = async (c: Consultora) => {
+    try {
+      await removerConsultoraFn({ data: { id: c.id } });
+      toast.success(`Consultora ${c.nome} removida.`);
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao remover consultora.");
+    }
+  };
+
+  const distribuirAgora = async () => {
     setAtribuindo(true);
     try {
-      const { atribuidos } = await atribuirFn({ data: { consultora: nome, quantidade: 10 } });
-      if (atribuidos === 0) {
-        toast.info("Nenhum lead disponível para atribuir.");
+      const { atribuidos, consultoras: nConsultoras } = await distribuirFn();
+      if (nConsultoras === 0) {
+        toast.warning("Cadastre ao menos uma consultora ativa.");
+      } else if (atribuidos === 0) {
+        toast.info("Nenhum lead disponível para distribuir.");
       } else {
-        toast.success(`${atribuidos} lead(s) atribuído(s) a ${nome}.`);
-        setNovaConsultora("");
+        toast.success(`${atribuidos} lead(s) distribuído(s) entre ${nConsultoras} consultora(s).`);
       }
       await load();
     } catch (e: any) {
-      toast.error(e?.message ?? "Erro ao atribuir leads.");
+      toast.error(e?.message ?? "Erro ao distribuir leads.");
     } finally {
       setAtribuindo(false);
     }
   };
 
   const consultoraOptions = useMemo(
-    () => distribuicao.map((d) => d.consultora),
-    [distribuicao],
+    () => Array.from(new Set([...consultoras.map((c) => c.nome), ...distribuicao.map((d) => d.consultora)])),
+    [consultoras, distribuicao],
   );
+
 
 
   const orgaoOptions = useMemo(
