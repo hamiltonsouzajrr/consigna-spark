@@ -40,6 +40,7 @@ function ImportarPage() {
   const [busy, setBusy] = useState(false);
   const [batches, setBatches] = useState<Batch[]>([]);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [secoes, setSecoes] = useState<Set<string>>(new Set(SECOES_RADAR));
   const fileRef = useRef<HTMLInputElement>(null);
 
   const onPick = async (files: FileList | null) => {
