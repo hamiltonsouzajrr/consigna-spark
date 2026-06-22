@@ -314,6 +314,11 @@ function RegistrosPage() {
                       </p>
                     </div>
                   </button>
+                  {r.potencial_financeiro && (
+                    <Badge className={`text-xs ${potencialTone(r.potencial_financeiro)}`}>
+                      {r.potencial_financeiro}
+                    </Badge>
+                  )}
                   {r.data_publicacao && <Badge variant="outline" className="text-xs">{r.data_publicacao}</Badge>}
                   {r.duplicado_possivel && <Badge className="bg-orange-500 text-white">duplicado?</Badge>}
                   <Badge className={`text-xs ${statusTone(r.status_revisao)}`}>{r.status_revisao}</Badge>
