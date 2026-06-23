@@ -755,7 +755,9 @@ export const adicionarConsultora = createServerFn({ method: "POST" })
     }).parse(data),
   )
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
-    const { error } = await context.supabase
+    await assertAdmin(context.supabase, context.userId);
+    const admin = await getAdminClient();
+    const { error } = await admin
       .from("radar_consultoras")
       .insert({ nome: data.nome, email: data.email ? data.email.toLowerCase() : null } as any);
     if (error) throw new Error(error.message);
@@ -766,7 +768,9 @@ export const toggleConsultora = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ id: z.string().uuid(), ativo: z.boolean() }).parse(data))
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
-    const { error } = await context.supabase
+    await assertAdmin(context.supabase, context.userId);
+    const admin = await getAdminClient();
+    const { error } = await admin
       .from("radar_consultoras")
       .update({ ativo: data.ativo } as any)
       .eq("id", data.id);
@@ -778,7 +782,9 @@ export const removerConsultora = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
-    const { error } = await context.supabase
+    await assertAdmin(context.supabase, context.userId);
+    const admin = await getAdminClient();
+    const { error } = await admin
       .from("radar_consultoras")
       .delete()
       .eq("id", data.id);
