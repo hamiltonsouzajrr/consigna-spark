@@ -16,6 +16,15 @@ async function assertAdmin(supabase: any, userId: string) {
   if (!data) throw new Error("Acesso restrito a administradores.");
 }
 
+// Privileged write client (service role). Writes to do_registros / do_arquivos
+// / radar_consultoras are locked to admins at the RLS level; legitimate app
+// writes flow through these authenticated server functions, which act as the
+// authorization boundary, using this client to bypass the table write policies.
+async function getAdminClient() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
