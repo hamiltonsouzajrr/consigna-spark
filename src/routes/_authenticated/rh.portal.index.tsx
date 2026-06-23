@@ -58,7 +58,7 @@ function KpiLink({ kpi, label, value, hint, icon: Icon, tone }: {
   kpi: KpiKey; label: string; value: string | number; hint: string; icon: LucideIcon; tone: keyof typeof tones;
 }) {
   return (
-    <Link to="/rh/portal/$kpi" params={{ kpi }} className="group">
+    <Link to="/rh/portal/$kpi" params={{ kpi }} search={{ periodo: "6m" }} className="group">
       <Card className="h-full p-5 transition-colors hover:border-primary/50 hover:bg-accent/40">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
