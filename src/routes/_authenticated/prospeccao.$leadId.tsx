@@ -32,6 +32,15 @@ import { useRhAccess } from "@/hooks/use-rh-access";
 export const Route = createFileRoute("/_authenticated/prospeccao/$leadId")({
   head: () => ({ meta: [{ title: "Lead — Prospecção" }, { name: "robots", content: "noindex,nofollow" }] }),
   component: Page,
+  errorComponent: ({ error }) => (
+    <div role="alert" className="p-6 text-sm text-destructive">{error.message}</div>
+  ),
+  notFoundComponent: () => (
+    <div className="p-6 text-sm">
+      Lead não encontrado.{" "}
+      <Link to="/prospeccao" className="text-primary underline">Voltar à prospecção</Link>
+    </div>
+  ),
 });
 
 type Lead = {
