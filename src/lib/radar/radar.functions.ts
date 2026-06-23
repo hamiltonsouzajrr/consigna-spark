@@ -622,7 +622,8 @@ export const marcarAbordagem = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }): Promise<{ ok: true; contatado_em: string | null }> => {
-    const { supabase, userId } = context;
+    const { userId } = context;
+    const admin = await getAdminClient();
     const patch: Record<string, unknown> = { status_abordagem: data.status };
     let contatadoEm: string | null = null;
     if (data.status === "contatado") {
@@ -630,7 +631,7 @@ export const marcarAbordagem = createServerFn({ method: "POST" })
       patch.contatado_em = contatadoEm;
       patch.contatado_por = userId;
     }
-    const { error } = await supabase.from("do_registros").update(patch as any).eq("id", data.id);
+    const { error } = await admin.from("do_registros").update(patch as any).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true, contatado_em: contatadoEm };
   });
