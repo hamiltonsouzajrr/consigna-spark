@@ -16,6 +16,15 @@ async function assertAdmin(supabase: any, userId: string) {
   if (!data) throw new Error("Acesso restrito a administradores.");
 }
 
+// Privileged write client (service role). Writes to do_registros / do_arquivos
+// / radar_consultoras are locked to admins at the RLS level; legitimate app
+// writes flow through these authenticated server functions, which act as the
+// authorization boundary, using this client to bypass the table write policies.
+async function getAdminClient() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -309,8 +318,9 @@ export const criarArquivo = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }): Promise<{ id: string }> => {
-    const { supabase, userId } = context;
-    const { data: row, error } = await supabase
+    const { userId } = context;
+    const admin = await getAdminClient();
+    const { data: row, error } = await admin
       .from("do_arquivos")
       .insert({
         nome_arquivo: data.nome_arquivo,
@@ -419,10 +429,11 @@ export const salvarRegistros = createServerFn({ method: "POST" })
       };
     });
 
-    const { error } = await supabase.from("do_registros").insert(rows as any);
+    const admin = await getAdminClient();
+    const { error } = await admin.from("do_registros").insert(rows as any);
     if (error) throw new Error(error.message);
 
-    await supabase
+    await admin
       .from("do_arquivos")
       .update({
         status_processamento: "concluido",
@@ -590,7 +601,8 @@ export const atualizarRegistro = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
-    const { error } = await context.supabase
+    const admin = await getAdminClient();
+    const { error } = await admin
       .from("do_registros")
       .update(data.patch as any)
       .eq("id", data.id);
@@ -610,7 +622,8 @@ export const marcarAbordagem = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }): Promise<{ ok: true; contatado_em: string | null }> => {
-    const { supabase, userId } = context;
+    const { userId } = context;
+    const admin = await getAdminClient();
     const patch: Record<string, unknown> = { status_abordagem: data.status };
     let contatadoEm: string | null = null;
     if (data.status === "contatado") {
@@ -618,7 +631,7 @@ export const marcarAbordagem = createServerFn({ method: "POST" })
       patch.contatado_em = contatadoEm;
       patch.contatado_por = userId;
     }
-    const { error } = await supabase.from("do_registros").update(patch as any).eq("id", data.id);
+    const { error } = await admin.from("do_registros").update(patch as any).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true, contatado_em: contatadoEm };
   });
@@ -674,16 +687,17 @@ async function distribuirRoundRobin(supabase: any): Promise<{ atribuidos: number
     alvo.total += 1;
   }
 
+  const admin = await getAdminClient();
   let atribuidos = 0;
   for (const c of ativas) {
     const ids = buckets.get(c.id)!;
     if (!ids.length) continue;
-    const { error: upErr } = await supabase
+    const { error: upErr } = await admin
       .from("do_registros")
       .update({ consultora_responsavel: c.nome } as any)
       .in("id", ids);
     if (upErr) throw new Error(upErr.message);
-    const { error: cntErr } = await supabase
+    const { error: cntErr } = await admin
       .from("radar_consultoras")
       .update({ total_leads_atribuidos: c.total } as any)
       .eq("id", c.id);
@@ -700,6 +714,7 @@ async function distribuirRoundRobin(supabase: any): Promise<{ atribuidos: number
 export const distribuirLeadsAutomatico = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ atribuidos: number; consultoras: number }> => {
+    await assertAdmin(context.supabase, context.userId);
     return distribuirRoundRobin(context.supabase);
   });
 
@@ -740,7 +755,9 @@ export const adicionarConsultora = createServerFn({ method: "POST" })
     }).parse(data),
   )
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
-    const { error } = await context.supabase
+    await assertAdmin(context.supabase, context.userId);
+    const admin = await getAdminClient();
+    const { error } = await admin
       .from("radar_consultoras")
       .insert({ nome: data.nome, email: data.email ? data.email.toLowerCase() : null } as any);
     if (error) throw new Error(error.message);
@@ -751,7 +768,9 @@ export const toggleConsultora = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ id: z.string().uuid(), ativo: z.boolean() }).parse(data))
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
-    const { error } = await context.supabase
+    await assertAdmin(context.supabase, context.userId);
+    const admin = await getAdminClient();
+    const { error } = await admin
       .from("radar_consultoras")
       .update({ ativo: data.ativo } as any)
       .eq("id", data.id);
@@ -763,7 +782,9 @@ export const removerConsultora = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
-    const { error } = await context.supabase
+    await assertAdmin(context.supabase, context.userId);
+    const admin = await getAdminClient();
+    const { error } = await admin
       .from("radar_consultoras")
       .delete()
       .eq("id", data.id);
@@ -852,7 +873,8 @@ export const deletarArquivo = createServerFn({ method: "POST" })
     if (arq?.caminho_arquivo) {
       await supabase.storage.from("diario-oficial").remove([arq.caminho_arquivo]);
     }
-    const { error } = await supabase.from("do_arquivos").delete().eq("id", data.id);
+    const admin = await getAdminClient();
+    const { error } = await admin.from("do_arquivos").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
