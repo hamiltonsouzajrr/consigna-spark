@@ -318,8 +318,9 @@ export const criarArquivo = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }): Promise<{ id: string }> => {
-    const { supabase, userId } = context;
-    const { data: row, error } = await supabase
+    const { userId } = context;
+    const admin = await getAdminClient();
+    const { data: row, error } = await admin
       .from("do_arquivos")
       .insert({
         nome_arquivo: data.nome_arquivo,
