@@ -873,7 +873,8 @@ export const deletarArquivo = createServerFn({ method: "POST" })
     if (arq?.caminho_arquivo) {
       await supabase.storage.from("diario-oficial").remove([arq.caminho_arquivo]);
     }
-    const { error } = await supabase.from("do_arquivos").delete().eq("id", data.id);
+    const admin = await getAdminClient();
+    const { error } = await admin.from("do_arquivos").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
