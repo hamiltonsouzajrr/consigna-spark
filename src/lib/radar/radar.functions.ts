@@ -429,10 +429,11 @@ export const salvarRegistros = createServerFn({ method: "POST" })
       };
     });
 
-    const { error } = await supabase.from("do_registros").insert(rows as any);
+    const admin = await getAdminClient();
+    const { error } = await admin.from("do_registros").insert(rows as any);
     if (error) throw new Error(error.message);
 
-    await supabase
+    await admin
       .from("do_arquivos")
       .update({
         status_processamento: "concluido",
