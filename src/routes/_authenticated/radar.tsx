@@ -3,7 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { Radar, LayoutDashboard, Upload, List, FileText, ShieldAlert, Loader2, CalendarClock } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/radar")({
+export const Route = createFileRoute("/_authenticated/radar")({
   head: () => ({
     meta: [
       { title: "Radar Diário Oficial" },

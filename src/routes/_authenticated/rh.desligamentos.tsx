@@ -29,7 +29,7 @@ import {
   TIPOS_DESLIGAMENTO, type Desligamento,
 } from "@/lib/rh/desligamentos.functions";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/rh/desligamentos")({
+export const Route = createFileRoute("/_authenticated/rh/desligamentos")({
   component: DesligamentosPage,
 });
 

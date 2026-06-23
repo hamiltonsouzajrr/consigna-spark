@@ -10,7 +10,7 @@ import {
   STATUS_LABEL, STATUS_TONE, type LeadStatus,
 } from "@/lib/prospeccao/constants";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/prospeccao/recentes")({
+export const Route = createFileRoute("/_authenticated/prospeccao/recentes")({
   head: () => ({
     meta: [
       { title: "Recentes Prospectados — Prospecção" },

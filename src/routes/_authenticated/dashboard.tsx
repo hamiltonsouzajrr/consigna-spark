@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
 import { ProducaoRanking } from "@/components/rh/ProducaoRanking";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/dashboard")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — Consulta de Margem" },

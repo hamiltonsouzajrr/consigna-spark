@@ -26,7 +26,7 @@ import { User } from "lucide-react";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 
 
-export const Route = createFileRoute("/_authenticated/_authenticated/prospeccao/")({
+export const Route = createFileRoute("/_authenticated/prospeccao/")({
   head: () => ({
     meta: [
       { title: "Prospecção — Fila inteligente de leads" },

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { RhPageHeader, StatusBadge } from "@/components/rh/RhLayout";
 import { ferias as seed, formatDate, type Ferias } from "@/lib/rh/mock";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/rh/ferias")({
+export const Route = createFileRoute("/_authenticated/rh/ferias")({
   component: FeriasPage,
 });
 

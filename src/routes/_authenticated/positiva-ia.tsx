@@ -36,7 +36,7 @@ import {
   Gauge, Smile, Sparkles, Trophy, Phone, ShieldCheck,
 } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/positiva-ia")({
+export const Route = createFileRoute("/_authenticated/positiva-ia")({
   head: () => ({
     meta: [
       { title: "POSITIVA IA — Gerente Comercial Virtual" },

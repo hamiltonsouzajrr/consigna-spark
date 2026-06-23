@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import { RhPageHeader } from "@/components/rh/RhLayout";
 import { okrs as seedOkrs, type OKR } from "@/lib/rh/extra";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/rh/okrs")({
+export const Route = createFileRoute("/_authenticated/rh/okrs")({
   component: Okrs,
 });
 

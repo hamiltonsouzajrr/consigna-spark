@@ -11,7 +11,7 @@ import {
 } from "@/lib/prospeccao/constants";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/prospeccao/followups")({
+export const Route = createFileRoute("/_authenticated/prospeccao/followups")({
   head: () => ({
     meta: [
       { title: "Follow-ups — Prospecção" },

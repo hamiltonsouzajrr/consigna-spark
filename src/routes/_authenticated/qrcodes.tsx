@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExternalLink, Star, MessageSquareHeart, Camera } from "lucide-react";
 import instaQr from "@/assets/insta-qr.png.asset.json";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/qrcodes")({
+export const Route = createFileRoute("/_authenticated/qrcodes")({
   head: () => ({
     meta: [
       { title: "QR Codes de Avaliação | Grupo Positive" },

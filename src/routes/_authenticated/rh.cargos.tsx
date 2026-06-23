@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { RhPageHeader } from "@/components/rh/RhLayout";
 import { cargos, brl } from "@/lib/rh/mock";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/rh/cargos")({
+export const Route = createFileRoute("/_authenticated/rh/cargos")({
   component: Cargos,
 });
 

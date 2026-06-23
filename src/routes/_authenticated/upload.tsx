@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { UploadCloud, AlertTriangle } from "lucide-react";
 import { isValidCpf, normalizeCpf, formatCpf } from "@/lib/cpf";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/upload")({
+export const Route = createFileRoute("/_authenticated/upload")({
   head: () => ({
     meta: [
       { title: "Upload de CPFs — Consulta de Margem" },

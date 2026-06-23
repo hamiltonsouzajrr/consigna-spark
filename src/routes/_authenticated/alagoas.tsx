@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Sparkles, TrendingUp, CreditCard, Wallet, Building2, Star } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/alagoas")({
+export const Route = createFileRoute("/_authenticated/alagoas")({
   head: () => ({
     meta: [
       { title: "​SIMULAÇÃO GOVERNO DE ALAGOAS — Simulação de Consignado" },

@@ -9,7 +9,7 @@ import { Download, FileText, ExternalLink, AlertTriangle, Camera, CheckCircle2, 
 import letterhead from "@/assets/contrato-letterhead.jpg";
 import logo from "@/assets/contrato-logo.png";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/contrato")({
+export const Route = createFileRoute("/_authenticated/contrato")({
   head: () => ({
     meta: [
       { title: "Gerar Contrato | Grupo Positive" },

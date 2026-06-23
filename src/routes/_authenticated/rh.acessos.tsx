@@ -52,7 +52,7 @@ import {
   type RhUserAccess,
 } from "@/lib/rh/access.functions";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/rh/acessos")({
+export const Route = createFileRoute("/_authenticated/rh/acessos")({
   component: AcessosPage,
 });
 

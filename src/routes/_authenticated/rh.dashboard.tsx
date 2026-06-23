@@ -14,7 +14,7 @@ import {
   turnoverMensal, headcountEvolucao,
 } from "@/lib/rh/mock";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/rh/dashboard")({
+export const Route = createFileRoute("/_authenticated/rh/dashboard")({
   component: DashboardRh,
 });
 

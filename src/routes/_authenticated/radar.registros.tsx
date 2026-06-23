@@ -21,7 +21,7 @@ import {
   type DoRegistro, type DoArquivo, type DistribuicaoConsultora, type Consultora,
 } from "@/lib/radar/radar.functions";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/radar/registros")({
+export const Route = createFileRoute("/_authenticated/radar/registros")({
   component: RegistrosPage,
 });
 

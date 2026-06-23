@@ -9,7 +9,7 @@ import { RhStatCard } from "@/components/rh/RhStatCard";
 import { ProducaoRanking } from "@/components/rh/ProducaoRanking";
 import { CalendarClock, Flame, Clock, Phone, Target, ChevronRight } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/producao/meu-dia")({
+export const Route = createFileRoute("/_authenticated/producao/meu-dia")({
   head: () => ({
     meta: [
       { title: "Meu Dia — Produção" },

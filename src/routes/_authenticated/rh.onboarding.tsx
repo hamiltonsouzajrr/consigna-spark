@@ -23,7 +23,7 @@ import {
   type Onboarding, type Tarefa,
 } from "@/lib/rh/onboarding.functions";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/rh/onboarding")({
+export const Route = createFileRoute("/_authenticated/rh/onboarding")({
   component: OnboardingPage,
 });
 

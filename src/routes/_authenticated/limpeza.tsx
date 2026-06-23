@@ -13,7 +13,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/limpeza")({
+export const Route = createFileRoute("/_authenticated/limpeza")({
   head: () => ({
     meta: [
       { title: "Limpeza de Registros — Consulta de Margem" },

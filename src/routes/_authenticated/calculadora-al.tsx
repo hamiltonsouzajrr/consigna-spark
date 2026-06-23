@@ -21,7 +21,7 @@ import { aliquotaIR } from "@/lib/al/imposto";
 import { calcMargens } from "@/lib/al/margem";
 import { estimarCredito } from "@/lib/al/credito";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/calculadora-al")({
+export const Route = createFileRoute("/_authenticated/calculadora-al")({
   head: () => ({
     meta: [
       { title: "Calculadora de Margem Consignável — ARACAJU" },

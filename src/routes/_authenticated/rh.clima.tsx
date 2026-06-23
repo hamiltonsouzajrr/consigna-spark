@@ -23,7 +23,7 @@ import {
   getClimaWeek, submitClimaResponse, formatWeekLabel, CLIMA_QUESTIONS,
 } from "@/lib/rh/clima.functions";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/rh/clima")({
+export const Route = createFileRoute("/_authenticated/rh/clima")({
   component: Clima,
 });
 

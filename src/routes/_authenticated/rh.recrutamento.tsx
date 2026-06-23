@@ -34,7 +34,7 @@ import {
   ETAPAS, DEPARTAMENTOS, type Vaga, type Candidato,
 } from "@/lib/rh/recrutamento.functions";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/rh/recrutamento")({
+export const Route = createFileRoute("/_authenticated/rh/recrutamento")({
   component: Recrutamento,
 });
 

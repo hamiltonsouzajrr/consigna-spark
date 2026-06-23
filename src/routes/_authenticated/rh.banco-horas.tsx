@@ -21,7 +21,7 @@ import { RhPageHeader } from "@/components/rh/RhLayout";
 import { RhStatCard } from "@/components/rh/RhStatCard";
 import { pontos as pontosData, formatDate } from "@/lib/rh/mock";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/rh/banco-horas")({
+export const Route = createFileRoute("/_authenticated/rh/banco-horas")({
   component: BancoHoras,
 });
 

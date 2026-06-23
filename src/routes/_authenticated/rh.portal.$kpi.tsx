@@ -27,7 +27,7 @@ import {
 
 type PortalKpiSearch = { periodo: PeriodKey };
 
-export const Route = createFileRoute("/_authenticated/_authenticated/rh/portal/$kpi")({
+export const Route = createFileRoute("/_authenticated/rh/portal/$kpi")({
   validateSearch: (search: Record<string, unknown>): PortalKpiSearch => {
     const periodo = search.periodo;
     return {
