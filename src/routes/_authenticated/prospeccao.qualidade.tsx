@@ -17,7 +17,7 @@ import {
 } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-export const Route = createFileRoute("/prospeccao/qualidade")({
+export const Route = createFileRoute("/_authenticated/_authenticated/prospeccao/qualidade")({
   head: () => ({ meta: [{ title: "Qualidade de ligações — Prospecção" }, { name: "robots", content: "noindex,nofollow" }] }),
   component: Page,
 });

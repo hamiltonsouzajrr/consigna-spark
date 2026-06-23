@@ -29,7 +29,7 @@ import { markLeadOpened } from "@/lib/prospeccao/prospeccao.functions";
 
 import { useRhAccess } from "@/hooks/use-rh-access";
 
-export const Route = createFileRoute("/prospeccao/$leadId")({
+export const Route = createFileRoute("/_authenticated/_authenticated/prospeccao/$leadId")({
   head: () => ({ meta: [{ title: "Lead — Prospecção" }, { name: "robots", content: "noindex,nofollow" }] }),
   component: Page,
 });

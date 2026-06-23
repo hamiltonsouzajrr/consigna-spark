@@ -59,7 +59,7 @@ import {
   markConversationRead,
 } from "@/lib/wa/whatsapp.functions";
 
-export const Route = createFileRoute("/whatsapp")({
+export const Route = createFileRoute("/_authenticated/_authenticated/whatsapp")({
   head: () => ({
     meta: [
       { title: "WhatsApp | Grupo Positive" },

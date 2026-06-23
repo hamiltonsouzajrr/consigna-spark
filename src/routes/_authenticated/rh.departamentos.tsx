@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { RhPageHeader } from "@/components/rh/RhLayout";
 import { departamentos } from "@/lib/rh/mock";
 
-export const Route = createFileRoute("/rh/departamentos")({
+export const Route = createFileRoute("/_authenticated/_authenticated/rh/departamentos")({
   component: Departamentos,
 });
 

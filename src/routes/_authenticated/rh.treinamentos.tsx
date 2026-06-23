@@ -37,7 +37,7 @@ import { RhPageHeader, StatusBadge } from "@/components/rh/RhLayout";
 import { RhStatCard } from "@/components/rh/RhStatCard";
 import { treinamentos as treinamentosData, formatDate, type Treinamento } from "@/lib/rh/mock";
 
-export const Route = createFileRoute("/rh/treinamentos")({
+export const Route = createFileRoute("/_authenticated/_authenticated/rh/treinamentos")({
   component: Treinamentos,
 });
 

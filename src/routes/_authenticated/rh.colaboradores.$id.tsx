@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/rh/RhLayout";
 import { getColaborador, brl, formatDate, documentos, ocorrencias } from "@/lib/rh/mock";
 
-export const Route = createFileRoute("/rh/colaboradores/$id")({
+export const Route = createFileRoute("/_authenticated/_authenticated/rh/colaboradores/$id")({
   loader: ({ params }) => {
     const c = getColaborador(params.id);
     if (!c) throw notFound();

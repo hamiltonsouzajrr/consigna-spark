@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { RhPageHeader } from "@/components/rh/RhLayout";
 import { turnoverPred, turnoverNivel } from "@/lib/rh/extra";
 
-export const Route = createFileRoute("/rh/turnover")({
+export const Route = createFileRoute("/_authenticated/_authenticated/rh/turnover")({
   component: Turnover,
 });
 

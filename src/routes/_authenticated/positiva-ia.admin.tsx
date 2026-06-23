@@ -11,7 +11,7 @@ import { getAdminDashboard } from "@/lib/positiva/positiva.functions";
 import { ATIVIDADE_LABEL, classificacaoScore, type AtividadeTipo } from "@/lib/positiva/constants";
 import { ArrowLeft, AlertTriangle, Trophy, Gauge } from "lucide-react";
 
-export const Route = createFileRoute("/positiva-ia/admin")({
+export const Route = createFileRoute("/_authenticated/_authenticated/positiva-ia/admin")({
   head: () => ({
     meta: [
       { title: "Painel Administrativo — POSITIVA IA" },

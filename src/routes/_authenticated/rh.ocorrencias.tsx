@@ -29,7 +29,7 @@ import {
   TIPOS_OCORRENCIA, type Ocorrencia,
 } from "@/lib/rh/ocorrencias.functions";
 
-export const Route = createFileRoute("/rh/ocorrencias")({
+export const Route = createFileRoute("/_authenticated/_authenticated/rh/ocorrencias")({
   component: Ocorrencias,
 });
 

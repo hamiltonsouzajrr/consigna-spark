@@ -33,7 +33,7 @@ const FINALIDADES = [
   "Outra",
 ] as const;
 
-export const Route = createFileRoute("/pesquisas")({
+export const Route = createFileRoute("/_authenticated/_authenticated/pesquisas")({
   head: () => ({
     meta: [
       { title: "Pesquisas — Consulta Nova Vida" },

@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
 import { ProducaoRanking } from "@/components/rh/ProducaoRanking";
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/_authenticated/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — Consulta de Margem" },
@@ -290,12 +290,9 @@ function Page() {
           </p>
         )}
       </div>
-
       <div className="mb-6">
         <ProducaoRanking title="Ranking de Produção" limit={10} />
       </div>
-
-
       {isAdmin && (
         <>
           <div className="mb-3 mt-2">
@@ -321,7 +318,6 @@ function Page() {
           </Card>
         </>
       )}
-
       {/* Consulta Alagoas — destaque premium */}
       <div className="card-premium mb-8 p-6 text-white md:p-8">
         <div className="mb-5 flex items-center gap-3">
@@ -377,7 +373,6 @@ function Page() {
                   {debugRow.status === "processando" && <Loader2 className="ml-2 inline h-3 w-3 animate-spin" />}
                 </div>
               </div>
-
               {concluido && (() => {
                 const COEF_EMP = 0.01862;
                 const COEF_CARTAO = 17.15;
@@ -390,75 +385,70 @@ function Page() {
                 const cc = calcCartao(debugRow.margem_cartao_credito);
                 const cb = calcCartao(debugRow.margem_cartao_beneficio);
                 return (
-                <div className="space-y-2 rounded border bg-background/60 p-4 leading-relaxed">
-                  <div><span className="text-muted-foreground">Servidor</span> <strong>{debugRow.servidor_nome ?? "—"}</strong> <span className="text-muted-foreground ml-2">Matrícula</span><strong>{debugRow.matricula ?? "—"}</strong></div>
-                  <div><span className="text-muted-foreground">Órgão</span><strong>{debugRow.orgao ?? "—"}</strong></div>
-                  {(() => {
-                    const cat = (debugRow.categoria ?? "").toString();
-                    const sit = (debugRow.situacao ?? "").toString();
-                    const blob = `${cat} ${sit}`.toLowerCase();
-                    let vinculo: { label: string; cls: string } | null = null;
-                    if (/comission|cargo\s*em\s*comiss|cc\b|c\.c\./.test(blob)) vinculo = { label: "Comissionado", cls: "bg-warning/15 text-warning border-warning/30" };
-                    else if (/concurs|efetiv|estatut/.test(blob)) vinculo = { label: "Concursado", cls: "bg-success/15 text-success border-success/30" };
-                    return (
-                      <>
-                        <div>
-                          <span className="text-muted-foreground">Vínculo</span>{" "}
-                          {vinculo ? (
-                            <span className={`inline-block rounded border px-2 py-0.5 text-xs font-semibold ${vinculo.cls}`}>{vinculo.label}</span>
-                          ) : (
-                            <strong>—</strong>
-                          )}
-                          {cat && <span className="ml-2 text-xs text-muted-foreground">(categoria: {cat})</span>}
+                  <div className="space-y-2 rounded border bg-background/60 p-4 leading-relaxed">
+                    <div><span className="text-muted-foreground">Servidor</span> <strong>{debugRow.servidor_nome ?? "—"}</strong> <span className="text-muted-foreground ml-2">Matrícula</span><strong>{debugRow.matricula ?? "—"}</strong></div>
+                    <div><span className="text-muted-foreground">Órgão</span><strong>{debugRow.orgao ?? "—"}</strong></div>
+                    {(() => {
+                      const cat = (debugRow.categoria ?? "").toString();
+                      const sit = (debugRow.situacao ?? "").toString();
+                      const blob = `${cat} ${sit}`.toLowerCase();
+                      let vinculo: { label: string; cls: string } | null = null;
+                      if (/comission|cargo\s*em\s*comiss|cc\b|c\.c\./.test(blob)) vinculo = { label: "Comissionado", cls: "bg-warning/15 text-warning border-warning/30" };
+                      else if (/concurs|efetiv|estatut/.test(blob)) vinculo = { label: "Concursado", cls: "bg-success/15 text-success border-success/30" };
+                      return (
+                        <>
+                          <div>
+                            <span className="text-muted-foreground">Vínculo</span>{" "}
+                            {vinculo ? (
+                              <span className={`inline-block rounded border px-2 py-0.5 text-xs font-semibold ${vinculo.cls}`}>{vinculo.label}</span>
+                            ) : (
+                              <strong>—</strong>
+                            )}
+                            {cat && <span className="ml-2 text-xs text-muted-foreground">(categoria: {cat})</span>}
+                          </div>
+                          <div><span className="text-muted-foreground">Situação</span> <strong>{sit || "—"}</strong></div>
+                        </>
+                      );
+                    })()}
+                    <div className="pt-2">
+                      <div><span className="text-muted-foreground">Margem Empréstimo</span> <strong>{brl(debugRow.margem_emprestimo)}</strong>
+                        {empValor != null && <span className="ml-2 text-primary">→ Valor liberado aproximadamente <strong>{brl(empValor)}</strong> <span className="text-xs text-muted-foreground">(margem ÷ {COEF_EMP.toString().replace(".", ",")} · confirmar com o setor de Digitação)</span></span>}
+                      </div>
+                      <SimuladorMargem margemDisponivel={debugRow.margem_emprestimo} defaultCoef={COEF_EMP} />
+                    </div>
+                    <div className="pt-1">
+                      <div><span className="text-muted-foreground">Margem Cartão Crédito</span> <strong>{brl(debugRow.margem_cartao_credito)}</strong>
+                        {cc && <span className="ml-2 text-primary">× {COEF_CARTAO.toString().replace(".", ",")} = <strong>{brl(cc.total)}</strong></span>}
+                      </div>
+                      {cc && (
+                        <div className="ml-4 text-xs text-muted-foreground">
+                          Saque do cartão: <strong className="text-foreground">{brl(cc.saque)}</strong> · Limite do cartão: <strong className="text-foreground">{brl(cc.limite)}</strong>
                         </div>
-                        <div><span className="text-muted-foreground">Situação</span> <strong>{sit || "—"}</strong></div>
-                      </>
-                    );
-                  })()}
-
-                  <div className="pt-2">
-                    <div><span className="text-muted-foreground">Margem Empréstimo</span> <strong>{brl(debugRow.margem_emprestimo)}</strong>
-                      {empValor != null && <span className="ml-2 text-primary">→ Valor liberado aproximadamente <strong>{brl(empValor)}</strong> <span className="text-xs text-muted-foreground">(margem ÷ {COEF_EMP.toString().replace(".", ",")} · confirmar com o setor de Digitação)</span></span>}
+                      )}
                     </div>
-                    <SimuladorMargem margemDisponivel={debugRow.margem_emprestimo} defaultCoef={COEF_EMP} />
-                  </div>
-
-                  <div className="pt-1">
-                    <div><span className="text-muted-foreground">Margem Cartão Crédito</span> <strong>{brl(debugRow.margem_cartao_credito)}</strong>
-                      {cc && <span className="ml-2 text-primary">× {COEF_CARTAO.toString().replace(".", ",")} = <strong>{brl(cc.total)}</strong></span>}
-                    </div>
-                    {cc && (
-                      <div className="ml-4 text-xs text-muted-foreground">
-                        Saque do cartão: <strong className="text-foreground">{brl(cc.saque)}</strong> · Limite do cartão: <strong className="text-foreground">{brl(cc.limite)}</strong>
+                    <div className="pt-1">
+                      <div><span className="text-muted-foreground">Margem Cartão Benefício</span> <strong>{brl(debugRow.margem_cartao_beneficio)}</strong>
+                        {cb && <span className="ml-2 text-primary">× {COEF_CARTAO.toString().replace(".", ",")} = <strong>{brl(cb.total)}</strong></span>}
                       </div>
-                    )}
-                  </div>
-
-                  <div className="pt-1">
-                    <div><span className="text-muted-foreground">Margem Cartão Benefício</span> <strong>{brl(debugRow.margem_cartao_beneficio)}</strong>
-                      {cb && <span className="ml-2 text-primary">× {COEF_CARTAO.toString().replace(".", ",")} = <strong>{brl(cb.total)}</strong></span>}
+                      {cb && (
+                        <div className="ml-4 text-xs text-muted-foreground">
+                          Saque do cartão: <strong className="text-foreground">{brl(cb.saque)}</strong> · Limite do cartão: <strong className="text-foreground">{brl(cb.limite)}</strong>
+                        </div>
+                      )}
                     </div>
-                    {cb && (
-                      <div className="ml-4 text-xs text-muted-foreground">
-                        Saque do cartão: <strong className="text-foreground">{brl(cb.saque)}</strong> · Limite do cartão: <strong className="text-foreground">{brl(cb.limite)}</strong>
-                      </div>
-                    )}
                   </div>
-                </div>
-                );
+                )
               })()}
-
               <div className="mt-3 text-xs text-muted-foreground">
                 Última atualização: {new Date(debugRow.updated_at).toLocaleString("pt-BR")}
               </div>
-
               {debugRow.erro && (
                 <div className="mt-3 rounded border border-destructive/30 bg-destructive/10 p-2 text-destructive">
                   <strong>Erro / mensagem:</strong> {debugRow.erro}
                 </div>
               )}
             </div>
-          );
+          )
         })()}
 
         {debugRow && (() => {
@@ -518,9 +508,8 @@ function Page() {
           );
         })()}
       </div>
-
     </AppShell>
-  );
+  )
 }
 
 function SimuladorMargem({ margemDisponivel, defaultCoef }: { margemDisponivel: number | null; defaultCoef: number }) {

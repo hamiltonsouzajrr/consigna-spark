@@ -37,7 +37,7 @@ import { toast } from "sonner";
 import { RhPageHeader, StatusBadge } from "@/components/rh/RhLayout";
 import { equipamentos as equipamentosData, formatDate, type Equipamento } from "@/lib/rh/mock";
 
-export const Route = createFileRoute("/rh/equipamentos")({
+export const Route = createFileRoute("/_authenticated/_authenticated/rh/equipamentos")({
   component: Equipamentos,
 });
 

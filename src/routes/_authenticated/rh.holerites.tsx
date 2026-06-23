@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { RhPageHeader } from "@/components/rh/RhLayout";
 import { holerites as holeritesData, fmtBRL, type Holerite } from "@/lib/rh/extra";
 
-export const Route = createFileRoute("/rh/holerites")({
+export const Route = createFileRoute("/_authenticated/_authenticated/rh/holerites")({
   component: Holerites,
 });
 

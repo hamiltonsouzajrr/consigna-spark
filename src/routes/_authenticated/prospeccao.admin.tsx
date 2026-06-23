@@ -25,7 +25,7 @@ import {
 } from "@/lib/prospeccao/prospeccao.functions";
 import { STATUS_LABEL, STATUS_TONE, normalizeWhatsappNumber, type LeadStatus } from "@/lib/prospeccao/constants";
 
-export const Route = createFileRoute("/prospeccao/admin")({
+export const Route = createFileRoute("/_authenticated/_authenticated/prospeccao/admin")({
   head: () => ({ meta: [{ title: "Painel admin — Prospecção" }, { name: "robots", content: "noindex,nofollow" }] }),
   component: Page,
 });

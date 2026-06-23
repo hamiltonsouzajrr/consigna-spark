@@ -18,7 +18,7 @@ import {
 } from "@/lib/radar/radar.functions";
 import { PromovidosPdfImport } from "@/components/prospeccao/PromovidosPdfImport";
 
-export const Route = createFileRoute("/prospeccao/promovidos")({
+export const Route = createFileRoute("/_authenticated/_authenticated/prospeccao/promovidos")({
   head: () => ({
     meta: [
       { title: "Meus leads — Recém promovidos" },

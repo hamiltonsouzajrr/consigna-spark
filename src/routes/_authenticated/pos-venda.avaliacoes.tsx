@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Star, QrCode, ExternalLink } from "lucide-react";
 
-export const Route = createFileRoute("/pos-venda/avaliacoes")({
+export const Route = createFileRoute("/_authenticated/_authenticated/pos-venda/avaliacoes")({
   head: () => ({
     meta: [
       { title: "Avaliações — Pós-venda" },

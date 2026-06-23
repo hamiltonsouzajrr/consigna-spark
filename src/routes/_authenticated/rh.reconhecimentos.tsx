@@ -30,7 +30,7 @@ import {
   TIPOS, CATEGORIAS_RECONHECIMENTO, PERIODICIDADES, type Reconhecimento,
 } from "@/lib/rh/reconhecimentos.functions";
 
-export const Route = createFileRoute("/rh/reconhecimentos")({
+export const Route = createFileRoute("/_authenticated/_authenticated/rh/reconhecimentos")({
   component: Reconhecimentos,
 });
 

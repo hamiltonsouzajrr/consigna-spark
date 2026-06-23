@@ -2,7 +2,7 @@ import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { RhLayout } from "@/components/rh/RhLayout";
 
-export const Route = createFileRoute("/rh")({
+export const Route = createFileRoute("/_authenticated/_authenticated/rh")({
   head: () => ({
     meta: [
       { title: "RH | Grupo Positive" },

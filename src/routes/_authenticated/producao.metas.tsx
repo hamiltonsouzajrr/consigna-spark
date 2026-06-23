@@ -11,7 +11,7 @@ import { Target } from "lucide-react";
 import { brl } from "@/lib/rh/mock";
 import { producaoMesQueryOptions, mesAtual, formatMes } from "@/lib/rh/producao";
 
-export const Route = createFileRoute("/producao/metas")({
+export const Route = createFileRoute("/_authenticated/_authenticated/producao/metas")({
   head: () => ({
     meta: [
       { title: "Metas — Produção" },

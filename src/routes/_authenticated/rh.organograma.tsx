@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { RhPageHeader } from "@/components/rh/RhLayout";
 import { organograma, type OrgNode } from "@/lib/rh/extra";
 
-export const Route = createFileRoute("/rh/organograma")({
+export const Route = createFileRoute("/_authenticated/_authenticated/rh/organograma")({
   component: Organograma,
 });
 

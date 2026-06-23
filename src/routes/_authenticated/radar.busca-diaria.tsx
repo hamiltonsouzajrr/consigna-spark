@@ -19,7 +19,7 @@ import {
 } from "@/lib/radar/diario.functions";
 import { getCobertura2026, type CoberturaMes } from "@/lib/radar/radar.functions";
 
-export const Route = createFileRoute("/radar/busca-diaria")({
+export const Route = createFileRoute("/_authenticated/_authenticated/radar/busca-diaria")({
   // Painel autenticado cujos dados são carregados no cliente (useEffect).
   // Desativar SSR evita o erro de Suspense boundary durante o streaming no
   // servidor (queda para client rendering) e o flicker associado.

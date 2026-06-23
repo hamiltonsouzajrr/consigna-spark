@@ -56,7 +56,7 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   });
 }
 
-export const Route = createFileRoute("/safe-consig")({
+export const Route = createFileRoute("/_authenticated/_authenticated/safe-consig")({
   head: () => ({
     meta: [
       { title: "Verificar cadastro SafeConsig — Grupo Positive" },

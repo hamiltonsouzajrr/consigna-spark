@@ -13,7 +13,7 @@ import {
   type DoArquivo,
 } from "@/lib/radar/radar.functions";
 
-export const Route = createFileRoute("/radar/arquivos")({
+export const Route = createFileRoute("/_authenticated/_authenticated/radar/arquivos")({
   component: ArquivosPage,
 });
 

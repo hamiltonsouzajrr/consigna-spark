@@ -30,7 +30,7 @@ import {
 } from "@/lib/rh/mock";
 import { exportExcel, exportPdf } from "@/lib/rh/export";
 
-export const Route = createFileRoute("/rh/colaboradores")({
+export const Route = createFileRoute("/_authenticated/_authenticated/rh/colaboradores")({
   component: Colaboradores,
 });
 

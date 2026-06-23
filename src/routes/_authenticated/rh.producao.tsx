@@ -22,7 +22,7 @@ import {
   formatMes,
 } from "@/lib/rh/producao";
 
-export const Route = createFileRoute("/rh/producao")({
+export const Route = createFileRoute("/_authenticated/_authenticated/rh/producao")({
   component: ProducaoAdmin,
 });
 

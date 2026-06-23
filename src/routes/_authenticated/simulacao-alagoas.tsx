@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Calculator, Eraser, AlertTriangle } from "lucide-react";
 
-export const Route = createFileRoute("/simulacao-alagoas")({
+export const Route = createFileRoute("/_authenticated/_authenticated/simulacao-alagoas")({
   head: () => ({
     meta: [
       { title: "SIMULAÇÃO BANESE | Grupo Positive" },

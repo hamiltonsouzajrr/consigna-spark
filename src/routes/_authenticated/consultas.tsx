@@ -20,7 +20,7 @@ import { Progress } from "@/components/ui/progress";
 import * as XLSX from "xlsx";
 import { formatCpf } from "@/lib/cpf";
 
-export const Route = createFileRoute("/consultas")({
+export const Route = createFileRoute("/_authenticated/_authenticated/consultas")({
   head: () => ({
     meta: [
       { title: "Consultas — Margem Consignável" },

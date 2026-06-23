@@ -11,7 +11,7 @@ import { TrendingUp, Target, Copy, Search, ChevronLeft, ChevronRight, Loader2 } 
 import { formatCpf, normalizeCpf } from "@/lib/cpf";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/servidores-sem-acesso")({
+export const Route = createFileRoute("/_authenticated/_authenticated/servidores-sem-acesso")({
   head: () => ({
     meta: [
       { title: "Servidores sem acesso SafeConsig — Grupo Positive" },

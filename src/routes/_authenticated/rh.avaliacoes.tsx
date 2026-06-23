@@ -41,7 +41,7 @@ import {
   formatMes,
 } from "@/lib/rh/producao";
 
-export const Route = createFileRoute("/rh/avaliacoes")({
+export const Route = createFileRoute("/_authenticated/_authenticated/rh/avaliacoes")({
   component: Avaliacoes,
 });
 

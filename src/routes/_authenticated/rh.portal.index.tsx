@@ -43,7 +43,7 @@ import {
   PORTAL_ICON_NAMES, PORTAL_TONES, portalIcon, toneClass,
 } from "@/lib/rh/portal-icons";
 
-export const Route = createFileRoute("/rh/portal/")({
+export const Route = createFileRoute("/_authenticated/_authenticated/rh/portal/")({
   component: PortalIndex,
 });
 

@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { RhPageHeader } from "@/components/rh/RhLayout";
 import { documentos, formatDate } from "@/lib/rh/mock";
 
-export const Route = createFileRoute("/rh/documentos")({
+export const Route = createFileRoute("/_authenticated/_authenticated/rh/documentos")({
   component: Documentos,
 });
 

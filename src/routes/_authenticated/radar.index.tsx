@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { getDashboard, type DashboardData } from "@/lib/radar/radar.functions";
 
-export const Route = createFileRoute("/radar/")({
+export const Route = createFileRoute("/_authenticated/_authenticated/radar/")({
   component: DashboardPage,
 });
 
