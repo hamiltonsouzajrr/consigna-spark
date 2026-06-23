@@ -714,6 +714,7 @@ async function distribuirRoundRobin(supabase: any): Promise<{ atribuidos: number
 export const distribuirLeadsAutomatico = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ atribuidos: number; consultoras: number }> => {
+    await assertAdmin(context.supabase, context.userId);
     return distribuirRoundRobin(context.supabase);
   });
 
