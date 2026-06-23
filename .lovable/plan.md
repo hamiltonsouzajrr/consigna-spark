@@ -1,83 +1,98 @@
-# Radar Diário Oficial — Busca Diária Automática (Alagoas)
+# Diagnóstico Técnico — Plataforma Grupo Positive
 
-Boa notícia técnica: o site **expõe uma API JSON oficial**, então não preciso fazer scraping frágil de HTML.
+## 1) Arquitetura
 
+**Tecnologias:** TanStack Start v1 (React 19, SSR), TanStack Router + Query, Vite 7, Tailwind v4, Radix/shadcn, Supabase (Lovable Cloud, RLS), Vercel AI SDK, pdfjs/mammoth, jsPDF, recharts, sonner. Deploy em Cloudflare Workers.
+
+**Organização de pastas:**
 ```text
-Listar edições:  GET /apinova/api/editions/published?page=1
-  → { editions: [ { id, number, edition_type_name, suplement, publication_date } ] }
-Baixar PDF:      GET /apinova/api/editions/downloadPdf/{id}
+src/
+  routes/        68 rotas (page + api/public/*)
+  lib/           server functions (*.functions.ts) por domínio
+    radar/ prospeccao/ rh/ positiva/ legal/ wa/ al/ ai/ server/
+  components/     ui (shadcn), rh, prospeccao, legal, ai-elements
+  hooks/          use-rh-access, use-rh-notifications, use-mobile
+  integrations/   supabase/ (client, client.server, auth-*, types)
+supabase/         12 edge functions, 61 migrations
 ```
 
-A automação roda **toda a cadeia no servidor** (Cloudflare Workers): consulta a API, baixa o PDF, extrai o texto e aplica a IA já existente (`analisarDiarioAI`, com as regras anti-falso-positivo e priorização de seções que acabamos de implementar).
+**Rotas principais:** `/` `/login` `/dashboard`, `radar.*`, `prospeccao.*`, `rh.*` (layout + ~30 subrotas), `positiva-ia.*`, `aprovacao.$token`, `api/public/*` (webhooks WhatsApp, radar-diário).
 
-## Arquitetura (3 serviços)
+**Componentes:** `AppShell`, `RhLayout`, `NotificationBell`, `PromovidosPdfImport`, `CentralAprovacao`, `PositivaCoachWidget`, ai-elements.
 
-```text
-diarioCrawlerService     → consulta a API, detecta novas edições, baixa PDFs + suplementos, salva no storage
-diarioExtractionService  → extrai texto do PDF (server-side), roda IA, classifica e grava registros
-diarioSchedulerService   → orquestra a execução diária, grava logs, evita duplicidade, dispara alertas
-```
+**Hooks/contexts:** `AuthProvider`/`useAuth` (`src/lib/auth.tsx`), `useRhAccess`, `useRhNotifications`.
 
-Arquivos:
-- `src/lib/radar/diario-crawler.server.ts` — busca na API + download.
-- `src/lib/radar/diario-extraction.server.ts` — extração de texto (lib `unpdf`, compatível com Workers) + chamada da IA.
-- `src/lib/radar/diario-scheduler.server.ts` — pipeline completo (crawler → extração → registros → logs → alertas).
-- `src/lib/radar/diario.functions.ts` — server functions autenticadas (admin) para os botões manuais e leitura do painel.
-- `src/routes/api/public/hooks/radar-diario.ts` — endpoint chamado pelo cron diário (autenticado por `apikey`).
+**Serviços/APIs:** server functions com `requireSupabaseAuth`; crawlers em `*.server.ts`; AI Gateway (`ai-gateway.server.ts`); integrações Nova Vida, ConsigUp, WhatsApp.
 
-> Limitação honesta: OCR de PDF escaneado **não** roda no agendamento (Workers não suporta Tesseract). Se um PDF vier sem texto extraível, o sistema marca a edição como "Requer OCR" e gera um alerta para o admin processar manualmente pela aba Importar (que já tem OCR no navegador).
+**Banco:** ~45 tabelas com RLS. Funções `has_role`, `atribuir_consultora_automatico`, `compute_prospect_lead`, etc.
 
-## Banco de dados
+## 2) Análise por módulo (resumo)
 
-**`fontes_diario_oficial`** (registro de cada PDF encontrado/baixado):
-`data_consulta, data_publicacao, numero_edicao, tipo_edicao, titulo, suplemento, edition_id, url_origem, url_pdf, nome_arquivo, caminho_arquivo (storage), hash_arquivo, status_download, status_processamento, total_paginas, total_registros_extraidos, requer_ocr, erro_processamento, arquivo_id (FK→do_arquivos), criado_em, atualizado_em`
+- **`auth.tsx` (AuthProvider/useAuth):** gerencia sessão. Risco: não invalida router/Query em login/logout → dados stale; só repassa `error.message`.
+- **`use-rh-access.ts`:** bem implementado, cache 60s, baixo risco.
+- **`radar.functions.ts` (22 fns):** todas com `requireSupabaseAuth`. `getLeadsPromovidos` falha silenciosa (lista vazia) se e-mail não está em `radar_consultoras`. `distribuirLeadsAutomatico` com risco de race condition.
+- **`prospeccao.functions.ts`:** funções `admin*` precisam de checagem estrita de role.
+- **`legal.functions.ts` `getApprovalByToken`:** público intencional (acesso por token).
+- **`diario.*.server.ts`:** operações longas no Worker, sem OCR para PDFs escaneados.
+- **`radar.busca-diaria.tsx`:** múltiplos `useServerFn` em `useEffect` → causa erro de Suspense no SSR.
+- **`RhLayout`:** proteção de abas client-side via `useRhAccess`.
 
-Duplicidade: índice único em `(data_publicacao, numero_edicao, tipo_edicao, suplemento)` + verificação por `hash_arquivo`/`url_pdf`. Já baixado não reprocessa, exceto via botão "Reprocessar".
+## 3) Notas (0–100)
 
-**`diario_automacao_logs`** (log de cada execução):
-`executado_em, gatilho (cron/manual/data/intervalo), url_consultada, arquivos_encontrados, arquivos_baixados, registros_extraidos, duracao_ms, erros, detalhe(jsonb)`
+| Critério | Nota |
+|---|---|
+| Funcionalidade | 82 |
+| Estabilidade | 62 |
+| Organização | 80 |
+| Segurança | 45 |
+| Performance | 60 |
+| UX/UI | 75 |
+| Manutenibilidade | 74 |
+| Tratamento de erros | 55 |
+| Integração backend | 80 |
 
-**`diario_alertas`** (avisos ao admin, lidos no painel):
-`tipo, titulo, mensagem, fonte_id (FK), severidade, lido, criado_em`. Tipos: nova edição baixada, promoção confirmada encontrada, +10 registros numa edição, falha de download, site fora do ar, PDF requer OCR.
+## 4) Problemas por prioridade
 
-Os registros extraídos continuam indo para as tabelas existentes **`do_arquivos`/`do_registros`**, reaproveitando a aba Registros, filtros (potencial, status) e exportação já prontos.
+**CRÍTICO**
+- `do_registros` (PII: nome, CPF parcial) — RLS de escrita permissiva (`USING true`). Impacto: qualquer usuário autenticado adultera/insere. Correção: restringir INSERT/UPDATE a admin.
+- `radar_consultoras` — INSERT/UPDATE/DELETE com `true`. Impacto: corrupção da distribuição de leads. Correção: política admin.
 
-RLS: leitura/edição para `authenticated`; ações destrutivas e "rodar agora" restritas a admin (`has_role`); `service_role` total.
+**ALTO**
+- Sem layout `_authenticated/` — proteção só client-side (`useAuth`+`<Navigate>`). Impacto: flash de conteúdo no SSR, padrão não recomendado. Correção: criar `src/routes/_authenticated/route.tsx` e migrar rotas logadas.
+- Erro de Suspense em `/radar/busca-diaria`. Impacto: fallback para client render, flicker. Correção: migrar fetches para `loader`+`useSuspenseQuery`.
+- `do_arquivos`/`fontes_diario_oficial` — RLS de escrita permissiva. Correção: escrita só admin.
 
-## Painel "Busca Diária do Diário Oficial"
+**MÉDIO**
+- Padrão `useEffect`+`useState`+`useServerFn` em vez de `loader`+TanStack Query (sem cache/SSR). 
+- `AuthProvider` não invalida router/Query em troca de sessão.
+- Round-robin de distribuição não atômico (race). Correção: `UPDATE … RETURNING`.
+- `catch` silenciosos sem feedback ao usuário.
 
-Nova aba em `/radar/busca-diaria` (`src/routes/radar.busca-diaria.tsx`), adicionada ao menu do Radar.
+**BAIXO**
+- Rotas dinâmicas sem `errorComponent`/`notFoundComponent`.
+- ARIA ausente em tabs/nav customizados; tabelas densas sem scroll no mobile.
+- Dados mock no RH; TODOs pendentes.
 
-KPIs: última consulta, última edição encontrada, PDFs baixados hoje, PDFs aguardando processamento, registros encontrados hoje, promoções confirmadas, pendentes de revisão, possíveis falsos positivos.
+## 5) Plano de ação em 4 fases
 
-Ações:
-- **Rodar busca agora** (admin) — executa o pipeline para hoje.
-- **Buscar edição de data específica** (date picker).
-- **Buscar últimos 7 dias** / **Buscar últimos 30 dias**.
-- Por fonte na lista: **Reprocessar edição**, **Abrir PDF original** (URL assinada do storage).
+**Fase 1 — Correções seguras**
+- Endurecer RLS de escrita: `do_registros`, `radar_consultoras`, `do_arquivos`, `fontes_diario_oficial` (escrita só admin via `has_role`).
+- Adicionar `errorComponent`/`notFoundComponent` nas rotas com loader/params.
+- Substituir `catch` silenciosos por toasts/log.
 
-Seções: lista de edições/fontes (data, nº, tipo, suplemento, status download/processamento, nº registros), painel de alertas não lidos e histórico de logs da automação.
+**Fase 2 — Melhorias importantes**
+- Criar `_authenticated/route.tsx` e migrar rotas logadas.
+- Corrigir erro de Suspense em `/radar/busca-diaria`.
+- Invalidar router/Query em `onAuthStateChange` no `__root.tsx`.
 
-## Agendamento
+**Fase 3 — Refatorações**
+- Migrar telas críticas para `loader`+`useSuspenseQuery`.
+- Tornar round-robin atômico.
+- Hook reutilizável de carregamento de dados.
 
-`pg_cron` + `pg_net` chamando `POST /api/public/hooks/radar-diario` **de segunda a sexta às 06:30** (`30 9 * * 1-5` em UTC, equivalente a 06:30 BRT). Configurado via tool de inserção (contém URL + apikey, fora de migração).
+**Fase 4 — Melhorias avançadas**
+- Acessibilidade/ARIA, responsividade de tabelas.
+- Code-splitting, padronização de formulários.
+- Substituir mocks do RH por dados reais; limpar TODOs.
 
-## Boas práticas de acesso (implementadas)
-- Intervalo entre requisições (delay) ao baixar múltiplos PDFs.
-- Baixa apenas edições ainda não salvas; não repete download (checa hash/edition_id).
-- Mantém `url_origem`/`url_pdf` no histórico.
-- Reprocessamento sempre manual.
-- User-Agent e timeout definidos; se a API falhar, grava log + alerta "site fora do ar".
-
-## Ordem de execução
-1. Migração: 3 tabelas + GRANTs + RLS + índice de duplicidade.
-2. `bun add unpdf`.
-3. Serviços server-side (crawler, extraction, scheduler) + server functions.
-4. Rota pública do cron.
-5. Painel `/radar/busca-diaria` + item no menu.
-6. Agendamento `pg_cron` (06:30, dias úteis).
-7. Verificação: rodar o pipeline manualmente uma vez e validar download + extração + registros.
-
-## Pontos a confirmar
-- **Alertas ao admin**: começo com **alertas in-app** no painel (sino/lista). Quer também **e-mail**? Posso adicionar depois via conector de e-mail.
-- Mantém os registros nas tabelas atuais (`do_registros`) — recomendado, para reaproveitar a tela de Registros. Confirma?
+Diagnóstico concluído. Aguardando aprovação.
