@@ -601,7 +601,8 @@ export const atualizarRegistro = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
-    const { error } = await context.supabase
+    const admin = await getAdminClient();
+    const { error } = await admin
       .from("do_registros")
       .update(data.patch as any)
       .eq("id", data.id);
