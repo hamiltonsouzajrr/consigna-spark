@@ -687,16 +687,17 @@ async function distribuirRoundRobin(supabase: any): Promise<{ atribuidos: number
     alvo.total += 1;
   }
 
+  const admin = await getAdminClient();
   let atribuidos = 0;
   for (const c of ativas) {
     const ids = buckets.get(c.id)!;
     if (!ids.length) continue;
-    const { error: upErr } = await supabase
+    const { error: upErr } = await admin
       .from("do_registros")
       .update({ consultora_responsavel: c.nome } as any)
       .in("id", ids);
     if (upErr) throw new Error(upErr.message);
-    const { error: cntErr } = await supabase
+    const { error: cntErr } = await admin
       .from("radar_consultoras")
       .update({ total_leads_atribuidos: c.total } as any)
       .eq("id", c.id);
