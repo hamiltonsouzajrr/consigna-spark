@@ -20,6 +20,10 @@ import {
 import { getCobertura2026, type CoberturaMes } from "@/lib/radar/radar.functions";
 
 export const Route = createFileRoute("/radar/busca-diaria")({
+  // Painel autenticado cujos dados são carregados no cliente (useEffect).
+  // Desativar SSR evita o erro de Suspense boundary durante o streaming no
+  // servidor (queda para client rendering) e o flicker associado.
+  ssr: false,
   component: BuscaDiariaPage,
 });
 
