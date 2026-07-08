@@ -563,10 +563,7 @@ export async function processarProximoDaFila(jobId: string): Promise<JobProgress
     } as any)
     .eq("id", item.id);
 
-  await supabaseAdmin.rpc("bump_run_counters", { _run_id: jobId, _processed_inc: 0, _errors_inc: 0 }).then(
-    () => undefined,
-    () => undefined,
-  );
+
 
   const prog = await atualizarProgressoJob(jobId);
   const { data: j } = await supabaseAdmin
