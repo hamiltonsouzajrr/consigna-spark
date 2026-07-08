@@ -6,13 +6,21 @@ import { z } from "zod";
 
 export type RegistroExtraido = {
   nome_servidor: string;
+  nome_completo: string;
+  nome_parcial: string;
   matricula: string;
   cpf_parcial: string;
   cargo: string;
+  cargo_atual: string;
+  cargo_promovido: string;
+  cargo_anterior: string;
+  cargo_novo: string;
   orgao: string;
+  orgao_lotacao: string;
   tipo_movimentacao: string;
   data_publicacao: string;
   data_ato: string;
+  data_promocao: string;
   pagina: string;
   classe_anterior: string;
   classe_nova: string;
