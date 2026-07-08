@@ -1,0 +1,1 @@
+ALTER TABLE public.diario_busca_jobs ADD COLUMN IF NOT EXISTS finished_at timestamptz;

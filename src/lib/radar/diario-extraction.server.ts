@@ -6,13 +6,21 @@ import { z } from "zod";
 
 export type RegistroExtraido = {
   nome_servidor: string;
+  nome_completo: string;
+  nome_parcial: string;
   matricula: string;
   cpf_parcial: string;
   cargo: string;
+  cargo_atual: string;
+  cargo_promovido: string;
+  cargo_anterior: string;
+  cargo_novo: string;
   orgao: string;
+  orgao_lotacao: string;
   tipo_movimentacao: string;
   data_publicacao: string;
   data_ato: string;
+  data_promocao: string;
   pagina: string;
   classe_anterior: string;
   classe_nova: string;
@@ -173,6 +181,24 @@ As promoções em Diários Oficiais de AL geralmente seguem este molde:
 REGRAS:
 - Extraia apenas informações presentes no texto. NÃO invente dados. Deixe vazio o que não houver.
 - Sempre preserve em trecho_original o trecho exato que justifica a extração.
+- NOME — preencha nome_completo com o nome COMPLETO do servidor quando o ato o trouxer
+  por inteiro. Se o ato só trouxer um trecho/abreviação do nome (ex.: "M. da Silva",
+  "MARIA DA S.", iniciais), preencha nome_parcial com esse trecho e deixe nome_completo
+  vazio. SEMPRE preencha nome_servidor com a melhor forma disponível (completo ou parcial).
+- CARGO — preencha cargo_atual com o cargo/posto que o servidor ocupa ANTES do ato.
+  Preencha cargo_promovido com a representação da promoção:
+    • CIVIL: o cargo costuma permanecer o mesmo; represente a promoção como
+      "classe X nível Y -> classe X2 nível Y2" (ex.: "classe D nível 3 -> classe E nível 4").
+    • MILITAR: use cargo_anterior (posto/graduação antigo) e cargo_novo (posto novo),
+      e repita em cargo_promovido como "Posto antigo -> Posto novo"
+      (ex.: "Tenente-Coronel PM -> Coronel PM").
+- DATA DA PROMOÇÃO (campo data_promocao) — extraia a data em que a promoção passa a
+  valer: procure por "efeitos financeiros a partir de", "a contar de", "com efeitos a
+  partir de", "vigência a partir de" ou a data do próprio ato. Retorne no formato
+  AAAA-MM-DD. Se só houver "01 de março de 2026", converta para 2026-03-01. Se não
+  houver data, retorne "".
+- ÓRGÃO — preencha orgao_lotacao com o órgão/secretaria de lotação do servidor
+  (ex.: "Polícia Militar de Alagoas", "Secretaria de Educação").
 - CPF (campo cpf_parcial) — extraia o CPF do servidor SEMPRE que houver, mesmo PARCIAL
   ou mascarado. Formatos aceitos, entre outros:
   "CPF: 123.456.789-00", "CPF nº 123.456.789-00", "CPF n.º 123.456.789-00",
@@ -237,6 +263,34 @@ function extractCpf(trecho: string): string {
   return "";
 }
 
+const MESES_PT: Record<string, string> = {
+  janeiro: "01", fevereiro: "02", "março": "03", marco: "03", abril: "04",
+  maio: "05", junho: "06", julho: "07", agosto: "08", setembro: "09",
+  outubro: "10", novembro: "11", dezembro: "12",
+};
+
+// Fallback por regex: extrai a data em que a promoção passa a valer. Procura
+// âncoras ("efeitos financeiros a partir de", "a contar de", ...) e converte
+// datas por extenso ou numéricas para AAAA-MM-DD.
+function extractDataPromocao(trecho: string): string {
+  if (!trecho) return "";
+  const t = trecho.replace(/\s+/g, " ");
+  const ancora =
+    /(?:efeitos?\s+financeiros?\s+a\s+partir\s+de|com\s+efeitos?\s+a\s+partir\s+de|a\s+contar\s+de|vig[eê]ncia\s+a\s+partir\s+de|a\s+partir\s+de)\s+([^.,;]{4,40})/i;
+  const m = t.match(ancora);
+  const alvo = m ? m[1] : t;
+  // Data por extenso: "01 de março de 2026".
+  const ext = alvo.match(/(\d{1,2})\s+de\s+([a-zçã]+)\s+de\s+(\d{4})/i);
+  if (ext) {
+    const mes = MESES_PT[ext[2].toLowerCase()];
+    if (mes) return `${ext[3]}-${mes}-${ext[1].padStart(2, "0")}`;
+  }
+  // Data numérica: dd/mm/aaaa.
+  const num = alvo.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (num) return `${num[3]}-${num[2].padStart(2, "0")}-${num[1].padStart(2, "0")}`;
+  return "";
+}
+
 
 // Extrai o objeto JSON da resposta da IA (texto), tolerando cercas markdown e
 // texto extra ao redor. Valida com o schema e retorna { registros } ou null.
@@ -286,12 +340,20 @@ export async function analisarTextoServidor(input: {
 
   const itemSchema = z.object({
     nome_servidor: z.string(),
+    nome_completo: z.string().optional().default(""),
+    nome_parcial: z.string().optional().default(""),
     matricula: z.string(),
     cpf_parcial: z.string(),
     cargo: z.string(),
+    cargo_atual: z.string().optional().default(""),
+    cargo_promovido: z.string().optional().default(""),
+    cargo_anterior: z.string().optional().default(""),
+    cargo_novo: z.string().optional().default(""),
     orgao: z.string(),
+    orgao_lotacao: z.string().optional().default(""),
     tipo_movimentacao: z.string(),
     data_ato: z.string(),
+    data_promocao: z.string().optional().default(""),
     pagina: z.string(),
     classe_anterior: z.string(),
     classe_nova: z.string(),
@@ -327,17 +389,39 @@ export async function analisarTextoServidor(input: {
       });
       const output = parseRegistros(text, schema);
       for (const r of output?.registros ?? []) {
-        const nome = str(r.nome_servidor);
+        const nome = str(r.nome_servidor) || str(r.nome_completo) || str(r.nome_parcial);
         if (!nome) continue;
+        const trecho = str(r.trecho_original);
+        const cargoBase = str(r.cargo);
+        const cargoAtual = str(r.cargo_atual) || str(r.cargo_anterior) || cargoBase;
+        // Monta a representação da promoção quando a IA não a forneceu pronta.
+        let cargoPromovido = str(r.cargo_promovido);
+        if (!cargoPromovido) {
+          const mil = str(r.cargo_anterior) && str(r.cargo_novo)
+            ? `${str(r.cargo_anterior)} -> ${str(r.cargo_novo)}`
+            : "";
+          const civ = (str(r.classe_anterior) || str(r.nivel_anterior)) && (str(r.classe_nova) || str(r.nivel_novo))
+            ? `${[str(r.classe_anterior) && `classe ${str(r.classe_anterior)}`, str(r.nivel_anterior) && `nível ${str(r.nivel_anterior)}`].filter(Boolean).join(" ")} -> ${[str(r.classe_nova) && `classe ${str(r.classe_nova)}`, str(r.nivel_novo) && `nível ${str(r.nivel_novo)}`].filter(Boolean).join(" ")}`
+            : "";
+          cargoPromovido = mil || civ;
+        }
         out.push({
           nome_servidor: nome,
+          nome_completo: str(r.nome_completo),
+          nome_parcial: str(r.nome_parcial),
           matricula: str(r.matricula),
-          cpf_parcial: str(r.cpf_parcial) || extractCpf(str(r.trecho_original)),
-          cargo: str(r.cargo),
+          cpf_parcial: str(r.cpf_parcial) || extractCpf(trecho),
+          cargo: cargoBase,
+          cargo_atual: cargoAtual,
+          cargo_promovido: cargoPromovido,
+          cargo_anterior: str(r.cargo_anterior),
+          cargo_novo: str(r.cargo_novo),
           orgao: str(r.orgao) || str(input.orgao),
+          orgao_lotacao: str(r.orgao_lotacao) || str(r.orgao) || str(input.orgao),
           tipo_movimentacao: str(r.tipo_movimentacao) || "Possível promoção, precisa revisar",
           data_publicacao: str(input.data_publicacao),
           data_ato: str(r.data_ato),
+          data_promocao: str(r.data_promocao) || extractDataPromocao(trecho),
           pagina: str(r.pagina),
           classe_anterior: str(r.classe_anterior),
           classe_nova: str(r.classe_nova),
@@ -346,7 +430,7 @@ export async function analisarTextoServidor(input: {
           referencia_anterior: str(r.referencia_anterior),
           referencia_nova: str(r.referencia_nova),
           numero_ato: str(r.numero_ato),
-          trecho_original: str(r.trecho_original),
+          trecho_original: trecho,
           confianca_ia: str(r.confianca_ia) || "baixa",
           categoria: str(r.categoria) || "Possível promoção, precisa revisar",
           potencial_financeiro: str(r.potencial_financeiro) || "Médio",

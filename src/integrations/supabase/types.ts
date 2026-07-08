@@ -193,6 +193,110 @@ export type Database = {
         }
         Relationships: []
       }
+      diario_busca_fila: {
+        Row: {
+          created_at: string
+          edicao: Json
+          erro_msg: string | null
+          id: string
+          job_id: string
+          ordem: number
+          registros: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          edicao: Json
+          erro_msg?: string | null
+          id?: string
+          job_id: string
+          ordem?: number
+          registros?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          edicao?: Json
+          erro_msg?: string | null
+          id?: string
+          job_id?: string
+          ordem?: number
+          registros?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diario_busca_fila_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "diario_busca_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diario_busca_jobs: {
+        Row: {
+          baixados: number
+          created_at: string
+          created_by: string | null
+          current_label: string | null
+          date_from: string | null
+          date_to: string | null
+          erro_msg: string | null
+          erros: number
+          finished_at: string | null
+          id: string
+          periodo: string | null
+          periodo_label: string | null
+          processed: number
+          registros: number
+          status: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          baixados?: number
+          created_at?: string
+          created_by?: string | null
+          current_label?: string | null
+          date_from?: string | null
+          date_to?: string | null
+          erro_msg?: string | null
+          erros?: number
+          finished_at?: string | null
+          id?: string
+          periodo?: string | null
+          periodo_label?: string | null
+          processed?: number
+          registros?: number
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          baixados?: number
+          created_at?: string
+          created_by?: string | null
+          current_label?: string | null
+          date_from?: string | null
+          date_to?: string | null
+          erro_msg?: string | null
+          erros?: number
+          finished_at?: string | null
+          id?: string
+          periodo?: string | null
+          periodo_label?: string | null
+          processed?: number
+          registros?: number
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       do_arquivos: {
         Row: {
           caminho_arquivo: string | null
@@ -254,6 +358,10 @@ export type Database = {
         Row: {
           arquivo_id: string
           cargo: string | null
+          cargo_anterior: string | null
+          cargo_atual: string | null
+          cargo_novo: string | null
+          cargo_promovido: string | null
           categoria: string | null
           classe_anterior: string | null
           classe_nova: string | null
@@ -264,6 +372,7 @@ export type Database = {
           cpf_parcial: string | null
           created_at: string
           data_ato: string | null
+          data_promocao: string | null
           data_publicacao: string | null
           duplicado_possivel: boolean
           id: string
@@ -271,9 +380,12 @@ export type Database = {
           motivo_classificacao: string | null
           nivel_anterior: string | null
           nivel_novo: string | null
+          nome_completo: string | null
+          nome_parcial: string | null
           nome_servidor: string
           numero_ato: string | null
           orgao: string | null
+          orgao_lotacao: string | null
           pagina: string | null
           potencial_financeiro: string | null
           referencia_anterior: string | null
@@ -287,6 +399,10 @@ export type Database = {
         Insert: {
           arquivo_id: string
           cargo?: string | null
+          cargo_anterior?: string | null
+          cargo_atual?: string | null
+          cargo_novo?: string | null
+          cargo_promovido?: string | null
           categoria?: string | null
           classe_anterior?: string | null
           classe_nova?: string | null
@@ -297,6 +413,7 @@ export type Database = {
           cpf_parcial?: string | null
           created_at?: string
           data_ato?: string | null
+          data_promocao?: string | null
           data_publicacao?: string | null
           duplicado_possivel?: boolean
           id?: string
@@ -304,9 +421,12 @@ export type Database = {
           motivo_classificacao?: string | null
           nivel_anterior?: string | null
           nivel_novo?: string | null
+          nome_completo?: string | null
+          nome_parcial?: string | null
           nome_servidor: string
           numero_ato?: string | null
           orgao?: string | null
+          orgao_lotacao?: string | null
           pagina?: string | null
           potencial_financeiro?: string | null
           referencia_anterior?: string | null
@@ -320,6 +440,10 @@ export type Database = {
         Update: {
           arquivo_id?: string
           cargo?: string | null
+          cargo_anterior?: string | null
+          cargo_atual?: string | null
+          cargo_novo?: string | null
+          cargo_promovido?: string | null
           categoria?: string | null
           classe_anterior?: string | null
           classe_nova?: string | null
@@ -330,6 +454,7 @@ export type Database = {
           cpf_parcial?: string | null
           created_at?: string
           data_ato?: string | null
+          data_promocao?: string | null
           data_publicacao?: string | null
           duplicado_possivel?: boolean
           id?: string
@@ -337,9 +462,12 @@ export type Database = {
           motivo_classificacao?: string | null
           nivel_anterior?: string | null
           nivel_novo?: string | null
+          nome_completo?: string | null
+          nome_parcial?: string | null
           nome_servidor?: string
           numero_ato?: string | null
           orgao?: string | null
+          orgao_lotacao?: string | null
           pagina?: string | null
           potencial_financeiro?: string | null
           referencia_anterior?: string | null
@@ -1939,6 +2067,26 @@ export type Database = {
       bump_run_counters: {
         Args: { _errors_inc: number; _processed_inc: number; _run_id: string }
         Returns: undefined
+      }
+      claim_diario_fila_item: {
+        Args: { _job_id: string }
+        Returns: {
+          created_at: string
+          edicao: Json
+          erro_msg: string | null
+          id: string
+          job_id: string
+          ordem: number
+          registros: number
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "diario_busca_fila"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       has_role: {
         Args: {

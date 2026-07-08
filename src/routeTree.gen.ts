@@ -76,6 +76,7 @@ import { Route as AuthenticatedPositivaIaAdminRouteImport } from './routes/_auth
 import { Route as AuthenticatedPosVendaAvaliacoesRouteImport } from './routes/_authenticated/pos-venda.avaliacoes'
 import { Route as AuthenticatedRhPortalIndexRouteImport } from './routes/_authenticated/rh.portal.index'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp.webhook'
+import { Route as ApiPublicHooksRadarDiarioWorkerRouteImport } from './routes/api/public/hooks/radar-diario-worker'
 import { Route as ApiPublicHooksRadarDiarioRouteImport } from './routes/api/public/hooks/radar-diario'
 import { Route as AuthenticatedRhPortalKpiRouteImport } from './routes/_authenticated/rh.portal.$kpi'
 import { Route as AuthenticatedRhColaboradoresIdRouteImport } from './routes/_authenticated/rh.colaboradores.$id'
@@ -449,6 +450,12 @@ const ApiPublicWhatsappWebhookRoute =
     path: '/api/public/whatsapp/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksRadarDiarioWorkerRoute =
+  ApiPublicHooksRadarDiarioWorkerRouteImport.update({
+    id: '/api/public/hooks/radar-diario-worker',
+    path: '/api/public/hooks/radar-diario-worker',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksRadarDiarioRoute =
   ApiPublicHooksRadarDiarioRouteImport.update({
     id: '/api/public/hooks/radar-diario',
@@ -536,6 +543,7 @@ export interface FileRoutesByFullPath {
   '/rh/colaboradores/$id': typeof AuthenticatedRhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof AuthenticatedRhPortalKpiRoute
   '/api/public/hooks/radar-diario': typeof ApiPublicHooksRadarDiarioRoute
+  '/api/public/hooks/radar-diario-worker': typeof ApiPublicHooksRadarDiarioWorkerRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/rh/portal/': typeof AuthenticatedRhPortalIndexRoute
 }
@@ -604,6 +612,7 @@ export interface FileRoutesByTo {
   '/rh/colaboradores/$id': typeof AuthenticatedRhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof AuthenticatedRhPortalKpiRoute
   '/api/public/hooks/radar-diario': typeof ApiPublicHooksRadarDiarioRoute
+  '/api/public/hooks/radar-diario-worker': typeof ApiPublicHooksRadarDiarioWorkerRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/rh/portal': typeof AuthenticatedRhPortalIndexRoute
 }
@@ -677,6 +686,7 @@ export interface FileRoutesById {
   '/_authenticated/rh/colaboradores/$id': typeof AuthenticatedRhColaboradoresIdRoute
   '/_authenticated/rh/portal/$kpi': typeof AuthenticatedRhPortalKpiRoute
   '/api/public/hooks/radar-diario': typeof ApiPublicHooksRadarDiarioRoute
+  '/api/public/hooks/radar-diario-worker': typeof ApiPublicHooksRadarDiarioWorkerRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/_authenticated/rh/portal/': typeof AuthenticatedRhPortalIndexRoute
 }
@@ -750,6 +760,7 @@ export interface FileRouteTypes {
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
     | '/api/public/hooks/radar-diario'
+    | '/api/public/hooks/radar-diario-worker'
     | '/api/public/whatsapp/webhook'
     | '/rh/portal/'
   fileRoutesByTo: FileRoutesByTo
@@ -818,6 +829,7 @@ export interface FileRouteTypes {
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
     | '/api/public/hooks/radar-diario'
+    | '/api/public/hooks/radar-diario-worker'
     | '/api/public/whatsapp/webhook'
     | '/rh/portal'
   id:
@@ -890,6 +902,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rh/colaboradores/$id'
     | '/_authenticated/rh/portal/$kpi'
     | '/api/public/hooks/radar-diario'
+    | '/api/public/hooks/radar-diario-worker'
     | '/api/public/whatsapp/webhook'
     | '/_authenticated/rh/portal/'
   fileRoutesById: FileRoutesById
@@ -903,6 +916,7 @@ export interface RootRouteChildren {
   ApiPositivaCoachRoute: typeof ApiPositivaCoachRoute
   AprovacaoTokenRoute: typeof AprovacaoTokenRoute
   ApiPublicHooksRadarDiarioRoute: typeof ApiPublicHooksRadarDiarioRoute
+  ApiPublicHooksRadarDiarioWorkerRoute: typeof ApiPublicHooksRadarDiarioWorkerRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
@@ -1377,6 +1391,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/radar-diario-worker': {
+      id: '/api/public/hooks/radar-diario-worker'
+      path: '/api/public/hooks/radar-diario-worker'
+      fullPath: '/api/public/hooks/radar-diario-worker'
+      preLoaderRoute: typeof ApiPublicHooksRadarDiarioWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/radar-diario': {
       id: '/api/public/hooks/radar-diario'
       path: '/api/public/hooks/radar-diario'
@@ -1597,6 +1618,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPositivaCoachRoute: ApiPositivaCoachRoute,
   AprovacaoTokenRoute: AprovacaoTokenRoute,
   ApiPublicHooksRadarDiarioRoute: ApiPublicHooksRadarDiarioRoute,
+  ApiPublicHooksRadarDiarioWorkerRoute: ApiPublicHooksRadarDiarioWorkerRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport

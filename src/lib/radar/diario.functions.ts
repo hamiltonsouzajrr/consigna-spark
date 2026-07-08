@@ -238,3 +238,164 @@ export const extrairMes2026 = createServerFn({ method: "POST" })
     const { executarBuscaMes } = await import("./diario-scheduler.server");
     return executarBuscaMes(2026, data.mes);
   });
+
+// ---- Busca por período em segundo plano (fila com progresso) ----
+
+export type BuscaJob = {
+  id: string;
+  status: string;
+  periodo: string | null;
+  periodo_label: string | null;
+  date_from: string | null;
+  date_to: string | null;
+  total: number;
+  processed: number;
+  registros: number;
+  erros: number;
+  current_label: string | null;
+  erro_msg: string | null;
+  created_at: string;
+  finished_at: string | null;
+};
+
+export type PromovidoPeriodo = {
+  id: string;
+  nome_completo: string | null;
+  nome_servidor: string;
+  nome_parcial: string | null;
+  cpf_parcial: string | null;
+  cargo_atual: string | null;
+  cargo_promovido: string | null;
+  data_promocao: string | null;
+  data_publicacao: string | null;
+  matricula: string | null;
+  orgao_lotacao: string | null;
+  categoria: string | null;
+  potencial_financeiro: string | null;
+};
+
+// Calcula início/fim (YYYY-MM-DD, fuso Maceió) para os períodos suportados.
+function calcularPeriodo(periodo: "semana" | "mes" | "trimestre"): { dateFrom: string; dateTo: string } {
+  const hojeStr = new Date().toLocaleDateString("en-CA", { timeZone: "America/Maceio" });
+  const [y, m, d] = hojeStr.split("-").map(Number);
+  const hoje = new Date(Date.UTC(y, m - 1, d));
+  const ymd = (dt: Date) => dt.toISOString().slice(0, 10);
+
+  if (periodo === "semana") {
+    const dow = hoje.getUTCDay(); // 0=domingo
+    const diffSegunda = (dow + 6) % 7; // dias desde a segunda-feira
+    const inicio = new Date(hoje);
+    inicio.setUTCDate(hoje.getUTCDate() - diffSegunda);
+    return { dateFrom: ymd(inicio), dateTo: hojeStr };
+  }
+  if (periodo === "mes") {
+    return { dateFrom: `${y}-${String(m).padStart(2, "0")}-01`, dateTo: hojeStr };
+  }
+  // trimestre
+  const primeiroMesTri = Math.floor((m - 1) / 3) * 3 + 1;
+  return { dateFrom: `${y}-${String(primeiroMesTri).padStart(2, "0")}-01`, dateTo: hojeStr };
+}
+
+const PERIODO_LABEL: Record<string, string> = {
+  semana: "Esta semana",
+  mes: "Este mês",
+  trimestre: "Este trimestre",
+};
+
+// Inicia uma busca por período: enfileira as edições e devolve o job para
+// acompanhamento. O processamento roda em segundo plano (fila + cron).
+export const iniciarBuscaPromocoes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ periodo: z.enum(["semana", "mes", "trimestre"]) }).parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ jobId: string; total: number }> => {
+    await assertAdmin(context.supabase, context.userId);
+    const { dateFrom, dateTo } = calcularPeriodo(data.periodo);
+    const { iniciarBuscaJob } = await import("./diario-scheduler.server");
+    return iniciarBuscaJob({
+      periodo: data.periodo,
+      periodoLabel: PERIODO_LABEL[data.periodo],
+      dateFrom,
+      dateTo,
+      createdBy: context.userId,
+    });
+  });
+
+// Processa a próxima edição da fila do job (chamada em loop pelo cliente).
+export const processarProximoDaFilaFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ jobId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { processarProximoDaFila } = await import("./diario-scheduler.server");
+    return processarProximoDaFila(data.jobId);
+  });
+
+// Lê o job por id (para atualizar a barra de progresso).
+export const getBuscaJob = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ jobId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }): Promise<BuscaJob | null> => {
+    const { data: row, error } = await context.supabase
+      .from("diario_busca_jobs")
+      .select("id,status,periodo,periodo_label,date_from,date_to,total,processed,registros,erros,current_label,erro_msg,created_at,finished_at")
+      .eq("id", data.jobId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return (row ?? null) as BuscaJob | null;
+  });
+
+// Job mais recente em andamento (para retomar a barra ao voltar à tela).
+export const getJobAtivo = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<BuscaJob | null> => {
+    const { data, error } = await context.supabase
+      .from("diario_busca_jobs")
+      .select("id,status,periodo,periodo_label,date_from,date_to,total,processed,registros,erros,current_label,erro_msg,created_at,finished_at")
+      .in("status", ["running", "queued"])
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (error) throw new Error(error.message);
+    return (data?.[0] ?? null) as BuscaJob | null;
+  });
+
+// Resultados "promovidos recentemente" no período pesquisado, para a tabela e o CSV.
+export const getPromovidosPeriodo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }): Promise<PromovidoPeriodo[]> => {
+    // Considera promovidos: categorias de promoção/progressão OU potencial Alto,
+    // no período pesquisado (por data da promoção, ou publicação como fallback).
+    const categoriasPromo = [
+      "Promoção confirmada",
+      "Progressão funcional",
+      "Enquadramento",
+      "Reenquadramento",
+      "Mudança de classe",
+      "Mudança de nível",
+      "Mudança de referência",
+      "Mudança de cargo",
+    ];
+    const { data: rows, error } = await context.supabase
+      .from("do_registros")
+      .select(
+        "id,nome_completo,nome_servidor,nome_parcial,cpf_parcial,cargo_atual,cargo_promovido,data_promocao,data_publicacao,matricula,orgao_lotacao,categoria,potencial_financeiro,status_revisao",
+      )
+      .neq("status_revisao", "Ignorado")
+      .or(`categoria.in.(${categoriasPromo.map((c) => `"${c}"`).join(",")}),potencial_financeiro.eq.Alto`)
+      .gte("data_publicacao", data.dateFrom)
+      .lte("data_publicacao", data.dateTo)
+      .order("data_publicacao", { ascending: false })
+      .limit(5000);
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as PromovidoPeriodo[];
+  });
+
