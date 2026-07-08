@@ -159,19 +159,41 @@ NÃO considere como promoção de servidor quando o texto tratar de:
 Exemplo de falso positivo a IGNORAR: "PROMOÇÃO E APOIO AOS FESTIVAIS CULTURAIS".
 Exemplo a classificar como HONRARIA: "Fica outorgada ao 2º Sargento BM a Medalha do Mérito".
 
+MODELO REAL DE UM ATO DE PROMOÇÃO (use como âncora para extrair os campos):
+As promoções em Diários Oficiais de AL geralmente seguem este molde:
+  [NOME COMPLETO], inscrito(a) no CPF sob o n.º [CPF], matrícula n.º [MAT],
+  classe [X] nível [Y], ocupante do cargo de [CARGO], lotado(a) na/no [ÓRGÃO],
+  fica promovido(a)/progredido(a) para a classe [X2] nível [Y2] ...
+- CIVIL: o cargo costuma permanecer o MESMO; a "mudança de cargo" é representada
+  pela mudança de classe/nível/referência (ex: classe D -> E, nível 3 -> 4).
+  Preencha classe_anterior/classe_nova e nivel_anterior/nivel_novo.
+- MILITAR: há mudança real de posto/graduação (ex: "promovido ao posto de Coronel PM").
+  Registre o posto anterior em classe_anterior e o novo em classe_nova.
+
 REGRAS:
 - Extraia apenas informações presentes no texto. NÃO invente dados. Deixe vazio o que não houver.
 - Sempre preserve em trecho_original o trecho exato que justifica a extração.
-- CPF (campo cpf_parcial) — extraia o número de CPF do servidor se presente no texto. Formatos aceitos: "CPF: 123.456.789-00", "CPF nº 123.456.789-00", "portador(a) do CPF 123.456.789-00". Retorne apenas os dígitos e pontuação (ex: "082.478.484-73"). Se não houver CPF no texto, retorne "".
+- CPF (campo cpf_parcial) — extraia o CPF do servidor SEMPRE que houver, mesmo PARCIAL
+  ou mascarado. Formatos aceitos, entre outros:
+  "CPF: 123.456.789-00", "CPF nº 123.456.789-00", "CPF n.º 123.456.789-00",
+  "inscrito no CPF sob o n.º 123.456.789-00", "portador(a) do CPF n.º 123.456.789-00",
+  "portadora do CPF 123.456.789-00", e formas mascaradas como "***.456.789-**",
+  "123.***.***-00" ou "12345678900". Retorne exatamente como aparece no texto
+  (mantenha asteriscos/máscara). Se não houver nenhum indício de CPF, retorne "".
+- MATRÍCULA (campo matricula) — extraia de "matrícula n.º ...".
 
 CLASSIFICAÇÃO (campo categoria) — escolha uma:
 "Promoção confirmada", "Progressão funcional", "Enquadramento", "Reenquadramento", "Mudança de classe", "Mudança de nível", "Mudança de referência", "Nomeação", "Aposentadoria", "Reserva remunerada", "Processo relacionado, precisa revisar", "Promoção publicada anteriormente, precisa localizar ato original", "Honraria, sem promoção funcional confirmada", "Falso positivo", "Informação insuficiente".
+
+FILTRE FALSOS POSITIVOS que costumam ter muitos CPFs mas NÃO são promoções:
+escala de plantão, escala de serviço, concessão de férias, diárias, ajuda de custo,
+lista de aprovados/classificados em concurso sem nomeação. Classifique como "Falso positivo".
 
 POTENCIAL FINANCEIRO (campo potencial_financeiro) — escolha uma:
 - "Alto": promoção, progressão, enquadramento, mudança de posto/classe/nível/referência com possível impacto salarial.
 - "Médio": processo relacionado a ato funcional, aposentadoria, reserva remunerada ou revisão funcional.
 - "Baixo": nomeação ou movimentação sem sinal claro de aumento.
-- "Ignorar": medalha, honraria, evento, contrato, orçamento, ICMS, licitação ou assunto sem servidor pessoa física.
+- "Ignorar": medalha, honraria, evento, contrato, orçamento, ICMS, licitação, escala/férias/diárias ou assunto sem servidor pessoa física.
 
 MOTIVO (campo motivo_classificacao) — uma frase curta explicando a classificação.
 CONFIANÇA (campo confianca_ia) — "alta", "media" ou "baixa".`;
