@@ -718,6 +718,80 @@ export const distribuirLeadsAutomatico = createServerFn({ method: "POST" })
     return distribuirRoundRobin(context.supabase);
   });
 
+// Distribui TODOS os registros sem consultora (independente de status ou
+// potencial) entre as consultoras ATIVAS, em rodízio (least-loaded). Usado pelo
+// botão "Atribuir todos sem consultora".
+async function distribuirTodosRoundRobin(supabase: any): Promise<{ atribuidos: number; consultoras: number }> {
+  const { data: consultoras, error: cErr } = await supabase
+    .from("radar_consultoras")
+    .select("id,nome,total_leads_atribuidos")
+    .eq("ativo", true);
+  if (cErr) throw new Error(cErr.message);
+
+  const ativas = (consultoras ?? [])
+    .map((c: any) => ({ id: String(c.id), nome: String(c.nome ?? "").trim(), total: Number(c.total_leads_atribuidos ?? 0) }))
+    .filter((c: any) => c.nome);
+  if (!ativas.length) return { atribuidos: 0, consultoras: 0 };
+
+  // Todos os registros sem consultora, priorizando potencial e data.
+  const { data: rows, error } = await supabase
+    .from("do_registros")
+    .select("id,potencial_financeiro,data_publicacao")
+    .is("consultora_responsavel", null)
+    .limit(10000);
+  if (error) throw new Error(error.message);
+
+  const sorted = [...(rows ?? [])].sort((a: any, b: any) => {
+    const ra = POTENCIAL_RANK[String(a.potencial_financeiro)] ?? 9;
+    const rb = POTENCIAL_RANK[String(b.potencial_financeiro)] ?? 9;
+    if (ra !== rb) return ra - rb;
+    return String(b.data_publicacao ?? "").localeCompare(String(a.data_publicacao ?? ""));
+  });
+  if (!sorted.length) return { atribuidos: 0, consultoras: ativas.length };
+
+  const buckets = new Map<string, string[]>();
+  for (const c of ativas) buckets.set(c.id, []);
+  for (const r of sorted) {
+    let alvo = ativas[0];
+    for (const c of ativas) if (c.total < alvo.total) alvo = c;
+    buckets.get(alvo.id)!.push((r as any).id as string);
+    alvo.total += 1;
+  }
+
+  const admin = await getAdminClient();
+  let atribuidos = 0;
+  for (const c of ativas) {
+    const ids = buckets.get(c.id)!;
+    if (!ids.length) continue;
+    // Atualiza em blocos para não estourar limites de payload.
+    for (let i = 0; i < ids.length; i += 500) {
+      const chunk = ids.slice(i, i + 500);
+      const { error: upErr } = await admin
+        .from("do_registros")
+        .update({ consultora_responsavel: c.nome } as any)
+        .in("id", chunk);
+      if (upErr) throw new Error(upErr.message);
+    }
+    const { error: cntErr } = await admin
+      .from("radar_consultoras")
+      .update({ total_leads_atribuidos: c.total } as any)
+      .eq("id", c.id);
+    if (cntErr) throw new Error(cntErr.message);
+    atribuidos += ids.length;
+  }
+
+  return { atribuidos, consultoras: ativas.length };
+}
+
+// Botão "Atribuir todos sem consultora": distribui TODOS os registros que
+// estão sem consultora, independente de status ou potencial.
+export const distribuirTodosLeads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ atribuidos: number; consultoras: number }> => {
+    await assertAdmin(context.supabase, context.userId);
+    return distribuirTodosRoundRobin(context.supabase);
+  });
+
 // ---- Cadastro de consultoras ----
 
 export const getConsultoras = createServerFn({ method: "GET" })
