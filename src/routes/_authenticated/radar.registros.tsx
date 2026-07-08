@@ -539,6 +539,10 @@ function RegistrosPage() {
             {atribuindo ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Users className="mr-1 h-4 w-4" />}
             Redistribuir pendentes
           </Button>
+          <Button onClick={distribuirTodos} disabled={atribuindoTodos} variant="default" className="bg-emerald-600 hover:bg-emerald-700">
+            {atribuindoTodos ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Users className="mr-1 h-4 w-4" />}
+            Atribuir todos sem consultora
+          </Button>
         </div>
 
         {consultoras.length > 0 && (
