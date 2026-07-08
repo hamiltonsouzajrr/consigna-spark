@@ -17,7 +17,7 @@ import {
 import {
   getRegistros, getArquivos, atualizarRegistro, getArquivoUrl, marcarAbordagem,
   getDistribuicaoConsultoras, getConsultoras, adicionarConsultora,
-  toggleConsultora, removerConsultora, distribuirLeadsAutomatico,
+  toggleConsultora, removerConsultora, distribuirLeadsAutomatico, distribuirTodosLeads,
   type DoRegistro, type DoArquivo, type DistribuicaoConsultora, type Consultora,
 } from "@/lib/radar/radar.functions";
 
@@ -128,6 +128,7 @@ function RegistrosPage() {
   const toggleConsultoraFn = useServerFn(toggleConsultora);
   const removerConsultoraFn = useServerFn(removerConsultora);
   const distribuirFn = useServerFn(distribuirLeadsAutomatico);
+  const distribuirTodosFn = useServerFn(distribuirTodosLeads);
 
   const [list, setList] = useState<DoRegistro[]>([]);
   const [arquivos, setArquivos] = useState<Record<string, DoArquivo>>({});
@@ -149,6 +150,7 @@ function RegistrosPage() {
   const [novaConsultoraEmail, setNovaConsultoraEmail] = useState("");
   const [savingConsultora, setSavingConsultora] = useState(false);
   const [atribuindo, setAtribuindo] = useState(false);
+  const [atribuindoTodos, setAtribuindoTodos] = useState(false);
   const [exportFields, setExportFields] = useState<Set<string>>(
     new Set(["nome_servidor", "matricula", "cargo", "orgao", "tipo_movimentacao", "data_publicacao", "pagina", "status_revisao"]),
   );
@@ -233,6 +235,27 @@ function RegistrosPage() {
       setAtribuindo(false);
     }
   };
+
+  const distribuirTodos = async () => {
+    setAtribuindoTodos(true);
+    try {
+      const { atribuidos, consultoras: nConsultoras } = await distribuirTodosFn();
+      if (nConsultoras === 0) {
+        toast.warning("Cadastre ao menos uma consultora ativa.");
+      } else if (atribuidos === 0) {
+        toast.info("Nenhum registro sem consultora para atribuir.");
+      } else {
+        toast.success(`${atribuidos} registro(s) atribuído(s) entre ${nConsultoras} consultora(s).`);
+      }
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao atribuir registros.");
+    } finally {
+      setAtribuindoTodos(false);
+    }
+  };
+
+
 
   const consultoraOptions = useMemo(
     () => Array.from(new Set([...consultoras.map((c) => c.nome), ...distribuicao.map((d) => d.consultora)])),
@@ -515,6 +538,10 @@ function RegistrosPage() {
           <Button onClick={distribuirAgora} disabled={atribuindo}>
             {atribuindo ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Users className="mr-1 h-4 w-4" />}
             Redistribuir pendentes
+          </Button>
+          <Button onClick={distribuirTodos} disabled={atribuindoTodos} variant="default" className="bg-emerald-600 hover:bg-emerald-700">
+            {atribuindoTodos ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Users className="mr-1 h-4 w-4" />}
+            Atribuir todos sem consultora
           </Button>
         </div>
 
