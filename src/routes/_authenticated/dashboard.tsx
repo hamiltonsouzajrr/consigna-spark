@@ -535,7 +535,7 @@ function SimuladorMargem({ margemDisponivel, defaultCoef }: { margemDisponivel: 
   const parcelaCalc = modo === "parcela" && c && v ? v * c : null;
 
   return (
-    <div className="mt-3 rounded border bg-background p-3 text-foreground">
+    <div className="simulador-block mt-3 rounded border bg-background p-3 text-foreground">
       <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         Simulador (margem principal)
       </div>
