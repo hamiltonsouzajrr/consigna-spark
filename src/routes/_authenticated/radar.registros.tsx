@@ -128,6 +128,7 @@ function RegistrosPage() {
   const toggleConsultoraFn = useServerFn(toggleConsultora);
   const removerConsultoraFn = useServerFn(removerConsultora);
   const distribuirFn = useServerFn(distribuirLeadsAutomatico);
+  const distribuirTodosFn = useServerFn(distribuirTodosLeads);
 
   const [list, setList] = useState<DoRegistro[]>([]);
   const [arquivos, setArquivos] = useState<Record<string, DoArquivo>>({});
