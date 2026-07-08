@@ -183,20 +183,54 @@ html, body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
 }
 
 /* Result panel sits on a light background inside the premium card:
-   force dark-blue text for readable contrast. */
-.card-premium .result-panel,
-.card-premium .result-panel .text-foreground,
-.card-premium .result-panel .text-primary,
-.card-premium .result-panel strong,
-.card-premium .result-panel svg {
-  color: oklch(0.32 0.11 262);
+   build a clear color hierarchy for readability. */
+.card-premium .result-panel {
+  color: oklch(0.30 0.10 262);
 }
+/* Numbers / emphasized values: strong dark blue + bold */
+.card-premium .result-panel strong {
+  color: oklch(0.28 0.12 262);
+  font-weight: 700;
+}
+.card-premium .result-panel .text-foreground {
+  color: oklch(0.30 0.10 262);
+}
+.card-premium .result-panel .text-primary,
+.card-premium .result-panel .text-primary strong {
+  color: oklch(0.42 0.15 262);
+}
+/* Labels: uniform medium blue-gray */
 .card-premium .result-panel .text-muted-foreground {
-  color: oklch(0.5 0.05 262);
+  color: oklch(0.52 0.04 262);
 }
 .card-premium .result-panel .font-mono {
-  color: oklch(0.32 0.11 262);
+  color: oklch(0.28 0.12 262);
 }
+/* Status "Concluído": readable green */
+.card-premium .result-panel .text-success,
+.card-premium .result-panel .text-success strong {
+  color: oklch(0.52 0.15 150);
+}
+.card-premium .result-panel .text-destructive,
+.card-premium .result-panel .text-destructive strong {
+  color: oklch(0.52 0.20 25);
+}
+/* Icons follow dark-blue base */
+.card-premium .result-panel svg {
+  color: oklch(0.42 0.15 262);
+}
+/* Final "valor liberado" highlighted as a result: green + bold */
+.card-premium .result-panel .valor-final,
+.card-premium .result-panel .valor-final strong {
+  color: oklch(0.50 0.15 150);
+  font-weight: 700;
+}
+/* Simulator / calculation block: subtle blue surface to separate it */
+.card-premium .result-panel .simulador-block {
+  background: oklch(0.42 0.15 262 / 0.06);
+  border-color: oklch(0.42 0.15 262 / 0.25);
+}
+
 
 @utility card-elegant {
   background: var(--gradient-subtle);
