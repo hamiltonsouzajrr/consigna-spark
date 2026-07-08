@@ -181,6 +181,24 @@ As promoções em Diários Oficiais de AL geralmente seguem este molde:
 REGRAS:
 - Extraia apenas informações presentes no texto. NÃO invente dados. Deixe vazio o que não houver.
 - Sempre preserve em trecho_original o trecho exato que justifica a extração.
+- NOME — preencha nome_completo com o nome COMPLETO do servidor quando o ato o trouxer
+  por inteiro. Se o ato só trouxer um trecho/abreviação do nome (ex.: "M. da Silva",
+  "MARIA DA S.", iniciais), preencha nome_parcial com esse trecho e deixe nome_completo
+  vazio. SEMPRE preencha nome_servidor com a melhor forma disponível (completo ou parcial).
+- CARGO — preencha cargo_atual com o cargo/posto que o servidor ocupa ANTES do ato.
+  Preencha cargo_promovido com a representação da promoção:
+    • CIVIL: o cargo costuma permanecer o mesmo; represente a promoção como
+      "classe X nível Y -> classe X2 nível Y2" (ex.: "classe D nível 3 -> classe E nível 4").
+    • MILITAR: use cargo_anterior (posto/graduação antigo) e cargo_novo (posto novo),
+      e repita em cargo_promovido como "Posto antigo -> Posto novo"
+      (ex.: "Tenente-Coronel PM -> Coronel PM").
+- DATA DA PROMOÇÃO (campo data_promocao) — extraia a data em que a promoção passa a
+  valer: procure por "efeitos financeiros a partir de", "a contar de", "com efeitos a
+  partir de", "vigência a partir de" ou a data do próprio ato. Retorne no formato
+  AAAA-MM-DD. Se só houver "01 de março de 2026", converta para 2026-03-01. Se não
+  houver data, retorne "".
+- ÓRGÃO — preencha orgao_lotacao com o órgão/secretaria de lotação do servidor
+  (ex.: "Polícia Militar de Alagoas", "Secretaria de Educação").
 - CPF (campo cpf_parcial) — extraia o CPF do servidor SEMPRE que houver, mesmo PARCIAL
   ou mascarado. Formatos aceitos, entre outros:
   "CPF: 123.456.789-00", "CPF nº 123.456.789-00", "CPF n.º 123.456.789-00",
