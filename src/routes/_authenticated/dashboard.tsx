@@ -412,9 +412,10 @@ function Page() {
                     })()}
                     <div className="pt-2">
                       <div><span className="text-muted-foreground">Margem Empréstimo</span> <strong>{brl(debugRow.margem_emprestimo)}</strong>
-                        {empValor != null && <span className="ml-2 text-primary">→ Valor liberado aproximadamente <strong>{brl(empValor)}</strong> <span className="text-xs text-muted-foreground">(margem ÷ {COEF_EMP.toString().replace(".", ",")} · confirmar com o setor de Digitação)</span></span>}
+                        {empValor != null && <span className="valor-final ml-2">→ Valor liberado aproximadamente <strong>{brl(empValor)}</strong> <span className="text-xs text-muted-foreground">(margem ÷ {COEF_EMP.toString().replace(".", ",")} · confirmar com o setor de Digitação)</span></span>}
                       </div>
                       <SimuladorMargem margemDisponivel={debugRow.margem_emprestimo} defaultCoef={COEF_EMP} />
+
                     </div>
                     <div className="pt-1">
                       <div><span className="text-muted-foreground">Margem Cartão Crédito</span> <strong>{brl(debugRow.margem_cartao_credito)}</strong>
