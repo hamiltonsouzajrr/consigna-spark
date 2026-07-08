@@ -1,28 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useRhAccess } from "@/hooks/use-rh-access";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
   Play, RefreshCw, ExternalLink, Loader2, Bell, CalendarSearch, FileText,
-  CheckCircle2, AlertTriangle, Clock, ListChecks, XCircle,
+  CheckCircle2, AlertTriangle, Clock, ListChecks, XCircle, Download, Search,
 } from "lucide-react";
 import {
   getBuscaDiariaDashboard, getFontes, getAlertas, getLogsAutomacao,
-  rodarBuscaAgora, buscarPorData, buscarIntervaloDias, reprocessarFonteFn,
-  marcarAlertaLido, getFontePdfUrl, extrairMes2026,
+  rodarBuscaAgora, reprocessarFonteFn, marcarAlertaLido, getFontePdfUrl, extrairMes2026,
+  iniciarBuscaPromocoes, processarProximoDaFilaFn, getBuscaJob, getJobAtivo, getPromovidosPeriodo,
   type BuscaDiariaDashboard, type Fonte, type Alerta, type LogAutomacao, type ResultadoBuscaDTO,
+  type BuscaJob, type PromovidoPeriodo,
 } from "@/lib/radar/diario.functions";
 import { getCobertura2026, type CoberturaMes } from "@/lib/radar/radar.functions";
 
 export const Route = createFileRoute("/_authenticated/radar/busca-diaria")({
-  // Painel autenticado cujos dados são carregados no cliente (useEffect).
-  // Desativar SSR evita o erro de Suspense boundary durante o streaming no
-  // servidor (queda para client rendering) e o flicker associado.
   ssr: false,
   component: BuscaDiariaPage,
 });
@@ -48,6 +46,13 @@ function fmtDateTime(s: string | null): string {
   return new Date(s).toLocaleString("pt-BR", { timeZone: "America/Maceio" });
 }
 
+function fmtDate(s: string | null): string {
+  if (!s) return "—";
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return s;
+}
+
 function Kpi({ label, value, icon: Icon, tone }: { label: string; value: number | string; icon: any; tone?: string }) {
   return (
     <Card className="p-4">
@@ -64,6 +69,18 @@ function Kpi({ label, value, icon: Icon, tone }: { label: string; value: number 
   );
 }
 
+type Periodo = "semana" | "mes" | "trimestre";
+const PERIODOS: { key: Periodo; label: string }[] = [
+  { key: "semana", label: "Esta semana" },
+  { key: "mes", label: "Este mês" },
+  { key: "trimestre", label: "Este trimestre" },
+];
+
+function csvEscape(v: unknown): string {
+  const s = String(v ?? "");
+  return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
 function BuscaDiariaPage() {
   const { isAdmin } = useRhAccess();
 
@@ -72,13 +89,16 @@ function BuscaDiariaPage() {
   const fnAlertas = useServerFn(getAlertas);
   const fnLogs = useServerFn(getLogsAutomacao);
   const fnRodar = useServerFn(rodarBuscaAgora);
-  const fnPorData = useServerFn(buscarPorData);
-  const fnIntervalo = useServerFn(buscarIntervaloDias);
   const fnReprocessar = useServerFn(reprocessarFonteFn);
   const fnMarcarLido = useServerFn(marcarAlertaLido);
   const fnPdfUrl = useServerFn(getFontePdfUrl);
   const fnExtrairMes = useServerFn(extrairMes2026);
   const fnCobertura = useServerFn(getCobertura2026);
+  const fnIniciar = useServerFn(iniciarBuscaPromocoes);
+  const fnProximo = useServerFn(processarProximoDaFilaFn);
+  const fnGetJob = useServerFn(getBuscaJob);
+  const fnJobAtivo = useServerFn(getJobAtivo);
+  const fnPromovidos = useServerFn(getPromovidosPeriodo);
 
   const [dash, setDash] = useState<BuscaDiariaDashboard | null>(null);
   const [fontes, setFontes] = useState<Fonte[]>([]);
@@ -86,10 +106,14 @@ function BuscaDiariaPage() {
   const [logs, setLogs] = useState<LogAutomacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState<string | null>(null);
-  const [dataEspecifica, setDataEspecifica] = useState("");
   const [anoProgresso, setAnoProgresso] = useState<string | null>(null);
-  const [pendProgresso, setPendProgresso] = useState<string | null>(null);
   const [cobertura, setCobertura] = useState<CoberturaMes[]>([]);
+
+  const [periodo, setPeriodo] = useState<Periodo>("semana");
+  const [job, setJob] = useState<BuscaJob | null>(null);
+  const [promovidos, setPromovidos] = useState<PromovidoPeriodo[]>([]);
+  const [carregandoResultados, setCarregandoResultados] = useState(false);
+  const drivingRef = useRef(false);
 
   const carregar = useCallback(async () => {
     try {
@@ -102,14 +126,95 @@ function BuscaDiariaPage() {
     }
   }, [fnDashboard, fnFontes, fnAlertas, fnLogs, fnCobertura]);
 
-  useEffect(() => { carregar(); }, [carregar]);
+  const carregarPromovidos = useCallback(
+    async (j: BuscaJob | null) => {
+      if (!j?.date_from || !j?.date_to) return;
+      setCarregandoResultados(true);
+      try {
+        const rows = await fnPromovidos({ data: { dateFrom: j.date_from, dateTo: j.date_to } });
+        setPromovidos(rows);
+      } catch (e: any) {
+        toast.error(e?.message ?? "Falha ao carregar resultados.");
+      } finally {
+        setCarregandoResultados(false);
+      }
+    },
+    [fnPromovidos],
+  );
+
+  // Processa a fila do job em loop no cliente (progresso imediato enquanto a tela
+  // está aberta). Se o usuário sair, o cron continua o processamento.
+  const driveJob = useCallback(
+    async (jobId: string) => {
+      if (drivingRef.current) return;
+      drivingRef.current = true;
+      try {
+        let finalJob: BuscaJob | null = null;
+        while (true) {
+          const prog = await fnProximo({ data: { jobId } });
+          const j = await fnGetJob({ data: { jobId } });
+          if (j) setJob(j);
+          finalJob = j;
+          if (prog.done) break;
+        }
+        toast.success("Busca de promoções concluída.");
+        await carregarPromovidos(finalJob);
+        await carregar();
+      } catch (e: any) {
+        toast.error(e?.message ?? "Falha durante a busca.");
+      } finally {
+        drivingRef.current = false;
+      }
+    },
+    [fnProximo, fnGetJob, carregarPromovidos, carregar],
+  );
+
+  useEffect(() => {
+    carregar();
+    // Retoma um job em andamento ao abrir a tela.
+    (async () => {
+      try {
+        const ativo = await fnJobAtivo();
+        if (ativo) {
+          setJob(ativo);
+          if (ativo.periodo) setPeriodo(ativo.periodo as Periodo);
+          driveJob(ativo.id);
+        }
+      } catch {
+        /* ignora */
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const iniciarBusca = async () => {
+    if (drivingRef.current) {
+      toast.info("Já existe uma busca em andamento.");
+      return;
+    }
+    setRunning("periodo");
+    setPromovidos([]);
+    try {
+      const { jobId, total } = await fnIniciar({ data: { periodo } });
+      const j = await fnGetJob({ data: { jobId } });
+      setJob(j);
+      if (total === 0) {
+        toast.info("Nenhuma edição encontrada no período selecionado.");
+        await carregarPromovidos(j);
+      } else {
+        toast.success(`${total} edição(ões) enfileirada(s). Processando…`);
+        driveJob(jobId);
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao iniciar a busca.");
+    } finally {
+      setRunning(null);
+    }
+  };
 
   const reportar = (r: ResultadoBuscaDTO) => {
-    if (r.arquivos_encontrados === 0) {
-      toast.info("Nenhuma edição encontrada para o período.");
-    } else {
-      toast.success(`${r.arquivos_baixados} PDF(s) baixado(s), ${r.registros_extraidos} registro(s) extraído(s).`);
-    }
+    if (r.arquivos_encontrados === 0) toast.info("Nenhuma edição encontrada.");
+    else toast.success(`${r.arquivos_baixados} PDF(s), ${r.registros_extraidos} registro(s).`);
     if (r.erros.length) toast.error(`${r.erros.length} erro(s) durante o processamento.`);
   };
 
@@ -126,81 +231,31 @@ function BuscaDiariaPage() {
     }
   };
 
-  // Extrai todo o ano de 2026 retroativamente, mês a mês (jan-jun). Cada mês é
-  // uma requisição separada para não estourar o tempo limite do servidor. Como
-  // edições já baixadas são puladas (dedup), pode ser re-executado para retomar.
   const MESES_2026 = [
     { n: 1, nome: "Janeiro" }, { n: 2, nome: "Fevereiro" }, { n: 3, nome: "Março" },
     { n: 4, nome: "Abril" }, { n: 5, nome: "Maio" }, { n: 6, nome: "Junho" },
   ];
   const extrairTodo2026 = async () => {
     setRunning("ano2026");
-    const total: ResultadoBuscaDTO = {
-      arquivos_encontrados: 0, arquivos_baixados: 0, registros_extraidos: 0,
-      duracao_ms: 0, duplicados: 0, requer_ocr: 0, erros: [], fontes: [],
-    };
+    let baixados = 0, registros = 0, ocr = 0;
+    const erros: string[] = [];
     try {
       for (const m of MESES_2026) {
         setAnoProgresso(`Processando ${m.nome}/2026… (${m.n} de ${MESES_2026.length})`);
         try {
           const r = await fnExtrairMes({ data: { mes: m.n } });
-          total.arquivos_encontrados += r.arquivos_encontrados;
-          total.arquivos_baixados += r.arquivos_baixados;
-          total.registros_extraidos += r.registros_extraidos;
-          total.requer_ocr += r.requer_ocr;
-          total.erros.push(...r.erros);
+          baixados += r.arquivos_baixados; registros += r.registros_extraidos; ocr += r.requer_ocr;
+          erros.push(...r.erros);
         } catch (e: any) {
-          total.erros.push(`${m.nome}: ${e?.message ?? "falha"}`);
-          toast.error(`Falha em ${m.nome}/2026: ${e?.message ?? "erro"}`);
+          erros.push(`${m.nome}: ${e?.message ?? "falha"}`);
         }
         await carregar();
       }
-      toast.success(
-        `2026 concluído: ${total.arquivos_baixados} PDF(s) novo(s), ${total.registros_extraidos} registro(s).`,
-      );
-      if (total.requer_ocr > 0) toast.info(`${total.requer_ocr} edição(ões) exigem OCR (processar pela aba Importar).`);
-      if (total.erros.length) toast.error(`${total.erros.length} erro(s) durante a extração do ano.`);
+      toast.success(`2026 concluído: ${baixados} PDF(s) novo(s), ${registros} registro(s).`);
+      if (ocr > 0) toast.info(`${ocr} edição(ões) exigem OCR (aba Importar).`);
+      if (erros.length) toast.error(`${erros.length} erro(s) durante a extração do ano.`);
     } finally {
       setAnoProgresso(null);
-      setRunning(null);
-    }
-  };
-
-  // Processa todos os PDFs já baixados que ainda estão aguardando análise.
-  // Percorre fonte por fonte (cada uma é uma requisição) e mostra o progresso.
-  const processarPendentes = async () => {
-    const pend = fontes.filter(
-      (f) =>
-        f.caminho_arquivo &&
-        ["pendente", "processando", "requer_ocr", "erro"].includes(
-          (f.status_processamento ?? "").toLowerCase(),
-        ),
-    );
-    if (!pend.length) {
-      toast.info("Nenhum arquivo pendente para processar.");
-      return;
-    }
-    setRunning("pendentes");
-    let ok = 0;
-    let registros = 0;
-    const erros: string[] = [];
-    try {
-      for (let i = 0; i < pend.length; i++) {
-        setPendProgresso(`Processando ${i + 1} de ${pend.length}…`);
-        try {
-          const r = await fnReprocessar({ data: { id: pend[i].id } });
-          registros += r.registros_extraidos;
-          erros.push(...r.erros);
-          ok++;
-        } catch (e: any) {
-          erros.push(`${pend[i].numero_edicao ?? pend[i].id}: ${e?.message ?? "falha"}`);
-        }
-        await carregar();
-      }
-      toast.success(`Processados ${ok}/${pend.length} arquivo(s), ${registros} registro(s) extraído(s).`);
-      if (erros.length) toast.error(`${erros.length} erro(s) durante o processamento.`);
-    } finally {
-      setPendProgresso(null);
       setRunning(null);
     }
   };
@@ -224,6 +279,35 @@ function BuscaDiariaPage() {
     }
   };
 
+  const exportarCsv = () => {
+    if (!promovidos.length) { toast.info("Nada para exportar."); return; }
+    const header = [
+      "Nome completo", "Cargo atual", "Cargo/classe promovido", "Data da promoção",
+      "CPF parcial", "Nome parcial", "Matrícula", "Órgão/lotação",
+    ];
+    const linhas = promovidos.map((p) => [
+      p.nome_completo || p.nome_servidor,
+      p.cargo_atual ?? "",
+      p.cargo_promovido ?? "",
+      fmtDate(p.data_promocao ?? p.data_publicacao),
+      p.cpf_parcial ?? "",
+      p.nome_parcial ?? "",
+      p.matricula ?? "",
+      p.orgao_lotacao ?? "",
+    ]);
+    const csv = [header, ...linhas].map((r) => r.map(csvEscape).join(";")).join("\n");
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `promovidos-${job?.periodo ?? "periodo"}-${job?.date_from ?? ""}_a_${job?.date_to ?? ""}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const jobAtivoRodando = !!job && ["running", "queued"].includes(job.status) && (job.total ?? 0) > 0;
+  const pct = job && job.total > 0 ? Math.round((job.processed / job.total) * 100) : 0;
+
   if (loading) {
     return (
       <div className="flex min-h-[30vh] items-center justify-center text-muted-foreground">
@@ -237,7 +321,7 @@ function BuscaDiariaPage() {
       <div>
         <h2 className="text-lg font-semibold">Busca Diária do Diário Oficial</h2>
         <p className="text-sm text-muted-foreground">
-          Busca automática de promoções, progressões e eventos funcionais publicados no Diário Oficial de Alagoas.
+          Busca automática de servidores promovidos publicados no Diário Oficial de Alagoas.
           A automação roda em dias úteis às 06:30.
         </p>
       </div>
@@ -254,21 +338,135 @@ function BuscaDiariaPage() {
         <Card className="p-4">
           <p className="text-xs text-muted-foreground">Última consulta</p>
           <p className="mt-1 text-sm font-medium">{fmtDateTime(dash?.ultimaConsulta ?? null)}</p>
-          {dash?.ultimaEdicao?.titulo && (
-            <p className="mt-1 truncate text-xs text-muted-foreground" title={dash.ultimaEdicao.titulo}>
-              {dash.ultimaEdicao.titulo}
-            </p>
-          )}
         </Card>
       </div>
+
+      {/* Buscar promoções por período */}
+      <Card className="space-y-4 p-4">
+        <div>
+          <h3 className="text-sm font-semibold">Buscar promoções</h3>
+          <p className="text-xs text-muted-foreground">
+            Escolha o período; o sistema calcula as datas e baixa/analisa as edições do Diário Oficial
+            em segundo plano. Você pode sair da tela e voltar depois — o progresso continua.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex rounded-lg border p-0.5">
+            {PERIODOS.map((p) => (
+              <button
+                key={p.key}
+                type="button"
+                disabled={!isAdmin || jobAtivoRodando}
+                onClick={() => setPeriodo(p.key)}
+                className={`rounded-md px-3 py-1.5 text-sm transition ${
+                  periodo === p.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <Button disabled={!isAdmin || jobAtivoRodando || running === "periodo"} onClick={iniciarBusca}>
+            {running === "periodo" || jobAtivoRodando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+            Buscar promoções
+          </Button>
+        </div>
+        {!isAdmin && <p className="text-xs text-muted-foreground">A busca é restrita a administradores.</p>}
+
+        {/* Barra de progresso */}
+        {job && (job.total ?? 0) > 0 && (
+          <div className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium">
+                {job.periodo_label ?? "Período"} · {fmtDate(job.date_from)} a {fmtDate(job.date_to)}
+              </span>
+              <span className="text-muted-foreground">
+                {job.processed}/{job.total} edições · {job.registros} registros
+                {job.erros > 0 ? ` · ${job.erros} erro(s)` : ""}
+              </span>
+            </div>
+            <Progress value={pct} />
+            <p className="flex items-center gap-2 text-xs text-muted-foreground">
+              {jobAtivoRodando ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  {job.current_label ? `Processando: ${job.current_label}` : "Processando…"}
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                  Busca concluída.
+                </>
+              )}
+            </p>
+          </div>
+        )}
+      </Card>
+
+      {/* Resultados: promovidos recentemente */}
+      <Card className="space-y-3 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-semibold">Promovidos recentemente</h3>
+            <p className="text-xs text-muted-foreground">
+              {job?.date_from ? `Período: ${fmtDate(job.date_from)} a ${fmtDate(job.date_to)}` : "Faça uma busca para ver os resultados."}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" disabled={!job || carregandoResultados} onClick={() => carregarPromovidos(job)}>
+              {carregandoResultados ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Atualizar
+            </Button>
+            <Button size="sm" variant="outline" disabled={!promovidos.length} onClick={exportarCsv}>
+              <Download className="h-4 w-4" /> Exportar CSV
+            </Button>
+          </div>
+        </div>
+
+        {promovidos.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {carregandoResultados ? "Carregando…" : "Nenhum promovido no período (ou busca ainda não realizada)."}
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs text-muted-foreground">
+                  <th className="py-2 pr-3">Nome completo</th>
+                  <th className="py-2 pr-3">Cargo atual</th>
+                  <th className="py-2 pr-3">Cargo/classe promovido</th>
+                  <th className="py-2 pr-3">Data da promoção</th>
+                  <th className="py-2 pr-3">CPF parcial</th>
+                  <th className="py-2 pr-3">Nome parcial</th>
+                  <th className="py-2 pr-3">Matrícula</th>
+                  <th className="py-2 pr-3">Órgão/lotação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {promovidos.map((p) => (
+                  <tr key={p.id} className="border-b last:border-0 align-top">
+                    <td className="py-2 pr-3 font-medium">{p.nome_completo || p.nome_servidor}</td>
+                    <td className="py-2 pr-3 max-w-[180px] truncate" title={p.cargo_atual ?? ""}>{p.cargo_atual ?? "—"}</td>
+                    <td className="py-2 pr-3 max-w-[200px]">{p.cargo_promovido ?? "—"}</td>
+                    <td className="py-2 pr-3 whitespace-nowrap">{fmtDate(p.data_promocao ?? p.data_publicacao)}</td>
+                    <td className="py-2 pr-3 whitespace-nowrap">{p.cpf_parcial ?? "—"}</td>
+                    <td className="py-2 pr-3">{p.nome_parcial ?? "—"}</td>
+                    <td className="py-2 pr-3">{p.matricula ?? "—"}</td>
+                    <td className="py-2 pr-3 max-w-[180px] truncate" title={p.orgao_lotacao ?? ""}>{p.orgao_lotacao ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
       {/* Cobertura 2026 */}
       <Card className="space-y-3 p-4">
         <div>
           <h3 className="text-sm font-semibold">Painel de Cobertura 2026</h3>
-          <p className="text-xs text-muted-foreground">
-            Edições do Diário Oficial baixadas e processadas por mês.
-          </p>
+          <p className="text-xs text-muted-foreground">Edições do Diário Oficial baixadas e processadas por mês.</p>
         </div>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
           {MESES_2026.map((m) => {
@@ -292,79 +490,28 @@ function BuscaDiariaPage() {
         </div>
       </Card>
 
-      {/* Ações */}
+      {/* Ações complementares */}
       <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold">Ações</h3>
-        {!isAdmin && (
-          <p className="text-xs text-muted-foreground">As ações de busca são restritas a administradores.</p>
-        )}
+        <h3 className="text-sm font-semibold">Outras ações</h3>
         <div className="flex flex-wrap items-center gap-2">
-          <Button disabled={!isAdmin || !!running} onClick={() => runAction("hoje", () => fnRodar())}>
+          <Button variant="outline" disabled={!isAdmin || !!running} onClick={() => runAction("hoje", () => fnRodar())}>
             {running === "hoje" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-            Rodar busca agora
-          </Button>
-          <Button variant="outline" disabled={!isAdmin || !!running} onClick={() => runAction("7", () => fnIntervalo({ data: { dias: 7 } }))}>
-            {running === "7" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarSearch className="h-4 w-4" />}
-            Últimos 7 dias
-          </Button>
-          <Button variant="outline" disabled={!isAdmin || !!running} onClick={() => runAction("30", () => fnIntervalo({ data: { dias: 30 } }))}>
-            {running === "30" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarSearch className="h-4 w-4" />}
-            Últimos 30 dias
-          </Button>
-          <div className="flex items-center gap-2">
-            <Input
-              type="date"
-              value={dataEspecifica}
-              onChange={(e) => setDataEspecifica(e.target.value)}
-              className="w-[170px]"
-              disabled={!isAdmin || !!running}
-            />
-            <Button
-              variant="outline"
-              disabled={!isAdmin || !!running || !dataEspecifica}
-              onClick={() => runAction("data", () => fnPorData({ data: { data: dataEspecifica } }))}
-            >
-              {running === "data" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarSearch className="h-4 w-4" />}
-              Buscar data
-            </Button>
-          </div>
-          <Button
-            variant="secondary"
-            disabled={!isAdmin || !!running}
-            onClick={processarPendentes}
-            title="Processa todos os PDFs já baixados que ainda não foram analisados"
-          >
-            {running === "pendentes" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ListChecks className="h-4 w-4" />}
-            PROCESSAR PENDENTES
-            {(dash?.aguardandoProcessamento ?? 0) > 0 && (
-              <Badge variant="outline" className="ml-1">{dash?.aguardandoProcessamento}</Badge>
-            )}
+            Rodar busca de hoje
           </Button>
           <Button variant="ghost" disabled={!!running} onClick={carregar}>
-            <RefreshCw className="h-4 w-4" /> Atualizar
+            <RefreshCw className="h-4 w-4" /> Atualizar painel
           </Button>
         </div>
-        {pendProgresso && (
-          <p className="flex items-center gap-2 text-xs font-medium text-primary">
-            <Loader2 className="h-3 w-3 animate-spin" /> {pendProgresso}
-          </p>
-        )}
-
 
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="text-sm font-semibold">Extração retroativa de 2026</p>
               <p className="text-xs text-muted-foreground">
-                Percorre janeiro a junho de 2026 e baixa/processa todas as edições. Edições já
-                baixadas são puladas — pode rodar de novo para retomar.
+                Percorre janeiro a junho de 2026. Edições já baixadas são puladas — pode rodar de novo para retomar.
               </p>
             </div>
-            <Button
-              variant="default"
-              disabled={!isAdmin || !!running}
-              onClick={extrairTodo2026}
-            >
+            <Button variant="default" disabled={!isAdmin || !!running} onClick={extrairTodo2026}>
               {running === "ano2026" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarSearch className="h-4 w-4" />}
               EXTRAIR TODO 2026
             </Button>
@@ -377,11 +524,10 @@ function BuscaDiariaPage() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Os registros extraídos aparecem em{" "}
-          <Link to="/radar/registros" className="font-medium text-primary underline">Registros</Link>, com filtros e exportação.
+          Todos os registros extraídos aparecem em{" "}
+          <Link to="/radar/registros" className="font-medium text-primary underline">Registros</Link>, com filtros e revisão.
         </p>
       </Card>
-
 
       {/* Alertas */}
       {alertas.length > 0 && (
@@ -400,9 +546,7 @@ function BuscaDiariaPage() {
                   {a.mensagem && <p className="text-xs text-muted-foreground">{a.mensagem}</p>}
                   <p className="mt-1 text-[11px] text-muted-foreground">{fmtDateTime(a.criado_em)}</p>
                 </div>
-                {!a.lido && (
-                  <Button size="sm" variant="ghost" onClick={() => marcarLido(a.id)}>Lido</Button>
-                )}
+                {!a.lido && <Button size="sm" variant="ghost" onClick={() => marcarLido(a.id)}>Lido</Button>}
               </div>
             ))}
           </div>
@@ -413,7 +557,7 @@ function BuscaDiariaPage() {
       <Card className="p-4">
         <h3 className="mb-3 text-sm font-semibold">Edições encontradas</h3>
         {fontes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhuma edição registrada ainda. Use "Rodar busca agora".</p>
+          <p className="text-sm text-muted-foreground">Nenhuma edição registrada ainda. Use "Buscar promoções".</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
