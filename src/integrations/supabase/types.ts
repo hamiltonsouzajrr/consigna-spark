@@ -247,6 +247,7 @@ export type Database = {
           date_to: string | null
           erro_msg: string | null
           erros: number
+          finished_at: string | null
           id: string
           periodo: string | null
           periodo_label: string | null
@@ -265,6 +266,7 @@ export type Database = {
           date_to?: string | null
           erro_msg?: string | null
           erros?: number
+          finished_at?: string | null
           id?: string
           periodo?: string | null
           periodo_label?: string | null
@@ -283,6 +285,7 @@ export type Database = {
           date_to?: string | null
           erro_msg?: string | null
           erros?: number
+          finished_at?: string | null
           id?: string
           periodo?: string | null
           periodo_label?: string | null
