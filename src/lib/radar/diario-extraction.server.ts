@@ -389,17 +389,39 @@ export async function analisarTextoServidor(input: {
       });
       const output = parseRegistros(text, schema);
       for (const r of output?.registros ?? []) {
-        const nome = str(r.nome_servidor);
+        const nome = str(r.nome_servidor) || str(r.nome_completo) || str(r.nome_parcial);
         if (!nome) continue;
+        const trecho = str(r.trecho_original);
+        const cargoBase = str(r.cargo);
+        const cargoAtual = str(r.cargo_atual) || str(r.cargo_anterior) || cargoBase;
+        // Monta a representação da promoção quando a IA não a forneceu pronta.
+        let cargoPromovido = str(r.cargo_promovido);
+        if (!cargoPromovido) {
+          const mil = str(r.cargo_anterior) && str(r.cargo_novo)
+            ? `${str(r.cargo_anterior)} -> ${str(r.cargo_novo)}`
+            : "";
+          const civ = (str(r.classe_anterior) || str(r.nivel_anterior)) && (str(r.classe_nova) || str(r.nivel_novo))
+            ? `${[str(r.classe_anterior) && `classe ${str(r.classe_anterior)}`, str(r.nivel_anterior) && `nível ${str(r.nivel_anterior)}`].filter(Boolean).join(" ")} -> ${[str(r.classe_nova) && `classe ${str(r.classe_nova)}`, str(r.nivel_novo) && `nível ${str(r.nivel_novo)}`].filter(Boolean).join(" ")}`
+            : "";
+          cargoPromovido = mil || civ;
+        }
         out.push({
           nome_servidor: nome,
+          nome_completo: str(r.nome_completo),
+          nome_parcial: str(r.nome_parcial),
           matricula: str(r.matricula),
-          cpf_parcial: str(r.cpf_parcial) || extractCpf(str(r.trecho_original)),
-          cargo: str(r.cargo),
+          cpf_parcial: str(r.cpf_parcial) || extractCpf(trecho),
+          cargo: cargoBase,
+          cargo_atual: cargoAtual,
+          cargo_promovido: cargoPromovido,
+          cargo_anterior: str(r.cargo_anterior),
+          cargo_novo: str(r.cargo_novo),
           orgao: str(r.orgao) || str(input.orgao),
+          orgao_lotacao: str(r.orgao_lotacao) || str(r.orgao) || str(input.orgao),
           tipo_movimentacao: str(r.tipo_movimentacao) || "Possível promoção, precisa revisar",
           data_publicacao: str(input.data_publicacao),
           data_ato: str(r.data_ato),
+          data_promocao: str(r.data_promocao) || extractDataPromocao(trecho),
           pagina: str(r.pagina),
           classe_anterior: str(r.classe_anterior),
           classe_nova: str(r.classe_nova),
@@ -408,7 +430,7 @@ export async function analisarTextoServidor(input: {
           referencia_anterior: str(r.referencia_anterior),
           referencia_nova: str(r.referencia_nova),
           numero_ato: str(r.numero_ato),
-          trecho_original: str(r.trecho_original),
+          trecho_original: trecho,
           confianca_ia: str(r.confianca_ia) || "baixa",
           categoria: str(r.categoria) || "Possível promoção, precisa revisar",
           potencial_financeiro: str(r.potencial_financeiro) || "Médio",
