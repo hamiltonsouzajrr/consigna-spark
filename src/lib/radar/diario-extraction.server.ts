@@ -263,6 +263,34 @@ function extractCpf(trecho: string): string {
   return "";
 }
 
+const MESES_PT: Record<string, string> = {
+  janeiro: "01", fevereiro: "02", "março": "03", marco: "03", abril: "04",
+  maio: "05", junho: "06", julho: "07", agosto: "08", setembro: "09",
+  outubro: "10", novembro: "11", dezembro: "12",
+};
+
+// Fallback por regex: extrai a data em que a promoção passa a valer. Procura
+// âncoras ("efeitos financeiros a partir de", "a contar de", ...) e converte
+// datas por extenso ou numéricas para AAAA-MM-DD.
+function extractDataPromocao(trecho: string): string {
+  if (!trecho) return "";
+  const t = trecho.replace(/\s+/g, " ");
+  const ancora =
+    /(?:efeitos?\s+financeiros?\s+a\s+partir\s+de|com\s+efeitos?\s+a\s+partir\s+de|a\s+contar\s+de|vig[eê]ncia\s+a\s+partir\s+de|a\s+partir\s+de)\s+([^.,;]{4,40})/i;
+  const m = t.match(ancora);
+  const alvo = m ? m[1] : t;
+  // Data por extenso: "01 de março de 2026".
+  const ext = alvo.match(/(\d{1,2})\s+de\s+([a-zçã]+)\s+de\s+(\d{4})/i);
+  if (ext) {
+    const mes = MESES_PT[ext[2].toLowerCase()];
+    if (mes) return `${ext[3]}-${mes}-${ext[1].padStart(2, "0")}`;
+  }
+  // Data numérica: dd/mm/aaaa.
+  const num = alvo.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (num) return `${num[3]}-${num[2].padStart(2, "0")}-${num[1].padStart(2, "0")}`;
+  return "";
+}
+
 
 // Extrai o objeto JSON da resposta da IA (texto), tolerando cercas markdown e
 // texto extra ao redor. Valida com o schema e retorna { registros } ou null.
