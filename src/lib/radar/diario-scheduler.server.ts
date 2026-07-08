@@ -440,3 +440,168 @@ export async function executarBuscaMes(ano: number, mes: number): Promise<Result
 
   return res;
 }
+
+// ---------------------------------------------------------------------------
+// Busca em segundo plano (fila) — permite processar períodos longos (trimestre)
+// edição por edição sem estourar o tempo limite, com progresso persistido.
+// ---------------------------------------------------------------------------
+
+export type JobProgresso = {
+  done: boolean;
+  processed: number;
+  total: number;
+  remaining: number;
+  registros: number;
+};
+
+// Cria um job de busca: lista as edições do período (rápido, sem download) e
+// enfileira cada uma para processamento posterior. Retorna o id do job.
+export async function iniciarBuscaJob(opts: {
+  periodo: string;
+  periodoLabel: string;
+  dateFrom: string;
+  dateTo: string;
+  createdBy?: string | null;
+}): Promise<{ jobId: string; total: number }> {
+  let edicoes: EdicaoNormalizada[] = [];
+  edicoes = await listarEdicoes({ dateFrom: opts.dateFrom, dateTo: opts.dateTo });
+  edicoes.sort((a, b) => a.data_publicacao.localeCompare(b.data_publicacao));
+
+  const { data: job, error } = await supabaseAdmin
+    .from("diario_busca_jobs")
+    .insert({
+      status: edicoes.length ? "running" : "done",
+      periodo: opts.periodo,
+      periodo_label: opts.periodoLabel,
+      date_from: opts.dateFrom,
+      date_to: opts.dateTo,
+      total: edicoes.length,
+      created_by: opts.createdBy ?? null,
+      finished_at: edicoes.length ? null : new Date().toISOString(),
+    } as any)
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  const jobId = job.id as string;
+
+  if (edicoes.length) {
+    const rows = edicoes.map((ed, i) => ({ job_id: jobId, ordem: i, edicao: ed as any, status: "pendente" }));
+    const { error: filaErr } = await supabaseAdmin.from("diario_busca_fila").insert(rows as any);
+    if (filaErr) throw new Error(filaErr.message);
+  }
+
+  return { jobId, total: edicoes.length };
+}
+
+async function atualizarProgressoJob(jobId: string) {
+  const { data: itens } = await supabaseAdmin
+    .from("diario_busca_fila")
+    .select("status,registros")
+    .eq("job_id", jobId)
+    .limit(5000);
+  const list = itens ?? [];
+  const processed = list.filter((i) => ["concluido", "erro"].includes(String(i.status))).length;
+  const erros = list.filter((i) => String(i.status) === "erro").length;
+  const registros = list.reduce((s, i) => s + (Number(i.registros) || 0), 0);
+  const pendentes = list.filter((i) => ["pendente", "processando"].includes(String(i.status))).length;
+  const finalizado = pendentes === 0 && list.length > 0;
+  await supabaseAdmin
+    .from("diario_busca_jobs")
+    .update({
+      processed,
+      erros,
+      registros,
+      status: finalizado ? "done" : "running",
+      finished_at: finalizado ? new Date().toISOString() : null,
+      current_label: pendentes === 0 ? null : undefined,
+    } as any)
+    .eq("id", jobId);
+  return { finalizado, processed, registros };
+}
+
+// Processa a PRÓXIMA edição pendente de um job. Reserva o item de forma atômica
+// (claim), baixa/extrai/analisa e atualiza contadores. Chamável em loop pelo
+// cliente e pelo cron; a reserva evita processamento duplicado.
+export async function processarProximoDaFila(jobId: string): Promise<JobProgresso> {
+  const { data: claimed } = await supabaseAdmin.rpc("claim_diario_fila_item", { _job_id: jobId });
+  const item = Array.isArray(claimed) ? claimed[0] : claimed;
+
+  if (!item || !item.id) {
+    const prog = await atualizarProgressoJob(jobId);
+    const { data: j } = await supabaseAdmin
+      .from("diario_busca_jobs")
+      .select("total,processed,registros")
+      .eq("id", jobId)
+      .single();
+    return {
+      done: true,
+      processed: j?.processed ?? prog.processed,
+      total: j?.total ?? 0,
+      remaining: 0,
+      registros: j?.registros ?? prog.registros,
+    };
+  }
+
+  const ed = item.edicao as EdicaoNormalizada;
+  await supabaseAdmin
+    .from("diario_busca_jobs")
+    .update({ current_label: ed.titulo } as any)
+    .eq("id", jobId);
+
+  const res: ResultadoBusca = {
+    arquivos_encontrados: 1, arquivos_baixados: 0, registros_extraidos: 0,
+    duracao_ms: 0, duplicados: 0, requer_ocr: 0, erros: [], fontes: [],
+  };
+  await processarEdicao(ed, res, {});
+
+  await supabaseAdmin
+    .from("diario_busca_fila")
+    .update({
+      status: res.erros.length ? "erro" : "concluido",
+      registros: res.registros_extraidos,
+      erro_msg: res.erros.length ? res.erros.join(" | ") : null,
+    } as any)
+    .eq("id", item.id);
+
+  await supabaseAdmin.rpc("bump_run_counters", { _run_id: jobId, _processed_inc: 0, _errors_inc: 0 }).then(
+    () => undefined,
+    () => undefined,
+  );
+
+  const prog = await atualizarProgressoJob(jobId);
+  const { data: j } = await supabaseAdmin
+    .from("diario_busca_jobs")
+    .select("total,processed,registros")
+    .eq("id", jobId)
+    .single();
+  const total = j?.total ?? 0;
+  const processed = j?.processed ?? prog.processed;
+  return {
+    done: prog.finalizado,
+    processed,
+    total,
+    remaining: Math.max(0, total - processed),
+    registros: j?.registros ?? prog.registros,
+  };
+}
+
+// Usado pelo cron: processa alguns itens pendentes de qualquer job em andamento.
+export async function processarJobsPendentes(maxItens = 3): Promise<{ processados: number }> {
+  const { data: jobs } = await supabaseAdmin
+    .from("diario_busca_jobs")
+    .select("id")
+    .eq("status", "running")
+    .order("created_at", { ascending: true })
+    .limit(5);
+  let processados = 0;
+  for (const job of jobs ?? []) {
+    for (let i = 0; i < maxItens; i++) {
+      const prog = await processarProximoDaFila(job.id as string);
+      if (prog.done) break;
+      processados += 1;
+      await sleep(800);
+    }
+  }
+  return { processados };
+}
+
