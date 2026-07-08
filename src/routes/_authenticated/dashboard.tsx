@@ -385,7 +385,7 @@ function Page() {
                 const cc = calcCartao(debugRow.margem_cartao_credito);
                 const cb = calcCartao(debugRow.margem_cartao_beneficio);
                 return (
-                  <div className="space-y-2 rounded border bg-background/60 p-4 leading-relaxed">
+                  <div className="space-y-2 rounded border bg-muted/40 p-4 leading-relaxed text-foreground">
                     <div><span className="text-muted-foreground">Servidor</span> <strong>{debugRow.servidor_nome ?? "—"}</strong> <span className="text-muted-foreground ml-2">Matrícula</span><strong>{debugRow.matricula ?? "—"}</strong></div>
                     <div><span className="text-muted-foreground">Órgão</span><strong>{debugRow.orgao ?? "—"}</strong></div>
                     {(() => {
