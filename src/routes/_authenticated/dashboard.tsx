@@ -355,7 +355,7 @@ function Page() {
             n == null ? "—" : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
           const concluido = debugRow.status === "concluido";
           return (
-            <div className="mt-6 rounded-lg border bg-muted/30 p-4 text-sm">
+            <div className="mt-6 rounded-lg border bg-card p-4 text-sm text-foreground shadow-lg">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="text-muted-foreground">CPF:</span>{" "}
@@ -385,7 +385,7 @@ function Page() {
                 const cc = calcCartao(debugRow.margem_cartao_credito);
                 const cb = calcCartao(debugRow.margem_cartao_beneficio);
                 return (
-                  <div className="space-y-2 rounded border bg-background/60 p-4 leading-relaxed">
+                  <div className="space-y-2 rounded border bg-muted/40 p-4 leading-relaxed text-foreground">
                     <div><span className="text-muted-foreground">Servidor</span> <strong>{debugRow.servidor_nome ?? "—"}</strong> <span className="text-muted-foreground ml-2">Matrícula</span><strong>{debugRow.matricula ?? "—"}</strong></div>
                     <div><span className="text-muted-foreground">Órgão</span><strong>{debugRow.orgao ?? "—"}</strong></div>
                     {(() => {
@@ -534,7 +534,7 @@ function SimuladorMargem({ margemDisponivel, defaultCoef }: { margemDisponivel: 
   const parcelaCalc = modo === "parcela" && c && v ? v * c : null;
 
   return (
-    <div className="mt-3 rounded border bg-background/60 p-3">
+    <div className="mt-3 rounded border bg-background p-3 text-foreground">
       <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         Simulador (margem principal)
       </div>
