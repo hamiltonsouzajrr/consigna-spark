@@ -215,12 +215,28 @@ function chunkText(text: string, maxChars: number): string[] {
 
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 
-// Fallback por regex: extrai o primeiro CPF presente no trecho.
+// Fallback por regex: extrai o primeiro CPF presente no trecho, aceitando também
+// CPFs parciais/mascarados (com asteriscos ou dígitos suprimidos). Preserva o
+// formato original encontrado no texto.
 function extractCpf(trecho: string): string {
   if (!trecho) return "";
-  const m = trecho.match(/CPF\s*(?:n[oº°]?\s*\.?\s*|:\s*)?(\d{3}\.?\d{3}\.?\d{3}-?\d{2})/i);
-  return m ? m[1] : "";
+  // 1) CPF ancorado por rótulo (CPF:, CPF nº, inscrito no CPF sob o n.º, portador do CPF...).
+  const rotulado = trecho.match(
+    /CPF\s*(?:sob\s+o\s+)?(?:n[.ºo°]*\s*)?[:\s]*([\d*]{2,3}[.\s]?[\d*]{3}[.\s]?[\d*]{3}[-\s]?[\d*]{2})/i,
+  );
+  if (rotulado) return rotulado[1].replace(/\s/g, "");
+  // 2) CPF completo solto no texto (formatado).
+  const solto = trecho.match(/\b(\d{3}\.\d{3}\.\d{3}-\d{2})\b/);
+  if (solto) return solto[1];
+  // 3) CPF mascarado solto (ex: ***.456.789-** ou 123.***.***-00).
+  const mascarado = trecho.match(/\b([\d*]{3}\.[\d*]{3}\.[\d*]{3}-[\d*]{2})\b/);
+  if (mascarado) return mascarado[1];
+  // 4) 11 dígitos contínuos.
+  const cont = trecho.match(/\b(\d{11})\b/);
+  if (cont) return cont[1];
+  return "";
 }
+
 
 // Extrai o objeto JSON da resposta da IA (texto), tolerando cercas markdown e
 // texto extra ao redor. Valida com o schema e retorna { registros } ou null.
