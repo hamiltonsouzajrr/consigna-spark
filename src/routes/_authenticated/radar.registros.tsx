@@ -150,6 +150,7 @@ function RegistrosPage() {
   const [novaConsultoraEmail, setNovaConsultoraEmail] = useState("");
   const [savingConsultora, setSavingConsultora] = useState(false);
   const [atribuindo, setAtribuindo] = useState(false);
+  const [atribuindoTodos, setAtribuindoTodos] = useState(false);
   const [exportFields, setExportFields] = useState<Set<string>>(
     new Set(["nome_servidor", "matricula", "cargo", "orgao", "tipo_movimentacao", "data_publicacao", "pagina", "status_revisao"]),
   );
