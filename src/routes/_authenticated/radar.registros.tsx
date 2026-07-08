@@ -17,7 +17,7 @@ import {
 import {
   getRegistros, getArquivos, atualizarRegistro, getArquivoUrl, marcarAbordagem,
   getDistribuicaoConsultoras, getConsultoras, adicionarConsultora,
-  toggleConsultora, removerConsultora, distribuirLeadsAutomatico,
+  toggleConsultora, removerConsultora, distribuirLeadsAutomatico, distribuirTodosLeads,
   type DoRegistro, type DoArquivo, type DistribuicaoConsultora, type Consultora,
 } from "@/lib/radar/radar.functions";
 
