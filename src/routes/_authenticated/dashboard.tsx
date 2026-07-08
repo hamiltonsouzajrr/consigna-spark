@@ -568,12 +568,13 @@ function SimuladorMargem({ margemDisponivel, defaultCoef }: { margemDisponivel: 
       </div>
       <div className="mt-3 text-sm">
         {modo === "valor" ? (
-          <>Valor liberado aproximadamente: <strong className="text-primary">{brl(valorCalc)}</strong>
-            <span className="ml-2 text-xs text-muted-foreground">(parcela ÷ coeficiente · confirmar com o setor de Digitação)</span></>
+          <span className="valor-final">Valor liberado aproximadamente: <strong>{brl(valorCalc)}</strong>
+            <span className="ml-2 text-xs text-muted-foreground">(parcela ÷ coeficiente · confirmar com o setor de Digitação)</span></span>
         ) : (
           <>Parcela estimada: <strong className="text-primary">{brl(parcelaCalc)}</strong>
             <span className="ml-2 text-xs text-muted-foreground">(valor × coeficiente)</span></>
         )}
+
       </div>
     </div>
   );
