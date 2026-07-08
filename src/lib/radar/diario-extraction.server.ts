@@ -34,13 +34,89 @@ export type ExtracaoTexto = {
   requerOcr: boolean;
 };
 
-// Extrai o texto de um PDF. Retorna requerOcr=true quando o PDF tem pouco/nenhum
-// texto extraível (provavelmente escaneado -> precisa de OCR no navegador).
+// Extrai o texto de UMA página respeitando o layout em colunas de jornal.
+// Diários Oficiais usam 2 colunas; ler linearmente mistura o texto das duas,
+// corrompendo nomes/CPFs. Aqui separamos os itens pela coordenada X (metade da
+// largura da página) e reordenamos coluna esquerda -> coluna direita, cada uma
+// de cima para baixo.
+async function extrairTextoPaginaColunas(page: any): Promise<string> {
+  const viewport = page.getViewport({ scale: 1 });
+  const pageWidth = viewport.width || 600;
+  const midX = pageWidth / 2;
+  const content = await page.getTextContent();
+
+  type Item = { str: string; x: number; y: number };
+  const items: Item[] = [];
+  for (const it of content.items as any[]) {
+    const s = typeof it.str === "string" ? it.str : "";
+    if (!s) continue;
+    const tr = it.transform || [1, 0, 0, 1, 0, 0];
+    items.push({ str: s, x: tr[4], y: tr[5] });
+  }
+  if (!items.length) return "";
+
+  // Heurística: se quase tudo está de um lado só, trata como coluna única.
+  const left = items.filter((i) => i.x < midX);
+  const right = items.filter((i) => i.x >= midX);
+  const duasColunas = left.length > items.length * 0.15 && right.length > items.length * 0.15;
+
+  const montarColuna = (col: Item[]): string => {
+    // Agrupa por linha (mesma faixa de Y) e ordena por X dentro da linha.
+    const sorted = [...col].sort((a, b) => b.y - a.y || a.x - b.x);
+    const linhas: string[] = [];
+    let atualY: number | null = null;
+    let buffer: Item[] = [];
+    const flush = () => {
+      if (!buffer.length) return;
+      buffer.sort((a, b) => a.x - b.x);
+      linhas.push(buffer.map((b) => b.str).join(" ").replace(/\s+/g, " ").trim());
+      buffer = [];
+    };
+    for (const it of sorted) {
+      if (atualY === null || Math.abs(it.y - atualY) <= 3) {
+        buffer.push(it);
+        atualY = atualY === null ? it.y : atualY;
+      } else {
+        flush();
+        buffer = [it];
+        atualY = it.y;
+      }
+    }
+    flush();
+    return linhas.join("\n");
+  };
+
+  if (!duasColunas) return montarColuna(items);
+  return `${montarColuna(left)}\n${montarColuna(right)}`;
+}
+
+// Extrai o texto de um PDF respeitando colunas. Retorna requerOcr=true quando o
+// PDF tem pouco/nenhum texto extraível (provavelmente escaneado -> precisa OCR).
 export async function extrairTextoPdf(buffer: Uint8Array): Promise<ExtracaoTexto> {
-  const { getDocumentProxy, extractText } = await import("unpdf");
+  const { getDocumentProxy } = await import("unpdf");
   const pdf = await getDocumentProxy(buffer);
-  const { totalPages, text } = await extractText(pdf, { mergePages: true });
-  const texto = (Array.isArray(text) ? text.join("\n") : text) ?? "";
+  const totalPages = pdf.numPages as number;
+  const partes: string[] = [];
+  for (let n = 1; n <= totalPages; n++) {
+    try {
+      const page = await pdf.getPage(n);
+      const txt = await extrairTextoPaginaColunas(page);
+      if (txt.trim()) partes.push(`\n===== Página ${n} =====\n${txt}`);
+    } catch (e) {
+      console.error(`[extrairTextoPdf] falha na página ${n}:`, String((e as any)?.message ?? e));
+    }
+  }
+  let texto = partes.join("\n");
+  // Fallback: se a leitura por coluna não rendeu texto, usa extração linear.
+  if (texto.replace(/\s/g, "").length < 100) {
+    try {
+      const { extractText } = await import("unpdf");
+      const { text } = await extractText(pdf, { mergePages: true });
+      texto = (Array.isArray(text) ? text.join("\n") : text) ?? "";
+    } catch {
+      /* mantém o que houver */
+    }
+  }
   const limpo = texto.replace(/\u0000/g, "").trim();
   const requerOcr = limpo.replace(/\s/g, "").length < Math.max(200, totalPages * 40);
   return { texto: limpo, totalPaginas: totalPages, requerOcr };
