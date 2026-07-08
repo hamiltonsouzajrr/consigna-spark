@@ -234,6 +234,27 @@ function RegistrosPage() {
     }
   };
 
+  const distribuirTodos = async () => {
+    setAtribuindoTodos(true);
+    try {
+      const { atribuidos, consultoras: nConsultoras } = await distribuirTodosFn();
+      if (nConsultoras === 0) {
+        toast.warning("Cadastre ao menos uma consultora ativa.");
+      } else if (atribuidos === 0) {
+        toast.info("Nenhum registro sem consultora para atribuir.");
+      } else {
+        toast.success(`${atribuidos} registro(s) atribuído(s) entre ${nConsultoras} consultora(s).`);
+      }
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao atribuir registros.");
+    } finally {
+      setAtribuindoTodos(false);
+    }
+  };
+
+
+
   const consultoraOptions = useMemo(
     () => Array.from(new Set([...consultoras.map((c) => c.nome), ...distribuicao.map((d) => d.consultora)])),
     [consultoras, distribuicao],
