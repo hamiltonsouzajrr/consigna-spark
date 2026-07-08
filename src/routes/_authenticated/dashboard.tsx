@@ -355,7 +355,7 @@ function Page() {
             n == null ? "—" : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
           const concluido = debugRow.status === "concluido";
           return (
-            <div className="mt-6 rounded-lg border bg-muted/30 p-4 text-sm">
+            <div className="mt-6 rounded-lg border bg-card p-4 text-sm text-foreground shadow-lg">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="text-muted-foreground">CPF:</span>{" "}
