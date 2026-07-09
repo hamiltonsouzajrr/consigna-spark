@@ -513,9 +513,10 @@ export async function analisarTextoServidor(input: {
           cargo: cargoBase,
           cargo_atual: cargoAtual,
           cargo_promovido: cargoPromovido,
-          cargo_anterior: str(r.cargo_anterior),
-          cargo_novo: str(r.cargo_novo),
+          cargo_anterior: cargoAnterior,
+          cargo_novo: cargoNovo,
           orgao: str(r.orgao) || str(input.orgao),
+
           orgao_lotacao: str(r.orgao_lotacao) || str(r.orgao) || str(input.orgao),
           tipo_movimentacao: str(r.tipo_movimentacao) || "Possível promoção, precisa revisar",
           data_publicacao: str(input.data_publicacao),
