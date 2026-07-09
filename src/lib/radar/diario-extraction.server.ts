@@ -462,18 +462,48 @@ export async function analisarTextoServidor(input: {
         if (!nome) continue;
         const trecho = str(r.trecho_original);
         const cargoBase = str(r.cargo);
-        const cargoAtual = str(r.cargo_atual) || str(r.cargo_anterior) || cargoBase;
+
+        // Fallbacks por regex sobre o trecho quando a IA deixou campos vazios.
+        const parClasse = extractParMarcador(trecho, ["classe"]);
+        const parNivel = extractParMarcador(trecho, ["n[íi]vel"]);
+        const parRef = extractParMarcador(trecho, ["refer[êe]ncia", "padr[aã]o"]);
+        const posto = extractPostoMilitar(trecho);
+
+        const classeAnterior = str(r.classe_anterior) || parClasse.anterior;
+        const classeNova = str(r.classe_nova) || parClasse.nova;
+        const nivelAnterior = str(r.nivel_anterior) || parNivel.anterior;
+        const nivelNovo = str(r.nivel_novo) || parNivel.nova;
+        const referenciaAnterior = str(r.referencia_anterior) || parRef.anterior;
+        const referenciaNova = str(r.referencia_nova) || parRef.nova;
+        const cargoAnterior = str(r.cargo_anterior) || posto.anterior;
+        const cargoNovo = str(r.cargo_novo) || posto.novo;
+
+        const cargoAtual =
+          str(r.cargo_atual) || extractCargoAtual(trecho) || cargoAnterior || cargoBase;
+
         // Monta a representação da promoção quando a IA não a forneceu pronta.
         let cargoPromovido = str(r.cargo_promovido);
         if (!cargoPromovido) {
-          const mil = str(r.cargo_anterior) && str(r.cargo_novo)
-            ? `${str(r.cargo_anterior)} -> ${str(r.cargo_novo)}`
-            : "";
-          const civ = (str(r.classe_anterior) || str(r.nivel_anterior)) && (str(r.classe_nova) || str(r.nivel_novo))
-            ? `${[str(r.classe_anterior) && `classe ${str(r.classe_anterior)}`, str(r.nivel_anterior) && `nível ${str(r.nivel_anterior)}`].filter(Boolean).join(" ")} -> ${[str(r.classe_nova) && `classe ${str(r.classe_nova)}`, str(r.nivel_novo) && `nível ${str(r.nivel_novo)}`].filter(Boolean).join(" ")}`
-            : "";
+          const mil = cargoAnterior && cargoNovo ? `${cargoAnterior} -> ${cargoNovo}` : "";
+          const anteriorParts = [
+            classeAnterior && `classe ${classeAnterior}`,
+            nivelAnterior && `nível ${nivelAnterior}`,
+            referenciaAnterior && `referência ${referenciaAnterior}`,
+          ].filter(Boolean);
+          const novaParts = [
+            classeNova && `classe ${classeNova}`,
+            nivelNovo && `nível ${nivelNovo}`,
+            referenciaNova && `referência ${referenciaNova}`,
+          ].filter(Boolean);
+          const civ =
+            anteriorParts.length && novaParts.length
+              ? `${anteriorParts.join(" ")} -> ${novaParts.join(" ")}`
+              : novaParts.length
+                ? novaParts.join(" ")
+                : "";
           cargoPromovido = mil || civ;
         }
+
         out.push({
           nome_servidor: nome,
           nome_completo: str(r.nome_completo),
