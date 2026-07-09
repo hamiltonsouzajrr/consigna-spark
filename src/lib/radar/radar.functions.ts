@@ -799,7 +799,7 @@ export const getConsultoras = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<Consultora[]> => {
     const { data, error } = await context.supabase
       .from("radar_consultoras")
-      .select("id,nome,email,ativo,total_leads_atribuidos")
+      .select("id,nome,email,ativo,total_leads_atribuidos,token")
       .order("nome", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []) as Consultora[];
@@ -813,7 +813,7 @@ export const getMinhaConsultora = createServerFn({ method: "GET" })
     if (!email) return null;
     const { data, error } = await context.supabase
       .from("radar_consultoras")
-      .select("id,nome,email,ativo,total_leads_atribuidos")
+      .select("id,nome,email,ativo,total_leads_atribuidos,token")
       .ilike("email", email)
       .limit(1);
     if (error) throw new Error(error.message);
