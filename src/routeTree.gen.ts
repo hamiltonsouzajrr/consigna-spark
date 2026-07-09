@@ -14,6 +14,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ConsultoraTokenRouteImport } from './routes/consultora.$token'
 import { Route as AprovacaoTokenRouteImport } from './routes/aprovacao.$token'
 import { Route as ApiPositivaCoachRouteImport } from './routes/api/positiva-coach'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
@@ -103,6 +104,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsultoraTokenRoute = ConsultoraTokenRouteImport.update({
+  id: '/consultora/$token',
+  path: '/consultora/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AprovacaoTokenRoute = AprovacaoTokenRouteImport.update({
@@ -498,6 +504,7 @@ export interface FileRoutesByFullPath {
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/api/positiva-coach': typeof ApiPositivaCoachRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
+  '/consultora/$token': typeof ConsultoraTokenRoute
   '/pos-venda/avaliacoes': typeof AuthenticatedPosVendaAvaliacoesRoute
   '/positiva-ia/admin': typeof AuthenticatedPositivaIaAdminRoute
   '/producao/metas': typeof AuthenticatedProducaoMetasRoute
@@ -568,6 +575,7 @@ export interface FileRoutesByTo {
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/api/positiva-coach': typeof ApiPositivaCoachRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
+  '/consultora/$token': typeof ConsultoraTokenRoute
   '/pos-venda/avaliacoes': typeof AuthenticatedPosVendaAvaliacoesRoute
   '/positiva-ia/admin': typeof AuthenticatedPositivaIaAdminRoute
   '/producao/metas': typeof AuthenticatedProducaoMetasRoute
@@ -641,6 +649,7 @@ export interface FileRoutesById {
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/api/positiva-coach': typeof ApiPositivaCoachRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
+  '/consultora/$token': typeof ConsultoraTokenRoute
   '/_authenticated/pos-venda/avaliacoes': typeof AuthenticatedPosVendaAvaliacoesRoute
   '/_authenticated/positiva-ia/admin': typeof AuthenticatedPositivaIaAdminRoute
   '/_authenticated/producao/metas': typeof AuthenticatedProducaoMetasRoute
@@ -715,6 +724,7 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/api/positiva-coach'
     | '/aprovacao/$token'
+    | '/consultora/$token'
     | '/pos-venda/avaliacoes'
     | '/positiva-ia/admin'
     | '/producao/metas'
@@ -785,6 +795,7 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/api/positiva-coach'
     | '/aprovacao/$token'
+    | '/consultora/$token'
     | '/pos-venda/avaliacoes'
     | '/positiva-ia/admin'
     | '/producao/metas'
@@ -857,6 +868,7 @@ export interface FileRouteTypes {
     | '/_authenticated/whatsapp'
     | '/api/positiva-coach'
     | '/aprovacao/$token'
+    | '/consultora/$token'
     | '/_authenticated/pos-venda/avaliacoes'
     | '/_authenticated/positiva-ia/admin'
     | '/_authenticated/producao/metas'
@@ -915,6 +927,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiPositivaCoachRoute: typeof ApiPositivaCoachRoute
   AprovacaoTokenRoute: typeof AprovacaoTokenRoute
+  ConsultoraTokenRoute: typeof ConsultoraTokenRoute
   ApiPublicHooksRadarDiarioRoute: typeof ApiPublicHooksRadarDiarioRoute
   ApiPublicHooksRadarDiarioWorkerRoute: typeof ApiPublicHooksRadarDiarioWorkerRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
@@ -955,6 +968,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/consultora/$token': {
+      id: '/consultora/$token'
+      path: '/consultora/$token'
+      fullPath: '/consultora/$token'
+      preLoaderRoute: typeof ConsultoraTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/aprovacao/$token': {
@@ -1617,6 +1637,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiPositivaCoachRoute: ApiPositivaCoachRoute,
   AprovacaoTokenRoute: AprovacaoTokenRoute,
+  ConsultoraTokenRoute: ConsultoraTokenRoute,
   ApiPublicHooksRadarDiarioRoute: ApiPublicHooksRadarDiarioRoute,
   ApiPublicHooksRadarDiarioWorkerRoute: ApiPublicHooksRadarDiarioWorkerRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,

@@ -42,9 +42,8 @@ const ABORDAGEM_OPTIONS = [
   { value: "convertido", label: "Convertido" },
   { value: "sem_interesse", label: "Sem interesse" },
 ];
-const ABORDAGEM_LABEL: Record<string, string> = Object.fromEntries(
-  ABORDAGEM_OPTIONS.map((o) => [o.value, o.label]),
-);
+
+
 
 const MAX_VISIVEIS = 10;
 
