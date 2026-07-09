@@ -217,6 +217,16 @@ function RegistrosPage() {
     }
   };
 
+  const copiarLinkConsultora = async (c: Consultora) => {
+    const url = `${window.location.origin}/consultora/${c.token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(`Link de acesso de ${c.nome} copiado.`);
+    } catch {
+      toast.error("Não foi possível copiar o link.");
+    }
+  };
+
   const distribuirAgora = async () => {
     setAtribuindo(true);
     try {
