@@ -207,6 +207,12 @@ REGRAS:
   "123.***.***-00" ou "12345678900". Retorne exatamente como aparece no texto
   (mantenha asteriscos/máscara). Se não houver nenhum indício de CPF, retorne "".
 - MATRÍCULA (campo matricula) — extraia de "matrícula n.º ...".
+- CLASSE / NÍVEL / REFERÊNCIA — SEMPRE preencha classe_anterior/classe_nova,
+  nivel_anterior/nivel_novo e referencia_anterior/referencia_nova quando o ato
+  citar esses marcadores, inclusive em RETIFICAÇÕES no formato
+  "para a(o) CLASSE G LEIA-SE para a(o) CLASSE H" (aqui classe_anterior=G,
+  classe_nova=H) ou "onde se lê ... leia-se ...". O primeiro valor é o anterior
+  e o último é o novo. Isso vale mesmo quando o cargo permanece o mesmo.
 
 CLASSIFICAÇÃO (campo categoria) — escolha uma:
 "Promoção confirmada", "Progressão funcional", "Enquadramento", "Reenquadramento", "Mudança de classe", "Mudança de nível", "Mudança de referência", "Nomeação", "Aposentadoria", "Reserva remunerada", "Processo relacionado, precisa revisar", "Promoção publicada anteriormente, precisa localizar ato original", "Honraria, sem promoção funcional confirmada", "Falso positivo", "Informação insuficiente".
@@ -290,6 +296,75 @@ function extractDataPromocao(trecho: string): string {
   if (num) return `${num[3]}-${num[2].padStart(2, "0")}-${num[1].padStart(2, "0")}`;
   return "";
 }
+
+// ---------------------------------------------------------------------------
+// Fallbacks por regex para promoção civil/militar a partir do trecho_original.
+// Diários costumam trazer a mudança na forma "de/da CLASSE G ... para a(o)
+// CLASSE H", "nível 3 ... para o nível 4", "referência 2 ... referência 3" ou,
+// para militares, "promovido(a) ao posto/graduação de CORONEL PM".
+// ---------------------------------------------------------------------------
+
+const norm = (s: string) => s.replace(/\s+/g, " ").trim();
+
+// Extrai o par (anterior, nova) de um determinado marcador (classe|nível|
+// referência|padrão). Aceita variações "para a(o)", "LEIA-SE", "passando a".
+function extractParMarcador(
+  trecho: string,
+  marcadores: string[],
+): { anterior: string; nova: string } {
+  if (!trecho) return { anterior: "", nova: "" };
+  const t = norm(trecho);
+  const marc = marcadores.join("|");
+  // Captura todas as ocorrências "MARCADOR <valor>" na ordem do texto.
+  const re = new RegExp(
+    `(?:${marc})\\s*(?:n[.ºo°]*)?\\s*[:\\-]?\\s*([A-Za-z0-9ºª]{1,6})`,
+    "gi",
+  );
+  const valores: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(t)) !== null) {
+    const v = m[1].trim();
+    // Ignora capturas espúrias tipo "de", "da", "para".
+    if (/^(de|da|do|para|a|o|e|no|na)$/i.test(v)) continue;
+    valores.push(v.toUpperCase());
+  }
+  if (valores.length >= 2) {
+    return { anterior: valores[0], nova: valores[valores.length - 1] };
+  }
+  if (valores.length === 1) return { anterior: "", nova: valores[0] };
+  return { anterior: "", nova: "" };
+}
+
+// Extrai o cargo/função ocupado ("ocupante do cargo de X", "no cargo de X",
+// "cargo de X", "função de X").
+function extractCargoAtual(trecho: string): string {
+  if (!trecho) return "";
+  const t = norm(trecho);
+  const m = t.match(
+    /(?:ocupante\s+d[oa]\s+)?(?:cargo|fun[cç][aã]o|emprego)\s+de\s+([A-ZÀ-Ÿ][A-ZÀ-Ÿ\s/.\-]{2,60}?)(?:,|\.|\s+(?:lotad|matr[ií]cula|classe|n[íi]vel|refer[êe]ncia|padr[aã]o|inscrit|CPF|do\s+quadro|passando|fica|para\b))/i,
+  );
+  if (m) return norm(m[1]).replace(/[,.]$/, "");
+  return "";
+}
+
+// Extrai o posto/graduação militar promovido: "promovido(a) ao posto de CORONEL
+// PM" ou "à graduação de 1º SARGENTO". Retorna { anterior, novo }.
+function extractPostoMilitar(trecho: string): { anterior: string; novo: string } {
+  if (!trecho) return { anterior: "", novo: "" };
+  const t = norm(trecho);
+  const novoM = t.match(
+    /promovid[oa]\s+(?:ao?|à)\s+(?:posto|gradua[cç][aã]o)\s+de\s+([A-ZÀ-Ÿ0-9ºª][A-ZÀ-Ÿ0-9ºª\s.\-]{2,40}?)(?:,|\.|\s+(?:com|a\s+contar|por|do|nos)\b)/i,
+  );
+  const antM = t.match(
+    /(?:posto|gradua[cç][aã]o)\s+(?:atual|anterior)\s+de\s+([A-ZÀ-Ÿ0-9ºª][A-ZÀ-Ÿ0-9ºª\s.\-]{2,40}?)(?:,|\.|\s)/i,
+  );
+  return {
+    anterior: antM ? norm(antM[1]).replace(/[,.]$/, "") : "",
+    novo: novoM ? norm(novoM[1]).replace(/[,.]$/, "") : "",
+  };
+}
+
+
 
 
 // Extrai o objeto JSON da resposta da IA (texto), tolerando cercas markdown e
@@ -393,18 +468,48 @@ export async function analisarTextoServidor(input: {
         if (!nome) continue;
         const trecho = str(r.trecho_original);
         const cargoBase = str(r.cargo);
-        const cargoAtual = str(r.cargo_atual) || str(r.cargo_anterior) || cargoBase;
+
+        // Fallbacks por regex sobre o trecho quando a IA deixou campos vazios.
+        const parClasse = extractParMarcador(trecho, ["classe"]);
+        const parNivel = extractParMarcador(trecho, ["n[íi]vel"]);
+        const parRef = extractParMarcador(trecho, ["refer[êe]ncia", "padr[aã]o"]);
+        const posto = extractPostoMilitar(trecho);
+
+        const classeAnterior = str(r.classe_anterior) || parClasse.anterior;
+        const classeNova = str(r.classe_nova) || parClasse.nova;
+        const nivelAnterior = str(r.nivel_anterior) || parNivel.anterior;
+        const nivelNovo = str(r.nivel_novo) || parNivel.nova;
+        const referenciaAnterior = str(r.referencia_anterior) || parRef.anterior;
+        const referenciaNova = str(r.referencia_nova) || parRef.nova;
+        const cargoAnterior = str(r.cargo_anterior) || posto.anterior;
+        const cargoNovo = str(r.cargo_novo) || posto.novo;
+
+        const cargoAtual =
+          str(r.cargo_atual) || extractCargoAtual(trecho) || cargoAnterior || cargoBase;
+
         // Monta a representação da promoção quando a IA não a forneceu pronta.
         let cargoPromovido = str(r.cargo_promovido);
         if (!cargoPromovido) {
-          const mil = str(r.cargo_anterior) && str(r.cargo_novo)
-            ? `${str(r.cargo_anterior)} -> ${str(r.cargo_novo)}`
-            : "";
-          const civ = (str(r.classe_anterior) || str(r.nivel_anterior)) && (str(r.classe_nova) || str(r.nivel_novo))
-            ? `${[str(r.classe_anterior) && `classe ${str(r.classe_anterior)}`, str(r.nivel_anterior) && `nível ${str(r.nivel_anterior)}`].filter(Boolean).join(" ")} -> ${[str(r.classe_nova) && `classe ${str(r.classe_nova)}`, str(r.nivel_novo) && `nível ${str(r.nivel_novo)}`].filter(Boolean).join(" ")}`
-            : "";
+          const mil = cargoAnterior && cargoNovo ? `${cargoAnterior} -> ${cargoNovo}` : "";
+          const anteriorParts = [
+            classeAnterior && `classe ${classeAnterior}`,
+            nivelAnterior && `nível ${nivelAnterior}`,
+            referenciaAnterior && `referência ${referenciaAnterior}`,
+          ].filter(Boolean);
+          const novaParts = [
+            classeNova && `classe ${classeNova}`,
+            nivelNovo && `nível ${nivelNovo}`,
+            referenciaNova && `referência ${referenciaNova}`,
+          ].filter(Boolean);
+          const civ =
+            anteriorParts.length && novaParts.length
+              ? `${anteriorParts.join(" ")} -> ${novaParts.join(" ")}`
+              : novaParts.length
+                ? novaParts.join(" ")
+                : "";
           cargoPromovido = mil || civ;
         }
+
         out.push({
           nome_servidor: nome,
           nome_completo: str(r.nome_completo),
@@ -414,21 +519,23 @@ export async function analisarTextoServidor(input: {
           cargo: cargoBase,
           cargo_atual: cargoAtual,
           cargo_promovido: cargoPromovido,
-          cargo_anterior: str(r.cargo_anterior),
-          cargo_novo: str(r.cargo_novo),
+          cargo_anterior: cargoAnterior,
+          cargo_novo: cargoNovo,
           orgao: str(r.orgao) || str(input.orgao),
+
           orgao_lotacao: str(r.orgao_lotacao) || str(r.orgao) || str(input.orgao),
           tipo_movimentacao: str(r.tipo_movimentacao) || "Possível promoção, precisa revisar",
           data_publicacao: str(input.data_publicacao),
           data_ato: str(r.data_ato),
           data_promocao: str(r.data_promocao) || extractDataPromocao(trecho),
           pagina: str(r.pagina),
-          classe_anterior: str(r.classe_anterior),
-          classe_nova: str(r.classe_nova),
-          nivel_anterior: str(r.nivel_anterior),
-          nivel_novo: str(r.nivel_novo),
-          referencia_anterior: str(r.referencia_anterior),
-          referencia_nova: str(r.referencia_nova),
+          classe_anterior: classeAnterior,
+          classe_nova: classeNova,
+          nivel_anterior: nivelAnterior,
+          nivel_novo: nivelNovo,
+          referencia_anterior: referenciaAnterior,
+          referencia_nova: referenciaNova,
+
           numero_ato: str(r.numero_ato),
           trecho_original: trecho,
           confianca_ia: str(r.confianca_ia) || "baixa",

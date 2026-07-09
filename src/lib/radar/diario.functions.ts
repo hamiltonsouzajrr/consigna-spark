@@ -372,17 +372,17 @@ export const getPromovidosPeriodo = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }): Promise<PromovidoPeriodo[]> => {
-    // Considera promovidos: categorias de promoção/progressão OU potencial Alto,
-    // no período pesquisado (por data da promoção, ou publicação como fallback).
+    // Mostra APENAS atos que representam promoção de fato. Categorias como
+    // "Nomeação", "Aposentadoria", "Honraria", "Outro" ou concessões de
+    // adicionais NÃO entram aqui, mesmo com potencial financeiro Alto.
     const categoriasPromo = [
       "Promoção confirmada",
       "Progressão funcional",
-      "Enquadramento",
       "Reenquadramento",
+      "Enquadramento",
       "Mudança de classe",
       "Mudança de nível",
       "Mudança de referência",
-      "Mudança de cargo",
     ];
     const { data: rows, error } = await context.supabase
       .from("do_registros")
@@ -390,7 +390,7 @@ export const getPromovidosPeriodo = createServerFn({ method: "POST" })
         "id,nome_completo,nome_servidor,nome_parcial,cpf_parcial,cargo_atual,cargo_promovido,data_promocao,data_publicacao,matricula,orgao_lotacao,categoria,potencial_financeiro,status_revisao",
       )
       .neq("status_revisao", "Ignorado")
-      .or(`categoria.in.(${categoriasPromo.map((c) => `"${c}"`).join(",")}),potencial_financeiro.eq.Alto`)
+      .in("categoria", categoriasPromo)
       .gte("data_publicacao", data.dateFrom)
       .lte("data_publicacao", data.dateTo)
       .order("data_publicacao", { ascending: false })
@@ -398,4 +398,5 @@ export const getPromovidosPeriodo = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return (rows ?? []) as PromovidoPeriodo[];
   });
+
 
