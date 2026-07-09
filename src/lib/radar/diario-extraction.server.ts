@@ -207,6 +207,12 @@ REGRAS:
   "123.***.***-00" ou "12345678900". Retorne exatamente como aparece no texto
   (mantenha asteriscos/máscara). Se não houver nenhum indício de CPF, retorne "".
 - MATRÍCULA (campo matricula) — extraia de "matrícula n.º ...".
+- CLASSE / NÍVEL / REFERÊNCIA — SEMPRE preencha classe_anterior/classe_nova,
+  nivel_anterior/nivel_novo e referencia_anterior/referencia_nova quando o ato
+  citar esses marcadores, inclusive em RETIFICAÇÕES no formato
+  "para a(o) CLASSE G LEIA-SE para a(o) CLASSE H" (aqui classe_anterior=G,
+  classe_nova=H) ou "onde se lê ... leia-se ...". O primeiro valor é o anterior
+  e o último é o novo. Isso vale mesmo quando o cargo permanece o mesmo.
 
 CLASSIFICAÇÃO (campo categoria) — escolha uma:
 "Promoção confirmada", "Progressão funcional", "Enquadramento", "Reenquadramento", "Mudança de classe", "Mudança de nível", "Mudança de referência", "Nomeação", "Aposentadoria", "Reserva remunerada", "Processo relacionado, precisa revisar", "Promoção publicada anteriormente, precisa localizar ato original", "Honraria, sem promoção funcional confirmada", "Falso positivo", "Informação insuficiente".
