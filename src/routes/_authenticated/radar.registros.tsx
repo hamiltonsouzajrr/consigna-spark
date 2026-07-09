@@ -217,6 +217,16 @@ function RegistrosPage() {
     }
   };
 
+  const copiarLinkConsultora = async (c: Consultora) => {
+    const url = `${window.location.origin}/consultora/${c.token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(`Link de acesso de ${c.nome} copiado.`);
+    } catch {
+      toast.error("Não foi possível copiar o link.");
+    }
+  };
+
   const distribuirAgora = async () => {
     setAtribuindo(true);
     try {
@@ -565,6 +575,14 @@ function RegistrosPage() {
                     {c.email && <span className="font-normal text-muted-foreground">· {c.email}</span>}
                   </button>
                   <Badge variant="secondary" className="text-[10px]">{total} lead{total === 1 ? "" : "s"}</Badge>
+                  <button
+                    type="button"
+                    onClick={() => copiarLinkConsultora(c)}
+                    title="Copiar link de acesso da consultora"
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </button>
                   <button
                     type="button"
                     onClick={() => handleRemoverConsultora(c)}

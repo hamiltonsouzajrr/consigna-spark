@@ -1231,6 +1231,7 @@ export type Database = {
           email: string | null
           id: string
           nome: string
+          token: string
           total_leads_atribuidos: number
           updated_at: string
         }
@@ -1240,6 +1241,7 @@ export type Database = {
           email?: string | null
           id?: string
           nome: string
+          token?: string
           total_leads_atribuidos?: number
           updated_at?: string
         }
@@ -1249,6 +1251,7 @@ export type Database = {
           email?: string | null
           id?: string
           nome?: string
+          token?: string
           total_leads_atribuidos?: number
           updated_at?: string
         }

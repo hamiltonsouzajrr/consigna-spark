@@ -642,7 +642,7 @@ export const marcarAbordagem = createServerFn({ method: "POST" })
 
 const POTENCIAL_RANK: Record<string, number> = { Alto: 0, Médio: 1 };
 
-export type Consultora = { id: string; nome: string; email: string | null; ativo: boolean; total_leads_atribuidos: number };
+export type Consultora = { id: string; nome: string; email: string | null; ativo: boolean; total_leads_atribuidos: number; token: string };
 
 // Redistribui os leads PENDENTES (status novo + potencial alto/médio + sem
 // consultora) entre as consultoras ATIVAS, em rodízio (least-loaded), usando o
@@ -799,7 +799,7 @@ export const getConsultoras = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<Consultora[]> => {
     const { data, error } = await context.supabase
       .from("radar_consultoras")
-      .select("id,nome,email,ativo,total_leads_atribuidos")
+      .select("id,nome,email,ativo,total_leads_atribuidos,token")
       .order("nome", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []) as Consultora[];
@@ -813,7 +813,7 @@ export const getMinhaConsultora = createServerFn({ method: "GET" })
     if (!email) return null;
     const { data, error } = await context.supabase
       .from("radar_consultoras")
-      .select("id,nome,email,ativo,total_leads_atribuidos")
+      .select("id,nome,email,ativo,total_leads_atribuidos,token")
       .ilike("email", email)
       .limit(1);
     if (error) throw new Error(error.message);
