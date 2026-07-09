@@ -291,6 +291,75 @@ function extractDataPromocao(trecho: string): string {
   return "";
 }
 
+// ---------------------------------------------------------------------------
+// Fallbacks por regex para promoção civil/militar a partir do trecho_original.
+// Diários costumam trazer a mudança na forma "de/da CLASSE G ... para a(o)
+// CLASSE H", "nível 3 ... para o nível 4", "referência 2 ... referência 3" ou,
+// para militares, "promovido(a) ao posto/graduação de CORONEL PM".
+// ---------------------------------------------------------------------------
+
+const norm = (s: string) => s.replace(/\s+/g, " ").trim();
+
+// Extrai o par (anterior, nova) de um determinado marcador (classe|nível|
+// referência|padrão). Aceita variações "para a(o)", "LEIA-SE", "passando a".
+function extractParMarcador(
+  trecho: string,
+  marcadores: string[],
+): { anterior: string; nova: string } {
+  if (!trecho) return { anterior: "", nova: "" };
+  const t = norm(trecho);
+  const marc = marcadores.join("|");
+  // Captura todas as ocorrências "MARCADOR <valor>" na ordem do texto.
+  const re = new RegExp(
+    `(?:${marc})\\s*(?:n[.ºo°]*)?\\s*[:\\-]?\\s*([A-Za-z0-9ºª]{1,6})`,
+    "gi",
+  );
+  const valores: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(t)) !== null) {
+    const v = m[1].trim();
+    // Ignora capturas espúrias tipo "de", "da", "para".
+    if (/^(de|da|do|para|a|o|e|no|na)$/i.test(v)) continue;
+    valores.push(v.toUpperCase());
+  }
+  if (valores.length >= 2) {
+    return { anterior: valores[0], nova: valores[valores.length - 1] };
+  }
+  if (valores.length === 1) return { anterior: "", nova: valores[0] };
+  return { anterior: "", nova: "" };
+}
+
+// Extrai o cargo/função ocupado ("ocupante do cargo de X", "no cargo de X",
+// "cargo de X", "função de X").
+function extractCargoAtual(trecho: string): string {
+  if (!trecho) return "";
+  const t = norm(trecho);
+  const m = t.match(
+    /(?:ocupante\s+d[oa]\s+)?(?:cargo|fun[cç][aã]o|emprego)\s+de\s+([A-ZÀ-Ÿ][A-ZÀ-Ÿ\s/.\-]{2,60}?)(?:,|\.|\s+(?:lotad|matr[ií]cula|classe|n[íi]vel|refer[êe]ncia|padr[aã]o|inscrit|CPF|do\s+quadro|passando|fica|para\b))/i,
+  );
+  if (m) return norm(m[1]).replace(/[,.]$/, "");
+  return "";
+}
+
+// Extrai o posto/graduação militar promovido: "promovido(a) ao posto de CORONEL
+// PM" ou "à graduação de 1º SARGENTO". Retorna { anterior, novo }.
+function extractPostoMilitar(trecho: string): { anterior: string; novo: string } {
+  if (!trecho) return { anterior: "", novo: "" };
+  const t = norm(trecho);
+  const novoM = t.match(
+    /promovid[oa]\s+(?:ao?|à)\s+(?:posto|gradua[cç][aã]o)\s+de\s+([A-ZÀ-Ÿ0-9ºª][A-ZÀ-Ÿ0-9ºª\s.\-]{2,40}?)(?:,|\.|\s+(?:com|a\s+contar|por|do|nos)\b)/i,
+  );
+  const antM = t.match(
+    /(?:posto|gradua[cç][aã]o)\s+(?:atual|anterior)\s+de\s+([A-ZÀ-Ÿ0-9ºª][A-ZÀ-Ÿ0-9ºª\s.\-]{2,40}?)(?:,|\.|\s)/i,
+  );
+  return {
+    anterior: antM ? norm(antM[1]).replace(/[,.]$/, "") : "",
+    novo: novoM ? norm(novoM[1]).replace(/[,.]$/, "") : "",
+  };
+}
+
+
+
 
 // Extrai o objeto JSON da resposta da IA (texto), tolerando cercas markdown e
 // texto extra ao redor. Valida com o schema e retorna { registros } ou null.
