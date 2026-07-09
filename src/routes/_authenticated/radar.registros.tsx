@@ -567,6 +567,14 @@ function RegistrosPage() {
                   <Badge variant="secondary" className="text-[10px]">{total} lead{total === 1 ? "" : "s"}</Badge>
                   <button
                     type="button"
+                    onClick={() => copiarLinkConsultora(c)}
+                    title="Copiar link de acesso da consultora"
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handleRemoverConsultora(c)}
                     title="Remover consultora"
                     className="text-muted-foreground hover:text-destructive"
