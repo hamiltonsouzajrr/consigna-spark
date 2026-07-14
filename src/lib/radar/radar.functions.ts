@@ -706,7 +706,7 @@ async function distribuirRoundRobin(supabase: any): Promise<{ atribuidos: number
   for (const c of ativas) buckets.set(c.id, []);
   for (const r of sorted) {
     const lead = { idade: (r as any).idade ?? null, sexo: (r as any).sexo ?? null, score: (r as any).score ?? null };
-    const elegiveis = ativas.filter((c) => leadCasaPreferencias(lead, c));
+    const elegiveis = ativas.filter((c: any) => leadCasaPreferencias(lead, c));
     if (!elegiveis.length) continue;
     let alvo = elegiveis[0];
     for (const c of elegiveis) if (c.total < alvo.total) alvo = c;
