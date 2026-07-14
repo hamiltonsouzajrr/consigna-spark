@@ -84,7 +84,7 @@ function leadPhones(lead: Lead): string[] {
 function Page() {
   const { user, loading } = useAuth();
   const { isAdmin } = useRhAccess();
-  const { leadId } = useParams({ from: "/prospeccao/$leadId" });
+  const { leadId } = useParams({ from: "/_authenticated/prospeccao/$leadId" });
   const navigate = useNavigate();
   const markOpened = useServerFn(markLeadOpened);
 
