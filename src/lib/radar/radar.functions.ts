@@ -668,7 +668,7 @@ function leadCasaPreferencias(
 async function distribuirRoundRobin(supabase: any): Promise<{ atribuidos: number; consultoras: number }> {
   const { data: consultoras, error: cErr } = await supabase
     .from("radar_consultoras")
-    .select("id,nome,total_leads_atribuidos")
+    .select("id,nome,total_leads_atribuidos,pref_idade_min,pref_idade_max,pref_sexos,pref_score_min")
     .eq("ativo", true);
   if (cErr) throw new Error(cErr.message);
 
@@ -742,7 +742,7 @@ export const distribuirLeadsAutomatico = createServerFn({ method: "POST" })
 async function distribuirTodosRoundRobin(supabase: any): Promise<{ atribuidos: number; consultoras: number }> {
   const { data: consultoras, error: cErr } = await supabase
     .from("radar_consultoras")
-    .select("id,nome,total_leads_atribuidos")
+    .select("id,nome,total_leads_atribuidos,pref_idade_min,pref_idade_max,pref_sexos,pref_score_min")
     .eq("ativo", true);
   if (cErr) throw new Error(cErr.message);
 
@@ -817,7 +817,7 @@ export const getConsultoras = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<Consultora[]> => {
     const { data, error } = await context.supabase
       .from("radar_consultoras")
-      .select("id,nome,email,ativo,total_leads_atribuidos,token")
+      .select("id,nome,email,ativo,total_leads_atribuidos,token,pref_idade_min,pref_idade_max,pref_sexos,pref_score_min")
       .order("nome", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []) as Consultora[];
@@ -831,7 +831,7 @@ export const getMinhaConsultora = createServerFn({ method: "GET" })
     if (!email) return null;
     const { data, error } = await context.supabase
       .from("radar_consultoras")
-      .select("id,nome,email,ativo,total_leads_atribuidos,token")
+      .select("id,nome,email,ativo,total_leads_atribuidos,token,pref_idade_min,pref_idade_max,pref_sexos,pref_score_min")
       .ilike("email", email)
       .limit(1);
     if (error) throw new Error(error.message);
