@@ -376,6 +376,7 @@ export type Database = {
           data_publicacao: string | null
           duplicado_possivel: boolean
           id: string
+          idade: number | null
           matricula: string | null
           motivo_classificacao: string | null
           nivel_anterior: string | null
@@ -390,6 +391,8 @@ export type Database = {
           potencial_financeiro: string | null
           referencia_anterior: string | null
           referencia_nova: string | null
+          score: number | null
+          sexo: string | null
           status_abordagem: string
           status_revisao: string
           tipo_movimentacao: string | null
@@ -417,6 +420,7 @@ export type Database = {
           data_publicacao?: string | null
           duplicado_possivel?: boolean
           id?: string
+          idade?: number | null
           matricula?: string | null
           motivo_classificacao?: string | null
           nivel_anterior?: string | null
@@ -431,6 +435,8 @@ export type Database = {
           potencial_financeiro?: string | null
           referencia_anterior?: string | null
           referencia_nova?: string | null
+          score?: number | null
+          sexo?: string | null
           status_abordagem?: string
           status_revisao?: string
           tipo_movimentacao?: string | null
@@ -458,6 +464,7 @@ export type Database = {
           data_publicacao?: string | null
           duplicado_possivel?: boolean
           id?: string
+          idade?: number | null
           matricula?: string | null
           motivo_classificacao?: string | null
           nivel_anterior?: string | null
@@ -472,6 +479,8 @@ export type Database = {
           potencial_financeiro?: string | null
           referencia_anterior?: string | null
           referencia_nova?: string | null
+          score?: number | null
+          sexo?: string | null
           status_abordagem?: string
           status_revisao?: string
           tipo_movimentacao?: string | null
@@ -1231,6 +1240,10 @@ export type Database = {
           email: string | null
           id: string
           nome: string
+          pref_idade_max: number | null
+          pref_idade_min: number | null
+          pref_score_min: number
+          pref_sexos: string[]
           token: string
           total_leads_atribuidos: number
           updated_at: string
@@ -1241,6 +1254,10 @@ export type Database = {
           email?: string | null
           id?: string
           nome: string
+          pref_idade_max?: number | null
+          pref_idade_min?: number | null
+          pref_score_min?: number
+          pref_sexos?: string[]
           token?: string
           total_leads_atribuidos?: number
           updated_at?: string
@@ -1251,6 +1268,10 @@ export type Database = {
           email?: string | null
           id?: string
           nome?: string
+          pref_idade_max?: number | null
+          pref_idade_min?: number | null
+          pref_score_min?: number
+          pref_sexos?: string[]
           token?: string
           total_leads_atribuidos?: number
           updated_at?: string
