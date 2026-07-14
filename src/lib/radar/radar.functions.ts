@@ -642,7 +642,25 @@ export const marcarAbordagem = createServerFn({ method: "POST" })
 
 const POTENCIAL_RANK: Record<string, number> = { Alto: 0, Médio: 1 };
 
-export type Consultora = { id: string; nome: string; email: string | null; ativo: boolean; total_leads_atribuidos: number; token: string };
+export type Consultora = {
+  id: string; nome: string; email: string | null; ativo: boolean;
+  total_leads_atribuidos: number; token: string;
+  pref_idade_min: number | null; pref_idade_max: number | null;
+  pref_sexos: string[]; pref_score_min: number;
+};
+
+// Testa se o lead casa com as preferências da consultora. Valores nulos no
+// lead sempre passam (ainda não sabemos idade/sexo/score, então não restringe).
+function leadCasaPreferencias(
+  lead: { idade: number | null; sexo: string | null; score: number | null },
+  pref: { pref_idade_min: number | null; pref_idade_max: number | null; pref_sexos: string[]; pref_score_min: number },
+): boolean {
+  if (lead.sexo != null && !(pref.pref_sexos ?? []).includes(lead.sexo)) return false;
+  if (lead.idade != null && pref.pref_idade_min != null && lead.idade < pref.pref_idade_min) return false;
+  if (lead.idade != null && pref.pref_idade_max != null && lead.idade > pref.pref_idade_max) return false;
+  if (lead.score != null && lead.score < (pref.pref_score_min ?? 0)) return false;
+  return true;
+}
 
 // Redistribui os leads PENDENTES (status novo + potencial alto/médio + sem
 // consultora) entre as consultoras ATIVAS, em rodízio (least-loaded), usando o
