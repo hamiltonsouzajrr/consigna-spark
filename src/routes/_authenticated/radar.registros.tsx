@@ -18,8 +18,15 @@ import {
   getRegistros, getArquivos, atualizarRegistro, getArquivoUrl, marcarAbordagem,
   getDistribuicaoConsultoras, getConsultoras, adicionarConsultora,
   toggleConsultora, removerConsultora, distribuirLeadsAutomatico, distribuirTodosLeads,
+  salvarPreferenciasConsultora,
   type DoRegistro, type DoArquivo, type DistribuicaoConsultora, type Consultora,
 } from "@/lib/radar/radar.functions";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Settings2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/radar/registros")({
   component: RegistrosPage,
