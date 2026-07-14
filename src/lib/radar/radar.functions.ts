@@ -901,6 +901,35 @@ export const removerConsultora = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const salvarPreferenciasConsultora = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({
+      id: z.string().uuid(),
+      pref_idade_min: z.number().int().min(0).max(120).nullable(),
+      pref_idade_max: z.number().int().min(0).max(120).nullable(),
+      pref_sexos: z.array(z.enum(["M", "F", "O"])).min(1),
+      pref_score_min: z.number().int().min(0).max(100),
+    }).parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    await assertAdmin(context.supabase, context.userId);
+    const admin = await getAdminClient();
+    const { error } = await admin
+      .from("radar_consultoras")
+      .update({
+        pref_idade_min: data.pref_idade_min,
+        pref_idade_max: data.pref_idade_max,
+        pref_sexos: data.pref_sexos,
+        pref_score_min: data.pref_score_min,
+      } as any)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
+
 // Resumo de quantos leads cada consultora possui atribuídos.
 export type DistribuicaoConsultora = { consultora: string; total: number };
 
