@@ -673,14 +673,19 @@ async function distribuirRoundRobin(supabase: any): Promise<{ atribuidos: number
   if (cErr) throw new Error(cErr.message);
 
   const ativas = (consultoras ?? [])
-    .map((c: any) => ({ id: String(c.id), nome: String(c.nome ?? "").trim(), total: Number(c.total_leads_atribuidos ?? 0) }))
+    .map((c: any) => ({
+      id: String(c.id), nome: String(c.nome ?? "").trim(), total: Number(c.total_leads_atribuidos ?? 0),
+      pref_idade_min: c.pref_idade_min ?? null, pref_idade_max: c.pref_idade_max ?? null,
+      pref_sexos: (c.pref_sexos ?? ["M", "F", "O"]) as string[],
+      pref_score_min: Number(c.pref_score_min ?? 0),
+    }))
     .filter((c: any) => c.nome);
   if (!ativas.length) return { atribuidos: 0, consultoras: 0 };
 
   // Leads elegíveis pendentes de distribuição.
   const { data: rows, error } = await supabase
     .from("do_registros")
-    .select("id,potencial_financeiro,data_publicacao")
+    .select("id,potencial_financeiro,data_publicacao,idade,sexo,score")
     .eq("status_abordagem", "novo")
     .in("potencial_financeiro", ["Alto", "Médio"])
     .is("consultora_responsavel", null)
@@ -695,12 +700,16 @@ async function distribuirRoundRobin(supabase: any): Promise<{ atribuidos: number
   });
   if (!sorted.length) return { atribuidos: 0, consultoras: ativas.length };
 
-  // Atribui cada lead à consultora ativa com menor total acumulado.
-  const buckets = new Map<string, string[]>(); // id -> registro ids
+  // Atribui cada lead à consultora ativa com menor total acumulado, respeitando
+  // as preferências de idade/sexo/score. Leads sem match ficam sem consultora.
+  const buckets = new Map<string, string[]>();
   for (const c of ativas) buckets.set(c.id, []);
   for (const r of sorted) {
-    let alvo = ativas[0];
-    for (const c of ativas) if (c.total < alvo.total) alvo = c;
+    const lead = { idade: (r as any).idade ?? null, sexo: (r as any).sexo ?? null, score: (r as any).score ?? null };
+    const elegiveis = ativas.filter((c) => leadCasaPreferencias(lead, c));
+    if (!elegiveis.length) continue;
+    let alvo = elegiveis[0];
+    for (const c of elegiveis) if (c.total < alvo.total) alvo = c;
     buckets.get(alvo.id)!.push((r as any).id as string);
     alvo.total += 1;
   }
