@@ -87,7 +87,7 @@ function Page() {
   const refill = useServerFn(refillMyQueue);
 
   // Daily call goal used for gamification (progress bar + streak).
-  const META_DIARIA = 50;
+  const META_DIARIA = 250;
 
   const todayKey = () => new Date().toISOString().slice(0, 10);
   const chamadasKey = () => `prospeccao_chamadas_${todayKey()}`;
