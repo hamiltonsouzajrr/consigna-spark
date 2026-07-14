@@ -642,7 +642,25 @@ export const marcarAbordagem = createServerFn({ method: "POST" })
 
 const POTENCIAL_RANK: Record<string, number> = { Alto: 0, Médio: 1 };
 
-export type Consultora = { id: string; nome: string; email: string | null; ativo: boolean; total_leads_atribuidos: number; token: string };
+export type Consultora = {
+  id: string; nome: string; email: string | null; ativo: boolean;
+  total_leads_atribuidos: number; token: string;
+  pref_idade_min: number | null; pref_idade_max: number | null;
+  pref_sexos: string[]; pref_score_min: number;
+};
+
+// Testa se o lead casa com as preferências da consultora. Valores nulos no
+// lead sempre passam (ainda não sabemos idade/sexo/score, então não restringe).
+function leadCasaPreferencias(
+  lead: { idade: number | null; sexo: string | null; score: number | null },
+  pref: { pref_idade_min: number | null; pref_idade_max: number | null; pref_sexos: string[]; pref_score_min: number },
+): boolean {
+  if (lead.sexo != null && !(pref.pref_sexos ?? []).includes(lead.sexo)) return false;
+  if (lead.idade != null && pref.pref_idade_min != null && lead.idade < pref.pref_idade_min) return false;
+  if (lead.idade != null && pref.pref_idade_max != null && lead.idade > pref.pref_idade_max) return false;
+  if (lead.score != null && lead.score < (pref.pref_score_min ?? 0)) return false;
+  return true;
+}
 
 // Redistribui os leads PENDENTES (status novo + potencial alto/médio + sem
 // consultora) entre as consultoras ATIVAS, em rodízio (least-loaded), usando o
@@ -650,19 +668,24 @@ export type Consultora = { id: string; nome: string; email: string | null; ativo
 async function distribuirRoundRobin(supabase: any): Promise<{ atribuidos: number; consultoras: number }> {
   const { data: consultoras, error: cErr } = await supabase
     .from("radar_consultoras")
-    .select("id,nome,total_leads_atribuidos")
+    .select("id,nome,total_leads_atribuidos,pref_idade_min,pref_idade_max,pref_sexos,pref_score_min")
     .eq("ativo", true);
   if (cErr) throw new Error(cErr.message);
 
   const ativas = (consultoras ?? [])
-    .map((c: any) => ({ id: String(c.id), nome: String(c.nome ?? "").trim(), total: Number(c.total_leads_atribuidos ?? 0) }))
+    .map((c: any) => ({
+      id: String(c.id), nome: String(c.nome ?? "").trim(), total: Number(c.total_leads_atribuidos ?? 0),
+      pref_idade_min: c.pref_idade_min ?? null, pref_idade_max: c.pref_idade_max ?? null,
+      pref_sexos: (c.pref_sexos ?? ["M", "F", "O"]) as string[],
+      pref_score_min: Number(c.pref_score_min ?? 0),
+    }))
     .filter((c: any) => c.nome);
   if (!ativas.length) return { atribuidos: 0, consultoras: 0 };
 
   // Leads elegíveis pendentes de distribuição.
   const { data: rows, error } = await supabase
     .from("do_registros")
-    .select("id,potencial_financeiro,data_publicacao")
+    .select("id,potencial_financeiro,data_publicacao,idade,sexo,score")
     .eq("status_abordagem", "novo")
     .in("potencial_financeiro", ["Alto", "Médio"])
     .is("consultora_responsavel", null)
@@ -677,12 +700,16 @@ async function distribuirRoundRobin(supabase: any): Promise<{ atribuidos: number
   });
   if (!sorted.length) return { atribuidos: 0, consultoras: ativas.length };
 
-  // Atribui cada lead à consultora ativa com menor total acumulado.
-  const buckets = new Map<string, string[]>(); // id -> registro ids
+  // Atribui cada lead à consultora ativa com menor total acumulado, respeitando
+  // as preferências de idade/sexo/score. Leads sem match ficam sem consultora.
+  const buckets = new Map<string, string[]>();
   for (const c of ativas) buckets.set(c.id, []);
   for (const r of sorted) {
-    let alvo = ativas[0];
-    for (const c of ativas) if (c.total < alvo.total) alvo = c;
+    const lead = { idade: (r as any).idade ?? null, sexo: (r as any).sexo ?? null, score: (r as any).score ?? null };
+    const elegiveis = ativas.filter((c: any) => leadCasaPreferencias(lead, c));
+    if (!elegiveis.length) continue;
+    let alvo = elegiveis[0];
+    for (const c of elegiveis) if (c.total < alvo.total) alvo = c;
     buckets.get(alvo.id)!.push((r as any).id as string);
     alvo.total += 1;
   }
@@ -724,19 +751,24 @@ export const distribuirLeadsAutomatico = createServerFn({ method: "POST" })
 async function distribuirTodosRoundRobin(supabase: any): Promise<{ atribuidos: number; consultoras: number }> {
   const { data: consultoras, error: cErr } = await supabase
     .from("radar_consultoras")
-    .select("id,nome,total_leads_atribuidos")
+    .select("id,nome,total_leads_atribuidos,pref_idade_min,pref_idade_max,pref_sexos,pref_score_min")
     .eq("ativo", true);
   if (cErr) throw new Error(cErr.message);
 
   const ativas = (consultoras ?? [])
-    .map((c: any) => ({ id: String(c.id), nome: String(c.nome ?? "").trim(), total: Number(c.total_leads_atribuidos ?? 0) }))
+    .map((c: any) => ({
+      id: String(c.id), nome: String(c.nome ?? "").trim(), total: Number(c.total_leads_atribuidos ?? 0),
+      pref_idade_min: c.pref_idade_min ?? null, pref_idade_max: c.pref_idade_max ?? null,
+      pref_sexos: (c.pref_sexos ?? ["M", "F", "O"]) as string[],
+      pref_score_min: Number(c.pref_score_min ?? 0),
+    }))
     .filter((c: any) => c.nome);
   if (!ativas.length) return { atribuidos: 0, consultoras: 0 };
 
   // Todos os registros sem consultora, priorizando potencial e data.
   const { data: rows, error } = await supabase
     .from("do_registros")
-    .select("id,potencial_financeiro,data_publicacao")
+    .select("id,potencial_financeiro,data_publicacao,idade,sexo,score")
     .is("consultora_responsavel", null)
     .limit(10000);
   if (error) throw new Error(error.message);
@@ -752,8 +784,11 @@ async function distribuirTodosRoundRobin(supabase: any): Promise<{ atribuidos: n
   const buckets = new Map<string, string[]>();
   for (const c of ativas) buckets.set(c.id, []);
   for (const r of sorted) {
-    let alvo = ativas[0];
-    for (const c of ativas) if (c.total < alvo.total) alvo = c;
+    const lead = { idade: (r as any).idade ?? null, sexo: (r as any).sexo ?? null, score: (r as any).score ?? null };
+    const elegiveis = ativas.filter((c: any) => leadCasaPreferencias(lead, c));
+    if (!elegiveis.length) continue;
+    let alvo = elegiveis[0];
+    for (const c of elegiveis) if (c.total < alvo.total) alvo = c;
     buckets.get(alvo.id)!.push((r as any).id as string);
     alvo.total += 1;
   }
@@ -799,7 +834,7 @@ export const getConsultoras = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<Consultora[]> => {
     const { data, error } = await context.supabase
       .from("radar_consultoras")
-      .select("id,nome,email,ativo,total_leads_atribuidos,token")
+      .select("id,nome,email,ativo,total_leads_atribuidos,token,pref_idade_min,pref_idade_max,pref_sexos,pref_score_min")
       .order("nome", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []) as Consultora[];
@@ -813,7 +848,7 @@ export const getMinhaConsultora = createServerFn({ method: "GET" })
     if (!email) return null;
     const { data, error } = await context.supabase
       .from("radar_consultoras")
-      .select("id,nome,email,ativo,total_leads_atribuidos,token")
+      .select("id,nome,email,ativo,total_leads_atribuidos,token,pref_idade_min,pref_idade_max,pref_sexos,pref_score_min")
       .ilike("email", email)
       .limit(1);
     if (error) throw new Error(error.message);
@@ -865,6 +900,35 @@ export const removerConsultora = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const salvarPreferenciasConsultora = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({
+      id: z.string().uuid(),
+      pref_idade_min: z.number().int().min(0).max(120).nullable(),
+      pref_idade_max: z.number().int().min(0).max(120).nullable(),
+      pref_sexos: z.array(z.enum(["M", "F", "O"])).min(1),
+      pref_score_min: z.number().int().min(0).max(100),
+    }).parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    await assertAdmin(context.supabase, context.userId);
+    const admin = await getAdminClient();
+    const { error } = await admin
+      .from("radar_consultoras")
+      .update({
+        pref_idade_min: data.pref_idade_min,
+        pref_idade_max: data.pref_idade_max,
+        pref_sexos: data.pref_sexos,
+        pref_score_min: data.pref_score_min,
+      } as any)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 
 // Resumo de quantos leads cada consultora possui atribuídos.
 export type DistribuicaoConsultora = { consultora: string; total: number };

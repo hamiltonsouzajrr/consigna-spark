@@ -18,8 +18,15 @@ import {
   getRegistros, getArquivos, atualizarRegistro, getArquivoUrl, marcarAbordagem,
   getDistribuicaoConsultoras, getConsultoras, adicionarConsultora,
   toggleConsultora, removerConsultora, distribuirLeadsAutomatico, distribuirTodosLeads,
+  salvarPreferenciasConsultora,
   type DoRegistro, type DoArquivo, type DistribuicaoConsultora, type Consultora,
 } from "@/lib/radar/radar.functions";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Settings2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/radar/registros")({
   component: RegistrosPage,
@@ -118,6 +125,8 @@ const EXPORT_FIELDS: { key: keyof DoRegistro; label: string }[] = [
 function RegistrosPage() {
   const { user } = useAuth();
   const fetchRegs = useServerFn(getRegistros);
+  const prefsFn = useServerFn(salvarPreferenciasConsultora);
+  const [prefsEdit, setPrefsEdit] = useState<Consultora | null>(null);
   const fetchArqs = useServerFn(getArquivos);
   const updateFn = useServerFn(atualizarRegistro);
   const abordagemFn = useServerFn(marcarAbordagem);
@@ -585,6 +594,14 @@ function RegistrosPage() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setPrefsEdit(c)}
+                    title="Preferências de leads (idade, sexo, score)"
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    <Settings2 className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handleRemoverConsultora(c)}
                     title="Remover consultora"
                     className="text-muted-foreground hover:text-destructive"
@@ -769,7 +786,129 @@ function RegistrosPage() {
           })}
         </div>
       )}
+
+      <PreferenciasDialog
+        consultora={prefsEdit}
+        onClose={() => setPrefsEdit(null)}
+        onSave={async (patch) => {
+          try {
+            await prefsFn({ data: patch });
+            toast.success("Preferências atualizadas.");
+            setPrefsEdit(null);
+            await load();
+          } catch (e: any) {
+            toast.error(e?.message ?? "Erro ao salvar preferências.");
+          }
+        }}
+      />
     </div>
+  );
+}
+
+function PreferenciasDialog({
+  consultora,
+  onClose,
+  onSave,
+}: {
+  consultora: Consultora | null;
+  onClose: () => void;
+  onSave: (patch: {
+    id: string;
+    pref_idade_min: number | null;
+    pref_idade_max: number | null;
+    pref_sexos: ("M" | "F" | "O")[];
+    pref_score_min: number;
+  }) => void;
+}) {
+  const [idadeMin, setIdadeMin] = useState<string>("");
+  const [idadeMax, setIdadeMax] = useState<string>("");
+  const [sexos, setSexos] = useState<Set<"M" | "F" | "O">>(new Set(["M", "F", "O"]));
+  const [scoreMin, setScoreMin] = useState<string>("0");
+
+  useEffect(() => {
+    if (!consultora) return;
+    setIdadeMin(consultora.pref_idade_min == null ? "" : String(consultora.pref_idade_min));
+    setIdadeMax(consultora.pref_idade_max == null ? "" : String(consultora.pref_idade_max));
+    const s = (consultora.pref_sexos ?? ["M", "F", "O"]) as ("M" | "F" | "O")[];
+    setSexos(new Set(s.length ? s : (["M", "F", "O"] as ("M" | "F" | "O")[])));
+    setScoreMin(String(consultora.pref_score_min ?? 0));
+  }, [consultora]);
+
+  const toggleSexo = (v: "M" | "F" | "O") => {
+    setSexos((prev) => {
+      const next = new Set(prev);
+      if (next.has(v)) next.delete(v);
+      else next.add(v);
+      return next;
+    });
+  };
+
+  const salvar = () => {
+    if (!consultora) return;
+    if (!sexos.size) {
+      toast.warning("Selecione ao menos um sexo.");
+      return;
+    }
+    const mn = idadeMin === "" ? null : Number(idadeMin);
+    const mx = idadeMax === "" ? null : Number(idadeMax);
+    if (mn != null && mx != null && mn > mx) {
+      toast.warning("Idade mínima maior que a máxima.");
+      return;
+    }
+    onSave({
+      id: consultora.id,
+      pref_idade_min: mn,
+      pref_idade_max: mx,
+      pref_sexos: Array.from(sexos),
+      pref_score_min: Math.max(0, Math.min(100, Number(scoreMin) || 0)),
+    });
+  };
+
+  return (
+    <Dialog open={!!consultora} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Preferências de leads — {consultora?.nome}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 text-sm">
+          <p className="text-xs text-muted-foreground">
+            A distribuição automática só atribui a esta consultora leads que casem com os filtros abaixo.
+            Leads sem informação de idade/sexo/score passam por padrão.
+          </p>
+          <div>
+            <Label className="text-xs">Faixa etária (deixe vazio para não filtrar)</Label>
+            <div className="mt-1 flex items-center gap-2">
+              <Input type="number" min={0} max={120} placeholder="mín."
+                value={idadeMin} onChange={(e) => setIdadeMin(e.target.value)} className="w-24" />
+              <span className="text-muted-foreground">até</span>
+              <Input type="number" min={0} max={120} placeholder="máx."
+                value={idadeMax} onChange={(e) => setIdadeMax(e.target.value)} className="w-24" />
+              <span className="text-muted-foreground">anos</span>
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Sexo</Label>
+            <div className="mt-2 flex gap-4">
+              {(["M", "F", "O"] as const).map((v) => (
+                <label key={v} className="flex items-center gap-2">
+                  <Checkbox checked={sexos.has(v)} onCheckedChange={() => toggleSexo(v)} />
+                  <span>{v === "M" ? "Masculino" : v === "F" ? "Feminino" : "Outro"}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Score mínimo (0 a 100)</Label>
+            <Input type="number" min={0} max={100} value={scoreMin}
+              onChange={(e) => setScoreMin(e.target.value)} className="mt-1 w-24" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button onClick={salvar}>Salvar preferências</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
