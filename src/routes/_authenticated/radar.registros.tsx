@@ -124,6 +124,7 @@ const EXPORT_FIELDS: { key: keyof DoRegistro; label: string }[] = [
 
 function RegistrosPage() {
   const { user } = useAuth();
+  const fetchRegs = useServerFn(getRegistros);
   const prefsFn = useServerFn(salvarPreferenciasConsultora);
   const [prefsEdit, setPrefsEdit] = useState<Consultora | null>(null);
   const fetchArqs = useServerFn(getArquivos);
