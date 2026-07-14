@@ -594,6 +594,14 @@ function RegistrosPage() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setPrefsEdit(c)}
+                    title="Preferências de leads (idade, sexo, score)"
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    <Settings2 className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handleRemoverConsultora(c)}
                     title="Remover consultora"
                     className="text-muted-foreground hover:text-destructive"
