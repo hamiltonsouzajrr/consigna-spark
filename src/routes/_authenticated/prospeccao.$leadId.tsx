@@ -225,7 +225,16 @@ function Page() {
   };
 
   // Jump straight to the next untouched lead in the queue (call-in-sequence).
+  // Each click counts as one lead prospectado do dia (mesma chave/evento usados
+  // pelo painel "Chamadas hoje" em /prospeccao).
   const goNextLead = useCallback(async () => {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const key = `prospeccao_chamadas_${today}`;
+      const cur = Number(window.localStorage.getItem(key) || "0") || 0;
+      window.localStorage.setItem(key, String(cur + 1));
+      window.dispatchEvent(new Event("chamadas-updated"));
+    } catch {}
     const { data } = await supabase
       .from("prospect_leads")
       .select("id")
