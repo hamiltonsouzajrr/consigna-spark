@@ -225,9 +225,28 @@ function Page() {
   };
 
   // Jump straight to the next untouched lead in the queue (call-in-sequence).
-  // Each click counts as one lead prospectado do dia (mesma chave/evento usados
-  // pelo painel "Chamadas hoje" em /prospeccao).
+  // Só conta para "Chamadas hoje" quando a consultora efetivamente trabalhou o
+  // lead: registrou o contato (com o que foi tratado) E qualificou o status
+  // (saiu de "novo"). Caso contrário, avisamos para concluir antes de pular.
   const goNextLead = useCallback(async () => {
+    const contatoRegistrado = Boolean(lead?.last_contact_at) || events.some((e) => e.kind === "ligacao" || e.kind === "whatsapp" || e.kind === "nota");
+    const statusQualificado = Boolean(lead && lead.status !== "novo");
+
+    if (!contatoRegistrado || !statusQualificado) {
+      const faltando: string[] = [];
+      if (!contatoRegistrado) faltando.push("registrar o contato (descreva o que foi tratado)");
+      if (!statusQualificado) faltando.push("qualificar o status do lead");
+      toast.warning("Conclua antes de pular", {
+        description: `Antes de ir ao próximo, ${faltando.join(" e ")}.`,
+      });
+      // Foca o campo de nota para agilizar o preenchimento.
+      if (!contatoRegistrado) {
+        setContactKind("nota");
+        setTimeout(() => noteRef.current?.focus(), 50);
+      }
+      return;
+    }
+
     try {
       const today = new Date().toISOString().slice(0, 10);
       const key = `prospeccao_chamadas_${today}`;
@@ -247,7 +266,7 @@ function Page() {
     const next = data?.[0]?.id as string | undefined;
     if (next) navigate({ to: "/prospeccao/$leadId", params: { leadId: next } });
     else { toast.info("Não há mais leads na fila."); navigate({ to: "/prospeccao" }); }
-  }, [leadId, navigate]);
+  }, [lead, events, leadId, navigate]);
 
   const copyPhone = useCallback(() => {
     if (!primaryPhone) return;
