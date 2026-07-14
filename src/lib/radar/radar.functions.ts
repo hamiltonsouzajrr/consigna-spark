@@ -756,14 +756,19 @@ async function distribuirTodosRoundRobin(supabase: any): Promise<{ atribuidos: n
   if (cErr) throw new Error(cErr.message);
 
   const ativas = (consultoras ?? [])
-    .map((c: any) => ({ id: String(c.id), nome: String(c.nome ?? "").trim(), total: Number(c.total_leads_atribuidos ?? 0) }))
+    .map((c: any) => ({
+      id: String(c.id), nome: String(c.nome ?? "").trim(), total: Number(c.total_leads_atribuidos ?? 0),
+      pref_idade_min: c.pref_idade_min ?? null, pref_idade_max: c.pref_idade_max ?? null,
+      pref_sexos: (c.pref_sexos ?? ["M", "F", "O"]) as string[],
+      pref_score_min: Number(c.pref_score_min ?? 0),
+    }))
     .filter((c: any) => c.nome);
   if (!ativas.length) return { atribuidos: 0, consultoras: 0 };
 
   // Todos os registros sem consultora, priorizando potencial e data.
   const { data: rows, error } = await supabase
     .from("do_registros")
-    .select("id,potencial_financeiro,data_publicacao")
+    .select("id,potencial_financeiro,data_publicacao,idade,sexo,score")
     .is("consultora_responsavel", null)
     .limit(10000);
   if (error) throw new Error(error.message);
@@ -779,8 +784,11 @@ async function distribuirTodosRoundRobin(supabase: any): Promise<{ atribuidos: n
   const buckets = new Map<string, string[]>();
   for (const c of ativas) buckets.set(c.id, []);
   for (const r of sorted) {
-    let alvo = ativas[0];
-    for (const c of ativas) if (c.total < alvo.total) alvo = c;
+    const lead = { idade: (r as any).idade ?? null, sexo: (r as any).sexo ?? null, score: (r as any).score ?? null };
+    const elegiveis = ativas.filter((c: any) => leadCasaPreferencias(lead, c));
+    if (!elegiveis.length) continue;
+    let alvo = elegiveis[0];
+    for (const c of elegiveis) if (c.total < alvo.total) alvo = c;
     buckets.get(alvo.id)!.push((r as any).id as string);
     alvo.total += 1;
   }
