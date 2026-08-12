@@ -65,17 +65,58 @@ async function isAdmin(supabase: any, userId: string): Promise<boolean> {
   return Boolean(data);
 }
 
-async function nomeConsultora(supabase: any, claims: any): Promise<string | null> {
+function nomeDoEmail(email: string): string {
+  const local = email.split("@")[0] ?? email;
+  return local
+    .replace(/[._-]+/g, " ")
+    .replace(/\d+/g, "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+    .join(" ") || local;
+}
+
+// Vínculo automático: se o e-mail logado ainda não tem consultora cadastrada,
+// criamos (ou adotamos, quando o nome já existe) o registro na hora, para que
+// a consultora nunca fique sem carteira esperando ação do administrador.
+async function nomeConsultora(_supabase: any, claims: any, autoVincular = false): Promise<string | null> {
   const email = String(claims?.email ?? "").trim().toLowerCase();
   if (!email) return null;
-  const { data } = await supabase
-    .from("radar_consultoras")
-    .select("nome")
-    .ilike("email", email)
-    .limit(1);
+  const client = await getAdminClient();
+
+  const { data } = await client.from("radar_consultoras").select("nome").ilike("email", email).limit(1);
   const nome = (data ?? [])[0]?.nome;
-  return nome ? String(nome).trim() : null;
+  if (nome) return String(nome).trim();
+  if (!autoVincular) return null;
+
+  const candidato = nomeDoEmail(email);
+
+  // Já existe uma consultora com esse nome e sem e-mail? Vincula a ela.
+  const { data: semEmail } = await client
+    .from("radar_consultoras")
+    .select("id,nome,email")
+    .ilike("nome", candidato)
+    .limit(1);
+  const existente = (semEmail ?? [])[0];
+  if (existente) {
+    if (!existente.email) {
+      await client.from("radar_consultoras").update({ email, ativo: true }).eq("id", existente.id);
+      return String(existente.nome).trim();
+    }
+    // Nome ocupado por outro e-mail: diferencia usando o local-part completo.
+  }
+
+  const nomeFinal = existente ? `${candidato} (${email.split("@")[0]})` : candidato;
+  const { data: criada, error } = await client
+    .from("radar_consultoras")
+    .insert({ nome: nomeFinal, email, ativo: true })
+    .select("nome")
+    .single();
+  if (error) return null;
+  return String(criada.nome).trim();
 }
+
 
 // Carteira exclusiva: cada consultora mantém no máximo POOL_ALVO leads em
 // aberto. Quando ela finaliza (convertido / sem interesse), a vaga é reposta
