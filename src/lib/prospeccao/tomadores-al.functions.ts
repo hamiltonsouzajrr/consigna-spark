@@ -77,6 +77,60 @@ async function nomeConsultora(supabase: any, claims: any): Promise<string | null
   return nome ? String(nome).trim() : null;
 }
 
+// Carteira exclusiva: cada consultora mantém no máximo POOL_ALVO leads em
+// aberto. Quando ela finaliza (convertido / sem interesse), a vaga é reposta
+// com novos tomadores da planilha que ainda não têm responsável.
+export const POOL_ALVO = 10;
+const STATUS_ABERTOS = ["novo", "contatado", "proposta_enviada"];
+
+async function garantirPoolTomadores(nome: string): Promise<number> {
+  const client = await getAdminClient();
+
+  const { count: abertos, error: cErr } = await client
+    .from("tomadores_al")
+    .select("id", { count: "exact", head: true })
+    .eq("consultora_responsavel", nome)
+    .in("status_abordagem", STATUS_ABERTOS);
+  if (cErr) return 0;
+
+  const faltam = POOL_ALVO - Number(abertos ?? 0);
+  if (faltam <= 0) return 0;
+
+  const { data: livres, error: lErr } = await client
+    .from("tomadores_al")
+    .select("id")
+    .is("consultora_responsavel", null)
+    .order("margem_disp_emprestimo", { ascending: false })
+    .limit(faltam);
+  if (lErr || !livres?.length) return 0;
+
+  const ids = (livres as any[]).map((r) => String(r.id));
+  const { data: atualizados, error: uErr } = await client
+    .from("tomadores_al")
+    .update({ consultora_responsavel: nome, atribuido_em: new Date().toISOString() })
+    .in("id", ids)
+    .is("consultora_responsavel", null) // evita corrida entre duas consultoras
+    .select("id");
+  if (uErr) return 0;
+
+  const novos = (atualizados ?? []).length;
+  if (novos) {
+    const { data: c } = await client
+      .from("radar_consultoras")
+      .select("id,total_leads_atribuidos")
+      .eq("nome", nome)
+      .limit(1);
+    const alvo = (c ?? [])[0];
+    if (alvo) {
+      await client
+        .from("radar_consultoras")
+        .update({ total_leads_atribuidos: Number(alvo.total_leads_atribuidos ?? 0) + novos })
+        .eq("id", alvo.id);
+    }
+  }
+  return novos;
+}
+
 // Lista os tomadores. Consultora vê apenas os seus; admin vê todos e pode
 // filtrar por consultora.
 export const getTomadoresAl = createServerFn({ method: "POST" })
@@ -107,6 +161,10 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
     }> => {
       const admin = await isAdmin(context.supabase, context.userId);
       const minha = await nomeConsultora(context.supabase, context.claims);
+
+      // Carteira enxuta e exclusiva: ao entrar na aba, a consultora recebe
+      // reposição automática até completar POOL_ALVO leads em aberto.
+      if (minha) await garantirPoolTomadores(minha);
 
       let q = context.supabase
         .from("tomadores_al")
@@ -184,7 +242,9 @@ export const marcarAbordagemTomador = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// Distribui em rodízio (least-loaded) todos os tomadores ainda sem consultora.
+// Completa a carteira de cada consultora ativa até POOL_ALVO leads em aberto
+// (10 exclusivos). O restante da planilha fica no estoque, sem responsável,
+// e é reposto automaticamente conforme os leads são finalizados.
 export const distribuirTomadoresAl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ atribuidos: number; consultoras: number }> => {
@@ -192,54 +252,19 @@ export const distribuirTomadoresAl = createServerFn({ method: "POST" })
 
     const { data: consultoras, error: cErr } = await context.supabase
       .from("radar_consultoras")
-      .select("id,nome,total_leads_atribuidos")
+      .select("id,nome")
       .eq("ativo", true);
     if (cErr) throw new Error(cErr.message);
 
-    const ativas = (consultoras ?? [])
-      .map((c: any) => ({ id: String(c.id), nome: String(c.nome ?? "").trim(), total: Number(c.total_leads_atribuidos ?? 0) }))
-      .filter((c: any) => c.nome);
-    if (!ativas.length) return { atribuidos: 0, consultoras: 0 };
-
-    const client = await getAdminClient();
-    const { data: rows, error } = await client
-      .from("tomadores_al")
-      .select("id")
-      .is("consultora_responsavel", null)
-      .order("margem_disp_emprestimo", { ascending: false })
-      .limit(20000);
-    if (error) throw new Error(error.message);
-    if (!rows?.length) return { atribuidos: 0, consultoras: ativas.length };
-
-    const buckets = new Map<string, string[]>(ativas.map((c: any) => [c.id, [] as string[]]));
-    for (const r of rows as any[]) {
-      let alvo = ativas[0];
-      for (const c of ativas) if (c.total < alvo.total) alvo = c;
-      buckets.get(alvo.id)!.push(String(r.id));
-      alvo.total += 1;
-    }
+    const nomes = (consultoras ?? [])
+      .map((c: any) => String(c.nome ?? "").trim())
+      .filter(Boolean);
+    if (!nomes.length) return { atribuidos: 0, consultoras: 0 };
 
     let atribuidos = 0;
-    for (const c of ativas) {
-      const ids = buckets.get(c.id)!;
-      if (!ids.length) continue;
-      for (let i = 0; i < ids.length; i += 500) {
-        const { error: upErr } = await client
-          .from("tomadores_al")
-          .update({ consultora_responsavel: c.nome, atribuido_em: new Date().toISOString() })
-          .in("id", ids.slice(i, i + 500))
-          .is("consultora_responsavel", null);
-        if (upErr) throw new Error(upErr.message);
-      }
-      const { error: cntErr } = await client
-        .from("radar_consultoras")
-        .update({ total_leads_atribuidos: c.total })
-        .eq("id", c.id);
-      if (cntErr) throw new Error(cntErr.message);
-      atribuidos += ids.length;
-    }
+    for (const nome of nomes) atribuidos += await garantirPoolTomadores(nome);
 
-    return { atribuidos, consultoras: ativas.length };
+    return { atribuidos, consultoras: nomes.length };
   });
 
 // Painel admin: quantos tomadores cada consultora recebeu, quantos já foram

@@ -213,7 +213,7 @@ function Page() {
     try {
       const res = await distribuirFn();
       if (!res.consultoras) toast.error("Nenhuma consultora ativa cadastrada.");
-      else toast.success(`${res.atribuidos} tomadores distribuídos entre ${res.consultoras} consultoras.`);
+      else toast.success(`${res.atribuidos} novos leads repostos nas carteiras de ${res.consultoras} consultora(s).`);
       await load();
       await recarregarDistribuicao();
     } catch (e: any) {
@@ -239,7 +239,7 @@ function Page() {
       setNovoEmail("");
       await recarregarConsultoras();
       await recarregarDistribuicao();
-      toast.success("Consultora cadastrada. Agora use “Distribuir sem consultora”.");
+      toast.success("Consultora cadastrada. Agora use “Repor carteiras”.");
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao cadastrar consultora.");
     } finally {
@@ -324,7 +324,7 @@ function Page() {
                 </Button>
                 <Button variant="outline" size="sm" onClick={distribuir} disabled={distribuindo}>
                   <Shuffle className="mr-2 h-4 w-4" />
-                  {distribuindo ? "Distribuindo…" : "Distribuir sem consultora"}
+                  {distribuindo ? "Repondo…" : "Repor carteiras (10 por consultora)"}
                 </Button>
                 <Button size="sm" onClick={importar} disabled={importing}>
                   <Upload className="mr-2 h-4 w-4" />
@@ -350,7 +350,7 @@ function Page() {
               <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
                 Nenhuma consultora ativa cadastrada — por isso os leads aparecem apenas na visão de
                 administrador e nada foi distribuído. Cadastre cada consultora com o mesmo e-mail
-                que ela usa para entrar no sistema e depois clique em “Distribuir sem consultora”.
+                que ela usa para entrar no sistema e depois clique em “Repor carteiras”. Cada uma recebe 10 leads exclusivos, repostos conforme finaliza.
               </p>
             )}
 
@@ -376,7 +376,7 @@ function Page() {
               {[
                 { label: "Total na base", valor: dist?.total ?? total, tone: "text-foreground" },
                 { label: "Com responsável", valor: dist?.atribuidos ?? 0, tone: "text-emerald-600 dark:text-emerald-400" },
-                { label: "Pendentes (sem responsável)", valor: dist?.semResponsavel ?? 0, tone: "text-amber-600 dark:text-amber-400" },
+                { label: "Estoque (sem responsável)", valor: dist?.semResponsavel ?? 0, tone: "text-amber-600 dark:text-amber-400" },
                 { label: "Órfãos (consultora removida)", valor: dist?.orfaos ?? 0, tone: "text-rose-600 dark:text-rose-400" },
               ].map((k) => (
                 <div key={k.label} className="rounded-lg border border-border/60 bg-background p-3">
