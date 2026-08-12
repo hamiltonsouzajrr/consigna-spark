@@ -249,6 +249,22 @@ function Page() {
     } catch { /* seletor opcional */ }
   };
 
+  const importarAcessos = async () => {
+    setImportandoAcessos(true);
+    try {
+      const res = await importarAcessosFn();
+      if (!res.criadas) toast.info("Nenhum acesso novo para importar.");
+      else toast.success(`${res.criadas} consultora(s) importada(s) dos acessos. Use “Repor carteiras”.`);
+      await recarregarConsultoras();
+      await recarregarDistribuicao();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao importar acessos.");
+    } finally {
+      setImportandoAcessos(false);
+    }
+  };
+
+
   const salvarConsultora = async () => {
     if (!novoNome.trim()) { toast.error("Informe o nome da consultora."); return; }
     if (!novoEmail.trim()) { toast.error("Informe o e-mail de login da consultora."); return; }
