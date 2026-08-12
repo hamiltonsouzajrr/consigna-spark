@@ -15,7 +15,8 @@ import { COEF_MARGEM_AL_PADRAO } from "@/lib/al/margem";
 import { toast } from "sonner";
 import tomadoresAsset from "@/assets/tomadores_al.json.asset.json";
 import {
-  getTomadoresAl, marcarAbordagemTomador, distribuirTomadoresAl, type TomadorAl,
+  getTomadoresAl, marcarAbordagemTomador, distribuirTomadoresAl, getDistribuicaoTomadoresAl,
+  type TomadorAl, type DistribuicaoConsultora,
 } from "@/lib/prospeccao/tomadores-al.functions";
 import {
   getConsultoras, adicionarConsultora, toggleConsultora, type Consultora,
