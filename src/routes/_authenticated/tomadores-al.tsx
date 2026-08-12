@@ -354,6 +354,44 @@ function Page() {
           </div>
         </header>
 
+        {(resumo?.consultoraNome || (!isAdmin && vinculada)) && (
+          <section className="space-y-3 rounded-xl border border-border/60 bg-card p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 text-sm font-semibold">
+                <Briefcase className="h-4 w-4" /> Minha carteira
+                {resumo?.consultoraNome && (
+                  <span className="text-xs font-normal text-muted-foreground">· {resumo.consultoraNome}</span>
+                )}
+              </h2>
+              <Button variant="outline" size="sm" onClick={atualizarCarteira} disabled={resumoLoading || loading}>
+                <RefreshCw className={`mr-2 h-4 w-4 ${resumoLoading ? "animate-spin" : ""}`} />
+                {resumoLoading ? "Atualizando…" : "Atualizar status"}
+              </Button>
+            </div>
+
+            <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
+              {[
+                { label: "Atribuídos", valor: resumo?.atribuidos ?? 0, tone: "text-foreground" },
+                { label: "Pendentes (novos)", valor: resumo?.pendentes ?? 0, tone: "text-sky-600 dark:text-sky-400" },
+                { label: "Em andamento", valor: resumo?.emAndamento ?? 0, tone: "text-amber-600 dark:text-amber-400" },
+                { label: "Concluídos", valor: resumo?.concluidos ?? 0, tone: "text-emerald-600 dark:text-emerald-400" },
+              ].map((k) => (
+                <div key={k.label} className="rounded-lg border border-border/60 bg-background p-3">
+                  <p className="text-[11px] text-muted-foreground">{k.label}</p>
+                  <p className={`text-lg font-bold ${k.tone}`}>{k.valor.toLocaleString("pt-BR")}</p>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              {resumo?.convertidos ?? 0} convertido(s) · {resumo?.semInteresse ?? 0} sem interesse ·{" "}
+              {(resumo?.vagasLivres ?? 0) > 0
+                ? `${resumo?.vagasLivres} vaga(s) livre(s) na carteira — novos tomadores entram automaticamente.`
+                : "Carteira completa com 10 leads em aberto."}
+            </p>
+          </section>
+        )}
+
         {isAdmin && (
           <section className="space-y-3 rounded-xl border border-border/60 bg-card p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
