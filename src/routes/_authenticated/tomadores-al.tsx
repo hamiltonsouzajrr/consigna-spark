@@ -372,27 +372,73 @@ function Page() {
               </Button>
             </div>
 
-            {consultoras.length > 0 && (
+            <div className="grid gap-2 sm:grid-cols-4">
+              {[
+                { label: "Total na base", valor: dist?.total ?? total, tone: "text-foreground" },
+                { label: "Com responsável", valor: dist?.atribuidos ?? 0, tone: "text-emerald-600 dark:text-emerald-400" },
+                { label: "Pendentes (sem responsável)", valor: dist?.semResponsavel ?? 0, tone: "text-amber-600 dark:text-amber-400" },
+                { label: "Órfãos (consultora removida)", valor: dist?.orfaos ?? 0, tone: "text-rose-600 dark:text-rose-400" },
+              ].map((k) => (
+                <div key={k.label} className="rounded-lg border border-border/60 bg-background p-3">
+                  <p className="text-[11px] text-muted-foreground">{k.label}</p>
+                  <p className={`text-lg font-bold ${k.tone}`}>{k.valor.toLocaleString("pt-BR")}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {distLoading ? "Atualizando contagem…" : "Contagem apurada direto na base de tomadores."}
+              </p>
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px]" onClick={recarregarDistribuicao} disabled={distLoading}>
+                Atualizar
+              </Button>
+            </div>
+
+            {(dist?.consultoras.length ?? consultoras.length) > 0 && (
               <ul className="divide-y divide-border/60 rounded-lg border border-border/60">
-                {consultoras.map((c) => (
+                {(dist?.consultoras ?? consultoras.map((c) => ({
+                  id: c.id, nome: c.nome, email: c.email ?? null, ativo: c.ativo,
+                  atribuidos: c.total_leads_atribuidos ?? 0, trabalhados: 0,
+                  contador_cadastro: c.total_leads_atribuidos ?? 0,
+                }))).map((c) => (
                   <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{c.nome}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {c.email ?? "sem e-mail vinculado"} · {c.total_leads_atribuidos ?? 0} leads
+                        {c.email ?? "sem e-mail vinculado"}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className="bg-sky-500/15 text-sky-700 dark:text-sky-300">
+                        {c.atribuidos.toLocaleString("pt-BR")} atribuídos
+                      </Badge>
+                      <Badge className="bg-violet-500/15 text-violet-700 dark:text-violet-300">
+                        {c.trabalhados.toLocaleString("pt-BR")} trabalhados
+                      </Badge>
                       <Badge className={c.ativo ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground"}>
                         {c.ativo ? "Ativa" : "Inativa"}
                       </Badge>
-                      <Button variant="outline" size="sm" className="h-7 px-2 text-[11px]" onClick={() => alternarConsultora(c)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-[11px]"
+                        onClick={() => alternarConsultora({ ...(consultoras.find((x) => x.id === c.id) ?? ({} as Consultora)), id: c.id, ativo: c.ativo } as Consultora)}
+                      >
                         {c.ativo ? "Desativar" : "Ativar"}
                       </Button>
                     </div>
                   </li>
                 ))}
               </ul>
+            )}
+
+            {!!dist?.orfaos && (
+              <p className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-xs text-rose-900 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-200">
+                {dist.orfaos.toLocaleString("pt-BR")} tomadores estão vinculados a nomes que não
+                existem mais no cadastro de consultoras. Cadastre a consultora com o mesmo nome ou
+                limpe o responsável para redistribuir.
+              </p>
             )}
           </section>
         )}
