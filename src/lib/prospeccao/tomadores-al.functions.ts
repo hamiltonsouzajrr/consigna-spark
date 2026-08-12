@@ -77,6 +77,60 @@ async function nomeConsultora(supabase: any, claims: any): Promise<string | null
   return nome ? String(nome).trim() : null;
 }
 
+// Carteira exclusiva: cada consultora mantém no máximo POOL_ALVO leads em
+// aberto. Quando ela finaliza (convertido / sem interesse), a vaga é reposta
+// com novos tomadores da planilha que ainda não têm responsável.
+export const POOL_ALVO = 10;
+const STATUS_ABERTOS = ["novo", "contatado", "proposta_enviada"];
+
+async function garantirPoolTomadores(nome: string): Promise<number> {
+  const client = await getAdminClient();
+
+  const { count: abertos, error: cErr } = await client
+    .from("tomadores_al")
+    .select("id", { count: "exact", head: true })
+    .eq("consultora_responsavel", nome)
+    .in("status_abordagem", STATUS_ABERTOS);
+  if (cErr) return 0;
+
+  const faltam = POOL_ALVO - Number(abertos ?? 0);
+  if (faltam <= 0) return 0;
+
+  const { data: livres, error: lErr } = await client
+    .from("tomadores_al")
+    .select("id")
+    .is("consultora_responsavel", null)
+    .order("margem_disp_emprestimo", { ascending: false })
+    .limit(faltam);
+  if (lErr || !livres?.length) return 0;
+
+  const ids = (livres as any[]).map((r) => String(r.id));
+  const { data: atualizados, error: uErr } = await client
+    .from("tomadores_al")
+    .update({ consultora_responsavel: nome, atribuido_em: new Date().toISOString() })
+    .in("id", ids)
+    .is("consultora_responsavel", null) // evita corrida entre duas consultoras
+    .select("id");
+  if (uErr) return 0;
+
+  const novos = (atualizados ?? []).length;
+  if (novos) {
+    const { data: c } = await client
+      .from("radar_consultoras")
+      .select("id,total_leads_atribuidos")
+      .eq("nome", nome)
+      .limit(1);
+    const alvo = (c ?? [])[0];
+    if (alvo) {
+      await client
+        .from("radar_consultoras")
+        .update({ total_leads_atribuidos: Number(alvo.total_leads_atribuidos ?? 0) + novos })
+        .eq("id", alvo.id);
+    }
+  }
+  return novos;
+}
+
 // Lista os tomadores. Consultora vê apenas os seus; admin vê todos e pode
 // filtrar por consultora.
 export const getTomadoresAl = createServerFn({ method: "POST" })
