@@ -111,6 +111,8 @@ function Page() {
 
   const addConsultoraFn = useServerFn(adicionarConsultora);
   const toggleConsultoraFn = useServerFn(toggleConsultora);
+  const importarAcessosFn = useServerFn(importarConsultorasDosAcessos);
+  const [importandoAcessos, setImportandoAcessos] = useState(false);
 
   const [busca, setBusca] = useState("");
   const [termo, setTermo] = useState("");
