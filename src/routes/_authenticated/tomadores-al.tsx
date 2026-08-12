@@ -424,11 +424,24 @@ function Page() {
 
             {consultoras.filter((c) => c.ativo).length === 0 && (
               <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
-                Nenhuma consultora ativa cadastrada — por isso os leads aparecem apenas na visão de
-                administrador e nada foi distribuído. Cadastre cada consultora com o mesmo e-mail
-                que ela usa para entrar no sistema e depois clique em “Repor carteiras”. Cada uma recebe 10 leads exclusivos, repostos conforme finaliza.
+                Existem acessos criados no login, mas nenhuma consultora vinculada aqui — é isso que
+                impede a distribuição. Clique em “Importar consultoras dos acessos” para criar o
+                vínculo automaticamente pelos e-mails já cadastrados (admins são ignorados) e depois
+                use “Repor carteiras”. Cada uma recebe 10 leads exclusivos, repostos conforme finaliza.
               </p>
             )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 w-full sm:w-auto"
+              onClick={importarAcessos}
+              disabled={importandoAcessos}
+            >
+              <UserCheck className="mr-2 h-4 w-4" />
+              {importandoAcessos ? "Importando…" : "Importar consultoras dos acessos"}
+            </Button>
+
 
             <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
               <Input
