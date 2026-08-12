@@ -108,6 +108,10 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
       const admin = await isAdmin(context.supabase, context.userId);
       const minha = await nomeConsultora(context.supabase, context.claims);
 
+      // Carteira enxuta e exclusiva: ao entrar na aba, a consultora recebe
+      // reposição automática até completar POOL_ALVO leads em aberto.
+      if (minha) await garantirPoolTomadores(minha);
+
       let q = context.supabase
         .from("tomadores_al")
         .select(SELECT_COLS, { count: "exact" })
