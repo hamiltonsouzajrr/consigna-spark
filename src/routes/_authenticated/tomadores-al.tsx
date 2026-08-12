@@ -17,7 +17,9 @@ import tomadoresAsset from "@/assets/tomadores_al.json.asset.json";
 import {
   getTomadoresAl, marcarAbordagemTomador, distribuirTomadoresAl, type TomadorAl,
 } from "@/lib/prospeccao/tomadores-al.functions";
-import { getConsultoras, type Consultora } from "@/lib/radar/radar.functions";
+import {
+  getConsultoras, adicionarConsultora, toggleConsultora, type Consultora,
+} from "@/lib/radar/radar.functions";
 
 export const Route = createFileRoute("/_authenticated/tomadores-al")({
   head: () => ({
