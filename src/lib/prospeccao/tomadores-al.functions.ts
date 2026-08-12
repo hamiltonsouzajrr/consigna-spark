@@ -14,15 +14,46 @@ export type TomadorAl = {
   descricao_lotacao: string | null;
   orgao: string | null;
   matricula: string | null;
+  dt_nascimento: string | null;
+  margem_bruta_emprestimo: number | null;
+  margem_bruta_cartao_credito: number | null;
   margem_disp_cartao_credito: number | null;
   margem_disp_emprestimo: number | null;
+  margem_util_emprestimo: number | null;
+  margem_util_cartao_credito: number | null;
+  margem_util_cartao_beneficio: number | null;
   pct_utilizado_emprestimo: number | null;
   consultora_responsavel: string | null;
   status_abordagem: string;
+  telefones?: string[];
 };
 
 const SELECT_COLS =
-  "id,nome,documento,descricao_cargo,descricao_lotacao,orgao,matricula,margem_disp_cartao_credito,margem_disp_emprestimo,pct_utilizado_emprestimo,consultora_responsavel,status_abordagem";
+  "id,nome,documento,descricao_cargo,descricao_lotacao,orgao,matricula,dt_nascimento,margem_bruta_emprestimo,margem_bruta_cartao_credito,margem_disp_cartao_credito,margem_disp_emprestimo,margem_util_emprestimo,margem_util_cartao_credito,margem_util_cartao_beneficio,pct_utilizado_emprestimo,consultora_responsavel,status_abordagem";
+
+// Telefones não vêm na planilha — buscamos nos enriquecimentos já feitos
+// (pesquisas Nova Vida e leads de prospecção) pelo CPF do tomador.
+async function telefonesPorCpf(supabase: any, docs: string[]): Promise<Record<string, string[]>> {
+  const map: Record<string, Set<string>> = {};
+  const add = (doc: string, tel?: string | null) => {
+    const d = String(doc ?? "").replace(/\D/g, "");
+    const t = String(tel ?? "").replace(/\D/g, "");
+    if (!d || t.length < 10) return;
+    (map[d] ??= new Set()).add(t);
+  };
+  if (!docs.length) return {};
+
+  const [nv, leads] = await Promise.all([
+    supabase.from("pesquisas_nv").select("documento,celular").in("documento", docs).limit(500),
+    supabase.from("prospect_leads").select("cpf,telefone,telefones").in("cpf", docs).limit(500),
+  ]);
+  for (const r of nv.data ?? []) add(r.documento, r.celular);
+  for (const r of leads.data ?? []) {
+    add(r.cpf, r.telefone);
+    for (const t of r.telefones ?? []) add(r.cpf, t);
+  }
+  return Object.fromEntries(Object.entries(map).map(([k, v]) => [k, [...v]]));
+}
 
 async function getAdminClient() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
