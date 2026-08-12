@@ -182,6 +182,21 @@ function Page() {
 
   useEffect(() => { load(); }, [load]);
 
+  const recarregarResumo = useCallback(async () => {
+    setResumoLoading(true);
+    try {
+      setResumo(await fetchResumo({ data: { consultora: filtroConsultora || undefined } }));
+    } catch { /* painel opcional */ }
+    finally { setResumoLoading(false); }
+  }, [fetchResumo, filtroConsultora]);
+
+  useEffect(() => { void recarregarResumo(); }, [recarregarResumo]);
+
+  const atualizarCarteira = async () => {
+    await Promise.all([load(), recarregarResumo()]);
+    toast.success("Carteira atualizada.");
+  };
+
   useEffect(() => {
     supabase
       .from("tomadores_al")
