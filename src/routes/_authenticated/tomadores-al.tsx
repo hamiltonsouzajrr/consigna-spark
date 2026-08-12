@@ -17,7 +17,9 @@ import tomadoresAsset from "@/assets/tomadores_al.json.asset.json";
 import {
   getTomadoresAl, marcarAbordagemTomador, distribuirTomadoresAl, type TomadorAl,
 } from "@/lib/prospeccao/tomadores-al.functions";
-import { getConsultoras, type Consultora } from "@/lib/radar/radar.functions";
+import {
+  getConsultoras, adicionarConsultora, toggleConsultora, type Consultora,
+} from "@/lib/radar/radar.functions";
 
 export const Route = createFileRoute("/_authenticated/tomadores-al")({
   head: () => ({
@@ -103,9 +105,15 @@ function Page() {
   const distribuirFn = useServerFn(distribuirTomadoresAl);
   const fetchConsultoras = useServerFn(getConsultoras);
 
+  const addConsultoraFn = useServerFn(adicionarConsultora);
+  const toggleConsultoraFn = useServerFn(toggleConsultora);
+
   const [busca, setBusca] = useState("");
   const [termo, setTermo] = useState("");
   const [orgao, setOrgao] = useState("todos");
+  const [novoNome, setNovoNome] = useState("");
+  const [novoEmail, setNovoEmail] = useState("");
+  const [salvandoConsultora, setSalvandoConsultora] = useState(false);
   const [minMargem, setMinMargem] = useState("0");
   const [page, setPage] = useState(0);
   const [rows, setRows] = useState<TomadorAl[]>([]);
@@ -198,6 +206,40 @@ function Page() {
     }
   };
 
+  const recarregarConsultoras = async () => {
+    try {
+      setConsultoras(await fetchConsultoras());
+    } catch { /* seletor opcional */ }
+  };
+
+  const salvarConsultora = async () => {
+    if (!novoNome.trim()) { toast.error("Informe o nome da consultora."); return; }
+    if (!novoEmail.trim()) { toast.error("Informe o e-mail de login da consultora."); return; }
+    setSalvandoConsultora(true);
+    try {
+      await addConsultoraFn({ data: { nome: novoNome.trim(), email: novoEmail.trim().toLowerCase() } });
+      setNovoNome("");
+      setNovoEmail("");
+      await recarregarConsultoras();
+      toast.success("Consultora cadastrada. Agora use “Distribuir sem consultora”.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao cadastrar consultora.");
+    } finally {
+      setSalvandoConsultora(false);
+    }
+  };
+
+  const alternarConsultora = async (c: Consultora) => {
+    try {
+      await toggleConsultoraFn({ data: { id: c.id, ativo: !c.ativo } });
+      await recarregarConsultoras();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao atualizar consultora.");
+    }
+  };
+
+
+
   const importar = async () => {
     setImporting(true);
     setProgress(0);
@@ -273,6 +315,70 @@ function Page() {
             )}
           </div>
         </header>
+
+        {isAdmin && (
+          <section className="space-y-3 rounded-xl border border-border/60 bg-card p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 text-sm font-semibold">
+                <Users className="h-4 w-4" /> Consultoras e distribuição
+              </h2>
+              <span className="text-xs text-muted-foreground">
+                {consultoras.filter((c) => c.ativo).length} ativa(s) de {consultoras.length}
+              </span>
+            </div>
+
+            {consultoras.filter((c) => c.ativo).length === 0 && (
+              <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+                Nenhuma consultora ativa cadastrada — por isso os leads aparecem apenas na visão de
+                administrador e nada foi distribuído. Cadastre cada consultora com o mesmo e-mail
+                que ela usa para entrar no sistema e depois clique em “Distribuir sem consultora”.
+              </p>
+            )}
+
+            <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+              <Input
+                value={novoNome}
+                onChange={(e) => setNovoNome(e.target.value)}
+                placeholder="Nome da consultora"
+                className="h-10"
+              />
+              <Input
+                value={novoEmail}
+                onChange={(e) => setNovoEmail(e.target.value)}
+                placeholder="e-mail de login"
+                className="h-10"
+              />
+              <Button size="sm" className="h-10" onClick={salvarConsultora} disabled={salvandoConsultora}>
+                {salvandoConsultora ? "Salvando…" : "Cadastrar"}
+              </Button>
+            </div>
+
+            {consultoras.length > 0 && (
+              <ul className="divide-y divide-border/60 rounded-lg border border-border/60">
+                {consultoras.map((c) => (
+                  <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{c.nome}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {c.email ?? "sem e-mail vinculado"} · {c.total_leads_atribuidos ?? 0} leads
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={c.ativo ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground"}>
+                        {c.ativo ? "Ativa" : "Inativa"}
+                      </Badge>
+                      <Button variant="outline" size="sm" className="h-7 px-2 text-[11px]" onClick={() => alternarConsultora(c)}>
+                        {c.ativo ? "Desativar" : "Ativar"}
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
+
 
         <div className="grid gap-4 rounded-xl border border-border/60 bg-card p-4 md:grid-cols-4">
           <div>
