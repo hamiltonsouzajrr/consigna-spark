@@ -222,6 +222,7 @@ function Page() {
       await abordagemFn({ data: { id, status } });
       setRows((l) => l.map((r) => (r.id === id ? { ...r, status_abordagem: status } : r)));
       toast.success("Situação atualizada.");
+      void recarregarResumo();
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao atualizar.");
     }
