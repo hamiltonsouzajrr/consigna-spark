@@ -19,6 +19,7 @@ import { Route as AprovacaoTokenRouteImport } from './routes/aprovacao.$token'
 import { Route as ApiPositivaCoachRouteImport } from './routes/api/positiva-coach'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
+import { Route as AuthenticatedTomadoresAlRouteImport } from './routes/_authenticated/tomadores-al'
 import { Route as AuthenticatedSimulacaoAlagoasRouteImport } from './routes/_authenticated/simulacao-alagoas'
 import { Route as AuthenticatedServidoresSemAcessoRouteImport } from './routes/_authenticated/servidores-sem-acesso'
 import { Route as AuthenticatedSafeConsigRouteImport } from './routes/_authenticated/safe-consig'
@@ -131,6 +132,12 @@ const AuthenticatedUploadRoute = AuthenticatedUploadRouteImport.update({
   path: '/upload',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTomadoresAlRoute =
+  AuthenticatedTomadoresAlRouteImport.update({
+    id: '/tomadores-al',
+    path: '/tomadores-al',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSimulacaoAlagoasRoute =
   AuthenticatedSimulacaoAlagoasRouteImport.update({
     id: '/simulacao-alagoas',
@@ -500,6 +507,7 @@ export interface FileRoutesByFullPath {
   '/safe-consig': typeof AuthenticatedSafeConsigRoute
   '/servidores-sem-acesso': typeof AuthenticatedServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof AuthenticatedSimulacaoAlagoasRoute
+  '/tomadores-al': typeof AuthenticatedTomadoresAlRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/api/positiva-coach': typeof ApiPositivaCoachRoute
@@ -571,6 +579,7 @@ export interface FileRoutesByTo {
   '/safe-consig': typeof AuthenticatedSafeConsigRoute
   '/servidores-sem-acesso': typeof AuthenticatedServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof AuthenticatedSimulacaoAlagoasRoute
+  '/tomadores-al': typeof AuthenticatedTomadoresAlRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/api/positiva-coach': typeof ApiPositivaCoachRoute
@@ -645,6 +654,7 @@ export interface FileRoutesById {
   '/_authenticated/safe-consig': typeof AuthenticatedSafeConsigRoute
   '/_authenticated/servidores-sem-acesso': typeof AuthenticatedServidoresSemAcessoRoute
   '/_authenticated/simulacao-alagoas': typeof AuthenticatedSimulacaoAlagoasRoute
+  '/_authenticated/tomadores-al': typeof AuthenticatedTomadoresAlRoute
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/api/positiva-coach': typeof ApiPositivaCoachRoute
@@ -720,6 +730,7 @@ export interface FileRouteTypes {
     | '/safe-consig'
     | '/servidores-sem-acesso'
     | '/simulacao-alagoas'
+    | '/tomadores-al'
     | '/upload'
     | '/whatsapp'
     | '/api/positiva-coach'
@@ -791,6 +802,7 @@ export interface FileRouteTypes {
     | '/safe-consig'
     | '/servidores-sem-acesso'
     | '/simulacao-alagoas'
+    | '/tomadores-al'
     | '/upload'
     | '/whatsapp'
     | '/api/positiva-coach'
@@ -864,6 +876,7 @@ export interface FileRouteTypes {
     | '/_authenticated/safe-consig'
     | '/_authenticated/servidores-sem-acesso'
     | '/_authenticated/simulacao-alagoas'
+    | '/_authenticated/tomadores-al'
     | '/_authenticated/upload'
     | '/_authenticated/whatsapp'
     | '/api/positiva-coach'
@@ -1003,6 +1016,13 @@ declare module '@tanstack/react-router' {
       path: '/upload'
       fullPath: '/upload'
       preLoaderRoute: typeof AuthenticatedUploadRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tomadores-al': {
+      id: '/_authenticated/tomadores-al'
+      path: '/tomadores-al'
+      fullPath: '/tomadores-al'
+      preLoaderRoute: typeof AuthenticatedTomadoresAlRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/simulacao-alagoas': {
@@ -1582,6 +1602,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSafeConsigRoute: typeof AuthenticatedSafeConsigRoute
   AuthenticatedServidoresSemAcessoRoute: typeof AuthenticatedServidoresSemAcessoRoute
   AuthenticatedSimulacaoAlagoasRoute: typeof AuthenticatedSimulacaoAlagoasRoute
+  AuthenticatedTomadoresAlRoute: typeof AuthenticatedTomadoresAlRoute
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
   AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
   AuthenticatedPosVendaAvaliacoesRoute: typeof AuthenticatedPosVendaAvaliacoesRoute
@@ -1611,6 +1632,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSafeConsigRoute: AuthenticatedSafeConsigRoute,
   AuthenticatedServidoresSemAcessoRoute: AuthenticatedServidoresSemAcessoRoute,
   AuthenticatedSimulacaoAlagoasRoute: AuthenticatedSimulacaoAlagoasRoute,
+  AuthenticatedTomadoresAlRoute: AuthenticatedTomadoresAlRoute,
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
   AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
   AuthenticatedPosVendaAvaliacoesRoute: AuthenticatedPosVendaAvaliacoesRoute,
