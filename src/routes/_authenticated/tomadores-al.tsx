@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useRhAccess } from "@/hooks/use-rh-access";
@@ -8,15 +9,19 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Wallet, Search, Copy, Download, Upload, Users } from "lucide-react";
+import { Wallet, Search, Copy, Download, Upload, Users, Shuffle, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import tomadoresAsset from "@/assets/tomadores_al.json.asset.json";
+import {
+  getTomadoresAl, marcarAbordagemTomador, distribuirTomadoresAl, type TomadorAl,
+} from "@/lib/prospeccao/tomadores-al.functions";
+import { getConsultoras, type Consultora } from "@/lib/radar/radar.functions";
 
 export const Route = createFileRoute("/_authenticated/tomadores-al")({
   head: () => ({
     meta: [
       { title: "Clientes Tomadores com Margem — AL" },
-      { name: "description", content: "Base de servidores de Alagoas tomadores de crédito com margem disponível, filtros por órgão e valor." },
+      { name: "description", content: "Base de servidores de Alagoas tomadores de crédito com margem disponível, distribuída automaticamente por consultora." },
       { property: "og:title", content: "Clientes Tomadores com Margem — AL" },
       { property: "og:description", content: "Base de servidores de Alagoas tomadores de crédito com margem disponível." },
       { property: "og:type", content: "website" },
@@ -29,19 +34,20 @@ export const Route = createFileRoute("/_authenticated/tomadores-al")({
 
 const PAGE_SIZE = 25;
 
-type Row = {
-  id: string;
-  nome: string;
-  documento: string;
-  descricao_cargo: string | null;
-  descricao_lotacao: string | null;
-  dt_nascimento: string | null;
-  orgao: string | null;
-  matricula: string | null;
-  margem_disp_cartao_credito: number | null;
-  margem_disp_emprestimo: number | null;
-  margem_bruta_emprestimo: number | null;
-  pct_utilizado_emprestimo: number | null;
+const ABORDAGEM_OPTS: { value: TomadorAl["status_abordagem"]; label: string }[] = [
+  { value: "novo", label: "Novo" },
+  { value: "contatado", label: "Contatado" },
+  { value: "proposta_enviada", label: "Proposta" },
+  { value: "convertido", label: "Convertido" },
+  { value: "sem_interesse", label: "Sem interesse" },
+];
+const ABORDAGEM_LABEL: Record<string, string> = Object.fromEntries(ABORDAGEM_OPTS.map((o) => [o.value, o.label]));
+const ABORDAGEM_STYLE: Record<string, string> = {
+  novo: "bg-sky-500/15 text-sky-600 dark:text-sky-400",
+  contatado: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  proposta_enviada: "bg-violet-500/15 text-violet-600 dark:text-violet-400",
+  convertido: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  sem_interesse: "bg-muted text-muted-foreground",
 };
 
 const brl = (n: number | null) =>
@@ -52,51 +58,64 @@ const maskCpf = (d: string) =>
 
 function Page() {
   const { isAdmin } = useRhAccess();
+  const fetchTomadores = useServerFn(getTomadoresAl);
+  const abordagemFn = useServerFn(marcarAbordagemTomador);
+  const distribuirFn = useServerFn(distribuirTomadoresAl);
+  const fetchConsultoras = useServerFn(getConsultoras);
+
   const [busca, setBusca] = useState("");
   const [termo, setTermo] = useState("");
   const [orgao, setOrgao] = useState("todos");
   const [minMargem, setMinMargem] = useState("0");
   const [page, setPage] = useState(0);
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<TomadorAl[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [orgaos, setOrgaos] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [distribuindo, setDistribuindo] = useState(false);
+
+  const [consultoraNome, setConsultoraNome] = useState<string | null>(null);
+  const [vinculada, setVinculada] = useState(true);
+  const [consultoras, setConsultoras] = useState<Consultora[]>([]);
+  const [filtroConsultora, setFiltroConsultora] = useState("");
 
   useEffect(() => {
     const t = setTimeout(() => { setTermo(busca.trim()); setPage(0); }, 350);
     return () => clearTimeout(t);
   }, [busca]);
 
-  const load = async () => {
+  useEffect(() => {
+    if (!isAdmin) return;
+    fetchConsultoras().then(setConsultoras).catch(() => { /* seletor opcional */ });
+  }, [isAdmin]);
+
+  const load = useCallback(async () => {
     setLoading(true);
-    let q = supabase
-      .from("tomadores_al")
-      .select(
-        "id,nome,documento,descricao_cargo,descricao_lotacao,dt_nascimento,orgao,matricula,margem_disp_cartao_credito,margem_disp_emprestimo,margem_bruta_emprestimo,pct_utilizado_emprestimo",
-        { count: "exact" },
-      )
-      .gte("margem_disp_emprestimo", Number(minMargem) || 0)
-      .order("margem_disp_emprestimo", { ascending: false })
-      .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
-
-    if (orgao !== "todos") q = q.eq("orgao", orgao);
-    if (termo) {
-      const digits = termo.replace(/\D/g, "");
-      q = digits.length >= 3
-        ? q.ilike("documento", `%${digits}%`)
-        : q.ilike("nome", `%${termo}%`);
+    try {
+      const res = await fetchTomadores({
+        data: {
+          offset: page * PAGE_SIZE,
+          limit: PAGE_SIZE,
+          termo,
+          orgao: orgao === "todos" ? "" : orgao,
+          minMargem: Number(minMargem) || 0,
+          consultora: filtroConsultora || undefined,
+        },
+      });
+      setRows(res.rows);
+      setTotal(res.total);
+      setConsultoraNome(res.consultoraNome);
+      setVinculada(res.isAdmin || res.vinculada);
+    } catch (e: any) {
+      toast.error("Erro ao carregar base: " + (e?.message ?? e));
+    } finally {
+      setLoading(false);
     }
+  }, [page, termo, orgao, minMargem, filtroConsultora]);
 
-    const { data, count, error } = await q;
-    if (error) toast.error("Erro ao carregar base: " + error.message);
-    setRows((data ?? []) as Row[]);
-    setTotal(count ?? 0);
-    setLoading(false);
-  };
-
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page, orgao, minMargem, termo]);
+  useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
     supabase
@@ -114,6 +133,30 @@ function Page() {
     () => rows.reduce((a, r) => a + (r.margem_disp_emprestimo ?? 0), 0),
     [rows],
   );
+
+  const handleAbordagem = async (id: string, status: TomadorAl["status_abordagem"]) => {
+    try {
+      await abordagemFn({ data: { id, status } });
+      setRows((l) => l.map((r) => (r.id === id ? { ...r, status_abordagem: status } : r)));
+      toast.success("Situação atualizada.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao atualizar.");
+    }
+  };
+
+  const distribuir = async () => {
+    setDistribuindo(true);
+    try {
+      const res = await distribuirFn();
+      if (!res.consultoras) toast.error("Nenhuma consultora ativa cadastrada.");
+      else toast.success(`${res.atribuidos} tomadores distribuídos entre ${res.consultoras} consultoras.`);
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao distribuir.");
+    } finally {
+      setDistribuindo(false);
+    }
+  };
 
   const importar = async () => {
     setImporting(true);
@@ -139,12 +182,13 @@ function Page() {
   };
 
   const exportarCsv = () => {
-    const head = ["Nome", "CPF", "Órgão", "Lotação", "Matrícula", "Margem Empréstimo", "Margem Cartão", "% Utilizado"];
+    const head = ["Nome", "CPF", "Órgão", "Lotação", "Matrícula", "Margem Empréstimo", "Margem Cartão", "% Utilizado", "Consultora", "Situação"];
     const lines = rows.map((r) => [
       r.nome, r.documento, r.orgao ?? "", r.descricao_lotacao ?? "", r.matricula ?? "",
       String(r.margem_disp_emprestimo ?? 0).replace(".", ","),
       String(r.margem_disp_cartao_credito ?? 0).replace(".", ","),
       (r.pct_utilizado_emprestimo ?? 0).toFixed(1).replace(".", ","),
+      r.consultora_responsavel ?? "", ABORDAGEM_LABEL[r.status_abordagem] ?? r.status_abordagem,
     ]);
     const csv = [head, ...lines].map((l) => l.map((c) => `"${c}"`).join(";")).join("\n");
     const url = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }));
@@ -167,23 +211,30 @@ function Page() {
               CLIENTES TOMADORES COM MARGEM - AL
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {total.toLocaleString("pt-BR")} servidores na base · margem visível nesta página: {brl(somaMargem)}
+              {isAdmin ? "Visão de administrador" : "Seus leads exclusivos"} ·{" "}
+              {total.toLocaleString("pt-BR")} registros · margem nesta página: {brl(somaMargem)}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={exportarCsv} disabled={!rows.length}>
               <Download className="mr-2 h-4 w-4" /> Exportar CSV
             </Button>
             {isAdmin && (
-              <Button size="sm" onClick={importar} disabled={importing}>
-                <Upload className="mr-2 h-4 w-4" />
-                {importing ? `Importando ${progress}%` : "Importar planilha"}
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={distribuir} disabled={distribuindo}>
+                  <Shuffle className="mr-2 h-4 w-4" />
+                  {distribuindo ? "Distribuindo…" : "Distribuir sem consultora"}
+                </Button>
+                <Button size="sm" onClick={importar} disabled={importing}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  {importing ? `Importando ${progress}%` : "Importar planilha"}
+                </Button>
+              </>
             )}
           </div>
         </header>
 
-        <div className="grid gap-4 rounded-xl border border-border/60 bg-card p-4 md:grid-cols-3">
+        <div className="grid gap-4 rounded-xl border border-border/60 bg-card p-4 md:grid-cols-4">
           <div>
             <Label className="text-xs">Buscar por nome ou CPF</Label>
             <div className="relative">
@@ -212,15 +263,41 @@ function Page() {
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label className="flex items-center gap-1 text-xs"><UserCheck className="h-3.5 w-3.5" /> Consultora</Label>
+            {isAdmin ? (
+              <select
+                value={filtroConsultora}
+                onChange={(e) => { setFiltroConsultora(e.target.value); setPage(0); }}
+                className="h-10 w-full rounded-md border bg-background px-2 text-sm"
+              >
+                <option value="">Todas as consultoras (admin)</option>
+                {consultoras.map((c) => (
+                  <option key={c.id} value={c.nome}>{c.nome}{!c.ativo ? " (inativa)" : ""}</option>
+                ))}
+              </select>
+            ) : (
+              <div className="flex h-10 items-center gap-2 rounded-md border bg-primary/5 px-3 text-sm font-medium">
+                {consultoraNome ?? "—"}
+              </div>
+            )}
+          </div>
         </div>
 
         {loading ? (
           <p className="py-10 text-center text-sm text-muted-foreground">Carregando base…</p>
+        ) : !vinculada ? (
+          <div className="rounded-xl border border-dashed border-border/70 p-10 text-center">
+            <Users className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              Seu login ainda não está vinculado a uma consultora. Peça ao administrador para cadastrar seu e-mail.
+            </p>
+          </div>
         ) : rows.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border/70 p-10 text-center">
             <Users className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              Nenhum tomador encontrado.{isAdmin ? " Use “Importar planilha” para carregar a base." : ""}
+              Nenhum tomador atribuído a você.{isAdmin ? " Use “Importar planilha” e depois “Distribuir sem consultora”." : ""}
             </p>
           </div>
         ) : (
@@ -232,7 +309,7 @@ function Page() {
                   <th className="px-4 py-3 text-left">Órgão</th>
                   <th className="px-4 py-3 text-right">Margem empréstimo</th>
                   <th className="px-4 py-3 text-right">Margem cartão</th>
-                  <th className="px-4 py-3 text-right">% utilizado</th>
+                  <th className="px-4 py-3 text-left">Situação</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -244,14 +321,30 @@ function Page() {
                       <p className="text-xs text-muted-foreground">
                         {maskCpf(r.documento)} · mat. {r.matricula ?? "—"} · {r.descricao_cargo ?? "—"}
                       </p>
+                      {isAdmin && r.consultora_responsavel && (
+                        <Badge variant="outline" className="mt-1 text-[10px]">{r.consultora_responsavel}</Badge>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">{r.orgao ?? "—"}</td>
                     <td className="px-4 py-3 text-right font-semibold text-foreground">{brl(r.margem_disp_emprestimo)}</td>
                     <td className="px-4 py-3 text-right">{brl(r.margem_disp_cartao_credito)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <Badge variant={(r.pct_utilizado_emprestimo ?? 0) > 90 ? "destructive" : "secondary"}>
-                        {(r.pct_utilizado_emprestimo ?? 0).toFixed(0)}%
+                    <td className="px-4 py-3">
+                      <Badge className={ABORDAGEM_STYLE[r.status_abordagem] ?? ""}>
+                        {ABORDAGEM_LABEL[r.status_abordagem] ?? r.status_abordagem}
                       </Badge>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {ABORDAGEM_OPTS.filter((o) => o.value !== r.status_abordagem).map((o) => (
+                          <Button
+                            key={o.value}
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-[11px]"
+                            onClick={() => handleAbordagem(r.id, o.value)}
+                          >
+                            {o.label}
+                          </Button>
+                        ))}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Button

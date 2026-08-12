@@ -1936,6 +1936,9 @@ export type Database = {
       }
       tomadores_al: {
         Row: {
+          atribuido_em: string | null
+          consultora_responsavel: string | null
+          contatado_em: string | null
           created_at: string
           descricao_cargo: string | null
           descricao_lotacao: string | null
@@ -1953,9 +1956,13 @@ export type Database = {
           nome: string
           orgao: string | null
           pct_utilizado_emprestimo: number | null
+          status_abordagem: string
           updated_at: string
         }
         Insert: {
+          atribuido_em?: string | null
+          consultora_responsavel?: string | null
+          contatado_em?: string | null
           created_at?: string
           descricao_cargo?: string | null
           descricao_lotacao?: string | null
@@ -1973,9 +1980,13 @@ export type Database = {
           nome: string
           orgao?: string | null
           pct_utilizado_emprestimo?: number | null
+          status_abordagem?: string
           updated_at?: string
         }
         Update: {
+          atribuido_em?: string | null
+          consultora_responsavel?: string | null
+          contatado_em?: string | null
           created_at?: string
           descricao_cargo?: string | null
           descricao_lotacao?: string | null
@@ -1993,6 +2004,7 @@ export type Database = {
           nome?: string
           orgao?: string | null
           pct_utilizado_emprestimo?: number | null
+          status_abordagem?: string
           updated_at?: string
         }
         Relationships: []
