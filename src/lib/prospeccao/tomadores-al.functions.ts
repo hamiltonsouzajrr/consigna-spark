@@ -414,3 +414,71 @@ export const getResumoCarteiraTomadores = createServerFn({ method: "POST" })
       atualizadoEm: new Date().toISOString(),
     };
   });
+
+// A tabela de consultoras começa vazia mesmo quando já existem vários acessos
+// criados no login. Esta função importa os usuários existentes como consultoras
+// (nome derivado do e-mail), ignorando admins e e-mails já cadastrados.
+export const importarConsultorasDosAcessos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(
+    async ({ context }): Promise<{ criadas: number; existentes: number; ignorados: number }> => {
+      if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Apenas administradores.");
+      const client = await getAdminClient();
+
+      const { data: cs, error: cErr } = await client.from("radar_consultoras").select("nome,email");
+      if (cErr) throw new Error(cErr.message);
+      const emailsExistentes = new Set(
+        (cs ?? []).map((c: any) => String(c.email ?? "").trim().toLowerCase()).filter(Boolean),
+      );
+      const nomesExistentes = new Set(
+        (cs ?? []).map((c: any) => String(c.nome ?? "").trim().toLowerCase()).filter(Boolean),
+      );
+
+      const { data: rolesData } = await client.from("user_roles").select("user_id").eq("role", "admin");
+      const adminIds = new Set((rolesData ?? []).map((r: any) => String(r.user_id)));
+
+      const usuarios: { id: string; email: string }[] = [];
+      for (let page = 1; page <= 10; page++) {
+        const { data, error } = await client.auth.admin.listUsers({ page, perPage: 200 });
+        if (error) throw new Error(error.message);
+        const lote = data?.users ?? [];
+        for (const u of lote) {
+          const email = String(u.email ?? "").trim().toLowerCase();
+          if (email) usuarios.push({ id: String(u.id), email });
+        }
+        if (lote.length < 200) break;
+      }
+
+      const nomeDoEmail = (email: string) =>
+        email
+          .split("@")[0]!
+          .replace(/[._\-0-9]+/g, " ")
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+          .join(" ") || email;
+
+      let criadas = 0;
+      let existentes = 0;
+      let ignorados = 0;
+
+      for (const u of usuarios) {
+        if (adminIds.has(u.id)) { ignorados++; continue; }
+        if (emailsExistentes.has(u.email)) { existentes++; continue; }
+
+        let nome = nomeDoEmail(u.email);
+        if (nomesExistentes.has(nome.toLowerCase())) nome = `${nome} (${u.email.split("@")[0]})`;
+
+        const { error } = await client
+          .from("radar_consultoras")
+          .insert({ nome, email: u.email, ativo: true });
+        if (error) { ignorados++; continue; }
+        emailsExistentes.add(u.email);
+        nomesExistentes.add(nome.toLowerCase());
+        criadas++;
+      }
+
+      return { criadas, existentes, ignorados };
+    },
+  );

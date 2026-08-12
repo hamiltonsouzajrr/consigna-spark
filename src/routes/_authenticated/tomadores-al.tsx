@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import tomadoresAsset from "@/assets/tomadores_al.json.asset.json";
 import {
   getTomadoresAl, marcarAbordagemTomador, distribuirTomadoresAl, getDistribuicaoTomadoresAl,
-  getResumoCarteiraTomadores,
+  getResumoCarteiraTomadores, importarConsultorasDosAcessos,
   type TomadorAl, type DistribuicaoConsultora, type ResumoCarteira,
 } from "@/lib/prospeccao/tomadores-al.functions";
 import {
@@ -111,6 +111,8 @@ function Page() {
 
   const addConsultoraFn = useServerFn(adicionarConsultora);
   const toggleConsultoraFn = useServerFn(toggleConsultora);
+  const importarAcessosFn = useServerFn(importarConsultorasDosAcessos);
+  const [importandoAcessos, setImportandoAcessos] = useState(false);
 
   const [busca, setBusca] = useState("");
   const [termo, setTermo] = useState("");
@@ -248,6 +250,22 @@ function Page() {
       setConsultoras(await fetchConsultoras());
     } catch { /* seletor opcional */ }
   };
+
+  const importarAcessos = async () => {
+    setImportandoAcessos(true);
+    try {
+      const res = await importarAcessosFn();
+      if (!res.criadas) toast.info("Nenhum acesso novo para importar.");
+      else toast.success(`${res.criadas} consultora(s) importada(s) dos acessos. Use “Repor carteiras”.`);
+      await recarregarConsultoras();
+      await recarregarDistribuicao();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao importar acessos.");
+    } finally {
+      setImportandoAcessos(false);
+    }
+  };
+
 
   const salvarConsultora = async () => {
     if (!novoNome.trim()) { toast.error("Informe o nome da consultora."); return; }
@@ -406,11 +424,24 @@ function Page() {
 
             {consultoras.filter((c) => c.ativo).length === 0 && (
               <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
-                Nenhuma consultora ativa cadastrada — por isso os leads aparecem apenas na visão de
-                administrador e nada foi distribuído. Cadastre cada consultora com o mesmo e-mail
-                que ela usa para entrar no sistema e depois clique em “Repor carteiras”. Cada uma recebe 10 leads exclusivos, repostos conforme finaliza.
+                Existem acessos criados no login, mas nenhuma consultora vinculada aqui — é isso que
+                impede a distribuição. Clique em “Importar consultoras dos acessos” para criar o
+                vínculo automaticamente pelos e-mails já cadastrados (admins são ignorados) e depois
+                use “Repor carteiras”. Cada uma recebe 10 leads exclusivos, repostos conforme finaliza.
               </p>
             )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 w-full sm:w-auto"
+              onClick={importarAcessos}
+              disabled={importandoAcessos}
+            >
+              <UserCheck className="mr-2 h-4 w-4" />
+              {importandoAcessos ? "Importando…" : "Importar consultoras dos acessos"}
+            </Button>
+
 
             <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
               <Input
