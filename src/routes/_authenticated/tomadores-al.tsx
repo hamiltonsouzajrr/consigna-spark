@@ -64,6 +64,14 @@ const fmtTel = (t: string) =>
     ? `(${t.slice(0, 2)}) ${t.slice(2, 6)}-${t.slice(6)}`
     : t;
 
+// A planilha não traz a margem disponível de cartão benefício. Derivamos com os
+// coeficientes de AL do sistema: base = bruta empréstimo / 40%; benefício = 15% da base.
+const margemBeneficioDisp = (r: TomadorAl) => {
+  const base = (r.margem_bruta_emprestimo ?? 0) / COEF_MARGEM_AL_PADRAO.principal;
+  const bruta = base * COEF_MARGEM_AL_PADRAO.cartaoBeneficio;
+  return Math.max(0, bruta - (r.margem_util_cartao_beneficio ?? 0));
+};
+
 // Valor aproximado liberado usando os multiplicadores médios do sistema
 // (src/lib/al/credito.ts). Sempre estimativa — confirmar com Digitação.
 function MargemLinha({
