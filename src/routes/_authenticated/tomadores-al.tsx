@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/tomadores-al")({
   component: Page,
 });
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 const ABORDAGEM_OPTS: { value: TomadorAl["status_abordagem"]; label: string }[] = [
   { value: "novo", label: "Novo" },
