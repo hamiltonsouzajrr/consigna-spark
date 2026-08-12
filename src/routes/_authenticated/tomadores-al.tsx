@@ -105,6 +105,7 @@ function Page() {
   const abordagemFn = useServerFn(marcarAbordagemTomador);
   const distribuirFn = useServerFn(distribuirTomadoresAl);
   const fetchConsultoras = useServerFn(getConsultoras);
+  const fetchDistribuicao = useServerFn(getDistribuicaoTomadoresAl);
 
   const addConsultoraFn = useServerFn(adicionarConsultora);
   const toggleConsultoraFn = useServerFn(toggleConsultora);
