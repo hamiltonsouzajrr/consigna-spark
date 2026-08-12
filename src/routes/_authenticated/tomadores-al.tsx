@@ -136,6 +136,8 @@ function Page() {
     consultoras: DistribuicaoConsultora[];
   } | null>(null);
   const [distLoading, setDistLoading] = useState(false);
+  const [resumo, setResumo] = useState<ResumoCarteira | null>(null);
+  const [resumoLoading, setResumoLoading] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => { setTermo(busca.trim()); setPage(0); }, 350);
