@@ -131,8 +131,20 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
 
       const { data: rows, count, error } = await q;
       if (error) throw new Error(error.message);
+
+      const base = (rows ?? []) as TomadorAl[];
+      let tels: Record<string, string[]> = {};
+      try {
+        tels = await telefonesPorCpf(
+          context.supabase,
+          base.map((r) => String(r.documento ?? "").replace(/\D/g, "")).filter(Boolean),
+        );
+      } catch {
+        tels = {};
+      }
+
       return {
-        rows: (rows ?? []) as TomadorAl[],
+        rows: base.map((r) => ({ ...r, telefones: tels[String(r.documento ?? "").replace(/\D/g, "")] ?? [] })),
         total: count ?? 0,
         consultoraNome: minha,
         vinculada: Boolean(minha),
