@@ -246,11 +246,11 @@ function Page() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={exportarCsv} disabled={!rows.length}>
-              <Download className="mr-2 h-4 w-4" /> Exportar CSV
-            </Button>
             {isAdmin && (
               <>
+                <Button variant="outline" size="sm" onClick={exportarCsv} disabled={!rows.length}>
+                  <Download className="mr-2 h-4 w-4" /> Exportar CSV
+                </Button>
                 <Button variant="outline" size="sm" onClick={distribuir} disabled={distribuindo}>
                   <Shuffle className="mr-2 h-4 w-4" />
                   {distribuindo ? "Distribuindo…" : "Distribuir sem consultora"}
