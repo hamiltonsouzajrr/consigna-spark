@@ -241,3 +241,81 @@ export const distribuirTomadoresAl = createServerFn({ method: "POST" })
 
     return { atribuidos, consultoras: ativas.length };
   });
+
+// Painel admin: quantos tomadores cada consultora recebeu, quantos já foram
+// trabalhados e quantos seguem sem responsável após a distribuição.
+export type DistribuicaoConsultora = {
+  id: string;
+  nome: string;
+  email: string | null;
+  ativo: boolean;
+  atribuidos: number;
+  trabalhados: number;
+  contador_cadastro: number;
+};
+
+export const getDistribuicaoTomadoresAl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(
+    async ({
+      context,
+    }): Promise<{
+      total: number;
+      semResponsavel: number;
+      atribuidos: number;
+      orfaos: number;
+      consultoras: DistribuicaoConsultora[];
+    }> => {
+      if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Apenas administradores.");
+      const client = await getAdminClient();
+
+      const { data: cs, error: cErr } = await client
+        .from("radar_consultoras")
+        .select("id,nome,email,ativo,total_leads_atribuidos")
+        .order("nome");
+      if (cErr) throw new Error(cErr.message);
+
+      const countTomadores = async (build: (q: any) => any) => {
+        const { count, error } = await build(
+          client.from("tomadores_al").select("id", { count: "exact", head: true }),
+        );
+        if (error) throw new Error(error.message);
+        return Number(count ?? 0);
+      };
+
+      const total = await countTomadores((q: any) => q);
+      const semResponsavel = await countTomadores((q: any) => q.is("consultora_responsavel", null));
+
+      const consultoras: DistribuicaoConsultora[] = [];
+      for (const c of cs ?? []) {
+        const nome = String(c.nome ?? "").trim();
+        const atribuidos = nome
+          ? await countTomadores((q: any) => q.eq("consultora_responsavel", nome))
+          : 0;
+        const trabalhados = nome
+          ? await countTomadores((q: any) =>
+              q.eq("consultora_responsavel", nome).neq("status_abordagem", "novo"),
+            )
+          : 0;
+        consultoras.push({
+          id: String(c.id),
+          nome,
+          email: c.email ?? null,
+          ativo: Boolean(c.ativo),
+          atribuidos,
+          trabalhados,
+          contador_cadastro: Number(c.total_leads_atribuidos ?? 0),
+        });
+      }
+
+      const somaConsultoras = consultoras.reduce((a, c) => a + c.atribuidos, 0);
+      const atribuidos = total - semResponsavel;
+      return {
+        total,
+        semResponsavel,
+        atribuidos,
+        orfaos: Math.max(0, atribuidos - somaConsultoras),
+        consultoras,
+      };
+    },
+  );
