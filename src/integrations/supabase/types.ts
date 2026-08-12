@@ -1934,6 +1934,69 @@ export type Database = {
         }
         Relationships: []
       }
+      tomadores_al: {
+        Row: {
+          created_at: string
+          descricao_cargo: string | null
+          descricao_lotacao: string | null
+          documento: string
+          dt_nascimento: string | null
+          id: string
+          margem_bruta_cartao_credito: number | null
+          margem_bruta_emprestimo: number | null
+          margem_disp_cartao_credito: number | null
+          margem_disp_emprestimo: number | null
+          margem_util_cartao_beneficio: number | null
+          margem_util_cartao_credito: number | null
+          margem_util_emprestimo: number | null
+          matricula: string | null
+          nome: string
+          orgao: string | null
+          pct_utilizado_emprestimo: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descricao_cargo?: string | null
+          descricao_lotacao?: string | null
+          documento: string
+          dt_nascimento?: string | null
+          id?: string
+          margem_bruta_cartao_credito?: number | null
+          margem_bruta_emprestimo?: number | null
+          margem_disp_cartao_credito?: number | null
+          margem_disp_emprestimo?: number | null
+          margem_util_cartao_beneficio?: number | null
+          margem_util_cartao_credito?: number | null
+          margem_util_emprestimo?: number | null
+          matricula?: string | null
+          nome: string
+          orgao?: string | null
+          pct_utilizado_emprestimo?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descricao_cargo?: string | null
+          descricao_lotacao?: string | null
+          documento?: string
+          dt_nascimento?: string | null
+          id?: string
+          margem_bruta_cartao_credito?: number | null
+          margem_bruta_emprestimo?: number | null
+          margem_disp_cartao_credito?: number | null
+          margem_disp_emprestimo?: number | null
+          margem_util_cartao_beneficio?: number | null
+          margem_util_cartao_credito?: number | null
+          margem_util_emprestimo?: number | null
+          matricula?: string | null
+          nome?: string
+          orgao?: string | null
+          pct_utilizado_emprestimo?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
