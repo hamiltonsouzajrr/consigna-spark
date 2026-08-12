@@ -344,3 +344,73 @@ export const getDistribuicaoTomadoresAl = createServerFn({ method: "POST" })
       };
     },
   );
+
+// Resumo da carteira da consultora logada: quantidade atribuída, em andamento,
+// concluídos e pendentes. Admin pode consultar a carteira de uma consultora.
+export type ResumoCarteira = {
+  consultoraNome: string | null;
+  atribuidos: number;
+  pendentes: number;
+  emAndamento: number;
+  concluidos: number;
+  convertidos: number;
+  semInteresse: number;
+  vagasLivres: number;
+  atualizadoEm: string;
+};
+
+export const getResumoCarteiraTomadores = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ consultora: z.string().trim().optional() }).parse(data ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<ResumoCarteira> => {
+    const admin = await isAdmin(context.supabase, context.userId);
+    const minha = await nomeConsultora(context.supabase, context.claims);
+    const nome = (admin && data.consultora ? data.consultora : minha) ?? null;
+
+    const vazio: ResumoCarteira = {
+      consultoraNome: nome,
+      atribuidos: 0,
+      pendentes: 0,
+      emAndamento: 0,
+      concluidos: 0,
+      convertidos: 0,
+      semInteresse: 0,
+      vagasLivres: POOL_ALVO,
+      atualizadoEm: new Date().toISOString(),
+    };
+    if (!nome) return vazio;
+
+    const client = await getAdminClient();
+    const contar = async (build: (q: any) => any) => {
+      const { count, error } = await build(
+        client
+          .from("tomadores_al")
+          .select("id", { count: "exact", head: true })
+          .eq("consultora_responsavel", nome),
+      );
+      if (error) throw new Error(error.message);
+      return Number(count ?? 0);
+    };
+
+    const atribuidos = await contar((q: any) => q);
+    const pendentes = await contar((q: any) => q.eq("status_abordagem", "novo"));
+    const emAndamento = await contar((q: any) =>
+      q.in("status_abordagem", ["contatado", "proposta_enviada"]),
+    );
+    const convertidos = await contar((q: any) => q.eq("status_abordagem", "convertido"));
+    const semInteresse = await contar((q: any) => q.eq("status_abordagem", "sem_interesse"));
+
+    return {
+      ...vazio,
+      atribuidos,
+      pendentes,
+      emAndamento,
+      concluidos: convertidos + semInteresse,
+      convertidos,
+      semInteresse,
+      vagasLivres: Math.max(0, POOL_ALVO - (pendentes + emAndamento)),
+      atualizadoEm: new Date().toISOString(),
+    };
+  });

@@ -9,14 +9,15 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Wallet, Search, Copy, Download, Upload, Users, Shuffle, UserCheck, Phone } from "lucide-react";
+import { Wallet, Search, Copy, Download, Upload, Users, Shuffle, UserCheck, Phone, RefreshCw, Briefcase } from "lucide-react";
 import { MULT_PRINCIPAL, MULT_CARTAO_BENEFICIO, MULT_CARTAO_CONSIGNADO } from "@/lib/al/credito";
 import { COEF_MARGEM_AL_PADRAO } from "@/lib/al/margem";
 import { toast } from "sonner";
 import tomadoresAsset from "@/assets/tomadores_al.json.asset.json";
 import {
   getTomadoresAl, marcarAbordagemTomador, distribuirTomadoresAl, getDistribuicaoTomadoresAl,
-  type TomadorAl, type DistribuicaoConsultora,
+  getResumoCarteiraTomadores,
+  type TomadorAl, type DistribuicaoConsultora, type ResumoCarteira,
 } from "@/lib/prospeccao/tomadores-al.functions";
 import {
   getConsultoras, adicionarConsultora, toggleConsultora, type Consultora,
@@ -106,6 +107,7 @@ function Page() {
   const distribuirFn = useServerFn(distribuirTomadoresAl);
   const fetchConsultoras = useServerFn(getConsultoras);
   const fetchDistribuicao = useServerFn(getDistribuicaoTomadoresAl);
+  const fetchResumo = useServerFn(getResumoCarteiraTomadores);
 
   const addConsultoraFn = useServerFn(adicionarConsultora);
   const toggleConsultoraFn = useServerFn(toggleConsultora);
@@ -135,6 +137,8 @@ function Page() {
     consultoras: DistribuicaoConsultora[];
   } | null>(null);
   const [distLoading, setDistLoading] = useState(false);
+  const [resumo, setResumo] = useState<ResumoCarteira | null>(null);
+  const [resumoLoading, setResumoLoading] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => { setTermo(busca.trim()); setPage(0); }, 350);
@@ -181,6 +185,21 @@ function Page() {
 
   useEffect(() => { load(); }, [load]);
 
+  const recarregarResumo = useCallback(async () => {
+    setResumoLoading(true);
+    try {
+      setResumo(await fetchResumo({ data: { consultora: filtroConsultora || undefined } }));
+    } catch { /* painel opcional */ }
+    finally { setResumoLoading(false); }
+  }, [fetchResumo, filtroConsultora]);
+
+  useEffect(() => { void recarregarResumo(); }, [recarregarResumo]);
+
+  const atualizarCarteira = async () => {
+    await Promise.all([load(), recarregarResumo()]);
+    toast.success("Carteira atualizada.");
+  };
+
   useEffect(() => {
     supabase
       .from("tomadores_al")
@@ -203,6 +222,7 @@ function Page() {
       await abordagemFn({ data: { id, status } });
       setRows((l) => l.map((r) => (r.id === id ? { ...r, status_abordagem: status } : r)));
       toast.success("Situação atualizada.");
+      void recarregarResumo();
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao atualizar.");
     }
@@ -334,6 +354,44 @@ function Page() {
             )}
           </div>
         </header>
+
+        {(resumo?.consultoraNome || (!isAdmin && vinculada)) && (
+          <section className="space-y-3 rounded-xl border border-border/60 bg-card p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 text-sm font-semibold">
+                <Briefcase className="h-4 w-4" /> Minha carteira
+                {resumo?.consultoraNome && (
+                  <span className="text-xs font-normal text-muted-foreground">· {resumo.consultoraNome}</span>
+                )}
+              </h2>
+              <Button variant="outline" size="sm" onClick={atualizarCarteira} disabled={resumoLoading || loading}>
+                <RefreshCw className={`mr-2 h-4 w-4 ${resumoLoading ? "animate-spin" : ""}`} />
+                {resumoLoading ? "Atualizando…" : "Atualizar status"}
+              </Button>
+            </div>
+
+            <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
+              {[
+                { label: "Atribuídos", valor: resumo?.atribuidos ?? 0, tone: "text-foreground" },
+                { label: "Pendentes (novos)", valor: resumo?.pendentes ?? 0, tone: "text-sky-600 dark:text-sky-400" },
+                { label: "Em andamento", valor: resumo?.emAndamento ?? 0, tone: "text-amber-600 dark:text-amber-400" },
+                { label: "Concluídos", valor: resumo?.concluidos ?? 0, tone: "text-emerald-600 dark:text-emerald-400" },
+              ].map((k) => (
+                <div key={k.label} className="rounded-lg border border-border/60 bg-background p-3">
+                  <p className="text-[11px] text-muted-foreground">{k.label}</p>
+                  <p className={`text-lg font-bold ${k.tone}`}>{k.valor.toLocaleString("pt-BR")}</p>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              {resumo?.convertidos ?? 0} convertido(s) · {resumo?.semInteresse ?? 0} sem interesse ·{" "}
+              {(resumo?.vagasLivres ?? 0) > 0
+                ? `${resumo?.vagasLivres} vaga(s) livre(s) na carteira — novos tomadores entram automaticamente.`
+                : "Carteira completa com 10 leads em aberto."}
+            </p>
+          </section>
+        )}
 
         {isAdmin && (
           <section className="space-y-3 rounded-xl border border-border/60 bg-card p-4">
