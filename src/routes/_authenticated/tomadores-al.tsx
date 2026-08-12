@@ -215,6 +215,7 @@ function Page() {
       if (!res.consultoras) toast.error("Nenhuma consultora ativa cadastrada.");
       else toast.success(`${res.atribuidos} tomadores distribuídos entre ${res.consultoras} consultoras.`);
       await load();
+      await recarregarDistribuicao();
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao distribuir.");
     } finally {
@@ -237,6 +238,7 @@ function Page() {
       setNovoNome("");
       setNovoEmail("");
       await recarregarConsultoras();
+      await recarregarDistribuicao();
       toast.success("Consultora cadastrada. Agora use “Distribuir sem consultora”.");
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao cadastrar consultora.");
@@ -249,6 +251,7 @@ function Page() {
     try {
       await toggleConsultoraFn({ data: { id: c.id, ativo: !c.ativo } });
       await recarregarConsultoras();
+      await recarregarDistribuicao();
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao atualizar consultora.");
     }
