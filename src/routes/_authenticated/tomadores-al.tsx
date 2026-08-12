@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Wallet, Search, Copy, Download, Upload, Users, Shuffle, UserCheck } from "lucide-react";
+import { Wallet, Search, Copy, Download, Upload, Users, Shuffle, UserCheck, Phone } from "lucide-react";
+import { MULT_PRINCIPAL, MULT_CARTAO_BENEFICIO, MULT_CARTAO_CONSIGNADO } from "@/lib/al/credito";
+import { COEF_MARGEM_AL_PADRAO } from "@/lib/al/margem";
 import { toast } from "sonner";
 import tomadoresAsset from "@/assets/tomadores_al.json.asset.json";
 import {
@@ -32,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/tomadores-al")({
   component: Page,
 });
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 const ABORDAGEM_OPTS: { value: TomadorAl["status_abordagem"]; label: string }[] = [
   { value: "novo", label: "Novo" },
@@ -53,8 +55,46 @@ const ABORDAGEM_STYLE: Record<string, string> = {
 const brl = (n: number | null) =>
   (n ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const maskCpf = (d: string) =>
-  d.length === 11 ? `${d.slice(0, 3)}.***.***-${d.slice(9)}` : d;
+const fmtCpf = (d: string) =>
+  d?.length === 11 ? `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}` : d;
+
+const fmtTel = (t: string) =>
+  t.length === 11
+    ? `(${t.slice(0, 2)}) ${t.slice(2, 7)}-${t.slice(7)}`
+    : t.length === 10
+    ? `(${t.slice(0, 2)}) ${t.slice(2, 6)}-${t.slice(6)}`
+    : t;
+
+// A planilha não traz a margem disponível de cartão benefício. Derivamos com os
+// coeficientes de AL do sistema: base = bruta empréstimo / 40%; benefício = 15% da base.
+const margemBeneficioDisp = (r: TomadorAl) => {
+  const base = (r.margem_bruta_emprestimo ?? 0) / COEF_MARGEM_AL_PADRAO.principal;
+  const bruta = base * COEF_MARGEM_AL_PADRAO.cartaoBeneficio;
+  return Math.max(0, bruta - (r.margem_util_cartao_beneficio ?? 0));
+};
+
+// Valor aproximado liberado usando os multiplicadores médios do sistema
+// (src/lib/al/credito.ts). Sempre estimativa — confirmar com Digitação.
+function MargemLinha({
+  label,
+  margem,
+  mult,
+}: {
+  label: string;
+  margem: number | null;
+  mult: { medio: number };
+}) {
+  const m = margem ?? 0;
+  return (
+    <div className="rounded-lg border border-border/60 bg-muted/30 p-2.5">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-sm font-semibold text-foreground">{brl(m)}</p>
+      <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
+        ≈ {brl(m * mult.medio)} liberado
+      </p>
+    </div>
+  );
+}
 
 function Page() {
   const { isAdmin } = useRhAccess();
@@ -216,11 +256,11 @@ function Page() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={exportarCsv} disabled={!rows.length}>
-              <Download className="mr-2 h-4 w-4" /> Exportar CSV
-            </Button>
             {isAdmin && (
               <>
+                <Button variant="outline" size="sm" onClick={exportarCsv} disabled={!rows.length}>
+                  <Download className="mr-2 h-4 w-4" /> Exportar CSV
+                </Button>
                 <Button variant="outline" size="sm" onClick={distribuir} disabled={distribuindo}>
                   <Shuffle className="mr-2 h-4 w-4" />
                   {distribuindo ? "Distribuindo…" : "Distribuir sem consultora"}
@@ -301,67 +341,85 @@ function Page() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-border/60 bg-card">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/60 text-xs uppercase tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 text-left">Servidor</th>
-                  <th className="px-4 py-3 text-left">Órgão</th>
-                  <th className="px-4 py-3 text-right">Margem empréstimo</th>
-                  <th className="px-4 py-3 text-right">Margem cartão</th>
-                  <th className="px-4 py-3 text-left">Situação</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id} className="border-t border-border/50 align-top">
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-foreground">{r.nome}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {maskCpf(r.documento)} · mat. {r.matricula ?? "—"} · {r.descricao_cargo ?? "—"}
-                      </p>
-                      {isAdmin && r.consultora_responsavel && (
-                        <Badge variant="outline" className="mt-1 text-[10px]">{r.consultora_responsavel}</Badge>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{r.orgao ?? "—"}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-foreground">{brl(r.margem_disp_emprestimo)}</td>
-                    <td className="px-4 py-3 text-right">{brl(r.margem_disp_cartao_credito)}</td>
-                    <td className="px-4 py-3">
-                      <Badge className={ABORDAGEM_STYLE[r.status_abordagem] ?? ""}>
-                        {ABORDAGEM_LABEL[r.status_abordagem] ?? r.status_abordagem}
-                      </Badge>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {ABORDAGEM_OPTS.filter((o) => o.value !== r.status_abordagem).map((o) => (
-                          <Button
-                            key={o.value}
-                            size="sm"
-                            variant="outline"
-                            className="h-6 px-2 text-[11px]"
-                            onClick={() => handleAbordagem(r.id, o.value)}
-                          >
-                            {o.label}
-                          </Button>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          navigator.clipboard.writeText(r.documento);
-                          toast.success("CPF copiado");
-                        }}
+          <div className="grid gap-4 lg:grid-cols-2">
+            {rows.map((r) => (
+              <article key={r.id} className="rounded-xl border border-border/60 bg-card p-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-foreground">{r.nome}</p>
+                    <p className="text-xs text-muted-foreground">
+                      CPF {fmtCpf(r.documento)} · mat. {r.matricula ?? "—"} · {r.descricao_cargo ?? "—"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{r.orgao ?? "—"}</p>
+                    {isAdmin && r.consultora_responsavel && (
+                      <Badge variant="outline" className="mt-1 text-[10px]">{r.consultora_responsavel}</Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Badge className={ABORDAGEM_STYLE[r.status_abordagem] ?? ""}>
+                      {ABORDAGEM_LABEL[r.status_abordagem] ?? r.status_abordagem}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(r.documento);
+                        toast.success("CPF copiado");
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                  {r.telefones?.length ? (
+                    r.telefones.map((t) => (
+                      <a
+                        key={t}
+                        href={`tel:+55${t}`}
+                        className="rounded-full border border-border/60 px-2.5 py-0.5 text-xs font-medium text-foreground"
                       >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        {fmtTel(t)}
+                      </a>
+                    ))
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Telefone não cadastrado</span>
+                  )}
+                </div>
+
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  <MargemLinha label="Empréstimo" margem={r.margem_disp_emprestimo} mult={MULT_PRINCIPAL} />
+                  <MargemLinha label="Cartão crédito" margem={r.margem_disp_cartao_credito} mult={MULT_CARTAO_CONSIGNADO} />
+                  <MargemLinha
+                    label="Cartão benefício"
+                    margem={margemBeneficioDisp(r)}
+                    mult={MULT_CARTAO_BENEFICIO}
+                  />
+                </div>
+
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Margem bruta empréstimo {brl(r.margem_bruta_emprestimo)} · utilizado{" "}
+                  {(r.pct_utilizado_emprestimo ?? 0).toFixed(1).replace(".", ",")}% · valores estimados,
+                  confirmar com Digitação
+                </p>
+
+                <div className="mt-3 flex flex-wrap gap-1">
+                  {ABORDAGEM_OPTS.filter((o) => o.value !== r.status_abordagem).map((o) => (
+                    <Button
+                      key={o.value}
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-[11px]"
+                      onClick={() => handleAbordagem(r.id, o.value)}
+                    >
+                      {o.label}
+                    </Button>
+                  ))}
+                </div>
+              </article>
+            ))}
           </div>
         )}
 
