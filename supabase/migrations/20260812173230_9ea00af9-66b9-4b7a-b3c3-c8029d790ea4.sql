@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS trg_tomadores_al_atribuir ON public.tomadores_al;
