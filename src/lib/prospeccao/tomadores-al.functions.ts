@@ -201,7 +201,7 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
       isAdmin: boolean;
     }> => {
       const admin = await isAdmin(context.supabase, context.userId);
-      const minha = await nomeConsultora(context.supabase, context.claims);
+      const minha = await nomeConsultora(context.supabase, context.claims, !admin);
 
       // Carteira enxuta e exclusiva: ao entrar na aba, a consultora recebe
       // reposição automática até completar POOL_ALVO leads em aberto.
@@ -407,7 +407,7 @@ export const getResumoCarteiraTomadores = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<ResumoCarteira> => {
     const admin = await isAdmin(context.supabase, context.userId);
-    const minha = await nomeConsultora(context.supabase, context.claims);
+    const minha = await nomeConsultora(context.supabase, context.claims, !admin);
     const nome = (admin && data.consultora ? data.consultora : minha) ?? null;
 
     const vazio: ResumoCarteira = {
