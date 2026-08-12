@@ -206,6 +206,40 @@ function Page() {
     }
   };
 
+  const recarregarConsultoras = async () => {
+    try {
+      setConsultoras(await fetchConsultoras());
+    } catch { /* seletor opcional */ }
+  };
+
+  const salvarConsultora = async () => {
+    if (!novoNome.trim()) { toast.error("Informe o nome da consultora."); return; }
+    if (!novoEmail.trim()) { toast.error("Informe o e-mail de login da consultora."); return; }
+    setSalvandoConsultora(true);
+    try {
+      await addConsultoraFn({ data: { nome: novoNome.trim(), email: novoEmail.trim().toLowerCase() } });
+      setNovoNome("");
+      setNovoEmail("");
+      await recarregarConsultoras();
+      toast.success("Consultora cadastrada. Agora use “Distribuir sem consultora”.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao cadastrar consultora.");
+    } finally {
+      setSalvandoConsultora(false);
+    }
+  };
+
+  const alternarConsultora = async (c: Consultora) => {
+    try {
+      await toggleConsultoraFn({ data: { id: c.id, ativo: !c.ativo } });
+      await recarregarConsultoras();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao atualizar consultora.");
+    }
+  };
+
+
+
   const importar = async () => {
     setImporting(true);
     setProgress(0);
