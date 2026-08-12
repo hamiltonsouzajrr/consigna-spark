@@ -105,9 +105,15 @@ function Page() {
   const distribuirFn = useServerFn(distribuirTomadoresAl);
   const fetchConsultoras = useServerFn(getConsultoras);
 
+  const addConsultoraFn = useServerFn(adicionarConsultora);
+  const toggleConsultoraFn = useServerFn(toggleConsultora);
+
   const [busca, setBusca] = useState("");
   const [termo, setTermo] = useState("");
   const [orgao, setOrgao] = useState("todos");
+  const [novoNome, setNovoNome] = useState("");
+  const [novoEmail, setNovoEmail] = useState("");
+  const [salvandoConsultora, setSalvandoConsultora] = useState(false);
   const [minMargem, setMinMargem] = useState("0");
   const [page, setPage] = useState(0);
   const [rows, setRows] = useState<TomadorAl[]>([]);
