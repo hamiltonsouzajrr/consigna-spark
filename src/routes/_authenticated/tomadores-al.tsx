@@ -130,15 +130,29 @@ function Page() {
   const [vinculada, setVinculada] = useState(true);
   const [consultoras, setConsultoras] = useState<Consultora[]>([]);
   const [filtroConsultora, setFiltroConsultora] = useState("");
+  const [dist, setDist] = useState<{
+    total: number; semResponsavel: number; atribuidos: number; orfaos: number;
+    consultoras: DistribuicaoConsultora[];
+  } | null>(null);
+  const [distLoading, setDistLoading] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => { setTermo(busca.trim()); setPage(0); }, 350);
     return () => clearTimeout(t);
   }, [busca]);
 
+  const recarregarDistribuicao = useCallback(async () => {
+    setDistLoading(true);
+    try {
+      setDist(await fetchDistribuicao());
+    } catch { /* painel opcional */ }
+    finally { setDistLoading(false); }
+  }, [fetchDistribuicao]);
+
   useEffect(() => {
     if (!isAdmin) return;
     fetchConsultoras().then(setConsultoras).catch(() => { /* seletor opcional */ });
+    void recarregarDistribuicao();
   }, [isAdmin]);
 
   const load = useCallback(async () => {
