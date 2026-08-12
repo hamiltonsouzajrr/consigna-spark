@@ -53,8 +53,38 @@ const ABORDAGEM_STYLE: Record<string, string> = {
 const brl = (n: number | null) =>
   (n ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const maskCpf = (d: string) =>
-  d.length === 11 ? `${d.slice(0, 3)}.***.***-${d.slice(9)}` : d;
+const fmtCpf = (d: string) =>
+  d?.length === 11 ? `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}` : d;
+
+const fmtTel = (t: string) =>
+  t.length === 11
+    ? `(${t.slice(0, 2)}) ${t.slice(2, 7)}-${t.slice(7)}`
+    : t.length === 10
+    ? `(${t.slice(0, 2)}) ${t.slice(2, 6)}-${t.slice(6)}`
+    : t;
+
+// Valor aproximado liberado usando os multiplicadores médios do sistema
+// (src/lib/al/credito.ts). Sempre estimativa — confirmar com Digitação.
+function MargemLinha({
+  label,
+  margem,
+  mult,
+}: {
+  label: string;
+  margem: number | null;
+  mult: { medio: number };
+}) {
+  const m = margem ?? 0;
+  return (
+    <div className="rounded-lg border border-border/60 bg-muted/30 p-2.5">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-sm font-semibold text-foreground">{brl(m)}</p>
+      <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
+        ≈ {brl(m * mult.medio)} liberado
+      </p>
+    </div>
+  );
+}
 
 function Page() {
   const { isAdmin } = useRhAccess();
