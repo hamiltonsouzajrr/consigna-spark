@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Wallet, Search, Copy, Download, Upload, Users, Shuffle, UserCheck, Phone } from "lucide-react";
 import { MULT_PRINCIPAL, MULT_CARTAO_BENEFICIO, MULT_CARTAO_CONSIGNADO } from "@/lib/al/credito";
+import { COEF_MARGEM_AL_PADRAO } from "@/lib/al/margem";
 import { toast } from "sonner";
 import tomadoresAsset from "@/assets/tomadores_al.json.asset.json";
 import {
