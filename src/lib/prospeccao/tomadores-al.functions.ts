@@ -243,6 +243,10 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
       // reposição automática até completar POOL_ALVO leads em aberto.
       if (minha) await garantirPoolTomadores(minha);
 
+      const historico = data.aba === "historico";
+      // Na aba Histórico não repomos nada: é só leitura dos finalizados.
+      if (minha && !historico) await garantirPoolTomadores(minha);
+
       let q = context.supabase
         .from("tomadores_al")
         .select(SELECT_COLS, { count: "exact" })
@@ -252,14 +256,17 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
 
       if (admin) {
         if (data.consultora) q = q.eq("consultora_responsavel", data.consultora);
+        if (historico) q = q.in("status_abordagem", STATUS_FINALIZADOS);
       } else {
         // Sem vínculo de consultora: nenhum lead.
         if (!minha) return { rows: [], total: 0, consultoraNome: null, vinculada: false, isAdmin: false };
         q = q.eq("consultora_responsavel", minha);
         // A carteira mostra apenas leads em aberto: ao finalizar (convertido /
         // sem interesse) o lead sai da lista e o substituto do estoque aparece.
-        q = q.in("status_abordagem", STATUS_ABERTOS);
+        // O histórico mostra exatamente o oposto: só os finalizados.
+        q = q.in("status_abordagem", historico ? STATUS_FINALIZADOS : STATUS_ABERTOS);
       }
+
 
 
       if (data.orgao) q = q.eq("orgao", data.orgao);
