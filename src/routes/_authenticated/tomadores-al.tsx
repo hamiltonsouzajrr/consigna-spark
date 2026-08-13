@@ -175,6 +175,7 @@ function Page() {
           orgao: orgao === "todos" ? "" : orgao,
           minMargem: Number(minMargem) || 0,
           consultora: filtroConsultora || undefined,
+          aba,
         },
       });
       setRows(res.rows);
@@ -186,7 +187,7 @@ function Page() {
     } finally {
       setLoading(false);
     }
-  }, [page, termo, orgao, minMargem, filtroConsultora]);
+  }, [page, termo, orgao, minMargem, filtroConsultora, aba]);
 
   useEffect(() => { load(); }, [load]);
 
