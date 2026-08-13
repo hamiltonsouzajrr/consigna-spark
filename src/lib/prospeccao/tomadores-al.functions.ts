@@ -220,6 +220,7 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
         orgao: z.string().trim().default(""),
         minMargem: z.number().min(0).default(0),
         consultora: z.string().trim().optional(),
+        aba: z.enum(["carteira", "historico"]).default("carteira"),
         apenasMeus: z.boolean().default(true),
       })
       .parse(data ?? {}),
