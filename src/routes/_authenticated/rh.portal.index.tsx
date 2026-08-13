@@ -95,6 +95,12 @@ function PortalIndex() {
   const isAdmin = content?.isAdmin ?? false;
   const invalidate = () => qc.invalidateQueries({ queryKey: ["rh", "portal-content"] });
 
+  const fetchResumoTomadores = useServerFn(getResumoTomadoresAl);
+  const { data: resumoTomadores, isLoading: resumoTomadoresLoading, refetch: refetchResumoTomadores } = useQuery({
+    queryKey: ["tomadores-al", "resumo-portal"],
+    queryFn: () => fetchResumoTomadores(),
+  });
+
   // --- Profile photo (self-service for the consultant)
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
