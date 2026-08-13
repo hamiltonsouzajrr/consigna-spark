@@ -395,26 +395,64 @@ function Page() {
               </Button>
             </div>
 
-            <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-2 grid-cols-2 sm:grid-cols-4">
               {[
-                { label: "Atribuídos", valor: resumo?.atribuidos ?? 0, tone: "text-foreground" },
-                { label: "Pendentes (novos)", valor: resumo?.pendentes ?? 0, tone: "text-sky-600 dark:text-sky-400" },
-                { label: "Em andamento", valor: resumo?.emAndamento ?? 0, tone: "text-amber-600 dark:text-amber-400" },
-                { label: "Concluídos", valor: resumo?.concluidos ?? 0, tone: "text-emerald-600 dark:text-emerald-400" },
+                {
+                  label: "Ativos",
+                  valor: (resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0),
+                  tone: "text-foreground",
+                  hint: "novos + em andamento",
+                },
+                {
+                  label: "Convertidos",
+                  valor: resumo?.convertidos ?? 0,
+                  tone: "text-emerald-600 dark:text-emerald-400",
+                  hint: "desfechos positivos",
+                },
+                {
+                  label: "Sem interesse",
+                  valor: resumo?.semInteresse ?? 0,
+                  tone: "text-muted-foreground",
+                  hint: "descartados",
+                },
+                {
+                  label: "Vagas livres",
+                  valor: resumo?.vagasLivres ?? 0,
+                  tone: "text-amber-600 dark:text-amber-400",
+                  hint: "espaço para novos leads",
+                },
               ].map((k) => (
                 <div key={k.label} className="rounded-lg border border-border/60 bg-background p-3">
                   <p className="text-[11px] text-muted-foreground">{k.label}</p>
-                  <p className={`text-lg font-bold ${k.tone}`}>{k.valor.toLocaleString("pt-BR")}</p>
+                  <p className={`text-xl font-bold ${k.tone}`}>{k.valor.toLocaleString("pt-BR")}</p>
+                  <p className="text-[10px] text-muted-foreground">{k.hint}</p>
                 </div>
               ))}
             </div>
 
-            <p className="text-xs text-muted-foreground">
-              {resumo?.convertidos ?? 0} convertido(s) · {resumo?.semInteresse ?? 0} sem interesse ·{" "}
-              {(resumo?.vagasLivres ?? 0) > 0
-                ? `${resumo?.vagasLivres} vaga(s) livre(s) na carteira — novos tomadores entram automaticamente.`
-                : "Carteira completa com 10 leads em aberto."}
-            </p>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Capacidade da carteira</span>
+                <span className="font-medium">{((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0))} / 10</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all",
+                    ((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0)) < 5
+                      ? "bg-amber-500"
+                      : "bg-primary",
+                  )}
+                  style={{ width: `${Math.min(100, (((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0)) / 10) * 100)}%` }}
+                />
+              </div>
+              {((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0)) < 5 && (
+                <p className="flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  Carteira acabando — marque desfechos para repor leads automaticamente.
+                </p>
+              )}
+            </div>
           </section>
         )}
 
