@@ -221,9 +221,16 @@ function Page() {
 
   const handleAbordagem = async (id: string, status: TomadorAl["status_abordagem"]) => {
     try {
-      await abordagemFn({ data: { id, status } });
+      const res: any = await abordagemFn({ data: { id, status } });
       setRows((l) => l.map((r) => (r.id === id ? { ...r, status_abordagem: status } : r)));
-      toast.success("Situação atualizada.");
+      const repostos = Number(res?.repostos ?? 0);
+      if (repostos > 0) {
+        toast.success(`Situação atualizada · ${repostos} novo(s) lead(s) na sua carteira.`);
+        if (page !== 0) setPage(0);
+        else await load();
+      } else {
+        toast.success("Situação atualizada.");
+      }
       void recarregarResumo();
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao atualizar.");
