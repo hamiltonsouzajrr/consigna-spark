@@ -6,7 +6,7 @@ import { producaoConsultoraQueryOptions, formatMes } from "@/lib/rh/producao";
 import {
   Plane, FileText, ReceiptText, GraduationCap, HeartHandshake, Clock,
   CalendarDays, Bell, CheckCircle2, TrendingUp, ChevronRight,
-  Plus, Pencil, Trash2, Settings2, Camera, Loader2,
+  Plus, Pencil, Trash2, Settings2, Camera, Loader2, Wallet, RefreshCw,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +42,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   PORTAL_ICON_NAMES, PORTAL_TONES, portalIcon, toneClass,
 } from "@/lib/rh/portal-icons";
+import { getResumoTomadoresAl } from "@/lib/prospeccao/tomadores-al.functions";
 
 export const Route = createFileRoute("/_authenticated/rh/portal/")({
   component: PortalIndex,
