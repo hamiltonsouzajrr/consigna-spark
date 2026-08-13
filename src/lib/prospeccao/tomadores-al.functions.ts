@@ -265,7 +265,7 @@ export const marcarAbordagemTomador = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ ok: true; repostos: number }> => {
     const admin = await isAdmin(context.supabase, context.userId);
-    const minha = await nomeConsultora(context.supabase, context.claims);
+    const minha = await nomeConsultora(context.supabase, context.claims, !admin);
     if (!admin && !minha) throw new Error("Consultora não vinculada ao seu login.");
 
     const client = await getAdminClient();
