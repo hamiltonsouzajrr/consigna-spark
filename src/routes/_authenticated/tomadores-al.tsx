@@ -41,6 +41,15 @@ export const Route = createFileRoute("/_authenticated/tomadores-al")({
 
 const PAGE_SIZE = 10;
 
+// Motivos rápidos para medir a qualidade do estoque de leads.
+const MOTIVOS_SEM_INTERESSE = [
+  "Não atende",
+  "Sem interesse",
+  "Já tem contrato",
+  "Margem baixa",
+  "Telefone errado",
+] as const;
+
 const ABORDAGEM_OPTS: { value: TomadorAl["status_abordagem"]; label: string }[] = [
   { value: "novo", label: "Novo" },
   { value: "contatado", label: "Contatado" },
