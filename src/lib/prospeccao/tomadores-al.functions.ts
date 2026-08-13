@@ -123,6 +123,27 @@ async function nomeConsultora(_supabase: any, claims: any, autoVincular = false)
 // com novos tomadores da planilha que ainda não têm responsável.
 export const POOL_ALVO = 10;
 const STATUS_ABERTOS = ["novo", "contatado", "proposta_enviada"];
+const STATUS_FINALIZADOS = ["convertido", "sem_interesse"];
+
+// Prioriza a reposição por leads que já têm telefone enriquecido: sem telefone
+// a consultora perde tempo antes de conseguir abordar.
+async function priorizarComTelefone(client: any, candidatos: any[], faltam: number): Promise<string[]> {
+  const docs = candidatos
+    .map((r) => String(r.documento ?? "").replace(/\D/g, ""))
+    .filter(Boolean);
+  let comTel = new Set<string>();
+  try {
+    const mapa = await telefonesPorCpf(client, docs);
+    comTel = new Set(Object.keys(mapa).filter((d) => (mapa[d] ?? []).length > 0));
+  } catch {
+    comTel = new Set();
+  }
+  const rank = (r: any) => (comTel.has(String(r.documento ?? "").replace(/\D/g, "")) ? 0 : 1);
+  return [...candidatos]
+    .sort((a, b) => rank(a) - rank(b) || (b.margem_disp_emprestimo ?? 0) - (a.margem_disp_emprestimo ?? 0))
+    .slice(0, faltam)
+    .map((r) => String(r.id));
+}
 
 async function garantirPoolTomadores(nome: string): Promise<number> {
   const client = await getAdminClient();
@@ -139,13 +160,14 @@ async function garantirPoolTomadores(nome: string): Promise<number> {
 
   const { data: livres, error: lErr } = await client
     .from("tomadores_al")
-    .select("id")
+    .select("id,documento,margem_disp_emprestimo")
     .is("consultora_responsavel", null)
     .order("margem_disp_emprestimo", { ascending: false })
-    .limit(faltam);
+    .limit(Math.max(faltam * 8, 40));
   if (lErr || !livres?.length) return 0;
 
-  const ids = (livres as any[]).map((r) => String(r.id));
+  const ids = await priorizarComTelefone(client, livres as any[], faltam);
+  if (!ids.length) return 0;
   const { data: atualizados, error: uErr } = await client
     .from("tomadores_al")
     .update({ consultora_responsavel: nome, atribuido_em: new Date().toISOString() })
@@ -171,6 +193,19 @@ async function garantirPoolTomadores(nome: string): Promise<number> {
   }
   return novos;
 }
+
+// Reposição automática de todas as carteiras ativas — usada pelo job diário
+// (/api/public/hooks/tomadores-repor) para não depender de a consultora abrir a aba.
+export async function reporTodasCarteiras(): Promise<{ atribuidos: number; consultoras: number }> {
+  const client = await getAdminClient();
+  const { data, error } = await client.from("radar_consultoras").select("nome").eq("ativo", true);
+  if (error) throw new Error(error.message);
+  const nomes = (data ?? []).map((c: any) => String(c.nome ?? "").trim()).filter(Boolean);
+  let atribuidos = 0;
+  for (const nome of nomes) atribuidos += await garantirPoolTomadores(nome);
+  return { atribuidos, consultoras: nomes.length };
+}
+
 
 // Lista os tomadores. Consultora vê apenas os seus; admin vê todos e pode
 // filtrar por consultora.
