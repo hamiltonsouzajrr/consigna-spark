@@ -463,6 +463,81 @@ export const getResumoCarteiraTomadores = createServerFn({ method: "POST" })
     };
   });
 
+// Resumo compacto para o Portal do Colaborador (e outros dashboards).
+// Admin vê os totais da base; consultora vê a própria carteira de 10 leads.
+export type ResumoTomadoresAl = {
+  isAdmin: boolean;
+  consultoraNome: string | null;
+  ativos: number; // novo + contatado + proposta_enviada
+  convertidos: number;
+  semInteresse: number;
+  totalAtribuidos: number;
+  vagasLivres: number; // para consultora: quantos faltam para completar 10
+  estoque: number; // para admin: leads sem responsável
+};
+
+export const getResumoTomadoresAl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ResumoTomadoresAl> => {
+    const admin = await isAdmin(context.supabase, context.userId);
+    const minha = await nomeConsultora(context.supabase, context.claims, !admin);
+    const client = await getAdminClient();
+
+    const vazio: ResumoTomadoresAl = {
+      isAdmin: admin,
+      consultoraNome: minha,
+      ativos: 0,
+      convertidos: 0,
+      semInteresse: 0,
+      totalAtribuidos: 0,
+      vagasLivres: POOL_ALVO,
+      estoque: 0,
+    };
+
+    const contar = async (build: (q: any) => any) => {
+      const { count, error } = await build(
+        client.from("tomadores_al").select("id", { count: "exact", head: true }),
+      );
+      if (error) throw new Error(error.message);
+      return Number(count ?? 0);
+    };
+
+    if (admin) {
+      const total = await contar((q) => q);
+      const estoque = await contar((q) => q.is("consultora_responsavel", null));
+      const ativos = await contar((q) => q.in("status_abordagem", STATUS_ABERTOS));
+      const convertidos = await contar((q) => q.eq("status_abordagem", "convertido"));
+      const semInteresse = await contar((q) => q.eq("status_abordagem", "sem_interesse"));
+      return {
+        ...vazio,
+        ativos,
+        convertidos,
+        semInteresse,
+        totalAtribuidos: total - estoque,
+        vagasLivres: estoque,
+        estoque,
+      };
+    }
+
+    if (!minha) return vazio;
+
+    const base = (q: any) => q.eq("consultora_responsavel", minha);
+    const ativos = await contar((q) => base(q).in("status_abordagem", STATUS_ABERTOS));
+    const convertidos = await contar((q) => base(q).eq("status_abordagem", "convertido"));
+    const semInteresse = await contar((q) => base(q).eq("status_abordagem", "sem_interesse"));
+    const totalAtribuidos = await contar(base);
+
+    return {
+      ...vazio,
+      ativos,
+      convertidos,
+      semInteresse,
+      totalAtribuidos,
+      vagasLivres: Math.max(0, POOL_ALVO - ativos),
+      estoque: 0,
+    };
+  });
+
 // A tabela de consultoras começa vazia mesmo quando já existem vários acessos
 // criados no login. Esta função importa os usuários existentes como consultoras
 // (nome derivado do e-mail), ignorando admins e e-mails já cadastrados.
