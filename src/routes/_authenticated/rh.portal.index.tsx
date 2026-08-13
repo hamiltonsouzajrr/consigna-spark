@@ -252,6 +252,14 @@ function PortalIndex() {
         <KpiLink kpi="beneficios" label="Benefícios" value={beneficios} icon={HeartHandshake} tone="amber" hint="Ver detalhes" />
       </div>
 
+      {/* Painel de acompanhamento da carteira de leads (Tomadores AL) */}
+      <CarteiraLeadsCard
+        resumo={resumoTomadores}
+        loading={resumoTomadoresLoading}
+        onRefresh={() => refetchResumoTomadores()}
+        isAdmin={isAdmin}
+      />
+
       <div className="mb-6 grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
