@@ -82,6 +82,115 @@ function KpiLink({ kpi, label, value, hint, icon: Icon, tone }: {
 const emptyAviso = { titulo: "", quando: "", tone: "sky", icon: "Megaphone", sort: 0 };
 const emptyAtalho = { label: "", icon: "FileText", sort: 0 };
 
+function CarteiraLeadsCard({
+  resumo,
+  loading,
+  onRefresh,
+  isAdmin,
+}: {
+  resumo: ReturnType<typeof getResumoTomadoresAl> extends Promise<infer T> ? T | undefined : undefined;
+  loading: boolean;
+  onRefresh: () => void;
+  isAdmin: boolean;
+}) {
+  const ativos = resumo?.ativos ?? 0;
+  const convertidos = resumo?.convertidos ?? 0;
+  const semInteresse = resumo?.semInteresse ?? 0;
+  const vagasLivres = resumo?.vagasLivres ?? 0;
+  const estoque = resumo?.estoque ?? 0;
+  const totalAtribuidos = resumo?.totalAtribuidos ?? 0;
+  const consultoraNome = resumo?.consultoraNome ?? null;
+
+  const poolAlvo = 10;
+  const progresso = isAdmin ? 0 : Math.min(100, Math.round((ativos / poolAlvo) * 100));
+  const carteiraAcabando = !isAdmin && ativos < 5 && ativos > 0;
+  const carteiraVazia = !isAdmin && ativos === 0 && totalAtribuidos > 0;
+  const mostrarVinculo = !isAdmin && !consultoraNome && !loading;
+
+  return (
+    <Card className="mb-6">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Wallet className="h-4 w-4 text-primary" />
+          <CardTitle className="text-base">
+            {isAdmin ? "Base de Leads — Tomadores AL" : "Minha carteira de leads"}
+          </CardTitle>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={onRefresh} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          </Button>
+          <Link to="/tomadores-al">
+            <Button size="sm" variant="outline">Abrir leads</Button>
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando resumo…
+          </div>
+        ) : mostrarVinculo ? (
+          <p className="text-sm text-muted-foreground">
+            Seu login ainda não está vinculado a uma consultora. Acesse a página de Tomadores AL para criar o vínculo automaticamente.
+          </p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-lg border border-border/60 bg-primary/5 p-3">
+                <p className="text-[11px] text-muted-foreground">{isAdmin ? "Leads ativos" : "Ativos (para abordar)"}</p>
+                <p className="text-2xl font-bold text-foreground">{ativos.toLocaleString("pt-BR")}</p>
+                {!isAdmin && <p className="text-[10px] text-muted-foreground">de {poolAlvo} previstos</p>}
+              </div>
+              <div className="rounded-lg border border-border/60 bg-emerald-500/10 p-3">
+                <p className="text-[11px] text-muted-foreground">Convertidos</p>
+                <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{convertidos.toLocaleString("pt-BR")}</p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-muted p-3">
+                <p className="text-[11px] text-muted-foreground">Sem interesse</p>
+                <p className="text-2xl font-bold text-muted-foreground">{semInteresse.toLocaleString("pt-BR")}</p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-amber-500/10 p-3">
+                <p className="text-[11px] text-muted-foreground">{isAdmin ? "Estoque (sem dono)" : "Vagas livres"}</p>
+                <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{isAdmin ? estoque.toLocaleString("pt-BR") : vagasLivres.toLocaleString("pt-BR")}</p>
+              </div>
+            </div>
+
+            {!isAdmin && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Capacidade da carteira</span>
+                  <span className="font-medium">{ativos} / {poolAlvo}</span>
+                </div>
+                <Progress value={progresso} />
+                {carteiraAcabando && (
+                  <p className="flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    Carteira acabando — marque desfechos para repor leads automaticamente.
+                  </p>
+                )}
+                {carteiraVazia && (
+                  <p className="flex items-center gap-1 text-xs font-medium text-rose-700 dark:text-rose-400">
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    Carteira vazia. Acesse Tomadores AL para repor seus 10 leads.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {isAdmin && (
+              <p className="text-xs text-muted-foreground">
+                Total de leads com responsável: <strong>{totalAtribuidos.toLocaleString("pt-BR")}</strong> · estoque: <strong>{estoque.toLocaleString("pt-BR")}</strong>.
+              </p>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+
 function PortalIndex() {
   const qc = useQueryClient();
   const { data } = useSuspenseQuery(portalQueryOptions());
