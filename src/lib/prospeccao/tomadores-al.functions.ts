@@ -25,11 +25,13 @@ export type TomadorAl = {
   pct_utilizado_emprestimo: number | null;
   consultora_responsavel: string | null;
   status_abordagem: string;
+  motivo_sem_interesse?: string | null;
+  finalizado_em?: string | null;
   telefones?: string[];
 };
 
 const SELECT_COLS =
-  "id,nome,documento,descricao_cargo,descricao_lotacao,orgao,matricula,dt_nascimento,margem_bruta_emprestimo,margem_bruta_cartao_credito,margem_disp_cartao_credito,margem_disp_emprestimo,margem_util_emprestimo,margem_util_cartao_credito,margem_util_cartao_beneficio,pct_utilizado_emprestimo,consultora_responsavel,status_abordagem";
+  "id,nome,documento,descricao_cargo,descricao_lotacao,orgao,matricula,dt_nascimento,margem_bruta_emprestimo,margem_bruta_cartao_credito,margem_disp_cartao_credito,margem_disp_emprestimo,margem_util_emprestimo,margem_util_cartao_credito,margem_util_cartao_beneficio,pct_utilizado_emprestimo,consultora_responsavel,status_abordagem,motivo_sem_interesse,finalizado_em";
 
 // Telefones não vêm na planilha — buscamos nos enriquecimentos já feitos
 // (pesquisas Nova Vida e leads de prospecção) pelo CPF do tomador.
@@ -123,6 +125,27 @@ async function nomeConsultora(_supabase: any, claims: any, autoVincular = false)
 // com novos tomadores da planilha que ainda não têm responsável.
 export const POOL_ALVO = 10;
 const STATUS_ABERTOS = ["novo", "contatado", "proposta_enviada"];
+const STATUS_FINALIZADOS = ["convertido", "sem_interesse"];
+
+// Prioriza a reposição por leads que já têm telefone enriquecido: sem telefone
+// a consultora perde tempo antes de conseguir abordar.
+async function priorizarComTelefone(client: any, candidatos: any[], faltam: number): Promise<string[]> {
+  const docs = candidatos
+    .map((r) => String(r.documento ?? "").replace(/\D/g, ""))
+    .filter(Boolean);
+  let comTel = new Set<string>();
+  try {
+    const mapa = await telefonesPorCpf(client, docs);
+    comTel = new Set(Object.keys(mapa).filter((d) => (mapa[d] ?? []).length > 0));
+  } catch {
+    comTel = new Set();
+  }
+  const rank = (r: any) => (comTel.has(String(r.documento ?? "").replace(/\D/g, "")) ? 0 : 1);
+  return [...candidatos]
+    .sort((a, b) => rank(a) - rank(b) || (b.margem_disp_emprestimo ?? 0) - (a.margem_disp_emprestimo ?? 0))
+    .slice(0, faltam)
+    .map((r) => String(r.id));
+}
 
 async function garantirPoolTomadores(nome: string): Promise<number> {
   const client = await getAdminClient();
@@ -139,13 +162,14 @@ async function garantirPoolTomadores(nome: string): Promise<number> {
 
   const { data: livres, error: lErr } = await client
     .from("tomadores_al")
-    .select("id")
+    .select("id,documento,margem_disp_emprestimo")
     .is("consultora_responsavel", null)
     .order("margem_disp_emprestimo", { ascending: false })
-    .limit(faltam);
+    .limit(Math.max(faltam * 8, 40));
   if (lErr || !livres?.length) return 0;
 
-  const ids = (livres as any[]).map((r) => String(r.id));
+  const ids = await priorizarComTelefone(client, livres as any[], faltam);
+  if (!ids.length) return 0;
   const { data: atualizados, error: uErr } = await client
     .from("tomadores_al")
     .update({ consultora_responsavel: nome, atribuido_em: new Date().toISOString() })
@@ -172,6 +196,19 @@ async function garantirPoolTomadores(nome: string): Promise<number> {
   return novos;
 }
 
+// Reposição automática de todas as carteiras ativas — usada pelo job diário
+// (/api/public/hooks/tomadores-repor) para não depender de a consultora abrir a aba.
+export async function reporTodasCarteiras(): Promise<{ atribuidos: number; consultoras: number }> {
+  const client = await getAdminClient();
+  const { data, error } = await client.from("radar_consultoras").select("nome").eq("ativo", true);
+  if (error) throw new Error(error.message);
+  const nomes = (data ?? []).map((c: any) => String(c.nome ?? "").trim()).filter(Boolean);
+  let atribuidos = 0;
+  for (const nome of nomes) atribuidos += await garantirPoolTomadores(nome);
+  return { atribuidos, consultoras: nomes.length };
+}
+
+
 // Lista os tomadores. Consultora vê apenas os seus; admin vê todos e pode
 // filtrar por consultora.
 export const getTomadoresAl = createServerFn({ method: "POST" })
@@ -185,6 +222,7 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
         orgao: z.string().trim().default(""),
         minMargem: z.number().min(0).default(0),
         consultora: z.string().trim().optional(),
+        aba: z.enum(["carteira", "historico"]).default("carteira"),
         apenasMeus: z.boolean().default(true),
       })
       .parse(data ?? {}),
@@ -205,7 +243,11 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
 
       // Carteira enxuta e exclusiva: ao entrar na aba, a consultora recebe
       // reposição automática até completar POOL_ALVO leads em aberto.
-      if (minha) await garantirPoolTomadores(minha);
+
+
+      const historico = data.aba === "historico";
+      // Na aba Histórico não repomos nada: é só leitura dos finalizados.
+      if (minha && !historico) await garantirPoolTomadores(minha);
 
       let q = context.supabase
         .from("tomadores_al")
@@ -216,14 +258,17 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
 
       if (admin) {
         if (data.consultora) q = q.eq("consultora_responsavel", data.consultora);
+        if (historico) q = q.in("status_abordagem", STATUS_FINALIZADOS);
       } else {
         // Sem vínculo de consultora: nenhum lead.
         if (!minha) return { rows: [], total: 0, consultoraNome: null, vinculada: false, isAdmin: false };
         q = q.eq("consultora_responsavel", minha);
         // A carteira mostra apenas leads em aberto: ao finalizar (convertido /
         // sem interesse) o lead sai da lista e o substituto do estoque aparece.
-        q = q.in("status_abordagem", STATUS_ABERTOS);
+        // O histórico mostra exatamente o oposto: só os finalizados.
+        q = q.in("status_abordagem", historico ? STATUS_FINALIZADOS : STATUS_ABERTOS);
       }
+
 
 
       if (data.orgao) q = q.eq("orgao", data.orgao);
@@ -264,6 +309,7 @@ export const marcarAbordagemTomador = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid(),
         status: z.enum(["novo", "contatado", "proposta_enviada", "convertido", "sem_interesse"]),
+        motivo: z.string().trim().max(80).optional(),
       })
       .parse(data),
   )
@@ -272,18 +318,23 @@ export const marcarAbordagemTomador = createServerFn({ method: "POST" })
     const minha = await nomeConsultora(context.supabase, context.claims, !admin);
     if (!admin && !minha) throw new Error("Consultora não vinculada ao seu login.");
 
+    const agora = new Date().toISOString();
+    const finalizado = data.status === "convertido" || data.status === "sem_interesse";
     const client = await getAdminClient();
     let upd = client
       .from("tomadores_al")
       .update({
         status_abordagem: data.status,
-        contatado_em: data.status === "contatado" ? new Date().toISOString() : null,
+        contatado_em: data.status === "contatado" ? agora : null,
+        finalizado_em: finalizado ? agora : null,
+        motivo_sem_interesse: data.status === "sem_interesse" ? (data.motivo ?? null) : null,
       })
       .eq("id", data.id);
     if (!admin) upd = upd.eq("consultora_responsavel", minha);
 
     const { error } = await upd;
     if (error) throw new Error(error.message);
+
 
     // Ao concluir um lead (convertido / sem interesse) a vaga é reposta na hora
     // com novos tomadores do estoque, para a carteira nunca ficar vazia.

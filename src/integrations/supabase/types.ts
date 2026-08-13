@@ -1944,6 +1944,7 @@ export type Database = {
           descricao_lotacao: string | null
           documento: string
           dt_nascimento: string | null
+          finalizado_em: string | null
           id: string
           margem_bruta_cartao_credito: number | null
           margem_bruta_emprestimo: number | null
@@ -1953,6 +1954,7 @@ export type Database = {
           margem_util_cartao_credito: number | null
           margem_util_emprestimo: number | null
           matricula: string | null
+          motivo_sem_interesse: string | null
           nome: string
           orgao: string | null
           pct_utilizado_emprestimo: number | null
@@ -1968,6 +1970,7 @@ export type Database = {
           descricao_lotacao?: string | null
           documento: string
           dt_nascimento?: string | null
+          finalizado_em?: string | null
           id?: string
           margem_bruta_cartao_credito?: number | null
           margem_bruta_emprestimo?: number | null
@@ -1977,6 +1980,7 @@ export type Database = {
           margem_util_cartao_credito?: number | null
           margem_util_emprestimo?: number | null
           matricula?: string | null
+          motivo_sem_interesse?: string | null
           nome: string
           orgao?: string | null
           pct_utilizado_emprestimo?: number | null
@@ -1992,6 +1996,7 @@ export type Database = {
           descricao_lotacao?: string | null
           documento?: string
           dt_nascimento?: string | null
+          finalizado_em?: string | null
           id?: string
           margem_bruta_cartao_credito?: number | null
           margem_bruta_emprestimo?: number | null
@@ -2001,6 +2006,7 @@ export type Database = {
           margem_util_cartao_credito?: number | null
           margem_util_emprestimo?: number | null
           matricula?: string | null
+          motivo_sem_interesse?: string | null
           nome?: string
           orgao?: string | null
           pct_utilizado_emprestimo?: number | null

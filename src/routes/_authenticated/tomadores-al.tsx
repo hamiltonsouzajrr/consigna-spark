@@ -41,6 +41,15 @@ export const Route = createFileRoute("/_authenticated/tomadores-al")({
 
 const PAGE_SIZE = 10;
 
+// Motivos rápidos para medir a qualidade do estoque de leads.
+const MOTIVOS_SEM_INTERESSE = [
+  "Não atende",
+  "Sem interesse",
+  "Já tem contrato",
+  "Margem baixa",
+  "Telefone errado",
+] as const;
+
 const ABORDAGEM_OPTS: { value: TomadorAl["status_abordagem"]; label: string }[] = [
   { value: "novo", label: "Novo" },
   { value: "contatado", label: "Contatado" },
@@ -123,6 +132,8 @@ function Page() {
   const [salvandoConsultora, setSalvandoConsultora] = useState(false);
   const [minMargem, setMinMargem] = useState("0");
   const [page, setPage] = useState(0);
+  const [aba, setAba] = useState<"carteira" | "historico">("carteira");
+  const [motivoPara, setMotivoPara] = useState<string | null>(null);
   const [rows, setRows] = useState<TomadorAl[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -173,6 +184,7 @@ function Page() {
           orgao: orgao === "todos" ? "" : orgao,
           minMargem: Number(minMargem) || 0,
           consultora: filtroConsultora || undefined,
+          aba,
         },
       });
       setRows(res.rows);
@@ -184,7 +196,7 @@ function Page() {
     } finally {
       setLoading(false);
     }
-  }, [page, termo, orgao, minMargem, filtroConsultora]);
+  }, [page, termo, orgao, minMargem, filtroConsultora, aba]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -220,10 +232,15 @@ function Page() {
     [rows],
   );
 
-  const handleAbordagem = async (id: string, status: TomadorAl["status_abordagem"]) => {
+  const handleAbordagem = async (
+    id: string,
+    status: TomadorAl["status_abordagem"],
+    motivo?: string,
+  ) => {
     const finalizado = status === "convertido" || status === "sem_interesse";
     try {
-      const res: any = await abordagemFn({ data: { id, status } });
+      const res: any = await abordagemFn({ data: { id, status, motivo } });
+      setMotivoPara(null);
       setRows((l) =>
         finalizado
           ? l.filter((r) => r.id !== id)
@@ -245,6 +262,7 @@ function Page() {
       toast.error(e?.message ?? "Erro ao atualizar.");
     }
   };
+
 
   const distribuir = async () => {
     setDistribuindo(true);
@@ -638,6 +656,22 @@ function Page() {
           </div>
         </div>
 
+        <div className="flex gap-2">
+          {([
+            { v: "carteira", label: "Minha carteira" },
+            { v: "historico", label: "Histórico" },
+          ] as const).map((t) => (
+            <Button
+              key={t.v}
+              size="sm"
+              variant={aba === t.v ? "default" : "outline"}
+              onClick={() => { setAba(t.v); setPage(0); }}
+            >
+              {t.label}
+            </Button>
+          ))}
+        </div>
+
         {loading ? (
           <p className="py-10 text-center text-sm text-muted-foreground">Carregando base…</p>
         ) : !vinculada ? (
@@ -651,11 +685,14 @@ function Page() {
           <div className="rounded-xl border border-dashed border-border/70 p-10 text-center">
             <Users className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              Nenhum tomador atribuído a você.{isAdmin ? " Use “Importar planilha” e depois “Distribuir sem consultora”." : ""}
+              {aba === "historico"
+                ? "Nenhum lead finalizado ainda."
+                : `Nenhum tomador atribuído a você.${isAdmin ? " Use “Importar planilha” e depois “Distribuir sem consultora”." : ""}`}
             </p>
           </div>
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
+
             {rows.map((r) => (
               <article key={r.id} className="rounded-xl border border-border/60 bg-card p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
@@ -719,19 +756,58 @@ function Page() {
                   confirmar com Digitação
                 </p>
 
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {ABORDAGEM_OPTS.filter((o) => o.value !== r.status_abordagem).map((o) => (
-                    <Button
-                      key={o.value}
-                      size="sm"
-                      variant="outline"
-                      className="h-7 px-2 text-[11px]"
-                      onClick={() => handleAbordagem(r.id, o.value)}
-                    >
-                      {o.label}
-                    </Button>
-                  ))}
-                </div>
+                {aba === "historico" ? (
+                  <p className="mt-3 text-[11px] text-muted-foreground">
+                    Finalizado{r.finalizado_em ? ` em ${new Date(r.finalizado_em).toLocaleDateString("pt-BR")}` : ""}
+                    {r.motivo_sem_interesse ? ` · motivo: ${r.motivo_sem_interesse}` : ""}
+                  </p>
+                ) : motivoPara === r.id ? (
+                  <div className="mt-3 rounded-lg border border-border/60 bg-muted/30 p-2">
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Motivo do sem interesse
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {MOTIVOS_SEM_INTERESSE.map((m) => (
+                        <Button
+                          key={m}
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2 text-[11px]"
+                          onClick={() => handleAbordagem(r.id, "sem_interesse", m)}
+                        >
+                          {m}
+                        </Button>
+                      ))}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-[11px]"
+                        onClick={() => setMotivoPara(null)}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {ABORDAGEM_OPTS.filter((o) => o.value !== r.status_abordagem).map((o) => (
+                      <Button
+                        key={o.value}
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-[11px]"
+                        onClick={() =>
+                          o.value === "sem_interesse"
+                            ? setMotivoPara(r.id)
+                            : handleAbordagem(r.id, o.value)
+                        }
+                      >
+                        {o.label}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+
               </article>
             ))}
           </div>
