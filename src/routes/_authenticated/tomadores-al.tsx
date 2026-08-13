@@ -221,16 +221,24 @@ function Page() {
   );
 
   const handleAbordagem = async (id: string, status: TomadorAl["status_abordagem"]) => {
+    const finalizado = status === "convertido" || status === "sem_interesse";
     try {
       const res: any = await abordagemFn({ data: { id, status } });
-      setRows((l) => l.map((r) => (r.id === id ? { ...r, status_abordagem: status } : r)));
+      setRows((l) =>
+        finalizado
+          ? l.filter((r) => r.id !== id)
+          : l.map((r) => (r.id === id ? { ...r, status_abordagem: status } : r)),
+      );
       const repostos = Number(res?.repostos ?? 0);
       if (repostos > 0) {
         toast.success(`Situação atualizada · ${repostos} novo(s) lead(s) na sua carteira.`);
-        if (page !== 0) setPage(0);
-        else await load();
       } else {
         toast.success("Situação atualizada.");
+      }
+      // Ao finalizar, a lista é recarregada para já mostrar os substitutos do estoque.
+      if (finalizado || repostos > 0) {
+        if (page !== 0) setPage(0);
+        else await load();
       }
       void recarregarResumo();
     } catch (e: any) {
