@@ -43,7 +43,15 @@ export const Route = createFileRoute("/_authenticated/tomadores-al")({
 
 const PAGE_SIZE = 10;
 
+// Mensagem inicial de WhatsApp, personalizada com o primeiro nome do servidor.
+function msgWhatsapp(nome?: string | null): string {
+  const primeiro = (nome ?? "").trim().split(/\s+/)[0] ?? "";
+  const saudacao = primeiro ? `Olá, ${primeiro}!` : "Olá!";
+  return `${saudacao} Sou consultor(a) do Grupo Positive. Identifiquei margem disponível no seu contracheque para crédito consignado com desconto em folha. Posso te enviar uma simulação sem compromisso?`;
+}
+
 // Motivos rápidos para medir a qualidade do estoque de leads.
+
 const MOTIVOS_SEM_INTERESSE = [
   "Não atende",
   "Sem interesse",
