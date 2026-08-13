@@ -123,6 +123,8 @@ function Page() {
   const [salvandoConsultora, setSalvandoConsultora] = useState(false);
   const [minMargem, setMinMargem] = useState("0");
   const [page, setPage] = useState(0);
+  const [aba, setAba] = useState<"carteira" | "historico">("carteira");
+  const [motivoPara, setMotivoPara] = useState<string | null>(null);
   const [rows, setRows] = useState<TomadorAl[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
