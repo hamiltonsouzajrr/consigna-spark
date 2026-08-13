@@ -25,11 +25,13 @@ export type TomadorAl = {
   pct_utilizado_emprestimo: number | null;
   consultora_responsavel: string | null;
   status_abordagem: string;
+  motivo_sem_interesse?: string | null;
+  finalizado_em?: string | null;
   telefones?: string[];
 };
 
 const SELECT_COLS =
-  "id,nome,documento,descricao_cargo,descricao_lotacao,orgao,matricula,dt_nascimento,margem_bruta_emprestimo,margem_bruta_cartao_credito,margem_disp_cartao_credito,margem_disp_emprestimo,margem_util_emprestimo,margem_util_cartao_credito,margem_util_cartao_beneficio,pct_utilizado_emprestimo,consultora_responsavel,status_abordagem";
+  "id,nome,documento,descricao_cargo,descricao_lotacao,orgao,matricula,dt_nascimento,margem_bruta_emprestimo,margem_bruta_cartao_credito,margem_disp_cartao_credito,margem_disp_emprestimo,margem_util_emprestimo,margem_util_cartao_credito,margem_util_cartao_beneficio,pct_utilizado_emprestimo,consultora_responsavel,status_abordagem,motivo_sem_interesse,finalizado_em";
 
 // Telefones não vêm na planilha — buscamos nos enriquecimentos já feitos
 // (pesquisas Nova Vida e leads de prospecção) pelo CPF do tomador.
