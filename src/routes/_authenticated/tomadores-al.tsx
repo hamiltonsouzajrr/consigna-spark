@@ -220,10 +220,15 @@ function Page() {
     [rows],
   );
 
-  const handleAbordagem = async (id: string, status: TomadorAl["status_abordagem"]) => {
+  const handleAbordagem = async (
+    id: string,
+    status: TomadorAl["status_abordagem"],
+    motivo?: string,
+  ) => {
     const finalizado = status === "convertido" || status === "sem_interesse";
     try {
-      const res: any = await abordagemFn({ data: { id, status } });
+      const res: any = await abordagemFn({ data: { id, status, motivo } });
+      setMotivoPara(null);
       setRows((l) =>
         finalizado
           ? l.filter((r) => r.id !== id)
@@ -245,6 +250,7 @@ function Page() {
       toast.error(e?.message ?? "Erro ao atualizar.");
     }
   };
+
 
   const distribuir = async () => {
     setDistribuindo(true);
