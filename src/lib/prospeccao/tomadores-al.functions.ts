@@ -307,6 +307,7 @@ export const marcarAbordagemTomador = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid(),
         status: z.enum(["novo", "contatado", "proposta_enviada", "convertido", "sem_interesse"]),
+        motivo: z.string().trim().max(80).optional(),
       })
       .parse(data),
   )
@@ -315,18 +316,23 @@ export const marcarAbordagemTomador = createServerFn({ method: "POST" })
     const minha = await nomeConsultora(context.supabase, context.claims, !admin);
     if (!admin && !minha) throw new Error("Consultora não vinculada ao seu login.");
 
+    const agora = new Date().toISOString();
+    const finalizado = data.status === "convertido" || data.status === "sem_interesse";
     const client = await getAdminClient();
     let upd = client
       .from("tomadores_al")
       .update({
         status_abordagem: data.status,
-        contatado_em: data.status === "contatado" ? new Date().toISOString() : null,
+        contatado_em: data.status === "contatado" ? agora : null,
+        finalizado_em: finalizado ? agora : null,
+        motivo_sem_interesse: data.status === "sem_interesse" ? (data.motivo ?? null) : null,
       })
       .eq("id", data.id);
     if (!admin) upd = upd.eq("consultora_responsavel", minha);
 
     const { error } = await upd;
     if (error) throw new Error(error.message);
+
 
     // Ao concluir um lead (convertido / sem interesse) a vaga é reposta na hora
     // com novos tomadores do estoque, para a carteira nunca ficar vazia.
