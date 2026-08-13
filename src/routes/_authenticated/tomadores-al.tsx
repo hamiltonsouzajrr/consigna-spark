@@ -647,6 +647,22 @@ function Page() {
           </div>
         </div>
 
+        <div className="flex gap-2">
+          {([
+            { v: "carteira", label: "Minha carteira" },
+            { v: "historico", label: "Histórico" },
+          ] as const).map((t) => (
+            <Button
+              key={t.v}
+              size="sm"
+              variant={aba === t.v ? "default" : "outline"}
+              onClick={() => { setAba(t.v); setPage(0); }}
+            >
+              {t.label}
+            </Button>
+          ))}
+        </div>
+
         {loading ? (
           <p className="py-10 text-center text-sm text-muted-foreground">Carregando base…</p>
         ) : !vinculada ? (
@@ -660,11 +676,14 @@ function Page() {
           <div className="rounded-xl border border-dashed border-border/70 p-10 text-center">
             <Users className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              Nenhum tomador atribuído a você.{isAdmin ? " Use “Importar planilha” e depois “Distribuir sem consultora”." : ""}
+              {aba === "historico"
+                ? "Nenhum lead finalizado ainda."
+                : `Nenhum tomador atribuído a você.${isAdmin ? " Use “Importar planilha” e depois “Distribuir sem consultora”." : ""}`}
             </p>
           </div>
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
+
             {rows.map((r) => (
               <article key={r.id} className="rounded-xl border border-border/60 bg-card p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
