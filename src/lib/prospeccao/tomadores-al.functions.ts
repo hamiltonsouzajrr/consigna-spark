@@ -220,7 +220,11 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
         // Sem vínculo de consultora: nenhum lead.
         if (!minha) return { rows: [], total: 0, consultoraNome: null, vinculada: false, isAdmin: false };
         q = q.eq("consultora_responsavel", minha);
+        // A carteira mostra apenas leads em aberto: ao finalizar (convertido /
+        // sem interesse) o lead sai da lista e o substituto do estoque aparece.
+        q = q.in("status_abordagem", STATUS_ABERTOS);
       }
+
 
       if (data.orgao) q = q.eq("orgao", data.orgao);
       if (data.termo) {
