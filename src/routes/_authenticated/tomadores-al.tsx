@@ -723,22 +723,53 @@ function Page() {
                   </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                <div className="mt-3 space-y-1.5">
                   {r.telefones?.length ? (
                     r.telefones.map((t) => (
-                      <a
-                        key={t}
-                        href={`tel:+55${t}`}
-                        className="rounded-full border border-border/60 px-2.5 py-0.5 text-xs font-medium text-foreground"
-                      >
-                        {fmtTel(t)}
-                      </a>
+                      <div key={t} className="flex flex-wrap items-center gap-1.5">
+                        <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="rounded-full border border-border/60 px-2.5 py-0.5 text-xs font-medium text-foreground">
+                          {fmtTel(t)}
+                        </span>
+                        <Button asChild size="sm" variant="outline" className="h-7 px-2 text-[11px]">
+                          <a href={telLink(t) ?? "#"}>
+                            <Phone className="mr-1 h-3 w-3" /> Ligar
+                          </a>
+                        </Button>
+                        <Button
+                          asChild
+                          size="sm"
+                          className="h-7 bg-emerald-600 px-2 text-[11px] text-white hover:bg-emerald-700"
+                        >
+                          <a
+                            href={whatsappLink(t, msgWhatsapp(r.nome)) ?? "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <WhatsAppIcon className="mr-1 h-3 w-3" /> WhatsApp
+                          </a>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-1.5"
+                          onClick={() => {
+                            navigator.clipboard.writeText(fmtTel(t));
+                            toast.success("Telefone copiado");
+                          }}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
                     ))
                   ) : (
-                    <span className="text-xs text-muted-foreground">Telefone não cadastrado</span>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Telefone não cadastrado</span>
+                    </div>
                   )}
                 </div>
+
 
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
                   <MargemLinha label="Empréstimo" margem={r.margem_disp_emprestimo} mult={MULT_PRINCIPAL} />
