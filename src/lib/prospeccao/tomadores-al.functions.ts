@@ -263,7 +263,7 @@ export const marcarAbordagemTomador = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+  .handler(async ({ context, data }): Promise<{ ok: true; repostos: number }> => {
     const admin = await isAdmin(context.supabase, context.userId);
     const minha = await nomeConsultora(context.supabase, context.claims);
     if (!admin && !minha) throw new Error("Consultora não vinculada ao seu login.");
@@ -280,7 +280,14 @@ export const marcarAbordagemTomador = createServerFn({ method: "POST" })
 
     const { error } = await upd;
     if (error) throw new Error(error.message);
-    return { ok: true };
+
+    // Ao concluir um lead (convertido / sem interesse) a vaga é reposta na hora
+    // com novos tomadores do estoque, para a carteira nunca ficar vazia.
+    let repostos = 0;
+    if (minha && (data.status === "convertido" || data.status === "sem_interesse")) {
+      repostos = await garantirPoolTomadores(minha);
+    }
+    return { ok: true, repostos };
   });
 
 // Completa a carteira de cada consultora ativa até POOL_ALVO leads em aberto
