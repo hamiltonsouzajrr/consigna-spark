@@ -241,7 +241,7 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
 
       // Carteira enxuta e exclusiva: ao entrar na aba, a consultora recebe
       // reposição automática até completar POOL_ALVO leads em aberto.
-      if (minha) await garantirPoolTomadores(minha);
+
 
       const historico = data.aba === "historico";
       // Na aba Histórico não repomos nada: é só leitura dos finalizados.
