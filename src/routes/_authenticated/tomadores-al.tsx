@@ -747,19 +747,58 @@ function Page() {
                   confirmar com Digitação
                 </p>
 
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {ABORDAGEM_OPTS.filter((o) => o.value !== r.status_abordagem).map((o) => (
-                    <Button
-                      key={o.value}
-                      size="sm"
-                      variant="outline"
-                      className="h-7 px-2 text-[11px]"
-                      onClick={() => handleAbordagem(r.id, o.value)}
-                    >
-                      {o.label}
-                    </Button>
-                  ))}
-                </div>
+                {aba === "historico" ? (
+                  <p className="mt-3 text-[11px] text-muted-foreground">
+                    Finalizado{r.finalizado_em ? ` em ${new Date(r.finalizado_em).toLocaleDateString("pt-BR")}` : ""}
+                    {r.motivo_sem_interesse ? ` · motivo: ${r.motivo_sem_interesse}` : ""}
+                  </p>
+                ) : motivoPara === r.id ? (
+                  <div className="mt-3 rounded-lg border border-border/60 bg-muted/30 p-2">
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Motivo do sem interesse
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {MOTIVOS_SEM_INTERESSE.map((m) => (
+                        <Button
+                          key={m}
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2 text-[11px]"
+                          onClick={() => handleAbordagem(r.id, "sem_interesse", m)}
+                        >
+                          {m}
+                        </Button>
+                      ))}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-[11px]"
+                        onClick={() => setMotivoPara(null)}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {ABORDAGEM_OPTS.filter((o) => o.value !== r.status_abordagem).map((o) => (
+                      <Button
+                        key={o.value}
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-[11px]"
+                        onClick={() =>
+                          o.value === "sem_interesse"
+                            ? setMotivoPara(r.id)
+                            : handleAbordagem(r.id, o.value)
+                        }
+                      >
+                        {o.label}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+
               </article>
             ))}
           </div>
