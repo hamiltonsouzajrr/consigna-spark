@@ -478,10 +478,12 @@ function AcessosPage() {
                     <Button size="sm" variant="outline" onClick={exportCsv} title="Exportar CSV">
                       <Download className="h-4 w-4" />
                     </Button>
-                    <Button size="sm" onClick={openCreate}>
-                      <Plus className="mr-1 h-4 w-4" />
-                      Novo
-                    </Button>
+                    {canManageUsers && (
+                      <Button size="sm" onClick={openCreate}>
+                        <Plus className="mr-1 h-4 w-4" />
+                        Novo
+                      </Button>
+                    )}
                   </div>
                 </div>
                 <div className="relative mt-2">
