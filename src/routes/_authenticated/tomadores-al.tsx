@@ -142,6 +142,7 @@ function Page() {
   const fetchConsultoras = useServerFn(getConsultoras);
   const fetchDistribuicao = useServerFn(getDistribuicaoTomadoresAl);
   const fetchResumo = useServerFn(getResumoCarteiraTomadores);
+  const fetchFaixas = useServerFn(getContagemFaixasTomadores);
 
   const addConsultoraFn = useServerFn(adicionarConsultora);
   const toggleConsultoraFn = useServerFn(toggleConsultora);
