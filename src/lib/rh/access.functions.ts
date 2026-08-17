@@ -624,9 +624,20 @@ export const bulkSetRhAccess = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ ok: true; affected: number }> => {
     const { supabase, userId, claims } = context;
-    await assertAdmin(supabase, userId);
+    await assertAccessManager(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Snapshot anterior (por usuário) para permitir reverter pelo histórico.
+    const { data: beforeRows } = await supabaseAdmin
+      .from("rh_tab_access")
+      .select("user_id, tab_key")
+      .in("user_id", data.userIds);
+    const beforeMap: Record<string, string[]> = {};
+    for (const uid of data.userIds) beforeMap[uid] = [];
+    for (const r of (beforeRows ?? []) as any[]) {
+      (beforeMap[r.user_id as string] ??= []).push(r.tab_key as string);
+    }
 
     if (data.mode === "replace") {
       const { error: delErr } = await supabaseAdmin
