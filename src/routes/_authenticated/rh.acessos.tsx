@@ -229,6 +229,39 @@ function AcessosPage() {
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao alterar status."),
   });
 
+  const revokeMutation = useMutation({
+    mutationFn: (targetUserId: string) => revokeSessions({ data: { targetUserId } }),
+    onSuccess: () => {
+      toast.success("Sessões encerradas.");
+      invalidateUsers();
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Erro ao encerrar sessões."),
+  });
+
+  const onRevokeSessions = (u: RhUserAccess) => {
+    if (!confirm(`Encerrar todas as sessões ativas de ${u.email}?`)) return;
+    revokeMutation.mutate(u.id);
+  };
+
+  const revertMutation = useMutation({
+    mutationFn: (auditId: string) => revertAudit({ data: { auditId } }),
+    onSuccess: () => {
+      toast.success("Alteração revertida.");
+      invalidateUsers();
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao reverter."),
+  });
+
+  const purgeMutation = useMutation({
+    mutationFn: (meses: number) => purgeAudit({ data: { meses } }),
+    onSuccess: () => {
+      toast.success("Histórico antigo removido.");
+      queryClient.invalidateQueries({ queryKey: ["rh", "admin", "audit"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao limpar."),
+  });
+
   const recoveryMutation = useMutation({
     mutationFn: (email: string) => recoveryLink({ data: { email } }),
     onSuccess: (res, email) => {
