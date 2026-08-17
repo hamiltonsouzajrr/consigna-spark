@@ -701,7 +701,7 @@ export const copyRhAccess = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ ok: true; tabs: number }> => {
     const { supabase, userId, claims } = context;
-    await assertAdmin(supabase, userId);
+    await assertAccessManager(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: src, error } = await supabaseAdmin
