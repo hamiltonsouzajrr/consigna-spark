@@ -19,26 +19,77 @@ async function assertAdmin(supabase: any, userId: string) {
   if (!data) throw new Error("Acesso restrito a administradores.");
 }
 
+// Gestores de acessos podem liberar/remover abas e vincular colaboradores,
+// mas não criam/excluem usuários nem promovem administradores.
+async function assertAccessManager(supabase: any, userId: string) {
+  const [{ data: isAdmin }, { data: isManager }] = await Promise.all([
+    supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
+    supabase.rpc("has_role", { _user_id: userId, _role: "gestor_acessos" }),
+  ]);
+  if (!isAdmin && !isManager) {
+    throw new Error("Acesso restrito a administradores ou gestores de acessos.");
+  }
+}
+
+async function countAdmins(supabaseAdmin: any): Promise<number> {
+  const { count, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("user_id", { count: "exact", head: true })
+    .eq("role", "admin");
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+async function isAdminUser(supabaseAdmin: any, targetUserId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin
+    .from("user_roles")
+    .select("user_id")
+    .eq("user_id", targetUserId)
+    .eq("role", "admin")
+    .maybeSingle();
+  return !!data;
+}
+
+// Impede que a última conta de administrador seja removida, rebaixada ou bloqueada.
+async function assertNotLastAdmin(supabaseAdmin: any, targetUserId: string, acao: string) {
+  if (!(await isAdminUser(supabaseAdmin, targetUserId))) return;
+  const total = await countAdmins(supabaseAdmin);
+  if (total <= 1) {
+    throw new Error(
+      `Não é possível ${acao}: este é o único administrador do sistema. Promova outro administrador antes.`,
+    );
+  }
+}
+
 export const getMyRhAccess = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ isAdmin: boolean; tabs: string[] }> => {
-    const { supabase, userId } = context;
+  .handler(
+    async ({
+      context,
+    }): Promise<{ isAdmin: boolean; isAccessManager: boolean; tabs: string[] }> => {
+      const { supabase, userId } = context;
 
-    const { data: isAdmin } = await supabase.rpc("has_role", {
-      _user_id: userId,
-      _role: "admin",
-    });
+      const [{ data: isAdmin }, { data: isManager }] = await Promise.all([
+        supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
+        supabase.rpc("has_role", { _user_id: userId, _role: "gestor_acessos" }),
+      ]);
 
-    if (isAdmin) return { isAdmin: true, tabs: [] };
+      if (isAdmin) return { isAdmin: true, isAccessManager: true, tabs: [] };
 
-    const { data, error } = await supabase
-      .from("rh_tab_access")
-      .select("tab_key")
-      .eq("user_id", userId);
-    if (error) throw new Error(error.message);
+      const { data, error } = await supabase
+        .from("rh_tab_access")
+        .select("tab_key")
+        .eq("user_id", userId);
+      if (error) throw new Error(error.message);
 
-    return { isAdmin: false, tabs: (data ?? []).map((r) => r.tab_key as string) };
-  });
+      return {
+        isAdmin: false,
+        isAccessManager: !!isManager,
+        tabs: (data ?? []).map((r) => r.tab_key as string),
+      };
+    },
+  );
+
 
 export type RhEmployee = {
   id: string;
