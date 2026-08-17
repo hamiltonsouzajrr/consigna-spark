@@ -54,7 +54,13 @@ export type RhUserAccess = {
   tabs: string[];
   isAdmin: boolean;
   employee: { id: string; full_name: string } | null;
+  createdAt: string | null;
+  lastSignInAt: string | null;
+  emailConfirmed: boolean;
+  blocked: boolean;
+  hasConsultora: boolean;
 };
+
 
 export const listRhUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
