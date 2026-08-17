@@ -51,10 +51,14 @@ const ADMIN_ONLY = new Set<string>(["/rh/acessos"]);
 
 export function RhLayout({ children }: { children: ReactNode }) {
   const loc = useLocation();
-  const { isAdmin, canAccess, isLoading } = useRhAccess();
+  const { isAdmin, isAccessManager, canAccess, isLoading } = useRhAccess();
 
-  const items = [...rhNav, ...(isAdmin ? rhAdminNav : [])].filter((n) => {
-    if (ADMIN_ONLY.has(n.to)) return isAdmin;
+  // Gestores de acessos também podem abrir a aba de Acessos (sem poderes
+  // destrutivos, que continuam restritos ao admin dentro da própria tela).
+  const canOpenAdminOnly = isAdmin || isAccessManager;
+
+  const items = [...rhNav, ...(canOpenAdminOnly ? rhAdminNav : [])].filter((n) => {
+    if (ADMIN_ONLY.has(n.to)) return canOpenAdminOnly;
     if (isAdmin) return true;
     // While access is still loading, only show the always-allowed tabs to
     // avoid flashing restricted entries to a non-admin user.
@@ -69,7 +73,8 @@ export function RhLayout({ children }: { children: ReactNode }) {
   const denied =
     !isLoading &&
     !!current &&
-    (ADMIN_ONLY.has(current.to) ? !isAdmin : !canAccess(current.to));
+    (ADMIN_ONLY.has(current.to) ? !canOpenAdminOnly : !canAccess(current.to));
+
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row">
