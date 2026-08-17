@@ -122,6 +122,13 @@ function AcessosPage() {
   const [bulkMode, setBulkMode] = useState<"replace" | "add" | "remove">("add");
   const [copyFrom, setCopyFrom] = useState<string>("");
   const [linkDialog, setLinkDialog] = useState<{ email: string; link: string } | null>(null);
+  const [auditFilters, setAuditFilters] = useState({
+    actor: "",
+    target: "",
+    action: "",
+    from: "",
+    to: "",
+  });
 
   const usersQuery = useQuery({
     queryKey: ["rh", "admin", "users"],
