@@ -662,7 +662,32 @@ function Page() {
             </Select>
           </div>
           <div>
-            <Label className="text-xs">Margem mínima de empréstimo</Label>
+            <Label className="text-xs">Tipo de margem</Label>
+            <Select
+              value={tipoMargem}
+              onValueChange={(v) => { setTipoMargem(v as TipoMargem); setPage(0); }}
+            >
+              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {TIPOS_MARGEM.map((t) => (
+                  <SelectItem key={t} value={t}>{TIPO_MARGEM_LABEL[t]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Faixa de valor</Label>
+            <Select value={faixa} onValueChange={(v) => { setFaixa(v as FaixaMargem); setPage(0); }}>
+              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {FAIXAS_MARGEM.map((f) => (
+                  <SelectItem key={f} value={f}>{FAIXA_LABEL[f]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Valor mínimo (ajuste fino)</Label>
             <Select value={minMargem} onValueChange={(v) => { setMinMargem(v); setPage(0); }}>
               <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -692,6 +717,56 @@ function Page() {
             )}
           </div>
         </div>
+
+        {faixasCount && (
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-muted-foreground">
+              Faixas em {TIPO_MARGEM_CURTO[tipoMargem]}:
+            </span>
+            <button
+              type="button"
+              onClick={() => { setFaixa("alta"); setPage(0); }}
+              className={cn(
+                "rounded-full border px-2.5 py-1 font-semibold",
+                faixa === "alta"
+                  ? "border-emerald-600 bg-emerald-600 text-white"
+                  : "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200",
+              )}
+            >
+              Alta {faixasCount.alta.toLocaleString("pt-BR")}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setFaixa("media"); setPage(0); }}
+              className={cn(
+                "rounded-full border px-2.5 py-1 font-semibold",
+                faixa === "media"
+                  ? "border-amber-600 bg-amber-600 text-white"
+                  : "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200",
+              )}
+            >
+              Média {faixasCount.media.toLocaleString("pt-BR")}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setFaixa("baixa"); setPage(0); }}
+              className={cn(
+                "rounded-full border px-2.5 py-1 font-semibold",
+                faixa === "baixa"
+                  ? "border-slate-600 bg-slate-600 text-white"
+                  : "border-slate-300 bg-slate-50 text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200",
+              )}
+            >
+              Baixa {faixasCount.baixa.toLocaleString("pt-BR")}
+            </button>
+            {faixa !== "todas" && (
+              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setFaixa("todas"); setPage(0); }}>
+                Limpar faixa
+              </Button>
+            )}
+          </div>
+        )}
+
 
         <div className="flex gap-2">
           {([
