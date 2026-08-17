@@ -544,25 +544,37 @@ function AcessosPage() {
                               {u.tabs.length}
                             </Badge>
                           </button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 shrink-0"
-                            onClick={() => openEdit(u)}
-                            title="Editar usuário"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
-                            onClick={() => setDeleteTarget(u)}
-                            title="Excluir usuário"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
+                          {canManageUsers && (
+                            <>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 shrink-0"
+                                onClick={() => openEdit(u)}
+                                title="Editar usuário"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 shrink-0"
+                                onClick={() => onRevokeSessions(u)}
+                                title="Encerrar sessões ativas"
+                              >
+                                <LogOut className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
+                                onClick={() => setDeleteTarget(u)}
+                                title="Excluir usuário"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </>
+                          )}
                       ))
                     ) : (
                       <p className="px-3 py-6 text-center text-sm text-muted-foreground">
