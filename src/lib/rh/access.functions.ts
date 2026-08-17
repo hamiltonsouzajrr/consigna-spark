@@ -678,7 +678,12 @@ export const bulkSetRhAccess = createServerFn({ method: "POST" })
       actorId: userId,
       actorEmail: (claims as any)?.email ?? null,
       action: "acessos_em_massa",
-      detail: { mode: data.mode, tabs: data.tabs, usuarios: data.userIds.length },
+      detail: {
+        mode: data.mode,
+        tabs: data.tabs,
+        usuarios: data.userIds.length,
+        before: beforeMap,
+      },
     });
 
     return { ok: true, affected: data.userIds.length };
