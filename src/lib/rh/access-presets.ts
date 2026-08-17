@@ -1,0 +1,65 @@
+// Perfis de acesso pré-definidos para liberar abas do RH em um clique.
+export const ACCESS_PRESETS: { key: string; label: string; description: string; tabs: string[] }[] = [
+  {
+    key: "consultora",
+    label: "Consultora",
+    description: "Portal, produção, ranking e reconhecimentos.",
+    tabs: ["/rh/producao", "/rh/ranking", "/rh/reconhecimentos", "/rh/treinamentos"],
+  },
+  {
+    key: "gestor",
+    label: "Gestor de equipe",
+    description: "Acompanhamento de pessoas, metas e desempenho.",
+    tabs: [
+      "/rh/colaboradores",
+      "/rh/organograma",
+      "/rh/avaliacoes",
+      "/rh/pdi",
+      "/rh/okrs",
+      "/rh/ranking",
+      "/rh/producao",
+      "/rh/ocorrencias",
+      "/rh/clima",
+      "/rh/turnover",
+    ],
+  },
+  {
+    key: "rh-operacional",
+    label: "RH operacional",
+    description: "Rotinas de pessoal, documentos e benefícios.",
+    tabs: [
+      "/rh/colaboradores",
+      "/rh/departamentos",
+      "/rh/cargos",
+      "/rh/ferias",
+      "/rh/banco-horas",
+      "/rh/holerites",
+      "/rh/documentos",
+      "/rh/equipamentos",
+      "/rh/onboarding",
+      "/rh/desligamentos",
+      "/rh/ocorrencias",
+    ],
+  },
+  {
+    key: "recrutamento",
+    label: "Recrutamento",
+    description: "Vagas, candidatos e integração.",
+    tabs: ["/rh/recrutamento", "/rh/onboarding", "/rh/colaboradores"],
+  },
+];
+
+export const AUDIT_LABELS: Record<string, string> = {
+  criou_usuario: "Criou usuário",
+  atualizou_usuario: "Atualizou usuário",
+  excluiu_usuario: "Excluiu usuário",
+  atualizou_acessos: "Atualizou acessos",
+  acessos_em_massa: "Acessos em massa",
+  copiou_acessos: "Copiou acessos",
+  vinculou_colaborador: "Vinculou colaborador",
+  desvinculou_colaborador: "Desvinculou colaborador",
+  bloqueou_usuario: "Bloqueou usuário",
+  desbloqueou_usuario: "Desbloqueou usuário",
+  gerou_link_de_redefinicao: "Gerou link de senha",
+  sincronizou_consultoras: "Sincronizou consultoras",
+};
