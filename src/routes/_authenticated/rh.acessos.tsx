@@ -460,12 +460,25 @@ function AcessosPage() {
         ))}
       </div>
 
+      {!isAdmin && (
+        <Card className="mb-4 border-amber-300 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-500/10">
+          <CardContent className="flex items-start gap-3 p-4 text-sm">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <p>
+              Você é <strong>gestor de acessos</strong>: pode liberar ou remover abas e vincular
+              colaboradores, mas criar, editar e excluir usuários é exclusivo dos administradores.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs defaultValue="usuarios">
         <TabsList className="mb-4">
           <TabsTrigger value="usuarios">Usuários e acessos</TabsTrigger>
           <TabsTrigger value="consultoras">Consultoras</TabsTrigger>
-          <TabsTrigger value="historico">Histórico</TabsTrigger>
+          {isAdmin && <TabsTrigger value="historico">Histórico</TabsTrigger>}
         </TabsList>
+
 
         <TabsContent value="usuarios">
           <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
