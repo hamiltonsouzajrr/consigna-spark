@@ -156,6 +156,9 @@ function Page() {
   const [novoEmail, setNovoEmail] = useState("");
   const [salvandoConsultora, setSalvandoConsultora] = useState(false);
   const [minMargem, setMinMargem] = useState("0");
+  const [tipoMargem, setTipoMargem] = useState<TipoMargem>("emprestimo");
+  const [faixa, setFaixa] = useState<FaixaMargem>("todas");
+  const [faixasCount, setFaixasCount] = useState<{ baixa: number; media: number; alta: number } | null>(null);
   const [page, setPage] = useState(0);
   const [aba, setAba] = useState<"carteira" | "historico">("carteira");
   const [motivoPara, setMotivoPara] = useState<string | null>(null);
