@@ -489,6 +489,7 @@ export const deleteRhUser = createServerFn({ method: "POST" })
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await assertNotLastAdmin(supabaseAdmin, data.targetUserId, "excluir este usuário");
 
     // Unlink collaborator and remove grants/roles before deleting the auth user.
     await supabaseAdmin.from("rh_employees").update({ user_id: null } as any).eq("user_id", data.targetUserId);
