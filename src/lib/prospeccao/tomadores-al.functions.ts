@@ -209,24 +209,64 @@ export async function reporTodasCarteiras(): Promise<{ atribuidos: number; consu
 }
 
 
+// Aplica o filtro de tipo/faixa de margem sobre um builder já montado.
+function aplicarFiltroMargem(
+  q: any,
+  tipoMargem: TipoMargem,
+  faixa: FaixaMargem,
+  minMargem: number,
+): any {
+  if (tipoMargem === "qualquer") {
+    if (faixa !== "todas") {
+      const partes = (Object.keys(TIPO_MARGEM_COLUNA) as Exclude<TipoMargem, "qualquer">[]).map((t) => {
+        const col = TIPO_MARGEM_COLUNA[t];
+        const { gte, lt } = faixaIntervalo(t, faixa);
+        const conds = [`${col}.gte.${Math.max(gte ?? 0, minMargem)}`];
+        if (lt !== null) conds.push(`${col}.lt.${lt}`);
+        return `and(${conds.join(",")})`;
+      });
+      return q.or(partes.join(","));
+    }
+    if (minMargem > 0) {
+      const partes = (Object.keys(TIPO_MARGEM_COLUNA) as Exclude<TipoMargem, "qualquer">[]).map(
+        (t) => `${TIPO_MARGEM_COLUNA[t]}.gte.${minMargem}`,
+      );
+      return q.or(partes.join(","));
+    }
+    return q;
+  }
+
+  const col = TIPO_MARGEM_COLUNA[tipoMargem];
+  const { gte, lt } = faixaIntervalo(tipoMargem, faixa);
+  let out = q.gte(col, Math.max(gte ?? 0, minMargem));
+  if (lt !== null) out = out.lt(col, lt);
+  return out;
+}
+
+function colunaOrdenacao(tipoMargem: TipoMargem): string {
+  return tipoMargem === "qualquer"
+    ? TIPO_MARGEM_COLUNA.emprestimo
+    : TIPO_MARGEM_COLUNA[tipoMargem];
+}
+
+const filtrosSchema = z.object({
+  offset: z.number().int().min(0).default(0),
+  limit: z.number().int().min(1).max(100).default(25),
+  termo: z.string().trim().default(""),
+  orgao: z.string().trim().default(""),
+  minMargem: z.number().min(0).default(0),
+  tipoMargem: z.enum(["emprestimo", "cartao_credito", "cartao_beneficio", "qualquer"]).default("emprestimo"),
+  faixa: z.enum(["todas", "baixa", "media", "alta"]).default("todas"),
+  consultora: z.string().trim().optional(),
+  aba: z.enum(["carteira", "historico"]).default("carteira"),
+  apenasMeus: z.boolean().default(true),
+});
+
 // Lista os tomadores. Consultora vê apenas os seus; admin vê todos e pode
 // filtrar por consultora.
 export const getTomadoresAl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) =>
-    z
-      .object({
-        offset: z.number().int().min(0).default(0),
-        limit: z.number().int().min(1).max(100).default(25),
-        termo: z.string().trim().default(""),
-        orgao: z.string().trim().default(""),
-        minMargem: z.number().min(0).default(0),
-        consultora: z.string().trim().optional(),
-        aba: z.enum(["carteira", "historico"]).default("carteira"),
-        apenasMeus: z.boolean().default(true),
-      })
-      .parse(data ?? {}),
-  )
+  .inputValidator((data) => filtrosSchema.parse(data ?? {}))
   .handler(
     async ({
       context,
@@ -249,12 +289,13 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
       // Na aba Histórico não repomos nada: é só leitura dos finalizados.
       if (minha && !historico) await garantirPoolTomadores(minha);
 
-      let q = context.supabase
+      let q: any = context.supabase
         .from("tomadores_al")
         .select(SELECT_COLS, { count: "exact" })
-        .gte("margem_disp_emprestimo", data.minMargem)
-        .order("margem_disp_emprestimo", { ascending: false })
+        .order(colunaOrdenacao(data.tipoMargem), { ascending: false })
         .range(data.offset, data.offset + data.limit - 1);
+
+      q = aplicarFiltroMargem(q, data.tipoMargem, data.faixa, data.minMargem);
 
       if (admin) {
         if (data.consultora) q = q.eq("consultora_responsavel", data.consultora);
@@ -300,6 +341,42 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
       };
     },
   );
+
+// Contagem por faixa (baixa / média / alta) respeitando os demais filtros.
+export const getContagemFaixasTomadores = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => filtrosSchema.parse(data ?? {}))
+  .handler(async ({ context, data }): Promise<{ baixa: number; media: number; alta: number }> => {
+    const admin = await isAdmin(context.supabase, context.userId);
+    const minha = await nomeConsultora(context.supabase, context.claims, !admin);
+    if (!admin && !minha) return { baixa: 0, media: 0, alta: 0 };
+    const historico = data.aba === "historico";
+
+    const contar = async (faixa: FaixaMargem): Promise<number> => {
+      let q: any = context.supabase.from("tomadores_al").select("id", { count: "exact", head: true });
+      q = aplicarFiltroMargem(q, data.tipoMargem, faixa, data.minMargem);
+      if (admin) {
+        if (data.consultora) q = q.eq("consultora_responsavel", data.consultora);
+        if (historico) q = q.in("status_abordagem", STATUS_FINALIZADOS);
+      } else {
+        q = q
+          .eq("consultora_responsavel", minha)
+          .in("status_abordagem", historico ? STATUS_FINALIZADOS : STATUS_ABERTOS);
+      }
+      if (data.orgao) q = q.eq("orgao", data.orgao);
+      if (data.termo) {
+        const digits = data.termo.replace(/\D/g, "");
+        q = digits.length >= 3 ? q.ilike("documento", `%${digits}%`) : q.ilike("nome", `%${data.termo}%`);
+      }
+      const { count, error } = await q;
+      if (error) return 0;
+      return Number(count ?? 0);
+    };
+
+    const [baixa, media, alta] = await Promise.all([contar("baixa"), contar("media"), contar("alta")]);
+    return { baixa, media, alta };
+  });
+
 
 // Atualiza a situação de abordagem. Consultora só altera os leads dela.
 export const marcarAbordagemTomador = createServerFn({ method: "POST" })
