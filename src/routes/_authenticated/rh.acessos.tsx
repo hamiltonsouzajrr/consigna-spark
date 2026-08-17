@@ -102,6 +102,9 @@ function AcessosPage() {
   const fetchAudit = useServerFn(listRhAccessAudit);
   const fetchSync = useServerFn(getConsultoraSyncStatus);
   const syncConsultoras = useServerFn(syncConsultoraFromUsers);
+  const revokeSessions = useServerFn(revokeRhUserSessions);
+  const revertAudit = useServerFn(revertRhAccessAudit);
+  const purgeAudit = useServerFn(purgeRhAccessAudit);
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterKey>("todos");
