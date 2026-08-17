@@ -2236,7 +2236,7 @@ export type Database = {
       minha_consultora_nome: { Args: never; Returns: string }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "gestor_acessos"
       consulta_status: "pendente" | "processando" | "concluido" | "erro"
       prospect_event_kind:
         | "ligacao"
@@ -2375,7 +2375,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "gestor_acessos"],
       consulta_status: ["pendente", "processando", "concluido", "erro"],
       prospect_event_kind: [
         "ligacao",
