@@ -393,14 +393,14 @@ function AcessosPage() {
 
   if (accessLoading) return <Skeleton className="h-64 w-full" />;
 
-  if (!isAdmin) {
+  if (!canGrant) {
     return (
       <Card className="mx-auto max-w-md">
         <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
           <ShieldCheck className="h-10 w-10 text-muted-foreground" />
           <p className="font-medium">Acesso restrito</p>
           <p className="text-sm text-muted-foreground">
-            Apenas administradores podem gerenciar os acessos do RH.
+            Apenas administradores ou gestores de acessos podem gerenciar os acessos do RH.
           </p>
         </CardContent>
       </Card>
