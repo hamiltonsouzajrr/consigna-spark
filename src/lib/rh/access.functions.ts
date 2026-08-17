@@ -248,9 +248,16 @@ export const setRhUserAccess = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     const { supabase, userId, claims } = context;
-    await assertAdmin(supabase, userId);
+    await assertAccessManager(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Guarda o estado anterior para permitir reverter pelo histórico.
+    const { data: beforeRows } = await supabaseAdmin
+      .from("rh_tab_access")
+      .select("tab_key")
+      .eq("user_id", data.userId);
+    const before = ((beforeRows ?? []) as any[]).map((r) => r.tab_key as string);
 
     // Replace the user's grants with the new set.
     const { error: delErr } = await supabaseAdmin
