@@ -19,9 +19,13 @@ import { toast } from "sonner";
 import tomadoresAsset from "@/assets/tomadores_al.json.asset.json";
 import {
   getTomadoresAl, marcarAbordagemTomador, distribuirTomadoresAl, getDistribuicaoTomadoresAl,
-  getResumoCarteiraTomadores, importarConsultorasDosAcessos,
+  getResumoCarteiraTomadores, importarConsultorasDosAcessos, getContagemFaixasTomadores,
   type TomadorAl, type DistribuicaoConsultora, type ResumoCarteira,
 } from "@/lib/prospeccao/tomadores-al.functions";
+import {
+  TIPOS_MARGEM, FAIXAS_MARGEM, TIPO_MARGEM_LABEL, TIPO_MARGEM_CURTO, FAIXA_LABEL,
+  faixaDaMargem, type TipoMargem, type FaixaMargem,
+} from "@/lib/prospeccao/margem-faixas";
 import {
   getConsultoras, adicionarConsultora, toggleConsultora, type Consultora,
 } from "@/lib/radar/radar.functions";
