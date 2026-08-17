@@ -47,6 +47,9 @@ import {
   listRhAccessAudit,
   getConsultoraSyncStatus,
   syncConsultoraFromUsers,
+  revokeRhUserSessions,
+  revertRhAccessAudit,
+  purgeRhAccessAudit,
   type RhUserAccess,
 } from "@/lib/rh/access.functions";
 
