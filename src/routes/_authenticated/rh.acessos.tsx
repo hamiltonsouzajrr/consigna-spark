@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import {
   Search, ShieldCheck, Save, Loader2, UserCog, IdCard, Plus, Pencil, Trash2,
   ShieldAlert, Download, KeyRound, Lock, LockOpen, Copy, RefreshCw, History,
-  Users, Link2, CheckCircle2, AlertCircle,
+  Users, Link2, CheckCircle2, AlertCircle, LogOut, Undo2, Trash,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
