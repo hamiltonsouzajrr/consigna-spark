@@ -126,7 +126,7 @@ function AcessosPage() {
   const usersQuery = useQuery({
     queryKey: ["rh", "admin", "users"],
     queryFn: () => fetchUsers(),
-    enabled: isAdmin,
+    enabled: canGrant,
   });
 
   const employeesQuery = useQuery({
