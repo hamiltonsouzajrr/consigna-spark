@@ -1,6 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  TIPO_MARGEM_COLUNA,
+  faixaIntervalo,
+  type FaixaMargem,
+  type TipoMargem,
+} from "@/lib/prospeccao/margem-faixas";
 
 // Base "CLIENTES TOMADORES COM MARGEM - AL": mesma lógica de distribuição
 // exclusiva usada no Radar (round-robin least-loaded por consultora ativa),
