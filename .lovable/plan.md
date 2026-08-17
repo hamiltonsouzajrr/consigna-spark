@@ -1,98 +1,50 @@
-# Diagnóstico Técnico — Plataforma Grupo Positive
+# Melhorias sugeridas para os acessos de administrador
 
-## 1) Arquitetura
+O painel `/rh/acessos` já cobre criação/edição/exclusão de usuários, abas por usuário, bloqueio, link de senha, ações em massa, perfis prontos, auditoria e sincronização de consultoras. As lacunas restantes são de **segurança do próprio papel de admin** e de **granularidade de permissão**.
 
-**Tecnologias:** TanStack Start v1 (React 19, SSR), TanStack Router + Query, Vite 7, Tailwind v4, Radix/shadcn, Supabase (Lovable Cloud, RLS), Vercel AI SDK, pdfjs/mammoth, jsPDF, recharts, sonner. Deploy em Cloudflare Workers.
+## 1. Proteções no papel de admin (prioridade alta)
 
-**Organização de pastas:**
-```text
-src/
-  routes/        68 rotas (page + api/public/*)
-  lib/           server functions (*.functions.ts) por domínio
-    radar/ prospeccao/ rh/ positiva/ legal/ wa/ al/ ai/ server/
-  components/     ui (shadcn), rh, prospeccao, legal, ai-elements
-  hooks/          use-rh-access, use-rh-notifications, use-mobile
-  integrations/   supabase/ (client, client.server, auth-*, types)
-supabase/         12 edge functions, 61 migrations
-```
+Hoje qualquer admin pode rebaixar ou excluir outro admin, e pode remover o próprio papel de admin (a exclusão do próprio usuário é bloqueada, mas a remoção do papel não). Isso permite ficar sem nenhum administrador no sistema.
 
-**Rotas principais:** `/` `/login` `/dashboard`, `radar.*`, `prospeccao.*`, `rh.*` (layout + ~30 subrotas), `positiva-ia.*`, `aprovacao.$token`, `api/public/*` (webhooks WhatsApp, radar-diário).
+- Bloquear a remoção do próprio papel de admin ("você não pode remover seu próprio acesso de administrador").
+- Bloquear remoção/rebaixamento/bloqueio quando resultaria em **zero admins ativos**.
+- Confirmação com digitação do e-mail para promover alguém a admin e para excluir usuário.
+- Registrar na auditoria promoções/rebaixamentos com destaque (já são logados, mas sem rótulo próprio: criar ações `promoveu_admin` / `rebaixou_admin`).
 
-**Componentes:** `AppShell`, `RhLayout`, `NotificationBell`, `PromovidosPdfImport`, `CentralAprovacao`, `PositivaCoachWidget`, ai-elements.
+## 2. Admin com escopo limitado (permissões finas)
 
-**Hooks/contexts:** `AuthProvider`/`useAuth` (`src/lib/auth.tsx`), `useRhAccess`, `useRhNotifications`.
+Hoje existe só um papel: admin = tudo. Sugestão de dois níveis extras, mantendo `user_roles`:
 
-**Serviços/APIs:** server functions com `requireSupabaseAuth`; crawlers em `*.server.ts`; AI Gateway (`ai-gateway.server.ts`); integrações Nova Vida, ConsigUp, WhatsApp.
+- `gestor_acessos`: pode conceder/remover abas e vincular colaboradores, mas **não** cria/exclui usuários nem promove admins.
+- `admin`: total.
 
-**Banco:** ~45 tabelas com RLS. Funções `has_role`, `atribuir_consultora_automatico`, `compute_prospect_lead`, etc.
+Isso permite delegar a rotina de liberação de abas sem entregar as chaves do sistema.
 
-## 2) Análise por módulo (resumo)
+## 3. Visibilidade do que o admin enxerga
 
-- **`auth.tsx` (AuthProvider/useAuth):** gerencia sessão. Risco: não invalida router/Query em login/logout → dados stale; só repassa `error.message`.
-- **`use-rh-access.ts`:** bem implementado, cache 60s, baixo risco.
-- **`radar.functions.ts` (22 fns):** todas com `requireSupabaseAuth`. `getLeadsPromovidos` falha silenciosa (lista vazia) se e-mail não está em `radar_consultoras`. `distribuirLeadsAutomatico` com risco de race condition.
-- **`prospeccao.functions.ts`:** funções `admin*` precisam de checagem estrita de role.
-- **`legal.functions.ts` `getApprovalByToken`:** público intencional (acesso por token).
-- **`diario.*.server.ts`:** operações longas no Worker, sem OCR para PDFs escaneados.
-- **`radar.busca-diaria.tsx`:** múltiplos `useServerFn` em `useEffect` → causa erro de Suspense no SSR.
-- **`RhLayout`:** proteção de abas client-side via `useRhAccess`.
+- Mostrar no detalhe do usuário quais abas ele veria **de fato** (incluindo as sempre liberadas: Dashboard) para evitar dúvida de "concedi e não aparece".
+- Aviso visual quando o usuário é admin: "admin vê todas as abas; as marcações abaixo são ignoradas".
+- Contador de admins no painel de resumo do topo.
 
-## 3) Notas (0–100)
+## 4. Rastreio e reversão
 
-| Critério | Nota |
-|---|---|
-| Funcionalidade | 82 |
-| Estabilidade | 62 |
-| Organização | 80 |
-| Segurança | 45 |
-| Performance | 60 |
-| UX/UI | 75 |
-| Manutenibilidade | 74 |
-| Tratamento de erros | 55 |
-| Integração backend | 80 |
+- Botão "reverter" em entradas de auditoria de acesso (restaura o conjunto de abas anterior) — exige gravar o estado anterior no `detail` do log.
+- Filtro de auditoria por ator, por usuário-alvo e por tipo de ação, com intervalo de datas.
+- Retenção/limpeza da auditoria (ex.: manter 12 meses).
 
-## 4) Problemas por prioridade
+## 5. Sessões e segurança operacional
 
-**CRÍTICO**
-- `do_registros` (PII: nome, CPF parcial) — RLS de escrita permissiva (`USING true`). Impacto: qualquer usuário autenticado adultera/insere. Correção: restringir INSERT/UPDATE a admin.
-- `radar_consultoras` — INSERT/UPDATE/DELETE com `true`. Impacto: corrupção da distribuição de leads. Correção: política admin.
+- Botão "encerrar sessões" (revoga refresh tokens) junto ao bloqueio — hoje bloquear não desconecta quem já está logado.
+- Exigir troca de senha no primeiro acesso para usuários criados pelo admin.
+- Alerta no resumo para usuários admin sem acesso há mais de 60 dias.
 
-**ALTO**
-- Sem layout `_authenticated/` — proteção só client-side (`useAuth`+`<Navigate>`). Impacto: flash de conteúdo no SSR, padrão não recomendado. Correção: criar `src/routes/_authenticated/route.tsx` e migrar rotas logadas.
-- Erro de Suspense em `/radar/busca-diaria`. Impacto: fallback para client render, flicker. Correção: migrar fetches para `loader`+`useSuspenseQuery`.
-- `do_arquivos`/`fontes_diario_oficial` — RLS de escrita permissiva. Correção: escrita só admin.
+## Detalhes técnicos
 
-**MÉDIO**
-- Padrão `useEffect`+`useState`+`useServerFn` em vez de `loader`+TanStack Query (sem cache/SSR). 
-- `AuthProvider` não invalida router/Query em troca de sessão.
-- Round-robin de distribuição não atômico (race). Correção: `UPDATE … RETURNING`.
-- `catch` silenciosos sem feedback ao usuário.
+- Backend: `src/lib/rh/access.functions.ts` — adicionar guardas em `updateRhUser` (auto-rebaixamento, último admin), `deleteRhUser` e `setRhUserBlocked`; nova função `revokeRhUserSessions` usando `supabaseAdmin.auth.admin.signOut`; contagem de admins via `user_roles`.
+- Papéis: migração adicionando valor `gestor_acessos` ao enum `app_role` e um helper `assertAccessManager` que aceita `admin` ou `gestor_acessos`, mantendo `assertAdmin` nas operações destrutivas.
+- Auditoria: gravar `detail.before`/`detail.after` das abas em `setRhUserAccess`/`bulkSetRhAccess` para viabilizar reversão; novos rótulos em `src/lib/rh/access-presets.ts`.
+- UI: `src/routes/_authenticated/rh.acessos.tsx` — confirmação por digitação, aviso de admin, contador de admins, filtros de auditoria, botão de encerrar sessões.
 
-**BAIXO**
-- Rotas dinâmicas sem `errorComponent`/`notFoundComponent`.
-- ARIA ausente em tabs/nav customizados; tabelas densas sem scroll no mobile.
-- Dados mock no RH; TODOs pendentes.
+## Sugestão de execução
 
-## 5) Plano de ação em 4 fases
-
-**Fase 1 — Correções seguras**
-- Endurecer RLS de escrita: `do_registros`, `radar_consultoras`, `do_arquivos`, `fontes_diario_oficial` (escrita só admin via `has_role`).
-- Adicionar `errorComponent`/`notFoundComponent` nas rotas com loader/params.
-- Substituir `catch` silenciosos por toasts/log.
-
-**Fase 2 — Melhorias importantes**
-- Criar `_authenticated/route.tsx` e migrar rotas logadas.
-- Corrigir erro de Suspense em `/radar/busca-diaria`.
-- Invalidar router/Query em `onAuthStateChange` no `__root.tsx`.
-
-**Fase 3 — Refatorações**
-- Migrar telas críticas para `loader`+`useSuspenseQuery`.
-- Tornar round-robin atômico.
-- Hook reutilizável de carregamento de dados.
-
-**Fase 4 — Melhorias avançadas**
-- Acessibilidade/ARIA, responsividade de tabelas.
-- Code-splitting, padronização de formulários.
-- Substituir mocks do RH por dados reais; limpar TODOs.
-
-Diagnóstico concluído. Aguardando aprovação.
+Começar pelo bloco 1 (guardas de admin + confirmações) e pelo botão de encerrar sessões do bloco 5 — são rápidos e fecham os riscos reais. Blocos 2 e 4 depois, por serem mudanças de modelo de dados.
