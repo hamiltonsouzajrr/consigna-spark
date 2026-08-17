@@ -104,13 +104,28 @@ export const listRhUsers = createServerFn({ method: "GET" })
       if (e.user_id) empByUser.set(e.user_id as string, { id: e.id, full_name: e.full_name });
     }
 
+    const { data: consultoras } = await supabaseAdmin
+      .from("radar_consultoras")
+      .select("email");
+    const consultoraEmails = new Set<string>(
+      ((consultoras ?? []) as any[])
+        .map((c) => (c.email ? String(c.email).toLowerCase() : null))
+        .filter(Boolean) as string[],
+    );
+
     return usersData.users.map((u) => ({
       id: u.id,
       email: u.email ?? "(sem e-mail)",
       tabs: byUser.get(u.id) ?? [],
       isAdmin: adminSet.has(u.id),
       employee: empByUser.get(u.id) ?? null,
+      createdAt: u.created_at ?? null,
+      lastSignInAt: (u as any).last_sign_in_at ?? null,
+      emailConfirmed: !!(u as any).email_confirmed_at,
+      blocked: !!(u as any).banned_until && new Date((u as any).banned_until) > new Date(),
+      hasConsultora: !!u.email && consultoraEmails.has(u.email.toLowerCase()),
     }));
+
   });
 
 export const listRhEmployees = createServerFn({ method: "GET" })
