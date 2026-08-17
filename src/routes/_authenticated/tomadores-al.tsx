@@ -19,9 +19,13 @@ import { toast } from "sonner";
 import tomadoresAsset from "@/assets/tomadores_al.json.asset.json";
 import {
   getTomadoresAl, marcarAbordagemTomador, distribuirTomadoresAl, getDistribuicaoTomadoresAl,
-  getResumoCarteiraTomadores, importarConsultorasDosAcessos,
+  getResumoCarteiraTomadores, importarConsultorasDosAcessos, getContagemFaixasTomadores,
   type TomadorAl, type DistribuicaoConsultora, type ResumoCarteira,
 } from "@/lib/prospeccao/tomadores-al.functions";
+import {
+  TIPOS_MARGEM, FAIXAS_MARGEM, TIPO_MARGEM_LABEL, TIPO_MARGEM_CURTO, FAIXA_LABEL,
+  faixaDaMargem, type TipoMargem, type FaixaMargem,
+} from "@/lib/prospeccao/margem-faixas";
 import {
   getConsultoras, adicionarConsultora, toggleConsultora, type Consultora,
 } from "@/lib/radar/radar.functions";
@@ -103,22 +107,32 @@ function MargemLinha({
   label,
   margem,
   mult,
+  destaque = false,
 }: {
   label: string;
   margem: number | null;
   mult: { medio: number };
+  destaque?: boolean;
 }) {
   const m = margem ?? 0;
   return (
-    <div className="rounded-lg border border-border/60 bg-muted/30 p-2.5">
+    <div
+      className={cn(
+        "rounded-lg border p-2.5",
+        destaque
+          ? "border-primary bg-primary/10 ring-1 ring-primary/40"
+          : "border-border/60 bg-muted/30",
+      )}
+    >
       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="text-sm font-semibold text-foreground">{brl(m)}</p>
+      <p className={cn("font-semibold text-foreground", destaque ? "text-lg" : "text-sm")}>{brl(m)}</p>
       <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
         ≈ {brl(m * mult.medio)} liberado
       </p>
     </div>
   );
 }
+
 
 function Page() {
   const { isAdmin } = useRhAccess();
@@ -128,6 +142,7 @@ function Page() {
   const fetchConsultoras = useServerFn(getConsultoras);
   const fetchDistribuicao = useServerFn(getDistribuicaoTomadoresAl);
   const fetchResumo = useServerFn(getResumoCarteiraTomadores);
+  const fetchFaixas = useServerFn(getContagemFaixasTomadores);
 
   const addConsultoraFn = useServerFn(adicionarConsultora);
   const toggleConsultoraFn = useServerFn(toggleConsultora);
@@ -141,6 +156,9 @@ function Page() {
   const [novoEmail, setNovoEmail] = useState("");
   const [salvandoConsultora, setSalvandoConsultora] = useState(false);
   const [minMargem, setMinMargem] = useState("0");
+  const [tipoMargem, setTipoMargem] = useState<TipoMargem>("emprestimo");
+  const [faixa, setFaixa] = useState<FaixaMargem>("todas");
+  const [faixasCount, setFaixasCount] = useState<{ baixa: number; media: number; alta: number } | null>(null);
   const [page, setPage] = useState(0);
   const [aba, setAba] = useState<"carteira" | "historico">("carteira");
   const [motivoPara, setMotivoPara] = useState<string | null>(null);
@@ -183,30 +201,39 @@ function Page() {
     void recarregarDistribuicao();
   }, [isAdmin]);
 
+  const filtrosMargem = useMemo(
+    () => ({
+      termo,
+      orgao: orgao === "todos" ? "" : orgao,
+      minMargem: Number(minMargem) || 0,
+      tipoMargem,
+      faixa,
+      consultora: filtroConsultora || undefined,
+      aba,
+    }),
+    [termo, orgao, minMargem, tipoMargem, faixa, filtroConsultora, aba],
+  );
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetchTomadores({
-        data: {
-          offset: page * PAGE_SIZE,
-          limit: PAGE_SIZE,
-          termo,
-          orgao: orgao === "todos" ? "" : orgao,
-          minMargem: Number(minMargem) || 0,
-          consultora: filtroConsultora || undefined,
-          aba,
-        },
-      });
+      const [res, cont] = await Promise.all([
+        fetchTomadores({
+          data: { offset: page * PAGE_SIZE, limit: PAGE_SIZE, ...filtrosMargem },
+        }),
+        fetchFaixas({ data: { ...filtrosMargem } }).catch(() => null),
+      ]);
       setRows(res.rows);
       setTotal(res.total);
       setConsultoraNome(res.consultoraNome);
       setVinculada(res.isAdmin || res.vinculada);
+      setFaixasCount(cont);
     } catch (e: any) {
       toast.error("Erro ao carregar base: " + (e?.message ?? e));
     } finally {
       setLoading(false);
     }
-  }, [page, termo, orgao, minMargem, filtroConsultora, aba]);
+  }, [page, filtrosMargem, fetchTomadores, fetchFaixas]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -616,7 +643,7 @@ function Page() {
 
 
 
-        <div className="grid gap-4 rounded-xl border border-border/60 bg-card p-4 md:grid-cols-4">
+        <div className="grid gap-4 rounded-xl border border-border/60 bg-card p-4 md:grid-cols-2 lg:grid-cols-5">
           <div>
             <Label className="text-xs">Buscar por nome ou CPF</Label>
             <div className="relative">
@@ -635,7 +662,32 @@ function Page() {
             </Select>
           </div>
           <div>
-            <Label className="text-xs">Margem mínima de empréstimo</Label>
+            <Label className="text-xs">Tipo de margem</Label>
+            <Select
+              value={tipoMargem}
+              onValueChange={(v) => { setTipoMargem(v as TipoMargem); setPage(0); }}
+            >
+              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {TIPOS_MARGEM.map((t) => (
+                  <SelectItem key={t} value={t}>{TIPO_MARGEM_LABEL[t]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Faixa de valor</Label>
+            <Select value={faixa} onValueChange={(v) => { setFaixa(v as FaixaMargem); setPage(0); }}>
+              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {FAIXAS_MARGEM.map((f) => (
+                  <SelectItem key={f} value={f}>{FAIXA_LABEL[f]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Valor mínimo (ajuste fino)</Label>
             <Select value={minMargem} onValueChange={(v) => { setMinMargem(v); setPage(0); }}>
               <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -665,6 +717,56 @@ function Page() {
             )}
           </div>
         </div>
+
+        {faixasCount && (
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-muted-foreground">
+              Faixas em {TIPO_MARGEM_CURTO[tipoMargem]}:
+            </span>
+            <button
+              type="button"
+              onClick={() => { setFaixa("alta"); setPage(0); }}
+              className={cn(
+                "rounded-full border px-2.5 py-1 font-semibold",
+                faixa === "alta"
+                  ? "border-emerald-600 bg-emerald-600 text-white"
+                  : "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200",
+              )}
+            >
+              Alta {faixasCount.alta.toLocaleString("pt-BR")}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setFaixa("media"); setPage(0); }}
+              className={cn(
+                "rounded-full border px-2.5 py-1 font-semibold",
+                faixa === "media"
+                  ? "border-amber-600 bg-amber-600 text-white"
+                  : "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200",
+              )}
+            >
+              Média {faixasCount.media.toLocaleString("pt-BR")}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setFaixa("baixa"); setPage(0); }}
+              className={cn(
+                "rounded-full border px-2.5 py-1 font-semibold",
+                faixa === "baixa"
+                  ? "border-slate-600 bg-slate-600 text-white"
+                  : "border-slate-300 bg-slate-50 text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200",
+              )}
+            >
+              Baixa {faixasCount.baixa.toLocaleString("pt-BR")}
+            </button>
+            {faixa !== "todas" && (
+              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setFaixa("todas"); setPage(0); }}>
+                Limpar faixa
+              </Button>
+            )}
+          </div>
+        )}
+
 
         <div className="flex gap-2">
           {([
@@ -781,15 +883,68 @@ function Page() {
                 </div>
 
 
+                {tipoMargem !== "qualquer" && (
+                  <div className="mt-3">
+                    <Badge
+                      className={cn(
+                        "text-[10px]",
+                        faixaDaMargem(
+                          tipoMargem === "cartao_credito"
+                            ? r.margem_disp_cartao_credito
+                            : tipoMargem === "cartao_beneficio"
+                            ? margemBeneficioDisp(r)
+                            : r.margem_disp_emprestimo,
+                          tipoMargem,
+                        ) === "alta"
+                          ? "bg-emerald-600 text-white"
+                          : faixaDaMargem(
+                              tipoMargem === "cartao_credito"
+                                ? r.margem_disp_cartao_credito
+                                : tipoMargem === "cartao_beneficio"
+                                ? margemBeneficioDisp(r)
+                                : r.margem_disp_emprestimo,
+                              tipoMargem,
+                            ) === "media"
+                          ? "bg-amber-500 text-white"
+                          : "bg-slate-500 text-white",
+                      )}
+                    >
+                      {TIPO_MARGEM_CURTO[tipoMargem]} ·{" "}
+                      {FAIXA_LABEL[
+                        faixaDaMargem(
+                          tipoMargem === "cartao_credito"
+                            ? r.margem_disp_cartao_credito
+                            : tipoMargem === "cartao_beneficio"
+                            ? margemBeneficioDisp(r)
+                            : r.margem_disp_emprestimo,
+                          tipoMargem,
+                        )
+                      ]}
+                    </Badge>
+                  </div>
+                )}
+
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                  <MargemLinha label="Empréstimo" margem={r.margem_disp_emprestimo} mult={MULT_PRINCIPAL} />
-                  <MargemLinha label="Cartão crédito" margem={r.margem_disp_cartao_credito} mult={MULT_CARTAO_CONSIGNADO} />
+                  <MargemLinha
+                    label="Empréstimo"
+                    margem={r.margem_disp_emprestimo}
+                    mult={MULT_PRINCIPAL}
+                    destaque={tipoMargem === "emprestimo"}
+                  />
+                  <MargemLinha
+                    label="Cartão crédito"
+                    margem={r.margem_disp_cartao_credito}
+                    mult={MULT_CARTAO_CONSIGNADO}
+                    destaque={tipoMargem === "cartao_credito"}
+                  />
                   <MargemLinha
                     label="Cartão benefício"
                     margem={margemBeneficioDisp(r)}
                     mult={MULT_CARTAO_BENEFICIO}
+                    destaque={tipoMargem === "cartao_beneficio"}
                   />
                 </div>
+
 
                 <p className="mt-2 text-[11px] text-muted-foreground">
                   Margem bruta empréstimo {brl(r.margem_bruta_emprestimo)} · utilizado{" "}
