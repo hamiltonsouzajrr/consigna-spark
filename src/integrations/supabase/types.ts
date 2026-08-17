@@ -2200,6 +2200,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      minha_consultora_nome: { Args: never; Returns: string }
     }
     Enums: {
       app_role: "admin" | "user"
