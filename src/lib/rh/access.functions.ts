@@ -570,6 +570,9 @@ export const setRhUserBlocked = createServerFn({ method: "POST" })
     if (data.targetUserId === userId) throw new Error("Você não pode bloquear o próprio usuário.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.blocked) {
+      await assertNotLastAdmin(supabaseAdmin, data.targetUserId, "bloquear este administrador");
+    }
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.targetUserId, {
       ban_duration: data.blocked ? "876000h" : "none",
     } as any);
