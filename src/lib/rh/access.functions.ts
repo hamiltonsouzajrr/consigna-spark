@@ -154,8 +154,9 @@ export const linkEmployeeUser = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
-    const { supabase, userId } = context;
+    const { supabase, userId, claims } = context;
     await assertAdmin(supabase, userId);
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
