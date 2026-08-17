@@ -62,4 +62,10 @@ export const AUDIT_LABELS: Record<string, string> = {
   desbloqueou_usuario: "Desbloqueou usuário",
   gerou_link_de_redefinicao: "Gerou link de senha",
   sincronizou_consultoras: "Sincronizou consultoras",
+  promoveu_admin: "Promoveu a administrador",
+  rebaixou_admin: "Removeu administrador",
+  encerrou_sessoes: "Encerrou sessões",
+  reverteu_acessos: "Reverteu acessos",
+  limpou_historico: "Limpou histórico",
 };
+

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import {
   Search, ShieldCheck, Save, Loader2, UserCog, IdCard, Plus, Pencil, Trash2,
   ShieldAlert, Download, KeyRound, Lock, LockOpen, Copy, RefreshCw, History,
-  Users, Link2, CheckCircle2, AlertCircle,
+  Users, Link2, CheckCircle2, AlertCircle, LogOut, Undo2, Trash,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,9 @@ import {
   listRhAccessAudit,
   getConsultoraSyncStatus,
   syncConsultoraFromUsers,
+  revokeRhUserSessions,
+  revertRhAccessAudit,
+  purgeRhAccessAudit,
   type RhUserAccess,
 } from "@/lib/rh/access.functions";
 
@@ -80,7 +83,10 @@ const fmtDateTime = (v: string) =>
 const labelForTab = (to: string) => rhNav.find((n) => n.to === to)?.label ?? to;
 
 function AcessosPage() {
-  const { isAdmin, isLoading: accessLoading } = useRhAccess();
+  const { isAdmin, isAccessManager, isLoading: accessLoading } = useRhAccess();
+  // Admin faz tudo; gestor de acessos apenas libera/remove abas.
+  const canManageUsers = isAdmin;
+  const canGrant = isAdmin || isAccessManager;
   const queryClient = useQueryClient();
   const fetchUsers = useServerFn(listRhUsers);
   const saveAccess = useServerFn(setRhUserAccess);
@@ -96,6 +102,9 @@ function AcessosPage() {
   const fetchAudit = useServerFn(listRhAccessAudit);
   const fetchSync = useServerFn(getConsultoraSyncStatus);
   const syncConsultoras = useServerFn(syncConsultoraFromUsers);
+  const revokeSessions = useServerFn(revokeRhUserSessions);
+  const revertAudit = useServerFn(revertRhAccessAudit);
+  const purgeAudit = useServerFn(purgeRhAccessAudit);
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterKey>("todos");
@@ -113,22 +122,29 @@ function AcessosPage() {
   const [bulkMode, setBulkMode] = useState<"replace" | "add" | "remove">("add");
   const [copyFrom, setCopyFrom] = useState<string>("");
   const [linkDialog, setLinkDialog] = useState<{ email: string; link: string } | null>(null);
+  const [auditFilters, setAuditFilters] = useState({
+    actor: "",
+    target: "",
+    action: "",
+    from: "",
+    to: "",
+  });
 
   const usersQuery = useQuery({
     queryKey: ["rh", "admin", "users"],
     queryFn: () => fetchUsers(),
-    enabled: isAdmin,
+    enabled: canGrant,
   });
 
   const employeesQuery = useQuery({
     queryKey: ["rh", "admin", "employees"],
     queryFn: () => fetchEmployees(),
-    enabled: isAdmin,
+    enabled: canGrant,
   });
 
   const auditQuery = useQuery({
-    queryKey: ["rh", "admin", "audit"],
-    queryFn: () => fetchAudit(),
+    queryKey: ["rh", "admin", "audit", auditFilters],
+    queryFn: () => fetchAudit({ data: { ...auditFilters, limit: 200 } }),
     enabled: isAdmin,
   });
 
@@ -224,6 +240,39 @@ function AcessosPage() {
       invalidateUsers();
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao alterar status."),
+  });
+
+  const revokeMutation = useMutation({
+    mutationFn: (targetUserId: string) => revokeSessions({ data: { targetUserId } }),
+    onSuccess: () => {
+      toast.success("Sessões encerradas.");
+      invalidateUsers();
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Erro ao encerrar sessões."),
+  });
+
+  const onRevokeSessions = (u: RhUserAccess) => {
+    if (!confirm(`Encerrar todas as sessões ativas de ${u.email}?`)) return;
+    revokeMutation.mutate(u.id);
+  };
+
+  const revertMutation = useMutation({
+    mutationFn: (auditId: string) => revertAudit({ data: { auditId } }),
+    onSuccess: () => {
+      toast.success("Alteração revertida.");
+      invalidateUsers();
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao reverter."),
+  });
+
+  const purgeMutation = useMutation({
+    mutationFn: (meses: number) => purgeAudit({ data: { meses } }),
+    onSuccess: () => {
+      toast.success("Histórico antigo removido.");
+      queryClient.invalidateQueries({ queryKey: ["rh", "admin", "audit"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao limpar."),
   });
 
   const recoveryMutation = useMutation({
@@ -344,14 +393,14 @@ function AcessosPage() {
 
   if (accessLoading) return <Skeleton className="h-64 w-full" />;
 
-  if (!isAdmin) {
+  if (!canGrant) {
     return (
       <Card className="mx-auto max-w-md">
         <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
           <ShieldCheck className="h-10 w-10 text-muted-foreground" />
           <p className="font-medium">Acesso restrito</p>
           <p className="text-sm text-muted-foreground">
-            Apenas administradores podem gerenciar os acessos do RH.
+            Apenas administradores ou gestores de acessos podem gerenciar os acessos do RH.
           </p>
         </CardContent>
       </Card>
@@ -411,12 +460,25 @@ function AcessosPage() {
         ))}
       </div>
 
+      {!isAdmin && (
+        <Card className="mb-4 border-amber-300 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-500/10">
+          <CardContent className="flex items-start gap-3 p-4 text-sm">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <p>
+              Você é <strong>gestor de acessos</strong>: pode liberar ou remover abas e vincular
+              colaboradores, mas criar, editar e excluir usuários é exclusivo dos administradores.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs defaultValue="usuarios">
         <TabsList className="mb-4">
           <TabsTrigger value="usuarios">Usuários e acessos</TabsTrigger>
           <TabsTrigger value="consultoras">Consultoras</TabsTrigger>
-          <TabsTrigger value="historico">Histórico</TabsTrigger>
+          {isAdmin && <TabsTrigger value="historico">Histórico</TabsTrigger>}
         </TabsList>
+
 
         <TabsContent value="usuarios">
           <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
@@ -429,10 +491,12 @@ function AcessosPage() {
                     <Button size="sm" variant="outline" onClick={exportCsv} title="Exportar CSV">
                       <Download className="h-4 w-4" />
                     </Button>
-                    <Button size="sm" onClick={openCreate}>
-                      <Plus className="mr-1 h-4 w-4" />
-                      Novo
-                    </Button>
+                    {canManageUsers && (
+                      <Button size="sm" onClick={openCreate}>
+                        <Plus className="mr-1 h-4 w-4" />
+                        Novo
+                      </Button>
+                    )}
                   </div>
                 </div>
                 <div className="relative mt-2">
@@ -544,24 +608,37 @@ function AcessosPage() {
                               {u.tabs.length}
                             </Badge>
                           </button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 shrink-0"
-                            onClick={() => openEdit(u)}
-                            title="Editar usuário"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
-                            onClick={() => setDeleteTarget(u)}
-                            title="Excluir usuário"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          {canManageUsers && (
+                            <>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 shrink-0"
+                                onClick={() => openEdit(u)}
+                                title="Editar usuário"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 shrink-0"
+                                onClick={() => onRevokeSessions(u)}
+                                title="Encerrar sessões ativas"
+                              >
+                                <LogOut className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
+                                onClick={() => setDeleteTarget(u)}
+                                title="Excluir usuário"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       ))
                     ) : (
@@ -890,30 +967,120 @@ function AcessosPage() {
                 Histórico de alterações
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
+              {/* Filtros do histórico */}
+              <div className="grid gap-2 sm:grid-cols-5">
+                <Input
+                  placeholder="Quem alterou"
+                  value={auditFilters.actor}
+                  onChange={(e) => setAuditFilters((f) => ({ ...f, actor: e.target.value }))}
+                />
+                <Input
+                  placeholder="Usuário alvo"
+                  value={auditFilters.target}
+                  onChange={(e) => setAuditFilters((f) => ({ ...f, target: e.target.value }))}
+                />
+                <Select
+                  value={auditFilters.action || "todas"}
+                  onValueChange={(v) =>
+                    setAuditFilters((f) => ({ ...f, action: v === "todas" ? "" : v }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Ação" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as ações</SelectItem>
+                    {Object.entries(AUDIT_LABELS).map(([k, label]) => (
+                      <SelectItem key={k} value={k}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="date"
+                  value={auditFilters.from}
+                  onChange={(e) => setAuditFilters((f) => ({ ...f, from: e.target.value }))}
+                />
+                <Input
+                  type="date"
+                  value={auditFilters.to}
+                  onChange={(e) => setAuditFilters((f) => ({ ...f, to: e.target.value }))}
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setAuditFilters({ actor: "", target: "", action: "", from: "", to: "" })
+                  }
+                >
+                  Limpar filtros
+                </Button>
+                {isAdmin && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-auto text-destructive hover:text-destructive"
+                    disabled={purgeMutation.isPending}
+                    onClick={() => {
+                      if (!confirm("Remover registros com mais de 12 meses?")) return;
+                      purgeMutation.mutate(12);
+                    }}
+                  >
+                    <Trash className="mr-1.5 h-3.5 w-3.5" />
+                    Limpar antigos (12 meses)
+                  </Button>
+                )}
+              </div>
+
               {auditQuery.isLoading ? (
                 <Skeleton className="h-40 w-full" />
               ) : auditQuery.data?.length ? (
                 <div className="space-y-1">
-                  {auditQuery.data.map((a) => (
-                    <div
-                      key={a.id}
-                      className="flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-sm"
-                    >
-                      <Badge variant="secondary">{AUDIT_LABELS[a.action] ?? a.action}</Badge>
-                      <span className="text-muted-foreground">
-                        por <strong className="text-foreground">{a.actor_email ?? "sistema"}</strong>
-                        {a.target_email ? ` · alvo ${a.target_email}` : ""}
-                      </span>
-                      <span className="ml-auto text-xs text-muted-foreground">
-                        {fmtDateTime(a.created_at)}
-                      </span>
-                    </div>
-                  ))}
+                  {auditQuery.data.map((a) => {
+                    const revertivel =
+                      (a.action === "atualizou_acessos" || a.action === "acessos_em_massa") &&
+                      !!a.detail?.before;
+                    return (
+                      <div
+                        key={a.id}
+                        className="flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-sm"
+                      >
+                        <Badge variant="secondary">{AUDIT_LABELS[a.action] ?? a.action}</Badge>
+                        <span className="text-muted-foreground">
+                          por{" "}
+                          <strong className="text-foreground">{a.actor_email ?? "sistema"}</strong>
+                          {a.target_email ? ` · alvo ${a.target_email}` : ""}
+                        </span>
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {fmtDateTime(a.created_at)}
+                        </span>
+                        {isAdmin && revertivel && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7"
+                            disabled={revertMutation.isPending}
+                            onClick={() => {
+                              if (!confirm("Restaurar as abas anteriores desta alteração?")) return;
+                              revertMutation.mutate(a.id);
+                            }}
+                          >
+                            <Undo2 className="mr-1.5 h-3.5 w-3.5" />
+                            Reverter
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="py-10 text-center text-sm text-muted-foreground">
-                  Nenhuma alteração registrada ainda.
+                  Nenhuma alteração registrada.
                 </p>
               )}
             </CardContent>

@@ -19,26 +19,77 @@ async function assertAdmin(supabase: any, userId: string) {
   if (!data) throw new Error("Acesso restrito a administradores.");
 }
 
+// Gestores de acessos podem liberar/remover abas e vincular colaboradores,
+// mas não criam/excluem usuários nem promovem administradores.
+async function assertAccessManager(supabase: any, userId: string) {
+  const [{ data: isAdmin }, { data: isManager }] = await Promise.all([
+    supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
+    supabase.rpc("has_role", { _user_id: userId, _role: "gestor_acessos" }),
+  ]);
+  if (!isAdmin && !isManager) {
+    throw new Error("Acesso restrito a administradores ou gestores de acessos.");
+  }
+}
+
+async function countAdmins(supabaseAdmin: any): Promise<number> {
+  const { count, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("user_id", { count: "exact", head: true })
+    .eq("role", "admin");
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+async function isAdminUser(supabaseAdmin: any, targetUserId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin
+    .from("user_roles")
+    .select("user_id")
+    .eq("user_id", targetUserId)
+    .eq("role", "admin")
+    .maybeSingle();
+  return !!data;
+}
+
+// Impede que a última conta de administrador seja removida, rebaixada ou bloqueada.
+async function assertNotLastAdmin(supabaseAdmin: any, targetUserId: string, acao: string) {
+  if (!(await isAdminUser(supabaseAdmin, targetUserId))) return;
+  const total = await countAdmins(supabaseAdmin);
+  if (total <= 1) {
+    throw new Error(
+      `Não é possível ${acao}: este é o único administrador do sistema. Promova outro administrador antes.`,
+    );
+  }
+}
+
 export const getMyRhAccess = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ isAdmin: boolean; tabs: string[] }> => {
-    const { supabase, userId } = context;
+  .handler(
+    async ({
+      context,
+    }): Promise<{ isAdmin: boolean; isAccessManager: boolean; tabs: string[] }> => {
+      const { supabase, userId } = context;
 
-    const { data: isAdmin } = await supabase.rpc("has_role", {
-      _user_id: userId,
-      _role: "admin",
-    });
+      const [{ data: isAdmin }, { data: isManager }] = await Promise.all([
+        supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
+        supabase.rpc("has_role", { _user_id: userId, _role: "gestor_acessos" }),
+      ]);
 
-    if (isAdmin) return { isAdmin: true, tabs: [] };
+      if (isAdmin) return { isAdmin: true, isAccessManager: true, tabs: [] };
 
-    const { data, error } = await supabase
-      .from("rh_tab_access")
-      .select("tab_key")
-      .eq("user_id", userId);
-    if (error) throw new Error(error.message);
+      const { data, error } = await supabase
+        .from("rh_tab_access")
+        .select("tab_key")
+        .eq("user_id", userId);
+      if (error) throw new Error(error.message);
 
-    return { isAdmin: false, tabs: (data ?? []).map((r) => r.tab_key as string) };
-  });
+      return {
+        isAdmin: false,
+        isAccessManager: !!isManager,
+        tabs: (data ?? []).map((r) => r.tab_key as string),
+      };
+    },
+  );
+
 
 export type RhEmployee = {
   id: string;
@@ -155,7 +206,7 @@ export const linkEmployeeUser = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     const { supabase, userId, claims } = context;
-    await assertAdmin(supabase, userId);
+    await assertAccessManager(supabase, userId);
 
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -197,9 +248,16 @@ export const setRhUserAccess = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     const { supabase, userId, claims } = context;
-    await assertAdmin(supabase, userId);
+    await assertAccessManager(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Guarda o estado anterior para permitir reverter pelo histórico.
+    const { data: beforeRows } = await supabaseAdmin
+      .from("rh_tab_access")
+      .select("tab_key")
+      .eq("user_id", data.userId);
+    const before = ((beforeRows ?? []) as any[]).map((r) => r.tab_key as string);
 
     // Replace the user's grants with the new set.
     const { error: delErr } = await supabaseAdmin
@@ -229,7 +287,7 @@ export const setRhUserAccess = createServerFn({ method: "POST" })
       actorEmail: (claims as any)?.email ?? null,
       targetUserId: data.userId,
       action: "atualizou_acessos",
-      detail: { tabs: data.tabs },
+      detail: { tabs: data.tabs, before, after: data.tabs },
     });
 
     return { ok: true };
@@ -369,6 +427,18 @@ export const updateRhUser = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // Guardas do papel de admin: ninguém remove o próprio admin nem deixa o
+    // sistema sem nenhum administrador.
+    if (data.isAdmin === false) {
+      if (data.targetUserId === userId) {
+        throw new Error("Você não pode remover seu próprio acesso de administrador.");
+      }
+      await assertNotLastAdmin(supabaseAdmin, data.targetUserId, "rebaixar este administrador");
+    }
+
+    const eraAdmin =
+      typeof data.isAdmin === "boolean" ? await isAdminUser(supabaseAdmin, data.targetUserId) : false;
+
     const attrs: Record<string, unknown> = {};
     if (data.email) attrs.email = data.email;
     if (data.password) attrs.password = data.password;
@@ -379,6 +449,15 @@ export const updateRhUser = createServerFn({ method: "POST" })
 
     if (typeof data.isAdmin === "boolean") {
       await setAdminRole(supabaseAdmin, data.targetUserId, data.isAdmin);
+      if (data.isAdmin !== eraAdmin) {
+        await logAudit(supabaseAdmin, {
+          actorId: userId,
+          actorEmail: (claims as any)?.email ?? null,
+          targetUserId: data.targetUserId,
+          targetEmail: data.email ?? null,
+          action: data.isAdmin ? "promoveu_admin" : "rebaixou_admin",
+        });
+      }
     }
 
     await logAudit(supabaseAdmin, {
@@ -410,6 +489,7 @@ export const deleteRhUser = createServerFn({ method: "POST" })
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await assertNotLastAdmin(supabaseAdmin, data.targetUserId, "excluir este usuário");
 
     // Unlink collaborator and remove grants/roles before deleting the auth user.
     await supabaseAdmin.from("rh_employees").update({ user_id: null } as any).eq("user_id", data.targetUserId);
@@ -463,20 +543,46 @@ export type RhAuditEntry = {
   action: string;
   detail: any;
   created_at: string;
+  target_user_id: string | null;
 };
 
 export const listRhAccessAudit = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<RhAuditEntry[]> => {
+  .inputValidator((data) =>
+    z
+      .object({
+        actor: z.string().trim().max(255).optional(),
+        target: z.string().trim().max(255).optional(),
+        action: z.string().trim().max(60).optional(),
+        from: z.string().trim().max(30).optional(),
+        to: z.string().trim().max(30).optional(),
+        limit: z.number().int().min(10).max(500).default(100),
+      })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<RhAuditEntry[]> => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
-    const { data, error } = await supabase
+
+    let q = supabase
       .from("rh_access_audit")
-      .select("id, actor_email, target_email, action, detail, created_at")
+      .select("id, actor_email, target_email, action, detail, created_at, target_user_id")
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(data.limit);
+
+    if (data.actor) q = q.ilike("actor_email", `%${data.actor}%`);
+    if (data.target) q = q.ilike("target_email", `%${data.target}%`);
+    if (data.action) q = q.eq("action", data.action);
+    if (data.from) q = q.gte("created_at", new Date(data.from).toISOString());
+    if (data.to) {
+      const end = new Date(data.to);
+      end.setHours(23, 59, 59, 999);
+      q = q.lte("created_at", end.toISOString());
+    }
+
+    const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return (data ?? []) as any as RhAuditEntry[];
+    return (rows ?? []) as any as RhAuditEntry[];
   });
 
 export const setRhUserBlocked = createServerFn({ method: "POST" })
@@ -490,6 +596,9 @@ export const setRhUserBlocked = createServerFn({ method: "POST" })
     if (data.targetUserId === userId) throw new Error("Você não pode bloquear o próprio usuário.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.blocked) {
+      await assertNotLastAdmin(supabaseAdmin, data.targetUserId, "bloquear este administrador");
+    }
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.targetUserId, {
       ban_duration: data.blocked ? "876000h" : "none",
     } as any);
@@ -541,9 +650,20 @@ export const bulkSetRhAccess = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ ok: true; affected: number }> => {
     const { supabase, userId, claims } = context;
-    await assertAdmin(supabase, userId);
+    await assertAccessManager(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Snapshot anterior (por usuário) para permitir reverter pelo histórico.
+    const { data: beforeRows } = await supabaseAdmin
+      .from("rh_tab_access")
+      .select("user_id, tab_key")
+      .in("user_id", data.userIds);
+    const beforeMap: Record<string, string[]> = {};
+    for (const uid of data.userIds) beforeMap[uid] = [];
+    for (const r of (beforeRows ?? []) as any[]) {
+      (beforeMap[r.user_id as string] ??= []).push(r.tab_key as string);
+    }
 
     if (data.mode === "replace") {
       const { error: delErr } = await supabaseAdmin
@@ -584,7 +704,12 @@ export const bulkSetRhAccess = createServerFn({ method: "POST" })
       actorId: userId,
       actorEmail: (claims as any)?.email ?? null,
       action: "acessos_em_massa",
-      detail: { mode: data.mode, tabs: data.tabs, usuarios: data.userIds.length },
+      detail: {
+        mode: data.mode,
+        tabs: data.tabs,
+        usuarios: data.userIds.length,
+        before: beforeMap,
+      },
     });
 
     return { ok: true, affected: data.userIds.length };
@@ -602,7 +727,7 @@ export const copyRhAccess = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ ok: true; tabs: number }> => {
     const { supabase, userId, claims } = context;
-    await assertAdmin(supabase, userId);
+    await assertAccessManager(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: src, error } = await supabaseAdmin
@@ -737,3 +862,118 @@ export const syncConsultoraFromUsers = createServerFn({ method: "POST" })
 
     return { criadas, ativadas };
   });
+
+// ============= Sessões, reversão e retenção =============
+
+// Encerra as sessões ativas do usuário (bloquear não desconecta quem já entrou).
+export const revokeRhUserSessions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ targetUserId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { supabase, userId, claims } = context;
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const res: any = await (supabaseAdmin.auth.admin as any).signOut?.(
+      data.targetUserId,
+      "global",
+    );
+    if (res?.error) throw new Error(res.error.message ?? String(res.error));
+
+    await logAudit(supabaseAdmin, {
+      actorId: userId,
+      actorEmail: (claims as any)?.email ?? null,
+      targetUserId: data.targetUserId,
+      action: "encerrou_sessoes",
+    });
+    return { ok: true };
+  });
+
+// Restaura o conjunto de abas anterior registrado em uma entrada de auditoria.
+export const revertRhAccessAudit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ auditId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }): Promise<{ ok: true; usuarios: number }> => {
+    const { supabase, userId, claims } = context;
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: entry, error } = await supabaseAdmin
+      .from("rh_access_audit")
+      .select("id, action, detail, target_user_id")
+      .eq("id", data.auditId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!entry) throw new Error("Registro de auditoria não encontrado.");
+
+    const detail = ((entry as any).detail ?? {}) as any;
+
+    // Monta o mapa usuário -> abas que devem voltar a valer.
+    const restore: Record<string, string[]> = {};
+    if ((entry as any).action === "atualizou_acessos" && Array.isArray(detail.before)) {
+      const target = (entry as any).target_user_id as string | null;
+      if (!target) throw new Error("Este registro não tem usuário-alvo para reverter.");
+      restore[target] = detail.before as string[];
+    } else if ((entry as any).action === "acessos_em_massa" && detail.before && typeof detail.before === "object") {
+      for (const [uid, tabs] of Object.entries(detail.before as Record<string, string[]>)) {
+        restore[uid] = Array.isArray(tabs) ? tabs : [];
+      }
+    } else {
+      throw new Error("Esta ação não pode ser revertida automaticamente.");
+    }
+
+    const uids = Object.keys(restore);
+    if (!uids.length) throw new Error("Nada para reverter.");
+
+    const { error: delErr } = await supabaseAdmin
+      .from("rh_tab_access")
+      .delete()
+      .in("user_id", uids);
+    if (delErr) throw new Error(delErr.message);
+
+    const rows: { user_id: string; tab_key: string }[] = [];
+    for (const uid of uids) for (const tab_key of restore[uid]!) rows.push({ user_id: uid, tab_key });
+    if (rows.length) {
+      const { error: insErr } = await supabaseAdmin.from("rh_tab_access").insert(rows as any);
+      if (insErr) throw new Error(insErr.message);
+    }
+
+    await logAudit(supabaseAdmin, {
+      actorId: userId,
+      actorEmail: (claims as any)?.email ?? null,
+      action: "reverteu_acessos",
+      detail: { auditId: data.auditId, usuarios: uids.length },
+    });
+
+    return { ok: true, usuarios: uids.length };
+  });
+
+// Retenção do histórico: remove registros com mais de N meses (padrão 12).
+export const purgeRhAccessAudit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ meses: z.number().int().min(1).max(60).default(12) }).parse(data ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { supabase, userId, claims } = context;
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const limite = new Date();
+    limite.setMonth(limite.getMonth() - data.meses);
+
+    const { error } = await supabaseAdmin
+      .from("rh_access_audit")
+      .delete()
+      .lt("created_at", limite.toISOString());
+    if (error) throw new Error(error.message);
+
+    await logAudit(supabaseAdmin, {
+      actorId: userId,
+      actorEmail: (claims as any)?.email ?? null,
+      action: "limpou_historico",
+      detail: { meses: data.meses },
+    });
+    return { ok: true };
+  });
+
