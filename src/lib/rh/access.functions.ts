@@ -287,7 +287,7 @@ export const setRhUserAccess = createServerFn({ method: "POST" })
       actorEmail: (claims as any)?.email ?? null,
       targetUserId: data.userId,
       action: "atualizou_acessos",
-      detail: { tabs: data.tabs },
+      detail: { tabs: data.tabs, before, after: data.tabs },
     });
 
     return { ok: true };
