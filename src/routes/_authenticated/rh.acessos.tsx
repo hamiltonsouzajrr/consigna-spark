@@ -952,30 +952,120 @@ function AcessosPage() {
                 Histórico de alterações
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
+              {/* Filtros do histórico */}
+              <div className="grid gap-2 sm:grid-cols-5">
+                <Input
+                  placeholder="Quem alterou"
+                  value={auditFilters.actor}
+                  onChange={(e) => setAuditFilters((f) => ({ ...f, actor: e.target.value }))}
+                />
+                <Input
+                  placeholder="Usuário alvo"
+                  value={auditFilters.target}
+                  onChange={(e) => setAuditFilters((f) => ({ ...f, target: e.target.value }))}
+                />
+                <Select
+                  value={auditFilters.action || "todas"}
+                  onValueChange={(v) =>
+                    setAuditFilters((f) => ({ ...f, action: v === "todas" ? "" : v }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Ação" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as ações</SelectItem>
+                    {Object.entries(AUDIT_LABELS).map(([k, label]) => (
+                      <SelectItem key={k} value={k}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="date"
+                  value={auditFilters.from}
+                  onChange={(e) => setAuditFilters((f) => ({ ...f, from: e.target.value }))}
+                />
+                <Input
+                  type="date"
+                  value={auditFilters.to}
+                  onChange={(e) => setAuditFilters((f) => ({ ...f, to: e.target.value }))}
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setAuditFilters({ actor: "", target: "", action: "", from: "", to: "" })
+                  }
+                >
+                  Limpar filtros
+                </Button>
+                {isAdmin && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-auto text-destructive hover:text-destructive"
+                    disabled={purgeMutation.isPending}
+                    onClick={() => {
+                      if (!confirm("Remover registros com mais de 12 meses?")) return;
+                      purgeMutation.mutate(12);
+                    }}
+                  >
+                    <Trash className="mr-1.5 h-3.5 w-3.5" />
+                    Limpar antigos (12 meses)
+                  </Button>
+                )}
+              </div>
+
               {auditQuery.isLoading ? (
                 <Skeleton className="h-40 w-full" />
               ) : auditQuery.data?.length ? (
                 <div className="space-y-1">
-                  {auditQuery.data.map((a) => (
-                    <div
-                      key={a.id}
-                      className="flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-sm"
-                    >
-                      <Badge variant="secondary">{AUDIT_LABELS[a.action] ?? a.action}</Badge>
-                      <span className="text-muted-foreground">
-                        por <strong className="text-foreground">{a.actor_email ?? "sistema"}</strong>
-                        {a.target_email ? ` · alvo ${a.target_email}` : ""}
-                      </span>
-                      <span className="ml-auto text-xs text-muted-foreground">
-                        {fmtDateTime(a.created_at)}
-                      </span>
-                    </div>
-                  ))}
+                  {auditQuery.data.map((a) => {
+                    const revertivel =
+                      (a.action === "atualizou_acessos" || a.action === "acessos_em_massa") &&
+                      !!a.detail?.before;
+                    return (
+                      <div
+                        key={a.id}
+                        className="flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-sm"
+                      >
+                        <Badge variant="secondary">{AUDIT_LABELS[a.action] ?? a.action}</Badge>
+                        <span className="text-muted-foreground">
+                          por{" "}
+                          <strong className="text-foreground">{a.actor_email ?? "sistema"}</strong>
+                          {a.target_email ? ` · alvo ${a.target_email}` : ""}
+                        </span>
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {fmtDateTime(a.created_at)}
+                        </span>
+                        {isAdmin && revertivel && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7"
+                            disabled={revertMutation.isPending}
+                            onClick={() => {
+                              if (!confirm("Restaurar as abas anteriores desta alteração?")) return;
+                              revertMutation.mutate(a.id);
+                            }}
+                          >
+                            <Undo2 className="mr-1.5 h-3.5 w-3.5" />
+                            Reverter
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="py-10 text-center text-sm text-muted-foreground">
-                  Nenhuma alteração registrada ainda.
+                  Nenhuma alteração registrada.
                 </p>
               )}
             </CardContent>
