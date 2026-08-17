@@ -862,3 +862,116 @@ export const syncConsultoraFromUsers = createServerFn({ method: "POST" })
 
     return { criadas, ativadas };
   });
+
+// ============= Sessões, reversão e retenção =============
+
+// Encerra as sessões ativas do usuário (bloquear não desconecta quem já entrou).
+export const revokeRhUserSessions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ targetUserId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { supabase, userId, claims } = context;
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin.auth.admin as any).signOut?.(data.targetUserId, "global")
+      ?? { error: null };
+    if (error) throw new Error(error.message ?? String(error));
+
+    await logAudit(supabaseAdmin, {
+      actorId: userId,
+      actorEmail: (claims as any)?.email ?? null,
+      targetUserId: data.targetUserId,
+      action: "encerrou_sessoes",
+    });
+    return { ok: true };
+  });
+
+// Restaura o conjunto de abas anterior registrado em uma entrada de auditoria.
+export const revertRhAccessAudit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ auditId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }): Promise<{ ok: true; usuarios: number }> => {
+    const { supabase, userId, claims } = context;
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: entry, error } = await supabaseAdmin
+      .from("rh_access_audit")
+      .select("id, action, detail, target_user_id")
+      .eq("id", data.auditId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!entry) throw new Error("Registro de auditoria não encontrado.");
+
+    const detail = ((entry as any).detail ?? {}) as any;
+
+    // Monta o mapa usuário -> abas que devem voltar a valer.
+    const restore: Record<string, string[]> = {};
+    if ((entry as any).action === "atualizou_acessos" && Array.isArray(detail.before)) {
+      const target = (entry as any).target_user_id as string | null;
+      if (!target) throw new Error("Este registro não tem usuário-alvo para reverter.");
+      restore[target] = detail.before as string[];
+    } else if ((entry as any).action === "acessos_em_massa" && detail.before && typeof detail.before === "object") {
+      for (const [uid, tabs] of Object.entries(detail.before as Record<string, string[]>)) {
+        restore[uid] = Array.isArray(tabs) ? tabs : [];
+      }
+    } else {
+      throw new Error("Esta ação não pode ser revertida automaticamente.");
+    }
+
+    const uids = Object.keys(restore);
+    if (!uids.length) throw new Error("Nada para reverter.");
+
+    const { error: delErr } = await supabaseAdmin
+      .from("rh_tab_access")
+      .delete()
+      .in("user_id", uids);
+    if (delErr) throw new Error(delErr.message);
+
+    const rows: { user_id: string; tab_key: string }[] = [];
+    for (const uid of uids) for (const tab_key of restore[uid]!) rows.push({ user_id: uid, tab_key });
+    if (rows.length) {
+      const { error: insErr } = await supabaseAdmin.from("rh_tab_access").insert(rows as any);
+      if (insErr) throw new Error(insErr.message);
+    }
+
+    await logAudit(supabaseAdmin, {
+      actorId: userId,
+      actorEmail: (claims as any)?.email ?? null,
+      action: "reverteu_acessos",
+      detail: { auditId: data.auditId, usuarios: uids.length },
+    });
+
+    return { ok: true, usuarios: uids.length };
+  });
+
+// Retenção do histórico: remove registros com mais de N meses (padrão 12).
+export const purgeRhAccessAudit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ meses: z.number().int().min(1).max(60).default(12) }).parse(data ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { supabase, userId, claims } = context;
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const limite = new Date();
+    limite.setMonth(limite.getMonth() - data.meses);
+
+    const { error } = await supabaseAdmin
+      .from("rh_access_audit")
+      .delete()
+      .lt("created_at", limite.toISOString());
+    if (error) throw new Error(error.message);
+
+    await logAudit(supabaseAdmin, {
+      actorId: userId,
+      actorEmail: (claims as any)?.email ?? null,
+      action: "limpou_historico",
+      detail: { meses: data.meses },
+    });
+    return { ok: true };
+  });
+
