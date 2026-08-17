@@ -543,20 +543,46 @@ export type RhAuditEntry = {
   action: string;
   detail: any;
   created_at: string;
+  target_user_id: string | null;
 };
 
 export const listRhAccessAudit = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<RhAuditEntry[]> => {
+  .inputValidator((data) =>
+    z
+      .object({
+        actor: z.string().trim().max(255).optional(),
+        target: z.string().trim().max(255).optional(),
+        action: z.string().trim().max(60).optional(),
+        from: z.string().trim().max(30).optional(),
+        to: z.string().trim().max(30).optional(),
+        limit: z.number().int().min(10).max(500).default(100),
+      })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<RhAuditEntry[]> => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
-    const { data, error } = await supabase
+
+    let q = supabase
       .from("rh_access_audit")
-      .select("id, actor_email, target_email, action, detail, created_at")
+      .select("id, actor_email, target_email, action, detail, created_at, target_user_id")
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(data.limit);
+
+    if (data.actor) q = q.ilike("actor_email", `%${data.actor}%`);
+    if (data.target) q = q.ilike("target_email", `%${data.target}%`);
+    if (data.action) q = q.eq("action", data.action);
+    if (data.from) q = q.gte("created_at", new Date(data.from).toISOString());
+    if (data.to) {
+      const end = new Date(data.to);
+      end.setHours(23, 59, 59, 999);
+      q = q.lte("created_at", end.toISOString());
+    }
+
+    const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return (data ?? []) as any as RhAuditEntry[];
+    return (rows ?? []) as any as RhAuditEntry[];
   });
 
 export const setRhUserBlocked = createServerFn({ method: "POST" })
