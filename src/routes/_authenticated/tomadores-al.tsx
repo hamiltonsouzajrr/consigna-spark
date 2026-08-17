@@ -197,30 +197,39 @@ function Page() {
     void recarregarDistribuicao();
   }, [isAdmin]);
 
+  const filtrosMargem = useMemo(
+    () => ({
+      termo,
+      orgao: orgao === "todos" ? "" : orgao,
+      minMargem: Number(minMargem) || 0,
+      tipoMargem,
+      faixa,
+      consultora: filtroConsultora || undefined,
+      aba,
+    }),
+    [termo, orgao, minMargem, tipoMargem, faixa, filtroConsultora, aba],
+  );
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetchTomadores({
-        data: {
-          offset: page * PAGE_SIZE,
-          limit: PAGE_SIZE,
-          termo,
-          orgao: orgao === "todos" ? "" : orgao,
-          minMargem: Number(minMargem) || 0,
-          consultora: filtroConsultora || undefined,
-          aba,
-        },
-      });
+      const [res, cont] = await Promise.all([
+        fetchTomadores({
+          data: { offset: page * PAGE_SIZE, limit: PAGE_SIZE, ...filtrosMargem },
+        }),
+        fetchFaixas({ data: { ...filtrosMargem } }).catch(() => null),
+      ]);
       setRows(res.rows);
       setTotal(res.total);
       setConsultoraNome(res.consultoraNome);
       setVinculada(res.isAdmin || res.vinculada);
+      setFaixasCount(cont);
     } catch (e: any) {
       toast.error("Erro ao carregar base: " + (e?.message ?? e));
     } finally {
       setLoading(false);
     }
-  }, [page, termo, orgao, minMargem, filtroConsultora, aba]);
+  }, [page, filtrosMargem, fetchTomadores, fetchFaixas]);
 
   useEffect(() => { load(); }, [load]);
 
