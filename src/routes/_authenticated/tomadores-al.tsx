@@ -883,15 +883,68 @@ function Page() {
                 </div>
 
 
+                {tipoMargem !== "qualquer" && (
+                  <div className="mt-3">
+                    <Badge
+                      className={cn(
+                        "text-[10px]",
+                        faixaDaMargem(
+                          tipoMargem === "cartao_credito"
+                            ? r.margem_disp_cartao_credito
+                            : tipoMargem === "cartao_beneficio"
+                            ? margemBeneficioDisp(r)
+                            : r.margem_disp_emprestimo,
+                          tipoMargem,
+                        ) === "alta"
+                          ? "bg-emerald-600 text-white"
+                          : faixaDaMargem(
+                              tipoMargem === "cartao_credito"
+                                ? r.margem_disp_cartao_credito
+                                : tipoMargem === "cartao_beneficio"
+                                ? margemBeneficioDisp(r)
+                                : r.margem_disp_emprestimo,
+                              tipoMargem,
+                            ) === "media"
+                          ? "bg-amber-500 text-white"
+                          : "bg-slate-500 text-white",
+                      )}
+                    >
+                      {TIPO_MARGEM_CURTO[tipoMargem]} ·{" "}
+                      {FAIXA_LABEL[
+                        faixaDaMargem(
+                          tipoMargem === "cartao_credito"
+                            ? r.margem_disp_cartao_credito
+                            : tipoMargem === "cartao_beneficio"
+                            ? margemBeneficioDisp(r)
+                            : r.margem_disp_emprestimo,
+                          tipoMargem,
+                        )
+                      ]}
+                    </Badge>
+                  </div>
+                )}
+
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                  <MargemLinha label="Empréstimo" margem={r.margem_disp_emprestimo} mult={MULT_PRINCIPAL} />
-                  <MargemLinha label="Cartão crédito" margem={r.margem_disp_cartao_credito} mult={MULT_CARTAO_CONSIGNADO} />
+                  <MargemLinha
+                    label="Empréstimo"
+                    margem={r.margem_disp_emprestimo}
+                    mult={MULT_PRINCIPAL}
+                    destaque={tipoMargem === "emprestimo"}
+                  />
+                  <MargemLinha
+                    label="Cartão crédito"
+                    margem={r.margem_disp_cartao_credito}
+                    mult={MULT_CARTAO_CONSIGNADO}
+                    destaque={tipoMargem === "cartao_credito"}
+                  />
                   <MargemLinha
                     label="Cartão benefício"
                     margem={margemBeneficioDisp(r)}
                     mult={MULT_CARTAO_BENEFICIO}
+                    destaque={tipoMargem === "cartao_beneficio"}
                   />
                 </div>
+
 
                 <p className="mt-2 text-[11px] text-muted-foreground">
                   Margem bruta empréstimo {brl(r.margem_bruta_emprestimo)} · utilizado{" "}
