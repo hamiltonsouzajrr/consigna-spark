@@ -874,9 +874,11 @@ export const revokeRhUserSessions = createServerFn({ method: "POST" })
     await assertAdmin(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await (supabaseAdmin.auth.admin as any).signOut?.(data.targetUserId, "global")
-      ?? { error: null };
-    if (error) throw new Error(error.message ?? String(error));
+    const res: any = await (supabaseAdmin.auth.admin as any).signOut?.(
+      data.targetUserId,
+      "global",
+    );
+    if (res?.error) throw new Error(res.error.message ?? String(res.error));
 
     await logAudit(supabaseAdmin, {
       actorId: userId,
