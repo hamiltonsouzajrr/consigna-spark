@@ -132,12 +132,12 @@ function AcessosPage() {
   const employeesQuery = useQuery({
     queryKey: ["rh", "admin", "employees"],
     queryFn: () => fetchEmployees(),
-    enabled: isAdmin,
+    enabled: canGrant,
   });
 
   const auditQuery = useQuery({
-    queryKey: ["rh", "admin", "audit"],
-    queryFn: () => fetchAudit(),
+    queryKey: ["rh", "admin", "audit", auditFilters],
+    queryFn: () => fetchAudit({ data: { ...auditFilters, limit: 200 } }),
     enabled: isAdmin,
   });
 
