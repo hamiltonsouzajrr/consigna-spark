@@ -427,6 +427,18 @@ export const updateRhUser = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // Guardas do papel de admin: ninguém remove o próprio admin nem deixa o
+    // sistema sem nenhum administrador.
+    if (data.isAdmin === false) {
+      if (data.targetUserId === userId) {
+        throw new Error("Você não pode remover seu próprio acesso de administrador.");
+      }
+      await assertNotLastAdmin(supabaseAdmin, data.targetUserId, "rebaixar este administrador");
+    }
+
+    const eraAdmin =
+      typeof data.isAdmin === "boolean" ? await isAdminUser(supabaseAdmin, data.targetUserId) : false;
+
     const attrs: Record<string, unknown> = {};
     if (data.email) attrs.email = data.email;
     if (data.password) attrs.password = data.password;
@@ -437,6 +449,15 @@ export const updateRhUser = createServerFn({ method: "POST" })
 
     if (typeof data.isAdmin === "boolean") {
       await setAdminRole(supabaseAdmin, data.targetUserId, data.isAdmin);
+      if (data.isAdmin !== eraAdmin) {
+        await logAudit(supabaseAdmin, {
+          actorId: userId,
+          actorEmail: (claims as any)?.email ?? null,
+          targetUserId: data.targetUserId,
+          targetEmail: data.email ?? null,
+          action: data.isAdmin ? "promoveu_admin" : "rebaixou_admin",
+        });
+      }
     }
 
     await logAudit(supabaseAdmin, {
