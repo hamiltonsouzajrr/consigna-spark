@@ -20,6 +20,7 @@ export function useRhAccess() {
   });
 
   const isAdmin = query.data?.isAdmin ?? false;
+  const isAccessManager = query.data?.isAccessManager ?? false;
   const granted = useMemo(
     () => new Set(query.data?.tabs ?? []),
     [query.data?.tabs],
@@ -33,10 +34,11 @@ export function useRhAccess() {
 
   // Whether the user may see the RH area at all: admins, or users the admin
   // explicitly granted at least one RH tab.
-  const hasAnyAccess = isAdmin || granted.size > 0;
+  const hasAnyAccess = isAdmin || isAccessManager || granted.size > 0;
 
   return {
     isAdmin,
+    isAccessManager,
     granted,
     canAccess,
     hasAnyAccess,
@@ -44,3 +46,4 @@ export function useRhAccess() {
     alwaysAllowed: ALWAYS_ALLOWED,
   };
 }
+
