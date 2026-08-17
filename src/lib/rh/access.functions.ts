@@ -175,6 +175,13 @@ export const linkEmployeeUser = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
+    await logAudit(supabaseAdmin, {
+      actorId: userId,
+      actorEmail: (claims as any)?.email ?? null,
+      targetUserId: data.userId,
+      action: data.employeeId ? "vinculou_colaborador" : "desvinculou_colaborador",
+    });
+
     return { ok: true };
   });
 
@@ -189,7 +196,7 @@ export const setRhUserAccess = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
-    const { supabase, userId } = context;
+    const { supabase, userId, claims } = context;
     await assertAdmin(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -216,6 +223,14 @@ export const setRhUserAccess = createServerFn({ method: "POST" })
           ? `Você tem acesso a ${data.tabs.length} ${data.tabs.length === 1 ? "aba" : "abas"} do RH.`
           : "Seu acesso às abas do RH foi removido.",
     } as any);
+
+    await logAudit(supabaseAdmin, {
+      actorId: userId,
+      actorEmail: (claims as any)?.email ?? null,
+      targetUserId: data.userId,
+      action: "atualizou_acessos",
+      detail: { tabs: data.tabs },
+    });
 
     return { ok: true };
   });
@@ -286,7 +301,7 @@ export const createRhUser = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }): Promise<{ id: string }> => {
-    const { supabase, userId } = context;
+    const { supabase, userId, claims } = context;
     await assertAdmin(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -299,6 +314,39 @@ export const createRhUser = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     if (data.isAdmin) await setAdminRole(supabaseAdmin, created.user.id, true);
+
+    // Mantém a base de consultoras em sincronia com os acessos criados.
+    const lower = data.email.toLowerCase();
+    const { data: consultora } = await supabaseAdmin
+      .from("radar_consultoras")
+      .select("id, ativo")
+      .ilike("email", lower)
+      .maybeSingle();
+    if (consultora) {
+      if (!(consultora as any).ativo) {
+        await supabaseAdmin
+          .from("radar_consultoras")
+          .update({ ativo: true } as any)
+          .eq("id", (consultora as any).id);
+      }
+    } else {
+      const nome = lower
+        .split("@")[0]!
+        .replace(/[._-]+/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+      await supabaseAdmin
+        .from("radar_consultoras")
+        .insert({ nome, email: lower, ativo: true } as any);
+    }
+
+    await logAudit(supabaseAdmin, {
+      actorId: userId,
+      actorEmail: (claims as any)?.email ?? null,
+      targetUserId: created.user.id,
+      targetEmail: data.email,
+      action: "criou_usuario",
+      detail: { admin: data.isAdmin },
+    });
 
     return { id: created.user.id };
   });
@@ -333,6 +381,19 @@ export const updateRhUser = createServerFn({ method: "POST" })
       await setAdminRole(supabaseAdmin, data.targetUserId, data.isAdmin);
     }
 
+    await logAudit(supabaseAdmin, {
+      actorId: userId,
+      actorEmail: (claims as any)?.email ?? null,
+      targetUserId: data.targetUserId,
+      targetEmail: data.email ?? null,
+      action: "atualizou_usuario",
+      detail: {
+        email: !!data.email,
+        senha: !!data.password,
+        admin: typeof data.isAdmin === "boolean" ? data.isAdmin : null,
+      },
+    });
+
     return { ok: true };
   });
 
@@ -342,7 +403,7 @@ export const deleteRhUser = createServerFn({ method: "POST" })
     z.object({ targetUserId: z.string().uuid() }).parse(data),
   )
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
-    const { supabase, userId } = context;
+    const { supabase, userId, claims } = context;
     await assertAdmin(supabase, userId);
     if (data.targetUserId === userId) {
       throw new Error("Você não pode excluir o próprio usuário.");
@@ -357,6 +418,13 @@ export const deleteRhUser = createServerFn({ method: "POST" })
 
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.targetUserId);
     if (error) throw new Error(error.message);
+
+    await logAudit(supabaseAdmin, {
+      actorId: userId,
+      actorEmail: (claims as any)?.email ?? null,
+      targetUserId: data.targetUserId,
+      action: "excluiu_usuario",
+    });
 
     return { ok: true };
   });
@@ -393,7 +461,7 @@ export type RhAuditEntry = {
   actor_email: string | null;
   target_email: string | null;
   action: string;
-  detail: Record<string, unknown>;
+  detail: any;
   created_at: string;
 };
 
