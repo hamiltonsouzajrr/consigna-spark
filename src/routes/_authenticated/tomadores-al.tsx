@@ -103,22 +103,32 @@ function MargemLinha({
   label,
   margem,
   mult,
+  destaque = false,
 }: {
   label: string;
   margem: number | null;
   mult: { medio: number };
+  destaque?: boolean;
 }) {
   const m = margem ?? 0;
   return (
-    <div className="rounded-lg border border-border/60 bg-muted/30 p-2.5">
+    <div
+      className={cn(
+        "rounded-lg border p-2.5",
+        destaque
+          ? "border-primary bg-primary/10 ring-1 ring-primary/40"
+          : "border-border/60 bg-muted/30",
+      )}
+    >
       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="text-sm font-semibold text-foreground">{brl(m)}</p>
+      <p className={cn("font-semibold text-foreground", destaque ? "text-lg" : "text-sm")}>{brl(m)}</p>
       <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
         ≈ {brl(m * mult.medio)} liberado
       </p>
     </div>
   );
 }
+
 
 function Page() {
   const { isAdmin } = useRhAccess();
