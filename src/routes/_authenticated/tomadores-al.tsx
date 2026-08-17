@@ -643,7 +643,7 @@ function Page() {
 
 
 
-        <div className="grid gap-4 rounded-xl border border-border/60 bg-card p-4 md:grid-cols-4">
+        <div className="grid gap-4 rounded-xl border border-border/60 bg-card p-4 md:grid-cols-2 lg:grid-cols-5">
           <div>
             <Label className="text-xs">Buscar por nome ou CPF</Label>
             <div className="relative">
