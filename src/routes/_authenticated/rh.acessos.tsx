@@ -80,7 +80,10 @@ const fmtDateTime = (v: string) =>
 const labelForTab = (to: string) => rhNav.find((n) => n.to === to)?.label ?? to;
 
 function AcessosPage() {
-  const { isAdmin, isLoading: accessLoading } = useRhAccess();
+  const { isAdmin, isAccessManager, isLoading: accessLoading } = useRhAccess();
+  // Admin faz tudo; gestor de acessos apenas libera/remove abas.
+  const canManageUsers = isAdmin;
+  const canGrant = isAdmin || isAccessManager;
   const queryClient = useQueryClient();
   const fetchUsers = useServerFn(listRhUsers);
   const saveAccess = useServerFn(setRhUserAccess);
