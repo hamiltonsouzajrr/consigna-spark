@@ -602,7 +602,7 @@ export const getResumoCarteiraTomadores = createServerFn({ method: "POST" })
       concluidos: 0,
       convertidos: 0,
       semInteresse: 0,
-      vagasLivres: POOL_ALVO,
+      vagasLivres: POOL_TOTAL,
       atualizadoEm: new Date().toISOString(),
     };
     if (!nome) return vazio;
@@ -635,7 +635,7 @@ export const getResumoCarteiraTomadores = createServerFn({ method: "POST" })
       concluidos: convertidos + semInteresse,
       convertidos,
       semInteresse,
-      vagasLivres: Math.max(0, POOL_ALVO - (pendentes + emAndamento)),
+      vagasLivres: Math.max(0, POOL_TOTAL - (pendentes + emAndamento)),
       atualizadoEm: new Date().toISOString(),
     };
   });
@@ -667,7 +667,7 @@ export const getResumoTomadoresAl = createServerFn({ method: "POST" })
       convertidos: 0,
       semInteresse: 0,
       totalAtribuidos: 0,
-      vagasLivres: POOL_ALVO,
+      vagasLivres: POOL_TOTAL,
       estoque: 0,
     };
 
@@ -710,7 +710,7 @@ export const getResumoTomadoresAl = createServerFn({ method: "POST" })
       convertidos,
       semInteresse,
       totalAtribuidos,
-      vagasLivres: Math.max(0, POOL_ALVO - ativos),
+      vagasLivres: Math.max(0, POOL_TOTAL - ativos),
       estoque: 0,
     };
   });
