@@ -322,13 +322,13 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
       const admin = await isAdmin(context.supabase, context.userId);
       const minha = await nomeConsultora(context.supabase, context.claims, !admin);
 
-      // Carteira enxuta e exclusiva: ao entrar na aba, a consultora recebe
-      // reposição automática até completar POOL_ALVO leads em aberto.
-
-
+      // Carteira exclusiva por faixa: ao entrar na aba (ou ao escolher uma
+      // faixa), a consultora recebe reposição até POOL_ALVO leads em aberto
+      // em cada faixa de empréstimo — a faixa escolhida é priorizada.
       const historico = data.aba === "historico";
       // Na aba Histórico não repomos nada: é só leitura dos finalizados.
-      if (minha && !historico) await garantirPoolTomadores(minha);
+      if (minha && !historico) await garantirPoolTomadores(minha, data.faixa);
+
 
       let q: any = context.supabase
         .from("tomadores_al")
