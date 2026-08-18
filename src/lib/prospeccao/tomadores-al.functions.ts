@@ -126,12 +126,16 @@ async function nomeConsultora(_supabase: any, claims: any, autoVincular = false)
 }
 
 
-// Carteira exclusiva: cada consultora mantém no máximo POOL_ALVO leads em
-// aberto. Quando ela finaliza (convertido / sem interesse), a vaga é reposta
-// com novos tomadores da planilha que ainda não têm responsável.
+// Carteira exclusiva por faixa de margem: a consultora mantém até POOL_ALVO
+// leads em aberto EM CADA faixa de empréstimo (alta, média e baixa), ou seja
+// até 30 no total. Ao finalizar um lead, a vaga daquela faixa é reposta com
+// novos tomadores da planilha que ainda não têm responsável.
 export const POOL_ALVO = 10;
+export const FAIXAS_POOL = ["alta", "media", "baixa"] as const;
+export const POOL_TOTAL = POOL_ALVO * FAIXAS_POOL.length;
 const STATUS_ABERTOS = ["novo", "contatado", "proposta_enviada"];
 const STATUS_FINALIZADOS = ["convertido", "sem_interesse"];
+
 
 // Prioriza a reposição por leads que já têm telefone enriquecido: sem telefone
 // a consultora perde tempo antes de conseguir abordar.
