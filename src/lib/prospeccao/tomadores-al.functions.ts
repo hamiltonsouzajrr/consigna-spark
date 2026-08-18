@@ -365,13 +365,17 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
       const base = (rows ?? []) as TomadorAl[];
       let tels: Record<string, string[]> = {};
       try {
+        // Telefones vêm de enriquecimentos de outras tabelas (Nova Vida /
+        // prospect_leads) que a consultora não lê por RLS — usamos o cliente
+        // administrativo apenas para os CPFs já visíveis na carteira dela.
         tels = await telefonesPorCpf(
-          context.supabase,
+          await getAdminClient(),
           base.map((r) => String(r.documento ?? "").replace(/\D/g, "")).filter(Boolean),
         );
       } catch {
         tels = {};
       }
+
 
       return {
         rows: base.map((r) => ({ ...r, telefones: tels[String(r.documento ?? "").replace(/\D/g, "")] ?? [] })),
