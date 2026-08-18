@@ -765,8 +765,14 @@ function Page() {
                 Limpar faixa
               </Button>
             )}
+            {!data?.isAdmin && (
+              <span className="text-[11px] text-muted-foreground">
+                Clique numa faixa para receber leads dela — sua carteira mantém 10 em aberto por faixa (até 30).
+              </span>
+            )}
           </div>
         )}
+
 
 
         <div className="flex gap-2">
