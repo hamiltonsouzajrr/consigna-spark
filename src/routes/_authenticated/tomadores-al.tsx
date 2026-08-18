@@ -497,17 +497,18 @@ function Page() {
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Capacidade da carteira</span>
-                <span className="font-medium">{((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0))} / 10</span>
+                <span className="font-medium">{((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0))} / 30</span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div
                   className={cn(
                     "h-full rounded-full transition-all",
-                    ((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0)) < 5
+                    ((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0)) < 12
                       ? "bg-amber-500"
                       : "bg-primary",
+
                   )}
-                  style={{ width: `${Math.min(100, (((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0)) / 10) * 100)}%` }}
+                  style={{ width: `${Math.min(100, (((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0)) / 30) * 100)}%` }}
                 />
               </div>
               {((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0)) < 5 && (
@@ -764,8 +765,14 @@ function Page() {
                 Limpar faixa
               </Button>
             )}
+            {!isAdmin && (
+              <span className="text-[11px] text-muted-foreground">
+                Clique numa faixa para receber leads dela — sua carteira mantém 10 em aberto por faixa (até 30).
+              </span>
+            )}
           </div>
         )}
+
 
 
         <div className="flex gap-2">

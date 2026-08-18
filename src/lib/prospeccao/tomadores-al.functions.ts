@@ -126,12 +126,16 @@ async function nomeConsultora(_supabase: any, claims: any, autoVincular = false)
 }
 
 
-// Carteira exclusiva: cada consultora mantém no máximo POOL_ALVO leads em
-// aberto. Quando ela finaliza (convertido / sem interesse), a vaga é reposta
-// com novos tomadores da planilha que ainda não têm responsável.
+// Carteira exclusiva por faixa de margem: a consultora mantém até POOL_ALVO
+// leads em aberto EM CADA faixa de empréstimo (alta, média e baixa), ou seja
+// até 30 no total. Ao finalizar um lead, a vaga daquela faixa é reposta com
+// novos tomadores da planilha que ainda não têm responsável.
 export const POOL_ALVO = 10;
+export const FAIXAS_POOL = ["alta", "media", "baixa"] as const;
+export const POOL_TOTAL = POOL_ALVO * FAIXAS_POOL.length;
 const STATUS_ABERTOS = ["novo", "contatado", "proposta_enviada"];
 const STATUS_FINALIZADOS = ["convertido", "sem_interesse"];
+
 
 // Prioriza a reposição por leads que já têm telefone enriquecido: sem telefone
 // a consultora perde tempo antes de conseguir abordar.
@@ -153,29 +157,60 @@ async function priorizarComTelefone(client: any, candidatos: any[], faltam: numb
     .map((r) => String(r.id));
 }
 
-async function garantirPoolTomadores(nome: string): Promise<number> {
-  const client = await getAdminClient();
+const COL_EMPRESTIMO = TIPO_MARGEM_COLUNA.emprestimo;
 
-  const { count: abertos, error: cErr } = await client
-    .from("tomadores_al")
-    .select("id", { count: "exact", head: true })
-    .eq("consultora_responsavel", nome)
-    .in("status_abordagem", STATUS_ABERTOS);
+async function bumpContador(client: any, nome: string, novos: number) {
+  if (!novos) return;
+  const { data: c } = await client
+    .from("radar_consultoras")
+    .select("id,total_leads_atribuidos")
+    .eq("nome", nome)
+    .limit(1);
+  const alvo = (c ?? [])[0];
+  if (alvo) {
+    await client
+      .from("radar_consultoras")
+      .update({ total_leads_atribuidos: Number(alvo.total_leads_atribuidos ?? 0) + novos })
+      .eq("id", alvo.id);
+  }
+}
+
+// Completa a carteira de uma faixa específica de empréstimo até POOL_ALVO.
+async function garantirPoolFaixa(nome: string, faixa: "alta" | "media" | "baixa"): Promise<number> {
+  const client = await getAdminClient();
+  const { gte, lt } = faixaIntervalo("emprestimo", faixa);
+
+  const faixaRange = (q: any) => {
+    let out = q.gte(COL_EMPRESTIMO, gte ?? 0);
+    if (lt !== null) out = out.lt(COL_EMPRESTIMO, lt);
+    return out;
+  };
+
+  const { count: abertos, error: cErr } = await faixaRange(
+    client
+      .from("tomadores_al")
+      .select("id", { count: "exact", head: true })
+      .eq("consultora_responsavel", nome)
+      .in("status_abordagem", STATUS_ABERTOS),
+  );
   if (cErr) return 0;
 
   const faltam = POOL_ALVO - Number(abertos ?? 0);
   if (faltam <= 0) return 0;
 
-  const { data: livres, error: lErr } = await client
-    .from("tomadores_al")
-    .select("id,documento,margem_disp_emprestimo")
-    .is("consultora_responsavel", null)
-    .order("margem_disp_emprestimo", { ascending: false })
+  const { data: livres, error: lErr } = await faixaRange(
+    client
+      .from("tomadores_al")
+      .select("id,documento,margem_disp_emprestimo")
+      .is("consultora_responsavel", null),
+  )
+    .order(COL_EMPRESTIMO, { ascending: false })
     .limit(Math.max(faltam * 8, 40));
   if (lErr || !livres?.length) return 0;
 
   const ids = await priorizarComTelefone(client, livres as any[], faltam);
   if (!ids.length) return 0;
+
   const { data: atualizados, error: uErr } = await client
     .from("tomadores_al")
     .update({ consultora_responsavel: nome, atribuido_em: new Date().toISOString() })
@@ -185,22 +220,22 @@ async function garantirPoolTomadores(nome: string): Promise<number> {
   if (uErr) return 0;
 
   const novos = (atualizados ?? []).length;
-  if (novos) {
-    const { data: c } = await client
-      .from("radar_consultoras")
-      .select("id,total_leads_atribuidos")
-      .eq("nome", nome)
-      .limit(1);
-    const alvo = (c ?? [])[0];
-    if (alvo) {
-      await client
-        .from("radar_consultoras")
-        .update({ total_leads_atribuidos: Number(alvo.total_leads_atribuidos ?? 0) + novos })
-        .eq("id", alvo.id);
-    }
-  }
+  await bumpContador(client, nome, novos);
   return novos;
 }
+
+// Reposição da carteira: 10 leads em aberto por faixa (alta, média e baixa).
+// Quando a consultora escolhe uma faixa na tela, priorizamos essa faixa.
+async function garantirPoolTomadores(nome: string, prioridade?: FaixaMargem): Promise<number> {
+  const ordem: ("alta" | "media" | "baixa")[] =
+    prioridade && prioridade !== "todas"
+      ? [prioridade, ...FAIXAS_POOL.filter((f) => f !== prioridade)]
+      : [...FAIXAS_POOL];
+  let novos = 0;
+  for (const faixa of ordem) novos += await garantirPoolFaixa(nome, faixa);
+  return novos;
+}
+
 
 // Reposição automática de todas as carteiras ativas — usada pelo job diário
 // (/api/public/hooks/tomadores-repor) para não depender de a consultora abrir a aba.
@@ -287,13 +322,13 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
       const admin = await isAdmin(context.supabase, context.userId);
       const minha = await nomeConsultora(context.supabase, context.claims, !admin);
 
-      // Carteira enxuta e exclusiva: ao entrar na aba, a consultora recebe
-      // reposição automática até completar POOL_ALVO leads em aberto.
-
-
+      // Carteira exclusiva por faixa: ao entrar na aba (ou ao escolher uma
+      // faixa), a consultora recebe reposição até POOL_ALVO leads em aberto
+      // em cada faixa de empréstimo — a faixa escolhida é priorizada.
       const historico = data.aba === "historico";
       // Na aba Histórico não repomos nada: é só leitura dos finalizados.
-      if (minha && !historico) await garantirPoolTomadores(minha);
+      if (minha && !historico) await garantirPoolTomadores(minha, data.faixa);
+
 
       let q: any = context.supabase
         .from("tomadores_al")
@@ -330,13 +365,17 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
       const base = (rows ?? []) as TomadorAl[];
       let tels: Record<string, string[]> = {};
       try {
+        // Telefones vêm de enriquecimentos de outras tabelas (Nova Vida /
+        // prospect_leads) que a consultora não lê por RLS — usamos o cliente
+        // administrativo apenas para os CPFs já visíveis na carteira dela.
         tels = await telefonesPorCpf(
-          context.supabase,
+          await getAdminClient(),
           base.map((r) => String(r.documento ?? "").replace(/\D/g, "")).filter(Boolean),
         );
       } catch {
         tels = {};
       }
+
 
       return {
         rows: base.map((r) => ({ ...r, telefones: tels[String(r.documento ?? "").replace(/\D/g, "")] ?? [] })),
@@ -563,7 +602,7 @@ export const getResumoCarteiraTomadores = createServerFn({ method: "POST" })
       concluidos: 0,
       convertidos: 0,
       semInteresse: 0,
-      vagasLivres: POOL_ALVO,
+      vagasLivres: POOL_TOTAL,
       atualizadoEm: new Date().toISOString(),
     };
     if (!nome) return vazio;
@@ -596,7 +635,7 @@ export const getResumoCarteiraTomadores = createServerFn({ method: "POST" })
       concluidos: convertidos + semInteresse,
       convertidos,
       semInteresse,
-      vagasLivres: Math.max(0, POOL_ALVO - (pendentes + emAndamento)),
+      vagasLivres: Math.max(0, POOL_TOTAL - (pendentes + emAndamento)),
       atualizadoEm: new Date().toISOString(),
     };
   });
@@ -628,7 +667,7 @@ export const getResumoTomadoresAl = createServerFn({ method: "POST" })
       convertidos: 0,
       semInteresse: 0,
       totalAtribuidos: 0,
-      vagasLivres: POOL_ALVO,
+      vagasLivres: POOL_TOTAL,
       estoque: 0,
     };
 
@@ -671,7 +710,7 @@ export const getResumoTomadoresAl = createServerFn({ method: "POST" })
       convertidos,
       semInteresse,
       totalAtribuidos,
-      vagasLivres: Math.max(0, POOL_ALVO - ativos),
+      vagasLivres: Math.max(0, POOL_TOTAL - ativos),
       estoque: 0,
     };
   });

@@ -101,7 +101,7 @@ function CarteiraLeadsCard({
   const totalAtribuidos = resumo?.totalAtribuidos ?? 0;
   const consultoraNome = resumo?.consultoraNome ?? null;
 
-  const poolAlvo = 10;
+  const poolAlvo = 30; // 10 leads em aberto por faixa (alta, média, baixa)
   const progresso = isAdmin ? 0 : Math.min(100, Math.round((ativos / poolAlvo) * 100));
   const carteiraAcabando = !isAdmin && ativos < 5 && ativos > 0;
   const carteiraVazia = !isAdmin && ativos === 0 && totalAtribuidos > 0;
