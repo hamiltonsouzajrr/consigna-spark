@@ -507,7 +507,7 @@ function Page() {
                       ? "bg-amber-500"
                       : "bg-primary",
                   )}
-                  style={{ width: `${Math.min(100, (((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0)) / 10) * 100)}%` }}
+                  style={{ width: `${Math.min(100, (((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0)) / 30) * 100)}%` }}
                 />
               </div>
               {((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0)) < 5 && (
