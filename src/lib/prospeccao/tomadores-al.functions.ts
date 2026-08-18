@@ -157,29 +157,60 @@ async function priorizarComTelefone(client: any, candidatos: any[], faltam: numb
     .map((r) => String(r.id));
 }
 
-async function garantirPoolTomadores(nome: string): Promise<number> {
-  const client = await getAdminClient();
+const COL_EMPRESTIMO = TIPO_MARGEM_COLUNA.emprestimo;
 
-  const { count: abertos, error: cErr } = await client
-    .from("tomadores_al")
-    .select("id", { count: "exact", head: true })
-    .eq("consultora_responsavel", nome)
-    .in("status_abordagem", STATUS_ABERTOS);
+async function bumpContador(client: any, nome: string, novos: number) {
+  if (!novos) return;
+  const { data: c } = await client
+    .from("radar_consultoras")
+    .select("id,total_leads_atribuidos")
+    .eq("nome", nome)
+    .limit(1);
+  const alvo = (c ?? [])[0];
+  if (alvo) {
+    await client
+      .from("radar_consultoras")
+      .update({ total_leads_atribuidos: Number(alvo.total_leads_atribuidos ?? 0) + novos })
+      .eq("id", alvo.id);
+  }
+}
+
+// Completa a carteira de uma faixa específica de empréstimo até POOL_ALVO.
+async function garantirPoolFaixa(nome: string, faixa: "alta" | "media" | "baixa"): Promise<number> {
+  const client = await getAdminClient();
+  const { gte, lt } = faixaIntervalo("emprestimo", faixa);
+
+  const faixaRange = (q: any) => {
+    let out = q.gte(COL_EMPRESTIMO, gte ?? 0);
+    if (lt !== null) out = out.lt(COL_EMPRESTIMO, lt);
+    return out;
+  };
+
+  const { count: abertos, error: cErr } = await faixaRange(
+    client
+      .from("tomadores_al")
+      .select("id", { count: "exact", head: true })
+      .eq("consultora_responsavel", nome)
+      .in("status_abordagem", STATUS_ABERTOS),
+  );
   if (cErr) return 0;
 
   const faltam = POOL_ALVO - Number(abertos ?? 0);
   if (faltam <= 0) return 0;
 
-  const { data: livres, error: lErr } = await client
-    .from("tomadores_al")
-    .select("id,documento,margem_disp_emprestimo")
-    .is("consultora_responsavel", null)
-    .order("margem_disp_emprestimo", { ascending: false })
+  const { data: livres, error: lErr } = await faixaRange(
+    client
+      .from("tomadores_al")
+      .select("id,documento,margem_disp_emprestimo")
+      .is("consultora_responsavel", null),
+  )
+    .order(COL_EMPRESTIMO, { ascending: false })
     .limit(Math.max(faltam * 8, 40));
   if (lErr || !livres?.length) return 0;
 
   const ids = await priorizarComTelefone(client, livres as any[], faltam);
   if (!ids.length) return 0;
+
   const { data: atualizados, error: uErr } = await client
     .from("tomadores_al")
     .update({ consultora_responsavel: nome, atribuido_em: new Date().toISOString() })
@@ -189,22 +220,22 @@ async function garantirPoolTomadores(nome: string): Promise<number> {
   if (uErr) return 0;
 
   const novos = (atualizados ?? []).length;
-  if (novos) {
-    const { data: c } = await client
-      .from("radar_consultoras")
-      .select("id,total_leads_atribuidos")
-      .eq("nome", nome)
-      .limit(1);
-    const alvo = (c ?? [])[0];
-    if (alvo) {
-      await client
-        .from("radar_consultoras")
-        .update({ total_leads_atribuidos: Number(alvo.total_leads_atribuidos ?? 0) + novos })
-        .eq("id", alvo.id);
-    }
-  }
+  await bumpContador(client, nome, novos);
   return novos;
 }
+
+// Reposição da carteira: 10 leads em aberto por faixa (alta, média e baixa).
+// Quando a consultora escolhe uma faixa na tela, priorizamos essa faixa.
+async function garantirPoolTomadores(nome: string, prioridade?: FaixaMargem): Promise<number> {
+  const ordem: ("alta" | "media" | "baixa")[] =
+    prioridade && prioridade !== "todas"
+      ? [prioridade, ...FAIXAS_POOL.filter((f) => f !== prioridade)]
+      : [...FAIXAS_POOL];
+  let novos = 0;
+  for (const faixa of ordem) novos += await garantirPoolFaixa(nome, faixa);
+  return novos;
+}
+
 
 // Reposição automática de todas as carteiras ativas — usada pelo job diário
 // (/api/public/hooks/tomadores-repor) para não depender de a consultora abrir a aba.
