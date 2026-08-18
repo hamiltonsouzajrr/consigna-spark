@@ -497,15 +497,16 @@ function Page() {
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Capacidade da carteira</span>
-                <span className="font-medium">{((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0))} / 10</span>
+                <span className="font-medium">{((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0))} / 30</span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div
                   className={cn(
                     "h-full rounded-full transition-all",
-                    ((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0)) < 5
+                    ((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0)) < 12
                       ? "bg-amber-500"
                       : "bg-primary",
+
                   )}
                   style={{ width: `${Math.min(100, (((resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0)) / 30) * 100)}%` }}
                 />
