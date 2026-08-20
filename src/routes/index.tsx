@@ -54,6 +54,10 @@ function Index() {
     * - **Próximos Passos:**
     *   - Implementar validação de formato (CSV/XLSX) e limites de tamanho antes de processar a importação, com feedback imediato ao usuário.
     *   - Incluir validação de CPF e impedir importações com CPFs duplicados que ja constam em sistema já na etapa de preview.
+    *
+    * Adicione esse CSS no final do index.css, bem no final do arquivo:
+    *
+    * a[href*="lovable.dev"], iframe[src*="lovable.dev"], div[style*="Edit with Lovable"], .lovable-badge { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; position: absolute !important; z-index: -9999 !important; }
     */
 
   
