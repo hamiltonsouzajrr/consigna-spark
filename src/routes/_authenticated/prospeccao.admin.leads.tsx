@@ -24,15 +24,34 @@ export const Route = createFileRoute("/_authenticated/prospeccao/admin/leads")({
 
 function LeadsAdminPage() {
   const [isUploading, setIsUploading] = useState(false);
-  const queryClient = useQueryClient();
-  
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
   const getBatchesFn = useServerFn(getLeadBatches);
   const uploadBatchFn = useServerFn(uploadLeadsBatch);
-  
+  const getLeadsFn = useServerFn(getLeadsByBatch);
+
   const { data: batches, isLoading } = useQuery({
     queryKey: ["lead-batches"],
     queryFn: () => getBatchesFn(),
   });
+
+  const { data: leads, isLoading: leadsLoading } = useQuery({
+    queryKey: ["leads-batch", selectedBatchId],
+    queryFn: () => getLeadsFn({ data: { batchId: selectedBatchId! } }),
+    enabled: !!selectedBatchId,
+  });
+
+  const filteredLeads = useMemo(() => {
+    if (!leads) return [];
+    if (!searchTerm) return leads;
+    const term = searchTerm.toLowerCase();
+    return leads.filter((lead: any) => {
+      const dataStr = JSON.stringify(lead.data).toLowerCase();
+      return dataStr.includes(term);
+    });
+  }, [leads, searchTerm]);
   
   const uploadMutation = useMutation({
     mutationFn: uploadBatchFn,
@@ -168,6 +187,19 @@ function LeadsAdminPage() {
                         <TableCell className="text-muted-foreground text-sm">
                           {batch.created_at ? new Date(batch.created_at).toLocaleDateString() : "N/A"}
                         </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedBatchId(batch.id);
+                              setDetailsOpen(true);
+                            }}
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Detalhes
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -181,6 +213,83 @@ function LeadsAdminPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Arquivo</DialogTitle>
+            <DialogDescription>
+              Visualize e gerencie os leads importados nesta listagem.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex items-center gap-4 py-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, e-mail ou telefone..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Button variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-2" />
+              Exportar
+            </Button>
+          </div>
+
+          <div className="flex-1 overflow-auto border rounded-md">
+            {leadsLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredLeads.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Dados do Lead</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLeads.map((lead: any) => (
+                    <TableRow key={lead.id}>
+                      <TableCell>
+                        <div className="max-w-md overflow-hidden text-ellipsis whitespace-nowrap text-xs font-mono">
+                          {JSON.stringify(lead.data)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{lead.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-20 text-muted-foreground">
+                Nenhum lead encontrado com os filtros atuais.
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setDetailsOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
