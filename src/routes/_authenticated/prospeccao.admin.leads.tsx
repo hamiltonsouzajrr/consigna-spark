@@ -218,9 +218,12 @@ function LeadsAdminPage() {
                 className="cursor-pointer"
               />
               {isUploading && (
-                <div className="mt-4 flex items-center text-sm text-primary">
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processando arquivo...
+                <div className="mt-4 w-full space-y-2">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Processando arquivo...</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <Progress value={uploadProgress} className="h-1" />
                 </div>
               )}
             </div>
