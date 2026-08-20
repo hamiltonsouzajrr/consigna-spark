@@ -27,6 +27,14 @@ function LeadsAdminPage() {
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(false);
+  
+  // Column mapping states
+  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [availableColumns, setAvailableColumns] = useState<string[]>([]);
+  const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+  const [mappingOpen, setMappingOpen] = useState(false);
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
+  
   const queryClient = useQueryClient();
 
   const getBatchesFn = useServerFn(getLeadBatches);
@@ -70,7 +78,7 @@ function LeadsAdminPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    setIsUploading(true);
+    setCurrentFile(file);
     const reader = new FileReader();
     
     reader.onload = async (evt) => {
@@ -83,23 +91,71 @@ function LeadsAdminPage() {
         
         if (data.length === 0) {
           toast.error("O arquivo está vazio.");
-          setIsUploading(false);
           return;
         }
         
-        await uploadMutation.mutateAsync({
-          data: {
-            filename: file.name,
-            leads: data as any[],
-          }
-        });
+        // Identify available columns from the first row
+        const cols = Object.keys(data[0] as object);
+        setAvailableColumns(cols);
+        setPreviewData(data);
+        setMappingOpen(true);
       } catch (err: any) {
         toast.error("Erro ao ler o arquivo: " + err.message);
-        setIsUploading(false);
       }
     };
     
     reader.readAsBinaryString(file);
+  };
+
+  const confirmImport = async () => {
+    if (!currentFile || selectedColumns.length === 0) {
+      toast.error("Selecione pelo menos uma coluna para importar.");
+      return;
+    }
+
+    setIsUploading(true);
+    setMappingOpen(false);
+
+    try {
+      // Filter data to include only selected columns
+      const mappedLeads = previewData.map(row => {
+        const newRow: any = {};
+        selectedColumns.forEach(col => {
+          newRow[col] = row[col];
+        });
+        return newRow;
+      });
+
+      // Validation: Check for email if present (example requirement)
+      const hasEmail = selectedColumns.some(col => 
+        col.toLowerCase().includes("email") || col.toLowerCase().includes("e-mail")
+      );
+
+      if (!hasEmail) {
+        toast.warning("Atenção: Nenhuma coluna de e-mail foi identificada no mapeamento.");
+      }
+
+      await uploadMutation.mutateAsync({
+        data: {
+          filename: currentFile.name,
+          leads: mappedLeads,
+        }
+      });
+      
+      // Reset states
+      setSelectedColumns([]);
+      setPreviewData([]);
+      setCurrentFile(null);
+    } catch (err: any) {
+      toast.error("Erro na importação: " + err.message);
+      setIsUploading(false);
+    }
+  };
+
+  const toggleColumn = (col: string) => {
+    setSelectedColumns(prev => 
+      prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col]
+    );
   };
 
   const getStatusBadge = (status: string) => {
@@ -288,6 +344,76 @@ function LeadsAdminPage() {
 
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setDetailsOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Column Mapping Dialog */}
+      <Dialog open={mappingOpen} onOpenChange={setMappingOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Mapeamento de Colunas</DialogTitle>
+            <DialogDescription>
+              Selecione as colunas da planilha que deseja importar para o CRM.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-auto py-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {availableColumns.map(col => (
+                <div 
+                  key={col}
+                  onClick={() => toggleColumn(col)}
+                  className={`
+                    flex items-center p-3 rounded-lg border cursor-pointer transition-all
+                    ${selectedColumns.includes(col) 
+                      ? "border-primary bg-primary/5 ring-1 ring-primary" 
+                      : "border-muted hover:border-muted-foreground/50"}
+                  `}
+                >
+                  <div className={`
+                    w-4 h-4 rounded-sm border mr-3 flex items-center justify-center
+                    ${selectedColumns.includes(col) ? "bg-primary border-primary" : "border-muted-foreground/30"}
+                  `}>
+                    {selectedColumns.includes(col) && <CheckCircle2 className="w-3 h-3 text-primary-foreground" />}
+                  </div>
+                  <span className="text-sm font-medium truncate">{col}</span>
+                </div>
+              ))}
+            </div>
+
+            {selectedColumns.length > 0 && (
+              <div className="mt-6 p-4 bg-muted/50 rounded-lg border border-muted">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                  Resumo da Seleção ({selectedColumns.length} colunas)
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedColumns.map(col => (
+                    <Badge key={col} variant="secondary" className="px-2 py-1">
+                      {col}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {availableColumns.length > 0 && selectedColumns.length === 0 && (
+              <div className="mt-8 text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
+                <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                <p>Selecione pelo menos uma coluna para continuar</p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="pt-4 border-t gap-2">
+            <Button variant="ghost" onClick={() => setMappingOpen(false)}>Cancelar</Button>
+            <Button 
+              onClick={confirmImport} 
+              disabled={selectedColumns.length === 0 || isUploading}
+            >
+              {isUploading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Confirmar Importação
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
