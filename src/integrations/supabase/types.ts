@@ -585,6 +585,7 @@ export type Database = {
       }
       lead_batches: {
         Row: {
+          column_mapping: Json | null
           created_at: string | null
           created_by: string | null
           error_message: string | null
@@ -596,6 +597,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          column_mapping?: Json | null
           created_at?: string | null
           created_by?: string | null
           error_message?: string | null
@@ -607,6 +609,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          column_mapping?: Json | null
           created_at?: string | null
           created_by?: string | null
           error_message?: string | null
