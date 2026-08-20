@@ -17,6 +17,7 @@ import * as XLSX from "xlsx";
 import { 
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter 
 } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 
 export const Route = createFileRoute("/_authenticated/prospeccao/admin/leads")({
   component: LeadsAdminPage,
