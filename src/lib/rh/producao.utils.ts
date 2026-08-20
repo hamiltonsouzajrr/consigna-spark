@@ -1,5 +1,17 @@
 import { z } from "zod";
 
+export type ProducaoRow = {
+  id: string;
+  consultora: string;
+  departamento: string | null;
+  mes: string;
+  valor: number;
+  contratos: number;
+  created_at: string;
+  updated_at: string;
+};
+
+
 export function mesAtual(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
