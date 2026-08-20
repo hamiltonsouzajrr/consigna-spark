@@ -8,6 +8,8 @@ function Index() {
   if (loading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Carregando…</div>;
   
   /**
+   * Mover a importação e a validação para processamento em background e exibir um status/progresso da importação até concluir e mostrar uma barra de progresso e notificar ao admin quando finalizar com pop up
+   * 
    * Prompt Aprimorado:
    * 
    * Contexto:
