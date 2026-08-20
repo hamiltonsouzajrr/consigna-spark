@@ -1,16 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getLeadBatches, uploadLeadsBatch } from "@/lib/prospeccao/leads-admin.functions";
+import { getLeadBatches, uploadLeadsBatch, getLeadsByBatch } from "@/lib/prospeccao/leads-admin.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Upload, FileText, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { 
+  Loader2, Upload, FileText, CheckCircle2, AlertCircle, Clock, 
+  Search, ExternalLink, Download, Trash2, Edit2
+} from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import { 
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter 
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/prospeccao/admin/leads")({
   component: LeadsAdminPage,
