@@ -29,7 +29,6 @@ import { Route as AuthenticatedSimulacaoAlagoasRouteImport } from './routes/_aut
 import { Route as AuthenticatedTomadoresAlRouteImport } from './routes/_authenticated/tomadores-al'
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
-import { Route as ApiPositivaCoachRouteImport } from './routes/api/positiva-coach'
 import { Route as AprovacaoTokenRouteImport } from './routes/aprovacao.$token'
 import { Route as ConsultoraTokenRouteImport } from './routes/consultora.$token'
 import { Route as AuthenticatedPosVendaAvaliacoesRouteImport } from './routes/_authenticated/pos-venda.avaliacoes'
@@ -184,11 +183,6 @@ const AuthenticatedWhatsappRoute = AuthenticatedWhatsappRouteImport.update({
   id: '/whatsapp',
   path: '/whatsapp',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const ApiPositivaCoachRoute = ApiPositivaCoachRouteImport.update({
-  id: '/api/positiva-coach',
-  path: '/api/positiva-coach',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const AprovacaoTokenRoute = AprovacaoTokenRouteImport.update({
   id: '/aprovacao/$token',
@@ -504,7 +498,6 @@ export interface FileRoutesByFullPath {
   '/tomadores-al': typeof AuthenticatedTomadoresAlRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
-  '/api/positiva-coach': typeof ApiPositivaCoachRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/consultora/$token': typeof ConsultoraTokenRoute
   '/pos-venda/avaliacoes': typeof AuthenticatedPosVendaAvaliacoesRoute
@@ -575,7 +568,6 @@ export interface FileRoutesByTo {
   '/tomadores-al': typeof AuthenticatedTomadoresAlRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
-  '/api/positiva-coach': typeof ApiPositivaCoachRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/consultora/$token': typeof ConsultoraTokenRoute
   '/pos-venda/avaliacoes': typeof AuthenticatedPosVendaAvaliacoesRoute
@@ -649,7 +641,6 @@ export interface FileRoutesById {
   '/_authenticated/tomadores-al': typeof AuthenticatedTomadoresAlRoute
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
-  '/api/positiva-coach': typeof ApiPositivaCoachRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/consultora/$token': typeof ConsultoraTokenRoute
   '/_authenticated/pos-venda/avaliacoes': typeof AuthenticatedPosVendaAvaliacoesRoute
@@ -724,7 +715,6 @@ export interface FileRouteTypes {
     | '/tomadores-al'
     | '/upload'
     | '/whatsapp'
-    | '/api/positiva-coach'
     | '/aprovacao/$token'
     | '/consultora/$token'
     | '/pos-venda/avaliacoes'
@@ -795,7 +785,6 @@ export interface FileRouteTypes {
     | '/tomadores-al'
     | '/upload'
     | '/whatsapp'
-    | '/api/positiva-coach'
     | '/aprovacao/$token'
     | '/consultora/$token'
     | '/pos-venda/avaliacoes'
@@ -868,7 +857,6 @@ export interface FileRouteTypes {
     | '/_authenticated/tomadores-al'
     | '/_authenticated/upload'
     | '/_authenticated/whatsapp'
-    | '/api/positiva-coach'
     | '/aprovacao/$token'
     | '/consultora/$token'
     | '/_authenticated/pos-venda/avaliacoes'
@@ -928,7 +916,6 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  ApiPositivaCoachRoute: typeof ApiPositivaCoachRoute
   AprovacaoTokenRoute: typeof AprovacaoTokenRoute
   ConsultoraTokenRoute: typeof ConsultoraTokenRoute
   ApiPublicHooksFollowupLembretesRoute: typeof ApiPublicHooksFollowupLembretesRoute
@@ -1079,13 +1066,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/whatsapp'
       preLoaderRoute: typeof AuthenticatedWhatsappRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/api/positiva-coach': {
-      id: '/api/positiva-coach'
-      path: '/api/positiva-coach'
-      fullPath: '/api/positiva-coach'
-      preLoaderRoute: typeof ApiPositivaCoachRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/aprovacao/$token': {
       id: '/aprovacao/$token'
@@ -1624,7 +1604,6 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  ApiPositivaCoachRoute: ApiPositivaCoachRoute,
   AprovacaoTokenRoute: AprovacaoTokenRoute,
   ConsultoraTokenRoute: ConsultoraTokenRoute,
   ApiPublicHooksFollowupLembretesRoute: ApiPublicHooksFollowupLembretesRoute,
