@@ -72,6 +72,7 @@ import { Route as AuthenticatedRhReconhecimentosRouteImport } from './routes/_au
 import { Route as AuthenticatedRhRecrutamentoRouteImport } from './routes/_authenticated/rh.recrutamento'
 import { Route as AuthenticatedRhTreinamentosRouteImport } from './routes/_authenticated/rh.treinamentos'
 import { Route as AuthenticatedRhTurnoverRouteImport } from './routes/_authenticated/rh.turnover'
+import { Route as AuthenticatedProspeccaoAdminLeadsRouteImport } from './routes/_authenticated/prospeccao.admin.leads'
 import { Route as AuthenticatedRhColaboradoresIdRouteImport } from './routes/_authenticated/rh.colaboradores.$id'
 import { Route as AuthenticatedRhPortalIndexRouteImport } from './routes/_authenticated/rh.portal.index'
 import { Route as AuthenticatedRhPortalKpiRouteImport } from './routes/_authenticated/rh.portal.$kpi'
@@ -429,6 +430,12 @@ const AuthenticatedRhTurnoverRoute = AuthenticatedRhTurnoverRouteImport.update({
   path: '/turnover',
   getParentRoute: () => AuthenticatedRhRoute,
 } as any)
+const AuthenticatedProspeccaoAdminLeadsRoute =
+  AuthenticatedProspeccaoAdminLeadsRouteImport.update({
+    id: '/leads',
+    path: '/leads',
+    getParentRoute: () => AuthenticatedProspeccaoAdminRoute,
+  } as any)
 const AuthenticatedRhColaboradoresIdRoute =
   AuthenticatedRhColaboradoresIdRouteImport.update({
     id: '/$id',
@@ -505,7 +512,7 @@ export interface FileRoutesByFullPath {
   '/producao/meu-dia': typeof AuthenticatedProducaoMeuDiaRoute
   '/producao/ranking': typeof AuthenticatedProducaoRankingRoute
   '/prospeccao/$leadId': typeof AuthenticatedProspeccaoLeadIdRoute
-  '/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRoute
+  '/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRouteWithChildren
   '/prospeccao/followups': typeof AuthenticatedProspeccaoFollowupsRoute
   '/prospeccao/promovidos': typeof AuthenticatedProspeccaoPromovidosRoute
   '/prospeccao/qualidade': typeof AuthenticatedProspeccaoQualidadeRoute
@@ -541,6 +548,7 @@ export interface FileRoutesByFullPath {
   '/prospeccao/': typeof AuthenticatedProspeccaoIndexRoute
   '/radar/': typeof AuthenticatedRadarIndexRoute
   '/rh/': typeof AuthenticatedRhIndexRoute
+  '/prospeccao/admin/leads': typeof AuthenticatedProspeccaoAdminLeadsRoute
   '/rh/colaboradores/$id': typeof AuthenticatedRhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof AuthenticatedRhPortalKpiRoute
   '/api/public/hooks/followup-lembretes': typeof ApiPublicHooksFollowupLembretesRoute
@@ -575,7 +583,7 @@ export interface FileRoutesByTo {
   '/producao/meu-dia': typeof AuthenticatedProducaoMeuDiaRoute
   '/producao/ranking': typeof AuthenticatedProducaoRankingRoute
   '/prospeccao/$leadId': typeof AuthenticatedProspeccaoLeadIdRoute
-  '/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRoute
+  '/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRouteWithChildren
   '/prospeccao/followups': typeof AuthenticatedProspeccaoFollowupsRoute
   '/prospeccao/promovidos': typeof AuthenticatedProspeccaoPromovidosRoute
   '/prospeccao/qualidade': typeof AuthenticatedProspeccaoQualidadeRoute
@@ -610,6 +618,7 @@ export interface FileRoutesByTo {
   '/prospeccao': typeof AuthenticatedProspeccaoIndexRoute
   '/radar': typeof AuthenticatedRadarIndexRoute
   '/rh': typeof AuthenticatedRhIndexRoute
+  '/prospeccao/admin/leads': typeof AuthenticatedProspeccaoAdminLeadsRoute
   '/rh/colaboradores/$id': typeof AuthenticatedRhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof AuthenticatedRhPortalKpiRoute
   '/api/public/hooks/followup-lembretes': typeof ApiPublicHooksFollowupLembretesRoute
@@ -648,7 +657,7 @@ export interface FileRoutesById {
   '/_authenticated/producao/meu-dia': typeof AuthenticatedProducaoMeuDiaRoute
   '/_authenticated/producao/ranking': typeof AuthenticatedProducaoRankingRoute
   '/_authenticated/prospeccao/$leadId': typeof AuthenticatedProspeccaoLeadIdRoute
-  '/_authenticated/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRoute
+  '/_authenticated/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRouteWithChildren
   '/_authenticated/prospeccao/followups': typeof AuthenticatedProspeccaoFollowupsRoute
   '/_authenticated/prospeccao/promovidos': typeof AuthenticatedProspeccaoPromovidosRoute
   '/_authenticated/prospeccao/qualidade': typeof AuthenticatedProspeccaoQualidadeRoute
@@ -684,6 +693,7 @@ export interface FileRoutesById {
   '/_authenticated/prospeccao/': typeof AuthenticatedProspeccaoIndexRoute
   '/_authenticated/radar/': typeof AuthenticatedRadarIndexRoute
   '/_authenticated/rh/': typeof AuthenticatedRhIndexRoute
+  '/_authenticated/prospeccao/admin/leads': typeof AuthenticatedProspeccaoAdminLeadsRoute
   '/_authenticated/rh/colaboradores/$id': typeof AuthenticatedRhColaboradoresIdRoute
   '/_authenticated/rh/portal/$kpi': typeof AuthenticatedRhPortalKpiRoute
   '/api/public/hooks/followup-lembretes': typeof ApiPublicHooksFollowupLembretesRoute
@@ -758,6 +768,7 @@ export interface FileRouteTypes {
     | '/prospeccao/'
     | '/radar/'
     | '/rh/'
+    | '/prospeccao/admin/leads'
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
     | '/api/public/hooks/followup-lembretes'
@@ -827,6 +838,7 @@ export interface FileRouteTypes {
     | '/prospeccao'
     | '/radar'
     | '/rh'
+    | '/prospeccao/admin/leads'
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
     | '/api/public/hooks/followup-lembretes'
@@ -900,6 +912,7 @@ export interface FileRouteTypes {
     | '/_authenticated/prospeccao/'
     | '/_authenticated/radar/'
     | '/_authenticated/rh/'
+    | '/_authenticated/prospeccao/admin/leads'
     | '/_authenticated/rh/colaboradores/$id'
     | '/_authenticated/rh/portal/$kpi'
     | '/api/public/hooks/followup-lembretes'
@@ -1368,6 +1381,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRhTurnoverRouteImport
       parentRoute: typeof AuthenticatedRhRoute
     }
+    '/_authenticated/prospeccao/admin/leads': {
+      id: '/_authenticated/prospeccao/admin/leads'
+      path: '/leads'
+      fullPath: '/prospeccao/admin/leads'
+      preLoaderRoute: typeof AuthenticatedProspeccaoAdminLeadsRouteImport
+      parentRoute: typeof AuthenticatedProspeccaoAdminRoute
+    }
     '/_authenticated/rh/colaboradores/$id': {
       id: '/_authenticated/rh/colaboradores/$id'
       path: '/$id'
@@ -1536,6 +1556,21 @@ const AuthenticatedRhRouteWithChildren = AuthenticatedRhRoute._addFileChildren(
   AuthenticatedRhRouteChildren,
 )
 
+interface AuthenticatedProspeccaoAdminRouteChildren {
+  AuthenticatedProspeccaoAdminLeadsRoute: typeof AuthenticatedProspeccaoAdminLeadsRoute
+}
+
+const AuthenticatedProspeccaoAdminRouteChildren: AuthenticatedProspeccaoAdminRouteChildren =
+  {
+    AuthenticatedProspeccaoAdminLeadsRoute:
+      AuthenticatedProspeccaoAdminLeadsRoute,
+  }
+
+const AuthenticatedProspeccaoAdminRouteWithChildren =
+  AuthenticatedProspeccaoAdminRoute._addFileChildren(
+    AuthenticatedProspeccaoAdminRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAlagoasRoute: typeof AuthenticatedAlagoasRoute
   AuthenticatedCalculadoraAlRoute: typeof AuthenticatedCalculadoraAlRoute
@@ -1557,7 +1592,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProducaoMeuDiaRoute: typeof AuthenticatedProducaoMeuDiaRoute
   AuthenticatedProducaoRankingRoute: typeof AuthenticatedProducaoRankingRoute
   AuthenticatedProspeccaoLeadIdRoute: typeof AuthenticatedProspeccaoLeadIdRoute
-  AuthenticatedProspeccaoAdminRoute: typeof AuthenticatedProspeccaoAdminRoute
+  AuthenticatedProspeccaoAdminRoute: typeof AuthenticatedProspeccaoAdminRouteWithChildren
   AuthenticatedProspeccaoFollowupsRoute: typeof AuthenticatedProspeccaoFollowupsRoute
   AuthenticatedProspeccaoPromovidosRoute: typeof AuthenticatedProspeccaoPromovidosRoute
   AuthenticatedProspeccaoQualidadeRoute: typeof AuthenticatedProspeccaoQualidadeRoute
@@ -1586,7 +1621,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProducaoMeuDiaRoute: AuthenticatedProducaoMeuDiaRoute,
   AuthenticatedProducaoRankingRoute: AuthenticatedProducaoRankingRoute,
   AuthenticatedProspeccaoLeadIdRoute: AuthenticatedProspeccaoLeadIdRoute,
-  AuthenticatedProspeccaoAdminRoute: AuthenticatedProspeccaoAdminRoute,
+  AuthenticatedProspeccaoAdminRoute:
+    AuthenticatedProspeccaoAdminRouteWithChildren,
   AuthenticatedProspeccaoFollowupsRoute: AuthenticatedProspeccaoFollowupsRoute,
   AuthenticatedProspeccaoPromovidosRoute:
     AuthenticatedProspeccaoPromovidosRoute,
