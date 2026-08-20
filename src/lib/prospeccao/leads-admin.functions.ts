@@ -6,9 +6,10 @@ export const createLeadBatch = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({
     filename: z.string(),
     totalLeads: z.number(),
+    columnMapping: z.array(z.string()).optional(),
   }).parse(data))
   .handler(async ({ data }) => {
-    const { filename, totalLeads } = data;
+    const { filename, totalLeads, columnMapping } = data;
     
     const { data: batch, error } = await supabase
       .from("lead_batches")
@@ -16,10 +17,12 @@ export const createLeadBatch = createServerFn({ method: "POST" })
         filename,
         total_leads: totalLeads,
         status: "pending",
-        processed_leads: 0
+        processed_leads: 0,
+        column_mapping: columnMapping
       })
       .select()
       .single();
+
       
     if (error) throw new Error(`Failed to create batch: ${error.message}`);
     return batch;
