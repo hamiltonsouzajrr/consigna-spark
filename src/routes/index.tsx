@@ -50,7 +50,9 @@ function Index() {
    *   "has_blank_screen": true
    * }
    * ```
-   */
+   * - **Próximos Passos:**
+   *   - Implementar validação de formato (CSV/XLSX) e limites de tamanho antes de processar a importação, com feedback imediato ao usuário.
+   *
 
   
   return <Navigate to={user ? "/rh/portal" : "/login"} />;
