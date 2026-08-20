@@ -57,6 +57,7 @@ type Lead = {
   last_contact_at: string | null;
   first_response_at: string | null;
   created_at: string;
+  import_batch?: string | null;
 };
 
 function fmtWhen(iso: string | null): string {
@@ -160,7 +161,11 @@ function Page() {
       // drop out automatically and are replaced by fresh ones.
       const { data } = await supabase
         .from("prospect_leads")
-        .select("id,nome,telefone,telefones,cpf,cidade,origem,orcamento,urgencia,status,situacao,score,idade,sexo,sla_status,next_follow_up_at,last_contact_at,first_response_at,created_at")
+        .select(`
+          id,nome,telefone,telefones,cpf,cidade,origem,orcamento,urgencia,status,situacao,
+          score,idade,sexo,sla_status,next_follow_up_at,last_contact_at,first_response_at,created_at,
+          import_batch
+        `)
         .eq("status", "novo")
         .is("first_response_at", null)
         .is("opened_at", null)
