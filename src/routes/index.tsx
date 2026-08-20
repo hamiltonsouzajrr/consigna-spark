@@ -58,6 +58,8 @@ function Index() {
    *   "has_blank_screen": true
    * }
    * ```
+   *
+   * Implementar uma validação prévia mais rígida no preview, para eu receber alertas antes do envio quando existirem CPFs sem formato válido, nomes vazios ou linhas duplicadas.
    */
 
   
