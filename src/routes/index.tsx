@@ -8,46 +8,31 @@ function Index() {
   if (loading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Carregando…</div>;
   
   /**
-   * Mover a importação e a validação para processamento em background e exibir um status/progresso da importação até concluir e mostrar uma barra de progresso e notificar ao admin quando finalizar com pop up
-   * 
-   * For the code present, I get the error below.
+   * **Prompt Aprimorado:**
    *
-   * Please think step-by-step in order to resolve it.
-   * ```
-   * Error: aborted
+   * Analise as funcionalidades relacionadas às importações de planilhas no sistema, com foco nos seguintes pontos:
    *
-   * {
-   *   "timestamp": 1787249476133,
-   *   "error_type": "RUNTIME_ERROR",
-   *   "filename": "Unknown file",
-   *   "lineno": 0,
-   *   "colno": 0,
-   *   "stack": "Error: aborted\n    at abortIncoming (node:_http_server:838:17)\n    at socketOnClose (node:_http_server:832:3)\n    at Socket.emit (node:events:531:35)\n    at TCP.<anonymous> (node:net:346:12)\n    at TCP.callbackTrampoline (node:internal/async_hooks:130:17)",
-   *   "has_blank_screen": true
-   * }
-   * ```
-   * 
-   * Contexto:
-   * Sou responsável pela prospecção de leads e preciso integrar uma planilha (em qualquer formato) ao sistema de CRM. Ao carregar o arquivo, o sistema deve permitir que eu selecione quais colunas da planilha desejo mapear e exibir no CRM para as consultoras.
-   * 
-   * Requisitos Detalhados:
-   * - Formato de Upload: Aceitar planilhas em qualquer formato comum (Excel, CSV, Google Sheets, etc.).
-   * - Seleção de Colunas:
-   *   - O sistema deve apresentar uma visualização prévia das colunas identificadas na planilha.
-   *   - Permitir que eu selecione apenas as colunas relevantes para importação no CRM (ex.: nome, e-mail, telefone, etc.).
-   *   - Exibir um resumo das colunas selecionadas antes da confirmação final.
-   * - Validação de Dados:
-   *   - Verificar automaticamente se há campos obrigatórios (ex.: e-mail) e alertar caso estejam ausentes ou inválidos.
-   *   - Oferecer opção para corrigir ou ignorar inconsistências.
-   * - Feedback ao Usuário:
-   *   - Confirmar sucesso/erro na importação com detalhes (ex.: "X leads importados; Y registros ignorados por falta de e-mail").
-   *   - Permitir download de um relatório de inconsistências, se aplicável.
-   * 
-   * Objetivo Final:
-   * Garantir que as consultoras tenham acesso apenas aos dados estruturados e úteis para prospecção, sem informações desnecessárias ou duplicadas.
-   * Implementar uma tela para eu selecionar quais colunas desejo importar e salvar esse mapeamento por usuário para a aba CRM.
-   * Exibir na aba CRM apenas os campos que eu selecionei no upload, sem mostrar informações extras para todos os acessos de consultoras.
-   * 
+   * - **Problemas Identificados:**
+   *   - Impossibilidade de realizar upload da planilha.
+   *   - Dificuldade em selecionar as colunas desejadas durante o processo de importação.
+   *   - Falha ao salvar as configurações para posterior exibição no CRM.
+   *
+   * - **Objetivos da Verificação:**
+   *   - Identificar as causas raiz dos erros ou limitações.
+   *   - Verificar se há restrições de formato (ex.: .xlsx, .csv) ou tamanho da planilha.
+   *   - Confirmar se o usuário possui as permissões necessárias para realizar a importação.
+   *   - Avaliar se há mensagens de erro específicas ou logs que possam auxiliar no diagnóstico.
+   *
+   * - **Ações a Serem Realizadas:**
+   *   - Testar a importação com diferentes tipos de planilhas (ex.: com e sem cabeçalho).
+   *   - Verificar a documentação do sistema para conferir os requisitos e limitações.
+   *   - Analisar as configurações de permissão do usuário logado.
+   *   - Simular o processo em um ambiente de teste, se disponível, para isolar o problema.
+   *
+   * - **Resultados Esperados:**
+   *   - Relatório detalhado das causas dos problemas.
+   *   - Soluções possíveis para cada ponto identificado (ex.: ajustes no formato da planilha, liberação de permissões).
+   *   - Orientações claras sobre como proceder para concluir a importação com sucesso.
    */
 
   
