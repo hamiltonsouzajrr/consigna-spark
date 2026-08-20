@@ -62,8 +62,10 @@ function LeadsAdminPage() {
         }
         
         await uploadMutation.mutateAsync({
-          filename: file.name,
-          leads: data as any[],
+          data: {
+            filename: file.name,
+            leads: data as any[],
+          }
         });
       } catch (err: any) {
         toast.error("Erro ao ler o arquivo: " + err.message);
