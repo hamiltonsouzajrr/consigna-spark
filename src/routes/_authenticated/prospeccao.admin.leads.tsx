@@ -27,6 +27,7 @@ function LeadsAdminPage() {
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const getBatchesFn = useServerFn(getLeadBatches);
   const uploadBatchFn = useServerFn(uploadLeadsBatch);
