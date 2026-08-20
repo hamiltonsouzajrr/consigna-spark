@@ -9,7 +9,15 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Wallet, Search, Copy, Download, Upload, Users, Shuffle, UserCheck, Phone, RefreshCw, Briefcase, TrendingUp } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Wallet, Search, Copy, Download, Upload, Users, Shuffle, UserCheck, Phone, RefreshCw, Briefcase, TrendingUp, CalendarClock } from "lucide-react";
 import { MULT_PRINCIPAL, MULT_CARTAO_BENEFICIO, MULT_CARTAO_CONSIGNADO } from "@/lib/al/credito";
 import { COEF_MARGEM_AL_PADRAO } from "@/lib/al/margem";
 import { cn } from "@/lib/utils";
@@ -135,7 +143,7 @@ function MargemLinha({
 
 
 function Page() {
-  const { isAdmin } = useRhAccess();
+  const { user, isAdmin } = useRhAccess();
   const fetchTomadores = useServerFn(getTomadoresAl);
   const abordagemFn = useServerFn(marcarAbordagemTomador);
   const distribuirFn = useServerFn(distribuirTomadoresAl);
@@ -859,7 +867,7 @@ function Page() {
                                   consultant_id: user?.id,
                                   kind: "followup",
                                   body: `Follow-up agendado: ${f.label}`
-                                } as any).catch(() => {});
+                                } as any);
                                 toast.success(`Follow-up agendado: ${f.label}`);
                                 load();
                               } catch (e) {
