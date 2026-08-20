@@ -10,12 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
 import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
-import { PositivaCoachWidget } from "@/components/PositivaCoachWidget";
-import { PositivaCobrancaPopup } from "@/components/PositivaCobrancaPopup";
+import { FollowupPopup } from "@/components/prospeccao/FollowupPopup";
+import { MetaTopIndicator } from "@/components/MetaTopIndicator";
 import type { ReactNode } from "react";
 
 type BadgeKind = "leads" | "followups";
-type NavItem = { to: string; label: string; full?: string; icon: typeof Calculator; badge?: BadgeKind; exact?: boolean; adminOnly?: boolean };
+type NavItem = { to: string; label: string; full?: string; icon: typeof Calculator; badge?: BadgeKind; exact?: boolean; adminOnly?: boolean; consultoraOnly?: boolean };
 type NavSection = { section: string; items: NavItem[] };
 
 const navSections: NavSection[] = [
@@ -32,10 +32,8 @@ const navSections: NavSection[] = [
     items: [
       { to: "/prospeccao", label: "CRM", full: "CRM DE PROSPECÇÃO - FILA, SCORE E FOLLOW-UP", icon: Phone, exact: true },
       { to: "/tomadores-al", label: "Tomadores com Margem – AL", full: "CLIENTES TOMADORES COM MARGEM - AL", icon: Wallet },
-      
-      { to: "/safe-consig", label: "SafeConsig", icon: ShieldCheck },
       { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: Users, badge: "leads" },
-      { to: "/prospeccao/recentes", label: "Recentes Prospectados", icon: Flame },
+      { to: "/prospeccao/recentes", label: "Recentes Prospectados", icon: Flame, consultoraOnly: true },
       { to: "/prospeccao/followups", label: "Follow-ups", icon: CalendarClock, badge: "followups" },
       { to: "/radar", label: "Radar Diário Oficial", full: "RADAR DIÁRIO OFICIAL - PROMOÇÕES E PROGRESSÕES", icon: Radar },
     ],
@@ -43,8 +41,8 @@ const navSections: NavSection[] = [
   {
     section: "Produção",
     items: [
-      { to: "/producao/meu-dia", label: "Meu Dia", icon: Home },
-      { to: "/rh/ranking", label: "Ranking", icon: Trophy },
+      { to: "/producao/meu-dia", label: "Meu Dia", icon: Home, consultoraOnly: true },
+      { to: "/producao/ranking", label: "Ranking", icon: Trophy },
       { to: "/producao/metas", label: "Metas", icon: Target },
     ],
   },
@@ -62,13 +60,11 @@ const navSections: NavSection[] = [
     items: [
       { to: "/pos-venda/avaliacoes", label: "Avaliações", icon: Star },
       { to: "/qrcodes", label: "QR Codes", icon: QrCode },
-      
     ],
   },
   {
     section: "Painel",
     items: [
-      { to: "/positiva-ia", label: "POSITIVA IA", full: "POSITIVA IA - GERENTE COMERCIAL VIRTUAL", icon: Sparkles, exact: true },
       { to: "/rh", label: "RH", icon: Users },
       { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
     ],
@@ -183,6 +179,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       ...s,
       items: s.items.filter((n) => {
         if (n.adminOnly && !isAdmin) return false;
+        // Abas operacionais do dia a dia: só para consultoras (ocultas do admin).
+        if (n.consultoraOnly && isAdmin) return false;
         // RH area only for admins or users the admin directed (granted access).
         if (n.to === "/rh" && !hasAnyAccess) return false;
         return true;
@@ -232,8 +230,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen app-bg print:block print:min-h-0 print:bg-none">
       <HorariosOuroDialog />
       <HorariosOuroReminder />
-      <PositivaCoachWidget />
-      <PositivaCobrancaPopup />
+      {!isAdmin && <FollowupPopup />}
       <aside className="group/side hidden w-16 shrink-0 overflow-hidden sidebar-bg text-sidebar-foreground transition-[width] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:w-64 md:flex md:flex-col print:!hidden">
         <div className="flex h-16 shrink-0 items-center gap-3 px-2">
           <img src={logo.url} alt="Grupo Positive" className="h-12 w-12 shrink-0 rounded-lg bg-white object-contain p-1" />
@@ -263,11 +260,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="flex-1 overflow-x-hidden print:overflow-visible">
         {/* Top header bar (Bitrix-style) */}
         <header className="topbar-bg relative hidden items-center gap-4 px-6 py-2.5 text-white md:flex print:!hidden">
-          {/* Centered daily call counter */}
-          <div className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full bg-white/10 px-4 py-1">
-            <PhoneCall className="h-4 w-4 text-white/80" />
-            <span className="text-sm text-white/80">Chamadas hoje</span>
-            <span className="text-xl font-bold leading-none tabular-nums">{chamadas}</span>
+          {/* Contador de chamadas do dia + indicador da meta do mês */}
+          <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-3">
+            <div className="pointer-events-none flex items-center gap-2 rounded-full bg-white/10 px-4 py-1">
+              <PhoneCall className="h-4 w-4 text-white/80" />
+              <span className="text-sm text-white/80">Chamadas hoje</span>
+              <span className="text-xl font-bold leading-none tabular-nums">{chamadas}</span>
+            </div>
+            <MetaTopIndicator />
           </div>
           <div className="ml-auto flex items-center gap-4">
             <div className="flex items-center gap-2 tabular-nums">
