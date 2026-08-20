@@ -24,6 +24,7 @@ export const Route = createFileRoute("/_authenticated/prospeccao/admin/leads")({
 
 function LeadsAdminPage() {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -38,7 +39,8 @@ function LeadsAdminPage() {
   const queryClient = useQueryClient();
 
   const getBatchesFn = useServerFn(getLeadBatches);
-  const uploadBatchFn = useServerFn(uploadLeadsBatch);
+  const createBatchFn = useServerFn(createLeadBatch);
+  const processChunkFn = useServerFn(processLeadChunk);
   const getLeadsFn = useServerFn(getLeadsByBatch);
 
   const { data: batches, isLoading } = useQuery({
@@ -62,18 +64,6 @@ function LeadsAdminPage() {
     });
   }, [leads, searchTerm]);
   
-  const uploadMutation = useMutation({
-    mutationFn: uploadBatchFn,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["lead-batches"] });
-      toast.success("Arquivo processado com sucesso!");
-    },
-    onError: (error) => {
-      toast.error(`Erro no upload: ${error.message}`);
-    },
-    onSettled: () => setIsUploading(false),
-  });
-
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -106,6 +96,7 @@ function LeadsAdminPage() {
     
     reader.readAsBinaryString(file);
   };
+
 
   const confirmImport = async () => {
     if (!currentFile || selectedColumns.length === 0) {
