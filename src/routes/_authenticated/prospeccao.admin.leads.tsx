@@ -27,6 +27,14 @@ function LeadsAdminPage() {
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(false);
+  
+  // Column mapping states
+  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [availableColumns, setAvailableColumns] = useState<string[]>([]);
+  const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+  const [mappingOpen, setMappingOpen] = useState(false);
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
+  
   const queryClient = useQueryClient();
 
   const getBatchesFn = useServerFn(getLeadBatches);
