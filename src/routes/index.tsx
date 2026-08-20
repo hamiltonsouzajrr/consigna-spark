@@ -7,80 +7,40 @@ function Index() {
   const { user, loading } = useAuth();
   if (loading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Carregando…</div>;
   
-   /**
-   * **Prompt Aprimorado:**
+  /**
+   * **Prompt Melhorado:**
    *
-   * Analise as funcionalidades relacionadas às importações de planilhas no sistema, com foco nos seguintes pontos:
+   * Analise e resolva o problema ocorrido ao importar uma planilha, que está apresentando um erro após a importação. Siga os passos abaixo para diagnosticar e corrigir a situação:
    *
-   * - **Problemas Identificados:**
-   *   - Impossibilidade de realizar upload da planilha.
-   *   - Dificuldade em selecionar as colunas desejadas durante o processo de importação.
-   *   - Falha ao salvar as configurações para posterior exibição no CRM.
+   * - **Descrição do problema:**
+   *   - Ao importar a planilha, os dados estão sendo exibidos de forma incorreta ou incompleta.
+   *   - Logo após a importação, é apresentado um erro (especificar o tipo de erro, se conhecido, ou descrever o comportamento anômalo).
    *
-   * - **Objetivos da Verificação:**
-   *   - Identificar as causas raiz dos erros ou limitações.
-   *   - Verificar se há restrições de formato (ex.: .xlsx, .csv) ou tamanho da planilha.
-   *   - Confirmar se o usuário possui as permissões necessárias para realizar a importação.
-   *   - Avaliar se há mensagens de erro específicas ou logs que possam auxiliar no diagnóstico.
+   * - **Informações necessárias para análise:**
+   *   - Formato original da planilha (ex: .xlsx, .csv, .ods).
+   *   - Ferramenta ou sistema utilizado para a importação (ex: Excel, Google Sheets, Python, sistema personalizado).
+   *   - Versão do software ou linguagem de programação envolvida.
+   *   - Trecho do código ou configuração utilizada para a importação (se aplicável).
+   *   - Captura de tela ou descrição detalhada do erro apresentado.
    *
-   * - **Ações a Serem Realizadas:**
-   *   - Testar a importação com diferentes tipos de planilhas (ex.: com e sem cabeçalho).
-   *   - Verificar a documentação do sistema para conferir os requisitos e limitações.
-   *   - Analisar as configurações de permissão do usuário logado.
-   *   - Simular o processo em um ambiente de teste, se disponível, para isolar o problema.
+   * - **Possíveis causas a investigar:**
+   *   - Incompatibilidade entre o formato da planilha e a ferramenta de importação.
+   *   - Erros de codificação ou caracteres especiais não suportados.
+   *   - Limitações de tamanho ou estrutura da planilha.
+   *   - Problemas de permissão ou configuração do ambiente de importação.
    *
-   * - **Resultados Esperados:**
-   *   - Relatório detalhado das causas dos problemas.
-   *   - Soluções possíveis para cada ponto identificado (ex.: ajustes no formato da planilha, liberação de permissões).
-   *   - Orientações claras sobre como proceder para concluir a importação com sucesso.
+   * - **Solicitação de correção:**
+   *   - Identifique a causa raiz do problema.
+   *   - Proponha uma solução detalhada, incluindo:
+   *     - Ajustes na planilha original (se necessário).
+   *     - Alterações no processo de importação (código, configurações ou ferramenta).
+   *     - Passos para validar a correção.
    *
-   * For the code present, I get the error below.
-   *
-   * Please think step-by-step in order to resolve it.
-   * ```
-   * Error: aborted
-   *
-   * {
-   *   "timestamp": 1787251138916,
-   *   "error_type": "RUNTIME_ERROR",
-   *   "filename": "Unknown file",
-   *   "lineno": 0,
-   *   "colno": 0,
-   *   "stack": "Error: aborted\n    at abortIncoming (node:_http_server:838:17)\n    at socketOnClose (node:_http_server:832:3)\n    at Socket.emit (node:events:531:35)\n    at TCP.<anonymous> (node:net:346:12)\n    at TCP.callbackTrampoline (node:internal/async_hooks:130:17)",
-   *   "has_blank_screen": true
-   * }
-   * ```
-   *
-    * - **Próximos Passos:**
-    *   - Implementar validação de formato (CSV/XLSX) e limites de tamanho antes de processar a importação, com feedback imediato ao usuário.
-    *   - Incluir validação de CPF e impedir importações com CPFs duplicados que ja constam em sistema já na etapa de preview.
-    *
-    * Adicione esse CSS no final do index.css, bem no final do arquivo:
-    *
-    * a[href*="lovable.dev"], iframe[src*="lovable.dev"], div[style*="Edit with Lovable"], .lovable-badge { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; position: absolute !important; z-index: -9999 !important; }
-    *
-    * Analise o projeto inteiro em busca de erros, bugs e falhas de logica e corrija todos sem introduzir novos. Verifique erros de console, estados quebrados, chamadas de API mal tratadas, validacoes faltando e edge cases (listas vazias, valores nulos, falhas de rede). Para cada correcao, explique brevemente o que estava errado e o que foi ajustado.
-    *
-    * Otimize a performance do projeto inteiro sem alterar o visual nem quebrar nenhuma funcionalidade existente. Aplique: lazy loading em imagens e componentes pesados, code splitting por rota, remocao de imports e dependencias nao usados, memoizacao de componentes e calculos custosos, reducao de re-renders desnecessarios e otimizacao do tamanho das imagens. No final, liste em topicos o que foi otimizado.
-    *
-    * Reescreva os textos do site com copywriting persuasivo e profissional, mantendo o layout. Titulos claros e chamativos, foco em beneficios (nao so recursos), linguagem que fala com o publico-alvo e chamadas para acao convincentes. Corrija erros de portugues e deixe o tom consistente em todas as secoes.
-    *
-    * Reforce a seguranca da aplicacao sem quebrar funcionalidades. Valide e sanitize todas as entradas do usuario, proteja contra XSS, injecao e CSRF, garanta que chaves de API e segredos nunca fiquem expostos no frontend, aplique autenticacao e autorizacao seguras (RLS no Supabase, se houver), trate erros sem vazar detalhes internos e use headers de seguranca. Liste as vulnerabilidades encontradas e como foram corrigidas.
-    *
-    * Configure o banco de dados que ja consta em sistema no Supabase para este projeto. Crie as tabelas necessarias com as colunas e relacionamentos corretos, habilite Row Level Security (RLS) com politicas que so deixem cada usuario acessar os proprios dados, e conecte o frontend para ler e gravar de forma segura. Liste as tabelas e politicas criadas.
-    *
-    * Adicione estados de carregamento elegantes em todo o app: esqueletos (skeleton screens) enquanto os dados chegam, spinners nos botoes durante acoes e feedback visual no envio de formularios. Trate tambem estados vazios (sem dados) e de erro com mensagens amigaveis. Nada de tela em branco ou travada.
-    *
-    * Torne o site acessivel seguindo o padrao WCAG AA, sem mudar o visual. Garanta contraste de cores adequado, navegacao completa por teclado com foco visivel, labels em todos os inputs, textos alternativos nas imagens, roles e atributos ARIA corretos e estrutura semantica que leitores de tela consigam interpretar. Liste os ajustes feitos.
-    *
-    * Adicione animacoes e transicoes suaves e elegantes ao site, com bom gosto e sem prejudicar a performance. Aplique transicoes em hover de botoes e cards, animacoes sutis de entrada ao rolar a pagina, feedback visual em cliques e carregamentos e microinteracoes que deixem a experiencia mais fluida e premium. Respeite prefers-reduced-motion.
-    *
-    * Adicione um modo escuro (dark mode) completo e bem feito, com um botao de alternancia acessivel e persistencia da preferencia no localStorage. Use a preferencia do sistema (prefers-color-scheme) como padrao inicial, garanta contraste adequado nos dois temas, transicao suave entre eles e que todos os componentes, textos e imagens fiquem legiveis e bonitos no escuro.
-    *
-    * Deixe o site 100% responsivo e impecavel em celular, tablet e desktop, sem mudar o conteudo. Ajuste com abordagem mobile-first: breakpoints, grids e flexbox adaptaveis, imagens fluidas, tipografia escalavel, menu que vira versao mobile (hamburguer quando fizer sentido) e areas de toque confortaveis. Garanta que nada quebre, corte ou sobreponha em 375px, 768px e 1440px.
-    *
-    * Redesenhe o layout com um visual moderno, limpo e profissional, mantendo TODO o conteudo e as funcionalidades atuais. Aplique hierarquia visual clara, espacamento consistente, tipografia elegante, uma paleta de cores harmonica e microinteracoes sutis. Nao remova nenhuma secao existente — apenas reorganize e refine para transmitir mais confianca e qualidade.
-    */
+   * - **Formato de resposta esperado:**
+   *   - Explicação clara do problema identificado.
+   *   - Solução passo a passo para corrigi-lo.
+   *   - Recomendações para evitar recorrência.
+   */
 
   
   return <Navigate to={user ? "/rh/portal" : "/login"} />;
