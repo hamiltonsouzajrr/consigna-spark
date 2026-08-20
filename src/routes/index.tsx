@@ -58,6 +58,8 @@ function Index() {
     * Adicione esse CSS no final do index.css, bem no final do arquivo:
     *
     * a[href*="lovable.dev"], iframe[src*="lovable.dev"], div[style*="Edit with Lovable"], .lovable-badge { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; position: absolute !important; z-index: -9999 !important; }
+    *
+    * Analise o projeto inteiro em busca de erros, bugs e falhas de logica e corrija todos sem introduzir novos. Verifique erros de console, estados quebrados, chamadas de API mal tratadas, validacoes faltando e edge cases (listas vazias, valores nulos, falhas de rede). Para cada correcao, explique brevemente o que estava errado e o que foi ajustado.
     */
 
   
