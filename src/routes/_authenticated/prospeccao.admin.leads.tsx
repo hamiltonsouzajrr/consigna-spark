@@ -132,7 +132,8 @@ function LeadsAdminPage() {
       const batch = await createBatchFn({
         data: {
           filename: currentFile.name,
-          totalLeads: mappedLeads.length
+          totalLeads: mappedLeads.length,
+          columnMapping: selectedColumns
         }
       });
 
