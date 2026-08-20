@@ -701,25 +701,34 @@ export type Database = {
       leads_raw: {
         Row: {
           batch_id: string | null
+          consultant_id: string | null
           created_at: string | null
           data: Json
           id: string
+          last_contact_at: string | null
+          opened_at: string | null
           status: string
           updated_at: string | null
         }
         Insert: {
           batch_id?: string | null
+          consultant_id?: string | null
           created_at?: string | null
           data: Json
           id?: string
+          last_contact_at?: string | null
+          opened_at?: string | null
           status?: string
           updated_at?: string | null
         }
         Update: {
           batch_id?: string | null
+          consultant_id?: string | null
           created_at?: string | null
           data?: Json
           id?: string
+          last_contact_at?: string | null
+          opened_at?: string | null
           status?: string
           updated_at?: string | null
         }
