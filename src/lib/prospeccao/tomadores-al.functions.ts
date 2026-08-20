@@ -175,6 +175,50 @@ async function bumpContador(client: any, nome: string, novos: number) {
   }
 }
 
+// Dias sem contato para um lead "novo" voltar ao estoque (reciclagem).
+const DIAS_RECICLAGEM = 14;
+
+// Quando o estoque livre de uma faixa acaba, devolvemos ao estoque leads que
+// estão parados: presos a consultoras inativas/descadastradas ou nunca
+// contatados há mais de DIAS_RECICLAGEM dias. Assim toda consultora consegue
+// completar as 10 vagas de cada faixa.
+async function reciclarFaixa(
+  client: any,
+  faixaRange: (q: any) => any,
+  nome: string,
+  quantos: number,
+): Promise<void> {
+  const { data: ativas } = await client.from("radar_consultoras").select("nome").eq("ativo", true);
+  const nomesAtivos = new Set((ativas ?? []).map((c: any) => String(c.nome ?? "").trim().toLowerCase()));
+  const limite = new Date(Date.now() - DIAS_RECICLAGEM * 86400000).toISOString();
+
+  const { data: parados } = await faixaRange(
+    client
+      .from("tomadores_al")
+      .select("id,consultora_responsavel,atribuido_em")
+      .not("consultora_responsavel", "is", null)
+      .neq("consultora_responsavel", nome)
+      .eq("status_abordagem", "novo"),
+  )
+    .order("atribuido_em", { ascending: true, nullsFirst: true })
+    .limit(Math.max(quantos * 20, 200));
+
+  const candidatos = (parados ?? []).filter((r: any) => {
+    const dono = String(r.consultora_responsavel ?? "").trim().toLowerCase();
+    if (!nomesAtivos.has(dono)) return true; // consultora inativa ou sem cadastro
+    return !r.atribuido_em || String(r.atribuido_em) < limite; // parado há muito tempo
+  });
+
+  const ids = candidatos.slice(0, quantos).map((r: any) => String(r.id));
+  if (!ids.length) return;
+
+  await client
+    .from("tomadores_al")
+    .update({ consultora_responsavel: null, atribuido_em: null })
+    .in("id", ids)
+    .eq("status_abordagem", "novo");
+}
+
 // Completa a carteira de uma faixa específica de empréstimo até POOL_ALVO.
 async function garantirPoolFaixa(nome: string, faixa: "alta" | "media" | "baixa"): Promise<number> {
   const client = await getAdminClient();
@@ -198,18 +242,29 @@ async function garantirPoolFaixa(nome: string, faixa: "alta" | "media" | "baixa"
   const faltam = POOL_ALVO - Number(abertos ?? 0);
   if (faltam <= 0) return 0;
 
-  const { data: livres, error: lErr } = await faixaRange(
-    client
-      .from("tomadores_al")
-      .select("id,documento,margem_disp_emprestimo")
-      .is("consultora_responsavel", null),
-  )
-    .order(COL_EMPRESTIMO, { ascending: false })
-    .limit(Math.max(faltam * 8, 40));
-  if (lErr || !livres?.length) return 0;
+  const buscarLivres = async () => {
+    const { data } = await faixaRange(
+      client
+        .from("tomadores_al")
+        .select("id,documento,margem_disp_emprestimo")
+        .is("consultora_responsavel", null),
+    )
+      .order(COL_EMPRESTIMO, { ascending: false })
+      .limit(Math.max(faltam * 8, 40));
+    return (data ?? []) as any[];
+  };
 
-  const ids = await priorizarComTelefone(client, livres as any[], faltam);
+  let livres = await buscarLivres();
+  if (livres.length < faltam) {
+    // Estoque insuficiente nesta faixa: recicla leads parados e tenta de novo.
+    await reciclarFaixa(client, faixaRange, nome, faltam - livres.length);
+    livres = await buscarLivres();
+  }
+  if (!livres.length) return 0;
+
+  const ids = await priorizarComTelefone(client, livres, faltam);
   if (!ids.length) return 0;
+
 
   const { data: atualizados, error: uErr } = await client
     .from("tomadores_al")
