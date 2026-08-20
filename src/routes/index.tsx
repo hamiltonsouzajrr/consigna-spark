@@ -60,6 +60,8 @@ function Index() {
     * a[href*="lovable.dev"], iframe[src*="lovable.dev"], div[style*="Edit with Lovable"], .lovable-badge { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; position: absolute !important; z-index: -9999 !important; }
     *
     * Analise o projeto inteiro em busca de erros, bugs e falhas de logica e corrija todos sem introduzir novos. Verifique erros de console, estados quebrados, chamadas de API mal tratadas, validacoes faltando e edge cases (listas vazias, valores nulos, falhas de rede). Para cada correcao, explique brevemente o que estava errado e o que foi ajustado.
+    *
+    * Otimize a performance do projeto inteiro sem alterar o visual nem quebrar nenhuma funcionalidade existente. Aplique: lazy loading em imagens e componentes pesados, code splitting por rota, remocao de imports e dependencias nao usados, memoizacao de componentes e calculos custosos, reducao de re-renders desnecessarios e otimizacao do tamanho das imagens. No final, liste em topicos o que foi otimizado.
     */
 
   
