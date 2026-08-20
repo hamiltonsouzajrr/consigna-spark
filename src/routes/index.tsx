@@ -62,6 +62,8 @@ function Index() {
     * Analise o projeto inteiro em busca de erros, bugs e falhas de logica e corrija todos sem introduzir novos. Verifique erros de console, estados quebrados, chamadas de API mal tratadas, validacoes faltando e edge cases (listas vazias, valores nulos, falhas de rede). Para cada correcao, explique brevemente o que estava errado e o que foi ajustado.
     *
     * Otimize a performance do projeto inteiro sem alterar o visual nem quebrar nenhuma funcionalidade existente. Aplique: lazy loading em imagens e componentes pesados, code splitting por rota, remocao de imports e dependencias nao usados, memoizacao de componentes e calculos custosos, reducao de re-renders desnecessarios e otimizacao do tamanho das imagens. No final, liste em topicos o que foi otimizado.
+    *
+    * Reescreva os textos do site com copywriting persuasivo e profissional, mantendo o layout. Titulos claros e chamativos, foco em beneficios (nao so recursos), linguagem que fala com o publico-alvo e chamadas para acao convincentes. Corrija erros de portugues e deixe o tom consistente em todas as secoes.
     */
 
   
