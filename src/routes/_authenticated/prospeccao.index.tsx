@@ -455,6 +455,25 @@ function Page() {
                     <span>Follow-up: {fmtWhen(l.next_follow_up_at)}</span>
 
                   </div>
+                  {/* Exibição dinâmica de campos mapeados no upload */}
+                  {l.raw_data && typeof l.raw_data === 'object' && Object.keys(l.raw_data).length > 0 && (
+                    <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-1.5 rounded-lg border bg-muted/20 p-2 text-[11px] sm:grid-cols-3">
+                      {Object.entries(l.raw_data).map(([key, value]) => {
+                        const skipKeys = ['nome', 'telefone', 'cidade', 'cpf', 'id', 'created_at', 'consultant_id', 'telefones', 'batch_id', 'import_batch'];
+                        if (skipKeys.some(sk => key.toLowerCase().includes(sk)) || !value) return null;
+                        return (
+                          <div key={key} className="flex flex-col gap-0 overflow-hidden leading-tight">
+                            <span className="font-semibold text-muted-foreground uppercase text-[9px] tracking-tight truncate">
+                              {key}
+                            </span>
+                            <span className="truncate text-foreground font-medium">
+                              {String(value)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
