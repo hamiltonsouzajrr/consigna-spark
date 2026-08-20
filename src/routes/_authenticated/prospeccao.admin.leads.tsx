@@ -105,6 +105,7 @@ function LeadsAdminPage() {
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
     setMappingOpen(false);
 
     try {
@@ -117,7 +118,7 @@ function LeadsAdminPage() {
         return newRow;
       });
 
-      // Validation: Check for email if present (example requirement)
+      // Validation: Check for email if present
       const hasEmail = selectedColumns.some(col => 
         col.toLowerCase().includes("email") || col.toLowerCase().includes("e-mail")
       );
@@ -126,12 +127,34 @@ function LeadsAdminPage() {
         toast.warning("Atenção: Nenhuma coluna de e-mail foi identificada no mapeamento.");
       }
 
-      await uploadMutation.mutateAsync({
+      // 1. Create batch
+      const batch = await createBatchFn({
         data: {
           filename: currentFile.name,
-          leads: mappedLeads,
+          totalLeads: mappedLeads.length
         }
       });
+
+      // 2. Process in chunks
+      const chunkSize = 200;
+      for (let i = 0; i < mappedLeads.length; i += chunkSize) {
+        const chunk = mappedLeads.slice(i, i + chunkSize);
+        const isLastChunk = i + chunkSize >= mappedLeads.length;
+        
+        await processChunkFn({
+          data: {
+            batchId: batch.id,
+            leads: chunk,
+            isLastChunk
+          }
+        });
+        
+        const progress = Math.min(Math.round(((i + chunk.length) / mappedLeads.length) * 100), 100);
+        setUploadProgress(progress);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["lead-batches"] });
+      toast.success("Arquivo processado com sucesso!");
       
       // Reset states
       setSelectedColumns([]);
@@ -139,9 +162,12 @@ function LeadsAdminPage() {
       setCurrentFile(null);
     } catch (err: any) {
       toast.error("Erro na importação: " + err.message);
+    } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
+
 
   const toggleColumn = (col: string) => {
     setSelectedColumns(prev => 
