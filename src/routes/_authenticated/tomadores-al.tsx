@@ -143,7 +143,8 @@ function MargemLinha({
 
 
 function Page() {
-  const { user, isAdmin } = useRhAccess();
+  const { user } = useAuth();
+  const { isAdmin } = useRhAccess();
   const fetchTomadores = useServerFn(getTomadoresAl);
   const abordagemFn = useServerFn(marcarAbordagemTomador);
   const distribuirFn = useServerFn(distribuirTomadoresAl);
