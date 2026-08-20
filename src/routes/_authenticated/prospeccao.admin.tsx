@@ -141,14 +141,14 @@ function Page() {
   const batchesQ = useQuery({ queryKey: ["prospect", "import-batches"], queryFn: () => listBatches(), enabled: !!user && isAdmin });
   const usersQ = useQuery({ queryKey: ["prospect", "system-users"], queryFn: () => listSystemUsers(), enabled: !!user && isAdmin });
   const consultants = consultantsQ.data ?? [];
-  const emailById = useMemo(() => new Map(consultants.map((c) => [c.id, c.email])), [consultants]);
+  const emailById = useMemo(() => new Map(consultants.map((c: any) => [c.id, c.email])), [consultants]);
 
   const { leads: parsed, meta: importMeta } = useMemo(() => buildParsed(rawRecords, phoneCol), [rawRecords, phoneCol]);
 
   // Default: all consultants selected for distribution/recycle once loaded.
   useEffect(() => {
     if (consultants.length && selectedConsultants.size === 0) {
-      setSelectedConsultants(new Set(consultants.map((c) => c.id)));
+      setSelectedConsultants(new Set(consultants.map((c: any) => c.id)));
     }
   }, [consultants]);
   const toggleConsultant = (id: string) =>
@@ -431,7 +431,8 @@ function Page() {
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Não atribuir agora</SelectItem>
-                      {consultants.map((c) => <SelectItem key={c.id} value={c.id}>{c.email}</SelectItem>)}
+                      {consultants.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.email}</SelectItem>)}
+
                     </SelectContent>
                   </Select>
                 </div>
@@ -486,7 +487,8 @@ function Page() {
               <SelectTrigger className="col-span-2"><SelectValue placeholder="Consultora" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Não atribuir</SelectItem>
-                {consultants.map((c) => <SelectItem key={c.id} value={c.id}>{c.email}</SelectItem>)}
+                {consultants.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.email}</SelectItem>)}
+
               </SelectContent>
             </Select>
           </div>
@@ -501,7 +503,7 @@ function Page() {
 
         <Label className="text-xs">Consultoras participantes</Label>
         <div className="mt-2 flex flex-wrap gap-2">
-          {consultants.map((c) => {
+          {consultants.map((c: any) => {
             const on = selectedConsultants.has(c.id);
             return (
               <button
@@ -614,7 +616,7 @@ function Page() {
                       <SelectTrigger className="h-8 w-[200px]"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">Não atribuído</SelectItem>
-                        {consultants.map((c) => <SelectItem key={c.id} value={c.id}>{c.email}</SelectItem>)}
+                        {consultants.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.email}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </TableCell>

@@ -1,11 +1,8 @@
-// Server functions for produção mensal. Reads are available to any authenticated
-// staff member (the ranking is an intentional company-wide feature) but go
-// through the service-role client inside an authenticated handler so the
-// underlying table's direct read access stays locked to admins. Writes assert
-// the caller is an admin.
+// Server functions for produção mensal.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { mesAtual, producaoInputItem } from "./producao.utils";
 
 export type ProducaoRow = {
   id: string;
@@ -18,16 +15,7 @@ export type ProducaoRow = {
   updated_at: string;
 };
 
-function mesAtual(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
 
-async function assertAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Acesso restrito a administradores.");
-}
 
 export const fetchMesesFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -71,19 +59,14 @@ export const fetchProducaoConsultoraFn = createServerFn({ method: "GET" })
     return (rows ?? []) as ProducaoRow[];
   });
 
-const inputItem = z.object({
-  consultora: z.string().min(1).max(160),
-  departamento: z.string().max(160).nullable().optional(),
-  mes: z.string().min(1).max(7),
-  valor: z.number(),
-  contratos: z.number().int(),
-});
 
 export const upsertProducaoFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => inputItem.parse(d))
+  .inputValidator((d) => producaoInputItem.parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const { assertAdmin } = await import("./producao.server");
     await assertAdmin(context.supabase, context.userId);
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("rh_producao").upsert(
       {
@@ -102,9 +85,11 @@ export const upsertProducaoFn = createServerFn({ method: "POST" })
 
 export const upsertProducaoBatchFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ items: z.array(inputItem).min(1).max(2000) }).parse(d))
+  .inputValidator((d) => z.object({ items: z.array(producaoInputItem).min(1).max(2000) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const { assertAdmin } = await import("./producao.server");
     await assertAdmin(context.supabase, context.userId);
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("rh_producao").upsert(
       data.items.map((input) => ({
@@ -125,7 +110,9 @@ export const deleteProducaoFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const { assertAdmin } = await import("./producao.server");
     await assertAdmin(context.supabase, context.userId);
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("rh_producao").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
