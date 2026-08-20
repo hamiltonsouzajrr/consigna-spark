@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
-  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, PhoneCall, MapPin, MessageCircle, DoorOpen, CheckCircle2, BarChart3, Award, SlidersHorizontal, X,
+  Flame, Clock, CalendarClock, Target, Timer, Search, Settings2, ChevronRight, Phone, PhoneCall, MapPin, MessageCircle, DoorOpen, CheckCircle2, BarChart3, Award, SlidersHorizontal, X, FileText,
 } from "lucide-react";
 import {
   STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, whatsappLink, telLink, CALL_OUTCOMES, SITUACAO_TAGS,
@@ -166,7 +166,7 @@ function Page() {
         .select(`
           id,nome,telefone,telefones,cpf,cidade,origem,orcamento,urgencia,status,situacao,
           score,idade,sexo,sla_status,next_follow_up_at,last_contact_at,first_response_at,created_at,
-          import_batch
+          import_batch,batch_id,raw_data
         `)
         .eq("status", "novo")
         .is("first_response_at", null)
