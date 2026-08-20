@@ -142,7 +142,7 @@ export const assignBatchToConsultant = createServerFn({ method: "POST" })
         cpf: findField(row, ["cpf", "documento"]),
         consultant_id: consultantId,
         created_by: userId,
-        status: "novo",
+        status: "novo" as const,
         origem: "planilha_importada",
         import_batch: batch.filename,
         batch_id: batchId,
@@ -154,7 +154,7 @@ export const assignBatchToConsultant = createServerFn({ method: "POST" })
     const chunkSize = 500;
     for (let i = 0; i < prospectLeads.length; i += chunkSize) {
       const chunk = prospectLeads.slice(i, i + chunkSize);
-      const { error: insertError } = await supabase.from("prospect_leads").insert(chunk);
+      const { error: insertError } = await supabase.from("prospect_leads").insert(chunk as any);
       if (insertError) throw new Error(insertError.message);
     }
 
