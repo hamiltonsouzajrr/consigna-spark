@@ -95,3 +95,70 @@ export const getLeadsByBatch = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return leads;
   });
+
+export const assignBatchToConsultant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({
+    batchId: z.string(),
+    consultantId: z.string().uuid(),
+  }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { supabase: userSupabase, userId } = context;
+    const { batchId, consultantId } = data;
+
+    // 1. Get the batch and its mapping
+    const { data: batch, error: batchError } = await supabase
+      .from("lead_batches")
+      .select("*")
+      .eq("id", batchId)
+      .single();
+    if (batchError) throw new Error(batchError.message);
+
+    // 2. Get the leads from leads_raw
+    const { data: rawLeads, error: rawError } = await supabase
+      .from("leads_raw")
+      .select("*")
+      .eq("batch_id", batchId);
+    if (rawError) throw new Error(rawError.message);
+
+    // 3. Prepare prospect_leads rows
+    const mapping = (batch.column_mapping || []) as string[];
+    
+    // Try to find common field names for basic CRM fields
+    const findField = (row: any, keys: string[]) => {
+      const match = Object.keys(row).find(k => 
+        keys.some(key => k.toLowerCase().includes(key.toLowerCase()))
+      );
+      return match ? row[match] : null;
+    };
+
+    const prospectLeads = rawLeads.map(raw => {
+      const row = raw.data as any;
+      return {
+        nome: findField(row, ["nome", "cliente", "name"]) || "Lead Importado",
+        telefone: findField(row, ["telefone", "celular", "phone", "tel"]),
+        cidade: findField(row, ["cidade", "city"]),
+        cpf: findField(row, ["cpf", "documento"]),
+        consultant_id: consultantId,
+        created_by: userId,
+        status: "novo",
+        origem: "planilha_importada",
+        import_batch: batch.filename,
+        batch_id: batchId,
+        raw_data: row
+      };
+    });
+
+    // 4. Insert in chunks
+    const chunkSize = 500;
+    for (let i = 0; i < prospectLeads.length; i += chunkSize) {
+      const chunk = prospectLeads.slice(i, i + chunkSize);
+      const { error: insertError } = await supabase.from("prospect_leads").insert(chunk);
+      if (insertError) throw new Error(insertError.message);
+    }
+
+    // 5. Mark batch as assigned
+    await supabase.from("lead_batches").update({ status: "completed" }).eq("id", batchId);
+
+    return { success: true, count: prospectLeads.length };
+  });
