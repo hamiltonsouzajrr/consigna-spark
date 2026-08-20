@@ -5,7 +5,18 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { leadInput } from "./prospeccao.utils";
 
 export type ProspectConsultant = { id: string; email: string };
+export const getProspectConsultants = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ProspectConsultant[]> => {
+    const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
+    await assertAdmin(supabase, userId);
 
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    if (error) throw new Error(error.message);
+    return data.users.map((u) => ({ id: u.id, email: u.email ?? "(sem e-mail)" }));
+  });
 
 export const adminCreateLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
