@@ -347,6 +347,76 @@ function LeadsAdminPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Column Mapping Dialog */}
+      <Dialog open={mappingOpen} onOpenChange={setMappingOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Mapeamento de Colunas</DialogTitle>
+            <DialogDescription>
+              Selecione as colunas da planilha que deseja importar para o CRM.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-auto py-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {availableColumns.map(col => (
+                <div 
+                  key={col}
+                  onClick={() => toggleColumn(col)}
+                  className={`
+                    flex items-center p-3 rounded-lg border cursor-pointer transition-all
+                    ${selectedColumns.includes(col) 
+                      ? "border-primary bg-primary/5 ring-1 ring-primary" 
+                      : "border-muted hover:border-muted-foreground/50"}
+                  `}
+                >
+                  <div className={`
+                    w-4 h-4 rounded-sm border mr-3 flex items-center justify-center
+                    ${selectedColumns.includes(col) ? "bg-primary border-primary" : "border-muted-foreground/30"}
+                  `}>
+                    {selectedColumns.includes(col) && <CheckCircle2 className="w-3 h-3 text-primary-foreground" />}
+                  </div>
+                  <span className="text-sm font-medium truncate">{col}</span>
+                </div>
+              ))}
+            </div>
+
+            {selectedColumns.length > 0 && (
+              <div className="mt-6 p-4 bg-muted/50 rounded-lg border border-muted">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                  Resumo da Seleção ({selectedColumns.length} colunas)
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedColumns.map(col => (
+                    <Badge key={col} variant="secondary" className="px-2 py-1">
+                      {col}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {availableColumns.length > 0 && selectedColumns.length === 0 && (
+              <div className="mt-8 text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
+                <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                <p>Selecione pelo menos uma coluna para continuar</p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="pt-4 border-t gap-2">
+            <Button variant="ghost" onClick={() => setMappingOpen(false)}>Cancelar</Button>
+            <Button 
+              onClick={confirmImport} 
+              disabled={selectedColumns.length === 0 || isUploading}
+            >
+              {isUploading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Confirmar Importação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
