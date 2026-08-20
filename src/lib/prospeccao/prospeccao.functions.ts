@@ -1,48 +1,11 @@
 // Server functions for the Prospecção (CRM) area.
-// - getProspectConsultants: admin-only; lists user accounts for lead assignment.
-// - adminCreateLeads: admin-only; bulk-inserts leads (spreadsheet upload / manual).
-// - adminAssignLeads: admin-only; (re)assigns leads to a consultant.
-// - getAdminStats: admin-only; aggregated CRM metrics for the admin panel.
-// - aiLeadAssist: assistant that summarizes the timeline and suggests next steps.
-
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-async function assertAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase.rpc("has_role", {
-    _user_id: userId,
-    _role: "admin",
-  });
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Acesso restrito a administradores.");
-}
+import { leadInput } from "./prospeccao.utils";
 
 export type ProspectConsultant = { id: string; email: string };
 
-export const getProspectConsultants = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<ProspectConsultant[]> => {
-    const { supabase, userId } = context;
-    await assertAdmin(supabase, userId);
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    if (error) throw new Error(error.message);
-    return data.users.map((u) => ({ id: u.id, email: u.email ?? "(sem e-mail)" }));
-  });
-
-const leadInput = z.object({
-  nome: z.string().trim().min(1).max(200),
-  telefone: z.string().trim().max(40).optional().nullable(),
-  telefones: z.array(z.string().trim().max(40)).max(20).optional().nullable(),
-  cpf: z.string().trim().max(20).optional().nullable(),
-  cidade: z.string().trim().max(120).optional().nullable(),
-  origem: z.string().trim().max(60).optional().nullable(),
-  orcamento: z.number().nonnegative().max(1_000_000_000_000).optional().nullable(),
-  urgencia: z.enum(["alta", "media", "baixa"]).optional().nullable(),
-  consultant_id: z.string().uuid().optional().nullable(),
-});
 
 export const adminCreateLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -58,7 +21,9 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ inserted: number; skipped: number; updated: number }> => {
     const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
     await assertAdmin(supabase, userId);
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -181,7 +146,9 @@ export const adminAssignLeads = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
     await assertAdmin(supabase, userId);
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
@@ -344,7 +311,9 @@ export const adminDistributeLeads = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ assigned: number; perConsultant: Record<string, number> }> => {
     const { supabase, userId } = context;
+    const { assertAdmin, applyAssignments } = await import("./prospeccao.server");
     await assertAdmin(supabase, userId);
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: leads, error } = await supabaseAdmin
@@ -396,7 +365,9 @@ export const adminRecycleLeads = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ recycled: number; perConsultant: Record<string, number> }> => {
     const { supabase, userId } = context;
+    const { assertAdmin, applyAssignments } = await import("./prospeccao.server");
     await assertAdmin(supabase, userId);
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const cutoff = new Date(Date.now() - data.idleDays * 86400000).toISOString();
@@ -459,7 +430,9 @@ export const getAdminStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdminStats> => {
     const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
     await assertAdmin(supabase, userId);
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: leads, error } = await supabaseAdmin
@@ -601,7 +574,9 @@ export const adminListImportBatches = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ImportBatch[]> => {
     const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
     await assertAdmin(supabase, userId);
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const groups = new Map<string, ImportBatch>();
@@ -644,7 +619,9 @@ export const adminDeleteImportBatch = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ deleted: number }> => {
     const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
     await assertAdmin(supabase, userId);
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const base = () => supabaseAdmin.from("prospect_leads").delete({ count: "exact" });
@@ -670,7 +647,9 @@ export const adminListSystemUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<SystemUser[]> => {
     const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
     await assertAdmin(supabase, userId);
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: usersData, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
@@ -705,7 +684,9 @@ export const adminSetUserRole = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
     await assertAdmin(supabase, userId);
+
 
     if (data.targetUserId === userId && !data.makeAdmin) {
       throw new Error("Você não pode remover o seu próprio acesso de administrador.");
@@ -734,7 +715,9 @@ export const adminDeleteSystemUser = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ targetUserId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
     await assertAdmin(supabase, userId);
+
 
     if (data.targetUserId === userId) {
       throw new Error("Você não pode excluir o seu próprio usuário.");
@@ -772,19 +755,20 @@ export type CallQualityStats = {
   byConsultant: { email: string; calls: number; answered: number; qualified: number }[];
 };
 
-const ANSWERED_OUTCOMES = ["Atendeu", "Pediu pra retornar", "Agendou simulação"];
-
-function parseOutcome(body: string | null): string {
-  if (!body) return "Outro";
-  const m = body.match(/Resultado:\s*(.+)/i);
-  return (m ? m[1] : body).trim();
-}
-
 export const getCallQualityStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<CallQualityStats> => {
     const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
     await assertAdmin(supabase, userId);
+
+    const ANSWERED_OUTCOMES = ["Atendeu", "Pediu pra retornar", "Agendou simulação"];
+    function parseOutcome(body: string | null): string {
+      if (!body) return "Outro";
+      const m = body.match(/Resultado:\s*(.+)/i);
+      return (m ? m[1] : body).trim();
+    }
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
