@@ -21,11 +21,9 @@ import { Route as AuthenticatedContratoRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedLimpezaRouteImport } from './routes/_authenticated/limpeza'
 import { Route as AuthenticatedPesquisasRouteImport } from './routes/_authenticated/pesquisas'
-import { Route as AuthenticatedPositivaIaRouteImport } from './routes/_authenticated/positiva-ia'
 import { Route as AuthenticatedQrcodesRouteImport } from './routes/_authenticated/qrcodes'
 import { Route as AuthenticatedRadarRouteImport } from './routes/_authenticated/radar'
 import { Route as AuthenticatedRhRouteImport } from './routes/_authenticated/rh'
-import { Route as AuthenticatedSafeConsigRouteImport } from './routes/_authenticated/safe-consig'
 import { Route as AuthenticatedServidoresSemAcessoRouteImport } from './routes/_authenticated/servidores-sem-acesso'
 import { Route as AuthenticatedSimulacaoAlagoasRouteImport } from './routes/_authenticated/simulacao-alagoas'
 import { Route as AuthenticatedTomadoresAlRouteImport } from './routes/_authenticated/tomadores-al'
@@ -35,9 +33,9 @@ import { Route as ApiPositivaCoachRouteImport } from './routes/api/positiva-coac
 import { Route as AprovacaoTokenRouteImport } from './routes/aprovacao.$token'
 import { Route as ConsultoraTokenRouteImport } from './routes/consultora.$token'
 import { Route as AuthenticatedPosVendaAvaliacoesRouteImport } from './routes/_authenticated/pos-venda.avaliacoes'
-import { Route as AuthenticatedPositivaIaAdminRouteImport } from './routes/_authenticated/positiva-ia.admin'
 import { Route as AuthenticatedProducaoMetasRouteImport } from './routes/_authenticated/producao.metas'
 import { Route as AuthenticatedProducaoMeuDiaRouteImport } from './routes/_authenticated/producao.meu-dia'
+import { Route as AuthenticatedProducaoRankingRouteImport } from './routes/_authenticated/producao.ranking'
 import { Route as AuthenticatedProspeccaoIndexRouteImport } from './routes/_authenticated/prospeccao.index'
 import { Route as AuthenticatedProspeccaoLeadIdRouteImport } from './routes/_authenticated/prospeccao.$leadId'
 import { Route as AuthenticatedProspeccaoAdminRouteImport } from './routes/_authenticated/prospeccao.admin'
@@ -71,7 +69,6 @@ import { Route as AuthenticatedRhOrganogramaRouteImport } from './routes/_authen
 import { Route as AuthenticatedRhPdiRouteImport } from './routes/_authenticated/rh.pdi'
 import { Route as AuthenticatedRhPortalRouteImport } from './routes/_authenticated/rh.portal'
 import { Route as AuthenticatedRhProducaoRouteImport } from './routes/_authenticated/rh.producao'
-import { Route as AuthenticatedRhRankingRouteImport } from './routes/_authenticated/rh.ranking'
 import { Route as AuthenticatedRhReconhecimentosRouteImport } from './routes/_authenticated/rh.reconhecimentos'
 import { Route as AuthenticatedRhRecrutamentoRouteImport } from './routes/_authenticated/rh.recrutamento'
 import { Route as AuthenticatedRhTreinamentosRouteImport } from './routes/_authenticated/rh.treinamentos'
@@ -79,6 +76,7 @@ import { Route as AuthenticatedRhTurnoverRouteImport } from './routes/_authentic
 import { Route as AuthenticatedRhColaboradoresIdRouteImport } from './routes/_authenticated/rh.colaboradores.$id'
 import { Route as AuthenticatedRhPortalIndexRouteImport } from './routes/_authenticated/rh.portal.index'
 import { Route as AuthenticatedRhPortalKpiRouteImport } from './routes/_authenticated/rh.portal.$kpi'
+import { Route as ApiPublicHooksFollowupLembretesRouteImport } from './routes/api/public/hooks/followup-lembretes'
 import { Route as ApiPublicHooksRadarDiarioRouteImport } from './routes/api/public/hooks/radar-diario'
 import { Route as ApiPublicHooksRadarDiarioWorkerRouteImport } from './routes/api/public/hooks/radar-diario-worker'
 import { Route as ApiPublicHooksTomadoresReporRouteImport } from './routes/api/public/hooks/tomadores-repor'
@@ -144,11 +142,6 @@ const AuthenticatedPesquisasRoute = AuthenticatedPesquisasRouteImport.update({
   path: '/pesquisas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedPositivaIaRoute = AuthenticatedPositivaIaRouteImport.update({
-  id: '/positiva-ia',
-  path: '/positiva-ia',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedQrcodesRoute = AuthenticatedQrcodesRouteImport.update({
   id: '/qrcodes',
   path: '/qrcodes',
@@ -162,11 +155,6 @@ const AuthenticatedRadarRoute = AuthenticatedRadarRouteImport.update({
 const AuthenticatedRhRoute = AuthenticatedRhRouteImport.update({
   id: '/rh',
   path: '/rh',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedSafeConsigRoute = AuthenticatedSafeConsigRouteImport.update({
-  id: '/safe-consig',
-  path: '/safe-consig',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedServidoresSemAcessoRoute =
@@ -218,12 +206,6 @@ const AuthenticatedPosVendaAvaliacoesRoute =
     path: '/pos-venda/avaliacoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedPositivaIaAdminRoute =
-  AuthenticatedPositivaIaAdminRouteImport.update({
-    id: '/admin',
-    path: '/admin',
-    getParentRoute: () => AuthenticatedPositivaIaRoute,
-  } as any)
 const AuthenticatedProducaoMetasRoute =
   AuthenticatedProducaoMetasRouteImport.update({
     id: '/producao/metas',
@@ -234,6 +216,12 @@ const AuthenticatedProducaoMeuDiaRoute =
   AuthenticatedProducaoMeuDiaRouteImport.update({
     id: '/producao/meu-dia',
     path: '/producao/meu-dia',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProducaoRankingRoute =
+  AuthenticatedProducaoRankingRouteImport.update({
+    id: '/producao/ranking',
+    path: '/producao/ranking',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProspeccaoIndexRoute =
@@ -424,11 +412,6 @@ const AuthenticatedRhProducaoRoute = AuthenticatedRhProducaoRouteImport.update({
   path: '/producao',
   getParentRoute: () => AuthenticatedRhRoute,
 } as any)
-const AuthenticatedRhRankingRoute = AuthenticatedRhRankingRouteImport.update({
-  id: '/ranking',
-  path: '/ranking',
-  getParentRoute: () => AuthenticatedRhRoute,
-} as any)
 const AuthenticatedRhReconhecimentosRoute =
   AuthenticatedRhReconhecimentosRouteImport.update({
     id: '/reconhecimentos',
@@ -470,6 +453,12 @@ const AuthenticatedRhPortalKpiRoute =
     path: '/$kpi',
     getParentRoute: () => AuthenticatedRhPortalRoute,
   } as any)
+const ApiPublicHooksFollowupLembretesRoute =
+  ApiPublicHooksFollowupLembretesRouteImport.update({
+    id: '/api/public/hooks/followup-lembretes',
+    path: '/api/public/hooks/followup-lembretes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksRadarDiarioRoute =
   ApiPublicHooksRadarDiarioRouteImport.update({
     id: '/api/public/hooks/radar-diario',
@@ -507,11 +496,9 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/limpeza': typeof AuthenticatedLimpezaRoute
   '/pesquisas': typeof AuthenticatedPesquisasRoute
-  '/positiva-ia': typeof AuthenticatedPositivaIaRouteWithChildren
   '/qrcodes': typeof AuthenticatedQrcodesRoute
   '/radar': typeof AuthenticatedRadarRouteWithChildren
   '/rh': typeof AuthenticatedRhRouteWithChildren
-  '/safe-consig': typeof AuthenticatedSafeConsigRoute
   '/servidores-sem-acesso': typeof AuthenticatedServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof AuthenticatedSimulacaoAlagoasRoute
   '/tomadores-al': typeof AuthenticatedTomadoresAlRoute
@@ -521,9 +508,9 @@ export interface FileRoutesByFullPath {
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/consultora/$token': typeof ConsultoraTokenRoute
   '/pos-venda/avaliacoes': typeof AuthenticatedPosVendaAvaliacoesRoute
-  '/positiva-ia/admin': typeof AuthenticatedPositivaIaAdminRoute
   '/producao/metas': typeof AuthenticatedProducaoMetasRoute
   '/producao/meu-dia': typeof AuthenticatedProducaoMeuDiaRoute
+  '/producao/ranking': typeof AuthenticatedProducaoRankingRoute
   '/prospeccao/$leadId': typeof AuthenticatedProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRoute
   '/prospeccao/followups': typeof AuthenticatedProspeccaoFollowupsRoute
@@ -554,7 +541,6 @@ export interface FileRoutesByFullPath {
   '/rh/pdi': typeof AuthenticatedRhPdiRoute
   '/rh/portal': typeof AuthenticatedRhPortalRouteWithChildren
   '/rh/producao': typeof AuthenticatedRhProducaoRoute
-  '/rh/ranking': typeof AuthenticatedRhRankingRoute
   '/rh/reconhecimentos': typeof AuthenticatedRhReconhecimentosRoute
   '/rh/recrutamento': typeof AuthenticatedRhRecrutamentoRoute
   '/rh/treinamentos': typeof AuthenticatedRhTreinamentosRoute
@@ -564,6 +550,7 @@ export interface FileRoutesByFullPath {
   '/rh/': typeof AuthenticatedRhIndexRoute
   '/rh/colaboradores/$id': typeof AuthenticatedRhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof AuthenticatedRhPortalKpiRoute
+  '/api/public/hooks/followup-lembretes': typeof ApiPublicHooksFollowupLembretesRoute
   '/api/public/hooks/radar-diario': typeof ApiPublicHooksRadarDiarioRoute
   '/api/public/hooks/radar-diario-worker': typeof ApiPublicHooksRadarDiarioWorkerRoute
   '/api/public/hooks/tomadores-repor': typeof ApiPublicHooksTomadoresReporRoute
@@ -582,9 +569,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/limpeza': typeof AuthenticatedLimpezaRoute
   '/pesquisas': typeof AuthenticatedPesquisasRoute
-  '/positiva-ia': typeof AuthenticatedPositivaIaRouteWithChildren
   '/qrcodes': typeof AuthenticatedQrcodesRoute
-  '/safe-consig': typeof AuthenticatedSafeConsigRoute
   '/servidores-sem-acesso': typeof AuthenticatedServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof AuthenticatedSimulacaoAlagoasRoute
   '/tomadores-al': typeof AuthenticatedTomadoresAlRoute
@@ -594,9 +579,9 @@ export interface FileRoutesByTo {
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/consultora/$token': typeof ConsultoraTokenRoute
   '/pos-venda/avaliacoes': typeof AuthenticatedPosVendaAvaliacoesRoute
-  '/positiva-ia/admin': typeof AuthenticatedPositivaIaAdminRoute
   '/producao/metas': typeof AuthenticatedProducaoMetasRoute
   '/producao/meu-dia': typeof AuthenticatedProducaoMeuDiaRoute
+  '/producao/ranking': typeof AuthenticatedProducaoRankingRoute
   '/prospeccao/$leadId': typeof AuthenticatedProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRoute
   '/prospeccao/followups': typeof AuthenticatedProspeccaoFollowupsRoute
@@ -626,7 +611,6 @@ export interface FileRoutesByTo {
   '/rh/organograma': typeof AuthenticatedRhOrganogramaRoute
   '/rh/pdi': typeof AuthenticatedRhPdiRoute
   '/rh/producao': typeof AuthenticatedRhProducaoRoute
-  '/rh/ranking': typeof AuthenticatedRhRankingRoute
   '/rh/reconhecimentos': typeof AuthenticatedRhReconhecimentosRoute
   '/rh/recrutamento': typeof AuthenticatedRhRecrutamentoRoute
   '/rh/treinamentos': typeof AuthenticatedRhTreinamentosRoute
@@ -636,6 +620,7 @@ export interface FileRoutesByTo {
   '/rh': typeof AuthenticatedRhIndexRoute
   '/rh/colaboradores/$id': typeof AuthenticatedRhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof AuthenticatedRhPortalKpiRoute
+  '/api/public/hooks/followup-lembretes': typeof ApiPublicHooksFollowupLembretesRoute
   '/api/public/hooks/radar-diario': typeof ApiPublicHooksRadarDiarioRoute
   '/api/public/hooks/radar-diario-worker': typeof ApiPublicHooksRadarDiarioWorkerRoute
   '/api/public/hooks/tomadores-repor': typeof ApiPublicHooksTomadoresReporRoute
@@ -656,11 +641,9 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/limpeza': typeof AuthenticatedLimpezaRoute
   '/_authenticated/pesquisas': typeof AuthenticatedPesquisasRoute
-  '/_authenticated/positiva-ia': typeof AuthenticatedPositivaIaRouteWithChildren
   '/_authenticated/qrcodes': typeof AuthenticatedQrcodesRoute
   '/_authenticated/radar': typeof AuthenticatedRadarRouteWithChildren
   '/_authenticated/rh': typeof AuthenticatedRhRouteWithChildren
-  '/_authenticated/safe-consig': typeof AuthenticatedSafeConsigRoute
   '/_authenticated/servidores-sem-acesso': typeof AuthenticatedServidoresSemAcessoRoute
   '/_authenticated/simulacao-alagoas': typeof AuthenticatedSimulacaoAlagoasRoute
   '/_authenticated/tomadores-al': typeof AuthenticatedTomadoresAlRoute
@@ -670,9 +653,9 @@ export interface FileRoutesById {
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/consultora/$token': typeof ConsultoraTokenRoute
   '/_authenticated/pos-venda/avaliacoes': typeof AuthenticatedPosVendaAvaliacoesRoute
-  '/_authenticated/positiva-ia/admin': typeof AuthenticatedPositivaIaAdminRoute
   '/_authenticated/producao/metas': typeof AuthenticatedProducaoMetasRoute
   '/_authenticated/producao/meu-dia': typeof AuthenticatedProducaoMeuDiaRoute
+  '/_authenticated/producao/ranking': typeof AuthenticatedProducaoRankingRoute
   '/_authenticated/prospeccao/$leadId': typeof AuthenticatedProspeccaoLeadIdRoute
   '/_authenticated/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRoute
   '/_authenticated/prospeccao/followups': typeof AuthenticatedProspeccaoFollowupsRoute
@@ -703,7 +686,6 @@ export interface FileRoutesById {
   '/_authenticated/rh/pdi': typeof AuthenticatedRhPdiRoute
   '/_authenticated/rh/portal': typeof AuthenticatedRhPortalRouteWithChildren
   '/_authenticated/rh/producao': typeof AuthenticatedRhProducaoRoute
-  '/_authenticated/rh/ranking': typeof AuthenticatedRhRankingRoute
   '/_authenticated/rh/reconhecimentos': typeof AuthenticatedRhReconhecimentosRoute
   '/_authenticated/rh/recrutamento': typeof AuthenticatedRhRecrutamentoRoute
   '/_authenticated/rh/treinamentos': typeof AuthenticatedRhTreinamentosRoute
@@ -713,6 +695,7 @@ export interface FileRoutesById {
   '/_authenticated/rh/': typeof AuthenticatedRhIndexRoute
   '/_authenticated/rh/colaboradores/$id': typeof AuthenticatedRhColaboradoresIdRoute
   '/_authenticated/rh/portal/$kpi': typeof AuthenticatedRhPortalKpiRoute
+  '/api/public/hooks/followup-lembretes': typeof ApiPublicHooksFollowupLembretesRoute
   '/api/public/hooks/radar-diario': typeof ApiPublicHooksRadarDiarioRoute
   '/api/public/hooks/radar-diario-worker': typeof ApiPublicHooksRadarDiarioWorkerRoute
   '/api/public/hooks/tomadores-repor': typeof ApiPublicHooksTomadoresReporRoute
@@ -733,11 +716,9 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/limpeza'
     | '/pesquisas'
-    | '/positiva-ia'
     | '/qrcodes'
     | '/radar'
     | '/rh'
-    | '/safe-consig'
     | '/servidores-sem-acesso'
     | '/simulacao-alagoas'
     | '/tomadores-al'
@@ -747,9 +728,9 @@ export interface FileRouteTypes {
     | '/aprovacao/$token'
     | '/consultora/$token'
     | '/pos-venda/avaliacoes'
-    | '/positiva-ia/admin'
     | '/producao/metas'
     | '/producao/meu-dia'
+    | '/producao/ranking'
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
     | '/prospeccao/followups'
@@ -780,7 +761,6 @@ export interface FileRouteTypes {
     | '/rh/pdi'
     | '/rh/portal'
     | '/rh/producao'
-    | '/rh/ranking'
     | '/rh/reconhecimentos'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
@@ -790,6 +770,7 @@ export interface FileRouteTypes {
     | '/rh/'
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
+    | '/api/public/hooks/followup-lembretes'
     | '/api/public/hooks/radar-diario'
     | '/api/public/hooks/radar-diario-worker'
     | '/api/public/hooks/tomadores-repor'
@@ -808,9 +789,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/limpeza'
     | '/pesquisas'
-    | '/positiva-ia'
     | '/qrcodes'
-    | '/safe-consig'
     | '/servidores-sem-acesso'
     | '/simulacao-alagoas'
     | '/tomadores-al'
@@ -820,9 +799,9 @@ export interface FileRouteTypes {
     | '/aprovacao/$token'
     | '/consultora/$token'
     | '/pos-venda/avaliacoes'
-    | '/positiva-ia/admin'
     | '/producao/metas'
     | '/producao/meu-dia'
+    | '/producao/ranking'
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
     | '/prospeccao/followups'
@@ -852,7 +831,6 @@ export interface FileRouteTypes {
     | '/rh/organograma'
     | '/rh/pdi'
     | '/rh/producao'
-    | '/rh/ranking'
     | '/rh/reconhecimentos'
     | '/rh/recrutamento'
     | '/rh/treinamentos'
@@ -862,6 +840,7 @@ export interface FileRouteTypes {
     | '/rh'
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
+    | '/api/public/hooks/followup-lembretes'
     | '/api/public/hooks/radar-diario'
     | '/api/public/hooks/radar-diario-worker'
     | '/api/public/hooks/tomadores-repor'
@@ -881,11 +860,9 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/limpeza'
     | '/_authenticated/pesquisas'
-    | '/_authenticated/positiva-ia'
     | '/_authenticated/qrcodes'
     | '/_authenticated/radar'
     | '/_authenticated/rh'
-    | '/_authenticated/safe-consig'
     | '/_authenticated/servidores-sem-acesso'
     | '/_authenticated/simulacao-alagoas'
     | '/_authenticated/tomadores-al'
@@ -895,9 +872,9 @@ export interface FileRouteTypes {
     | '/aprovacao/$token'
     | '/consultora/$token'
     | '/_authenticated/pos-venda/avaliacoes'
-    | '/_authenticated/positiva-ia/admin'
     | '/_authenticated/producao/metas'
     | '/_authenticated/producao/meu-dia'
+    | '/_authenticated/producao/ranking'
     | '/_authenticated/prospeccao/$leadId'
     | '/_authenticated/prospeccao/admin'
     | '/_authenticated/prospeccao/followups'
@@ -928,7 +905,6 @@ export interface FileRouteTypes {
     | '/_authenticated/rh/pdi'
     | '/_authenticated/rh/portal'
     | '/_authenticated/rh/producao'
-    | '/_authenticated/rh/ranking'
     | '/_authenticated/rh/reconhecimentos'
     | '/_authenticated/rh/recrutamento'
     | '/_authenticated/rh/treinamentos'
@@ -938,6 +914,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rh/'
     | '/_authenticated/rh/colaboradores/$id'
     | '/_authenticated/rh/portal/$kpi'
+    | '/api/public/hooks/followup-lembretes'
     | '/api/public/hooks/radar-diario'
     | '/api/public/hooks/radar-diario-worker'
     | '/api/public/hooks/tomadores-repor'
@@ -954,6 +931,7 @@ export interface RootRouteChildren {
   ApiPositivaCoachRoute: typeof ApiPositivaCoachRoute
   AprovacaoTokenRoute: typeof AprovacaoTokenRoute
   ConsultoraTokenRoute: typeof ConsultoraTokenRoute
+  ApiPublicHooksFollowupLembretesRoute: typeof ApiPublicHooksFollowupLembretesRoute
   ApiPublicHooksRadarDiarioRoute: typeof ApiPublicHooksRadarDiarioRoute
   ApiPublicHooksRadarDiarioWorkerRoute: typeof ApiPublicHooksRadarDiarioWorkerRoute
   ApiPublicHooksTomadoresReporRoute: typeof ApiPublicHooksTomadoresReporRoute
@@ -1046,13 +1024,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPesquisasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/positiva-ia': {
-      id: '/_authenticated/positiva-ia'
-      path: '/positiva-ia'
-      fullPath: '/positiva-ia'
-      preLoaderRoute: typeof AuthenticatedPositivaIaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/qrcodes': {
       id: '/_authenticated/qrcodes'
       path: '/qrcodes'
@@ -1072,13 +1043,6 @@ declare module '@tanstack/react-router' {
       path: '/rh'
       fullPath: '/rh'
       preLoaderRoute: typeof AuthenticatedRhRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/safe-consig': {
-      id: '/_authenticated/safe-consig'
-      path: '/safe-consig'
-      fullPath: '/safe-consig'
-      preLoaderRoute: typeof AuthenticatedSafeConsigRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/servidores-sem-acesso': {
@@ -1144,13 +1108,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPosVendaAvaliacoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/positiva-ia/admin': {
-      id: '/_authenticated/positiva-ia/admin'
-      path: '/admin'
-      fullPath: '/positiva-ia/admin'
-      preLoaderRoute: typeof AuthenticatedPositivaIaAdminRouteImport
-      parentRoute: typeof AuthenticatedPositivaIaRoute
-    }
     '/_authenticated/producao/metas': {
       id: '/_authenticated/producao/metas'
       path: '/producao/metas'
@@ -1163,6 +1120,13 @@ declare module '@tanstack/react-router' {
       path: '/producao/meu-dia'
       fullPath: '/producao/meu-dia'
       preLoaderRoute: typeof AuthenticatedProducaoMeuDiaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/producao/ranking': {
+      id: '/_authenticated/producao/ranking'
+      path: '/producao/ranking'
+      fullPath: '/producao/ranking'
+      preLoaderRoute: typeof AuthenticatedProducaoRankingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/prospeccao/': {
@@ -1396,13 +1360,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRhProducaoRouteImport
       parentRoute: typeof AuthenticatedRhRoute
     }
-    '/_authenticated/rh/ranking': {
-      id: '/_authenticated/rh/ranking'
-      path: '/ranking'
-      fullPath: '/rh/ranking'
-      preLoaderRoute: typeof AuthenticatedRhRankingRouteImport
-      parentRoute: typeof AuthenticatedRhRoute
-    }
     '/_authenticated/rh/reconhecimentos': {
       id: '/_authenticated/rh/reconhecimentos'
       path: '/reconhecimentos'
@@ -1452,6 +1409,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRhPortalKpiRouteImport
       parentRoute: typeof AuthenticatedRhPortalRoute
     }
+    '/api/public/hooks/followup-lembretes': {
+      id: '/api/public/hooks/followup-lembretes'
+      path: '/api/public/hooks/followup-lembretes'
+      fullPath: '/api/public/hooks/followup-lembretes'
+      preLoaderRoute: typeof ApiPublicHooksFollowupLembretesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/radar-diario': {
       id: '/api/public/hooks/radar-diario'
       path: '/api/public/hooks/radar-diario'
@@ -1482,20 +1446,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface AuthenticatedPositivaIaRouteChildren {
-  AuthenticatedPositivaIaAdminRoute: typeof AuthenticatedPositivaIaAdminRoute
-}
-
-const AuthenticatedPositivaIaRouteChildren: AuthenticatedPositivaIaRouteChildren =
-  {
-    AuthenticatedPositivaIaAdminRoute: AuthenticatedPositivaIaAdminRoute,
-  }
-
-const AuthenticatedPositivaIaRouteWithChildren =
-  AuthenticatedPositivaIaRoute._addFileChildren(
-    AuthenticatedPositivaIaRouteChildren,
-  )
 
 interface AuthenticatedRadarRouteChildren {
   AuthenticatedRadarArquivosRoute: typeof AuthenticatedRadarArquivosRoute
@@ -1566,7 +1516,6 @@ interface AuthenticatedRhRouteChildren {
   AuthenticatedRhPdiRoute: typeof AuthenticatedRhPdiRoute
   AuthenticatedRhPortalRoute: typeof AuthenticatedRhPortalRouteWithChildren
   AuthenticatedRhProducaoRoute: typeof AuthenticatedRhProducaoRoute
-  AuthenticatedRhRankingRoute: typeof AuthenticatedRhRankingRoute
   AuthenticatedRhReconhecimentosRoute: typeof AuthenticatedRhReconhecimentosRoute
   AuthenticatedRhRecrutamentoRoute: typeof AuthenticatedRhRecrutamentoRoute
   AuthenticatedRhTreinamentosRoute: typeof AuthenticatedRhTreinamentosRoute
@@ -1596,7 +1545,6 @@ const AuthenticatedRhRouteChildren: AuthenticatedRhRouteChildren = {
   AuthenticatedRhPdiRoute: AuthenticatedRhPdiRoute,
   AuthenticatedRhPortalRoute: AuthenticatedRhPortalRouteWithChildren,
   AuthenticatedRhProducaoRoute: AuthenticatedRhProducaoRoute,
-  AuthenticatedRhRankingRoute: AuthenticatedRhRankingRoute,
   AuthenticatedRhReconhecimentosRoute: AuthenticatedRhReconhecimentosRoute,
   AuthenticatedRhRecrutamentoRoute: AuthenticatedRhRecrutamentoRoute,
   AuthenticatedRhTreinamentosRoute: AuthenticatedRhTreinamentosRoute,
@@ -1616,11 +1564,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLimpezaRoute: typeof AuthenticatedLimpezaRoute
   AuthenticatedPesquisasRoute: typeof AuthenticatedPesquisasRoute
-  AuthenticatedPositivaIaRoute: typeof AuthenticatedPositivaIaRouteWithChildren
   AuthenticatedQrcodesRoute: typeof AuthenticatedQrcodesRoute
   AuthenticatedRadarRoute: typeof AuthenticatedRadarRouteWithChildren
   AuthenticatedRhRoute: typeof AuthenticatedRhRouteWithChildren
-  AuthenticatedSafeConsigRoute: typeof AuthenticatedSafeConsigRoute
   AuthenticatedServidoresSemAcessoRoute: typeof AuthenticatedServidoresSemAcessoRoute
   AuthenticatedSimulacaoAlagoasRoute: typeof AuthenticatedSimulacaoAlagoasRoute
   AuthenticatedTomadoresAlRoute: typeof AuthenticatedTomadoresAlRoute
@@ -1629,6 +1575,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPosVendaAvaliacoesRoute: typeof AuthenticatedPosVendaAvaliacoesRoute
   AuthenticatedProducaoMetasRoute: typeof AuthenticatedProducaoMetasRoute
   AuthenticatedProducaoMeuDiaRoute: typeof AuthenticatedProducaoMeuDiaRoute
+  AuthenticatedProducaoRankingRoute: typeof AuthenticatedProducaoRankingRoute
   AuthenticatedProspeccaoLeadIdRoute: typeof AuthenticatedProspeccaoLeadIdRoute
   AuthenticatedProspeccaoAdminRoute: typeof AuthenticatedProspeccaoAdminRoute
   AuthenticatedProspeccaoFollowupsRoute: typeof AuthenticatedProspeccaoFollowupsRoute
@@ -1646,11 +1593,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLimpezaRoute: AuthenticatedLimpezaRoute,
   AuthenticatedPesquisasRoute: AuthenticatedPesquisasRoute,
-  AuthenticatedPositivaIaRoute: AuthenticatedPositivaIaRouteWithChildren,
   AuthenticatedQrcodesRoute: AuthenticatedQrcodesRoute,
   AuthenticatedRadarRoute: AuthenticatedRadarRouteWithChildren,
   AuthenticatedRhRoute: AuthenticatedRhRouteWithChildren,
-  AuthenticatedSafeConsigRoute: AuthenticatedSafeConsigRoute,
   AuthenticatedServidoresSemAcessoRoute: AuthenticatedServidoresSemAcessoRoute,
   AuthenticatedSimulacaoAlagoasRoute: AuthenticatedSimulacaoAlagoasRoute,
   AuthenticatedTomadoresAlRoute: AuthenticatedTomadoresAlRoute,
@@ -1659,6 +1604,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPosVendaAvaliacoesRoute: AuthenticatedPosVendaAvaliacoesRoute,
   AuthenticatedProducaoMetasRoute: AuthenticatedProducaoMetasRoute,
   AuthenticatedProducaoMeuDiaRoute: AuthenticatedProducaoMeuDiaRoute,
+  AuthenticatedProducaoRankingRoute: AuthenticatedProducaoRankingRoute,
   AuthenticatedProspeccaoLeadIdRoute: AuthenticatedProspeccaoLeadIdRoute,
   AuthenticatedProspeccaoAdminRoute: AuthenticatedProspeccaoAdminRoute,
   AuthenticatedProspeccaoFollowupsRoute: AuthenticatedProspeccaoFollowupsRoute,
@@ -1681,6 +1627,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPositivaCoachRoute: ApiPositivaCoachRoute,
   AprovacaoTokenRoute: AprovacaoTokenRoute,
   ConsultoraTokenRoute: ConsultoraTokenRoute,
+  ApiPublicHooksFollowupLembretesRoute: ApiPublicHooksFollowupLembretesRoute,
   ApiPublicHooksRadarDiarioRoute: ApiPublicHooksRadarDiarioRoute,
   ApiPublicHooksRadarDiarioWorkerRoute: ApiPublicHooksRadarDiarioWorkerRoute,
   ApiPublicHooksTomadoresReporRoute: ApiPublicHooksTomadoresReporRoute,

@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Building2, BriefcaseBusiness, Plane, Clock,
   FileText, GraduationCap, Laptop, Star, AlertTriangle, UserSearch,
   ClipboardCheck, UserMinus, Network, ReceiptText, HeartHandshake,
-  Target, Gauge, TrendingDown, Trophy, IdCard,
+  Target, Gauge, TrendingDown, IdCard,
   Goal, Award, ShieldCheck, Lock, LineChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,7 +30,7 @@ export const rhNav = [
   { to: "/rh/clima", label: "Clima Organizacional", icon: Gauge },
   
   { to: "/rh/turnover", label: "Predição de Turnover", icon: TrendingDown },
-  { to: "/rh/ranking", label: "Ranking", icon: Trophy },
+  
   { to: "/rh/portal", label: "Portal do Colaborador", icon: IdCard },
   { to: "/rh/okrs", label: "OKRs", icon: Goal },
   { to: "/rh/reconhecimentos", label: "Reconhecimentos", icon: Award },

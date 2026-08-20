@@ -3,8 +3,8 @@ export const ACCESS_PRESETS: { key: string; label: string; description: string; 
   {
     key: "consultora",
     label: "Consultora",
-    description: "Portal, produção, ranking e reconhecimentos.",
-    tabs: ["/rh/producao", "/rh/ranking", "/rh/reconhecimentos", "/rh/treinamentos"],
+    description: "Portal, produção e reconhecimentos.",
+    tabs: ["/rh/producao", "/rh/reconhecimentos", "/rh/treinamentos"],
   },
   {
     key: "gestor",
@@ -16,7 +16,6 @@ export const ACCESS_PRESETS: { key: string; label: string; description: string; 
       "/rh/avaliacoes",
       "/rh/pdi",
       "/rh/okrs",
-      "/rh/ranking",
       "/rh/producao",
       "/rh/ocorrencias",
       "/rh/clima",
