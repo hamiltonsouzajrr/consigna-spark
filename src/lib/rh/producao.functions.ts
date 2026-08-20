@@ -2,7 +2,19 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { mesAtual, producaoInputItem, type ProducaoRow } from "./producao.utils";
+import { mesAtual, producaoInputItem } from "./producao.utils";
+
+export type ProducaoRow = {
+  id: string;
+  consultora: string;
+  departamento: string | null;
+  mes: string;
+  valor: number;
+  contratos: number;
+  created_at: string;
+  updated_at: string;
+};
+
 
 
 export const fetchMesesFn = createServerFn({ method: "GET" })
