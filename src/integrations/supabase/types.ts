@@ -585,6 +585,7 @@ export type Database = {
       }
       lead_batches: {
         Row: {
+          column_mapping: Json | null
           created_at: string | null
           created_by: string | null
           error_message: string | null
@@ -596,6 +597,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          column_mapping?: Json | null
           created_at?: string | null
           created_by?: string | null
           error_message?: string | null
@@ -607,6 +609,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          column_mapping?: Json | null
           created_at?: string | null
           created_by?: string | null
           error_message?: string | null
@@ -698,25 +701,34 @@ export type Database = {
       leads_raw: {
         Row: {
           batch_id: string | null
+          consultant_id: string | null
           created_at: string | null
           data: Json
           id: string
+          last_contact_at: string | null
+          opened_at: string | null
           status: string
           updated_at: string | null
         }
         Insert: {
           batch_id?: string | null
+          consultant_id?: string | null
           created_at?: string | null
           data: Json
           id?: string
+          last_contact_at?: string | null
+          opened_at?: string | null
           status?: string
           updated_at?: string | null
         }
         Update: {
           batch_id?: string | null
+          consultant_id?: string | null
           created_at?: string | null
           data?: Json
           id?: string
+          last_contact_at?: string | null
+          opened_at?: string | null
           status?: string
           updated_at?: string | null
         }
@@ -1213,6 +1225,7 @@ export type Database = {
       }
       prospect_leads: {
         Row: {
+          batch_id: string | null
           cidade: string | null
           consultant_id: string | null
           cpf: string | null
@@ -1231,6 +1244,7 @@ export type Database = {
           orcamento: number | null
           origem: string | null
           quality_score: number
+          raw_data: Json | null
           respondeu_whatsapp: boolean
           score: number
           sexo: string | null
@@ -1243,6 +1257,7 @@ export type Database = {
           urgencia: string | null
         }
         Insert: {
+          batch_id?: string | null
           cidade?: string | null
           consultant_id?: string | null
           cpf?: string | null
@@ -1261,6 +1276,7 @@ export type Database = {
           orcamento?: number | null
           origem?: string | null
           quality_score?: number
+          raw_data?: Json | null
           respondeu_whatsapp?: boolean
           score?: number
           sexo?: string | null
@@ -1273,6 +1289,7 @@ export type Database = {
           urgencia?: string | null
         }
         Update: {
+          batch_id?: string | null
           cidade?: string | null
           consultant_id?: string | null
           cpf?: string | null
@@ -1291,6 +1308,7 @@ export type Database = {
           orcamento?: number | null
           origem?: string | null
           quality_score?: number
+          raw_data?: Json | null
           respondeu_whatsapp?: boolean
           score?: number
           sexo?: string | null
@@ -1302,7 +1320,15 @@ export type Database = {
           updated_at?: string
           urgencia?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "prospect_leads_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "lead_batches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       radar_consultoras: {
         Row: {

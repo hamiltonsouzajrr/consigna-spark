@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getLeadBatches, uploadLeadsBatch, getLeadsByBatch } from "@/lib/prospeccao/leads-admin.functions";
+import { getLeadBatches, createLeadBatch, processLeadChunk, getLeadsByBatch, assignBatchToConsultant } from "@/lib/prospeccao/leads-admin.functions";
+import { getProspectConsultants } from "@/lib/prospeccao/prospeccao.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,13 +11,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { 
   Loader2, Upload, FileText, CheckCircle2, AlertCircle, Clock, 
-  Search, ExternalLink, Download, Trash2, Edit2
+  Search, ExternalLink, Download, Trash2, Edit2, Users
 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { 
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter 
 } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 
 export const Route = createFileRoute("/_authenticated/prospeccao/admin/leads")({
   component: LeadsAdminPage,
@@ -24,9 +26,13 @@ export const Route = createFileRoute("/_authenticated/prospeccao/admin/leads")({
 
 function LeadsAdminPage() {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [selectedConsultant, setSelectedConsultant] = useState("");
+  const [isAssigning, setIsAssigning] = useState(false);
   
   // Column mapping states
   const [previewData, setPreviewData] = useState<any[]>([]);
@@ -38,12 +44,20 @@ function LeadsAdminPage() {
   const queryClient = useQueryClient();
 
   const getBatchesFn = useServerFn(getLeadBatches);
-  const uploadBatchFn = useServerFn(uploadLeadsBatch);
+  const createBatchFn = useServerFn(createLeadBatch);
+  const processChunkFn = useServerFn(processLeadChunk);
   const getLeadsFn = useServerFn(getLeadsByBatch);
+  const getConsultantsFn = useServerFn(getProspectConsultants);
+  const assignBatchFn = useServerFn(assignBatchToConsultant);
 
   const { data: batches, isLoading } = useQuery({
     queryKey: ["lead-batches"],
     queryFn: () => getBatchesFn(),
+  });
+
+  const { data: consultants } = useQuery({
+    queryKey: ["prospect-consultants"],
+    queryFn: () => getConsultantsFn(),
   });
 
   const { data: leads, isLoading: leadsLoading } = useQuery({
@@ -62,18 +76,6 @@ function LeadsAdminPage() {
     });
   }, [leads, searchTerm]);
   
-  const uploadMutation = useMutation({
-    mutationFn: uploadBatchFn,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["lead-batches"] });
-      toast.success("Arquivo processado com sucesso!");
-    },
-    onError: (error) => {
-      toast.error(`Erro no upload: ${error.message}`);
-    },
-    onSettled: () => setIsUploading(false),
-  });
-
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -107,6 +109,7 @@ function LeadsAdminPage() {
     reader.readAsBinaryString(file);
   };
 
+
   const confirmImport = async () => {
     if (!currentFile || selectedColumns.length === 0) {
       toast.error("Selecione pelo menos uma coluna para importar.");
@@ -114,6 +117,7 @@ function LeadsAdminPage() {
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
     setMappingOpen(false);
 
     try {
@@ -126,7 +130,7 @@ function LeadsAdminPage() {
         return newRow;
       });
 
-      // Validation: Check for email if present (example requirement)
+      // Validation: Check for email if present
       const hasEmail = selectedColumns.some(col => 
         col.toLowerCase().includes("email") || col.toLowerCase().includes("e-mail")
       );
@@ -135,12 +139,35 @@ function LeadsAdminPage() {
         toast.warning("Atenção: Nenhuma coluna de e-mail foi identificada no mapeamento.");
       }
 
-      await uploadMutation.mutateAsync({
+      // 1. Create batch
+      const batch = await createBatchFn({
         data: {
           filename: currentFile.name,
-          leads: mappedLeads,
+          totalLeads: mappedLeads.length,
+          columnMapping: selectedColumns
         }
       });
+
+      // 2. Process in chunks
+      const chunkSize = 200;
+      for (let i = 0; i < mappedLeads.length; i += chunkSize) {
+        const chunk = mappedLeads.slice(i, i + chunkSize);
+        const isLastChunk = i + chunkSize >= mappedLeads.length;
+        
+        await processChunkFn({
+          data: {
+            batchId: batch.id,
+            leads: chunk,
+            isLastChunk
+          }
+        });
+        
+        const progress = Math.min(Math.round(((i + chunk.length) / mappedLeads.length) * 100), 100);
+        setUploadProgress(progress);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["lead-batches"] });
+      toast.success("Arquivo processado com sucesso!");
       
       // Reset states
       setSelectedColumns([]);
@@ -148,9 +175,12 @@ function LeadsAdminPage() {
       setCurrentFile(null);
     } catch (err: any) {
       toast.error("Erro na importação: " + err.message);
+    } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
+
 
   const toggleColumn = (col: string) => {
     setSelectedColumns(prev => 
@@ -168,6 +198,32 @@ function LeadsAdminPage() {
         return <Badge className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20"><AlertCircle className="w-3 h-3 mr-1" /> Erro</Badge>;
       default:
         return <Badge className="bg-gray-500/10 text-gray-500 hover:bg-gray-500/20 border-gray-500/20"><Clock className="w-3 h-3 mr-1" /> Pendente</Badge>;
+    }
+  };
+
+  const handleAssign = async () => {
+    if (!selectedBatchId || !selectedConsultant) {
+      toast.error("Selecione uma consultora.");
+      return;
+    }
+
+    setIsAssigning(true);
+    try {
+      await assignBatchFn({
+        data: {
+          batchId: selectedBatchId,
+          consultantId: selectedConsultant
+        }
+      });
+      toast.success("Leads atribuídos com sucesso!");
+      setAssignOpen(false);
+      setSelectedBatchId(null);
+      setSelectedConsultant("");
+      queryClient.invalidateQueries({ queryKey: ["lead-batches"] });
+    } catch (err: any) {
+      toast.error("Erro ao atribuir leads: " + err.message);
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -200,9 +256,12 @@ function LeadsAdminPage() {
                 className="cursor-pointer"
               />
               {isUploading && (
-                <div className="mt-4 flex items-center text-sm text-primary">
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processando arquivo...
+                <div className="mt-4 w-full space-y-2">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Processando arquivo...</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <Progress value={uploadProgress} className="h-1" />
                 </div>
               )}
             </div>
@@ -245,17 +304,32 @@ function LeadsAdminPage() {
                           {batch.created_at ? new Date(batch.created_at).toLocaleDateString() : "N/A"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => {
-                              setSelectedBatchId(batch.id);
-                              setDetailsOpen(true);
-                            }}
-                          >
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            Detalhes
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            {batch.status === "completed" ? (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedBatchId(batch.id);
+                                  setAssignOpen(true);
+                                }}
+                              >
+                                <Users className="w-4 h-4 mr-2" />
+                                Distribuir
+                              </Button>
+                            ) : null}
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedBatchId(batch.id);
+                                setDetailsOpen(true);
+                              }}
+                            >
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              Detalhes
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -344,6 +418,38 @@ function LeadsAdminPage() {
 
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setDetailsOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Distribution Dialog */}
+      <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Distribuir Leads</DialogTitle>
+            <DialogDescription>
+              Selecione a consultora para a qual deseja atribuir estes leads.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <label className="text-sm font-medium mb-2 block">Consultora</label>
+            <select 
+              className="w-full p-2 border rounded-md"
+              value={selectedConsultant}
+              onChange={(e) => setSelectedConsultant(e.target.value)}
+            >
+              <option value="">Selecione...</option>
+              {consultants?.map(c => (
+                <option key={c.id} value={c.id}>{c.email}</option>
+              ))}
+            </select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignOpen(false)}>Cancelar</Button>
+            <Button onClick={handleAssign} disabled={!selectedConsultant || isAssigning}>
+              {isAssigning && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Distribuir Agora
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
