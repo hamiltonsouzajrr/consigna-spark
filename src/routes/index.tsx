@@ -10,7 +10,7 @@ function Index() {
   /**
    * Mover a importação e a validação para processamento em background e exibir um status/progresso da importação até concluir e mostrar uma barra de progresso e notificar ao admin quando finalizar com pop up
    * 
-   * Prompt Aprimorado:
+   * APROVE
    * 
    * Contexto:
    * Sou responsável pela prospecção de leads e preciso integrar uma planilha (em qualquer formato) ao sistema de CRM. Ao carregar o arquivo, o sistema deve permitir que eu selecione quais colunas da planilha desejo mapear e exibir no CRM para as consultoras.
