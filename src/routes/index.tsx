@@ -41,7 +41,7 @@ function Index() {
    * Error: aborted
    *
    * {
-   *   "timestamp": 1787251079991,
+   *   "timestamp": 1787251138916,
    *   "error_type": "RUNTIME_ERROR",
    *   "filename": "Unknown file",
    *   "lineno": 0,
