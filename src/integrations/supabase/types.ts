@@ -583,6 +583,42 @@ export type Database = {
           },
         ]
       }
+      lead_batches: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          error_message: string | null
+          filename: string
+          id: string
+          processed_leads: number | null
+          status: string
+          total_leads: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          error_message?: string | null
+          filename: string
+          id?: string
+          processed_leads?: number | null
+          status?: string
+          total_leads?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          error_message?: string | null
+          filename?: string
+          id?: string
+          processed_leads?: number | null
+          status?: string
+          total_leads?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       lead_events: {
         Row: {
           body: string | null
@@ -655,6 +691,41 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "prospect_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads_raw: {
+        Row: {
+          batch_id: string | null
+          created_at: string | null
+          data: Json
+          id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string | null
+          data: Json
+          id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string | null
+          data?: Json
+          id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_raw_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "lead_batches"
             referencedColumns: ["id"]
           },
         ]

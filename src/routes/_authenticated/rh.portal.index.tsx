@@ -7,6 +7,7 @@ import {
   Plane, FileText, ReceiptText, GraduationCap, HeartHandshake, Clock,
   CalendarDays, Bell, CheckCircle2, TrendingUp, ChevronRight,
   Plus, Pencil, Trash2, Settings2, Camera, Loader2, Wallet, RefreshCw,
+  Upload,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -370,6 +371,24 @@ function PortalIndex() {
       />
 
       <div className="mb-6 grid gap-4 lg:grid-cols-3">
+        {isAdmin && (
+          <Card className="lg:col-span-3 border-primary/20 bg-primary/5">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Upload className="h-4 w-4 text-primary" />
+                <CardTitle className="text-base text-primary">Administração de Leads</CardTitle>
+              </div>
+              <Link to="/prospeccao/admin/leads">
+                <Button size="sm">Gerenciar Arquivos</Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Área dedicada ao upload de listagens, processamento de arquivos e organização da base de leads.
+              </p>
+            </CardContent>
+          </Card>
+        )}
         <Card className="lg:col-span-2">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-base">Atalhos</CardTitle>
