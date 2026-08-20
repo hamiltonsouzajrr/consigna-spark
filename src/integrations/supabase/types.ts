@@ -1225,6 +1225,7 @@ export type Database = {
       }
       prospect_leads: {
         Row: {
+          batch_id: string | null
           cidade: string | null
           consultant_id: string | null
           cpf: string | null
@@ -1256,6 +1257,7 @@ export type Database = {
           urgencia: string | null
         }
         Insert: {
+          batch_id?: string | null
           cidade?: string | null
           consultant_id?: string | null
           cpf?: string | null
@@ -1287,6 +1289,7 @@ export type Database = {
           urgencia?: string | null
         }
         Update: {
+          batch_id?: string | null
           cidade?: string | null
           consultant_id?: string | null
           cpf?: string | null
@@ -1317,7 +1320,15 @@ export type Database = {
           updated_at?: string
           urgencia?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "prospect_leads_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "lead_batches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       radar_consultoras: {
         Row: {
