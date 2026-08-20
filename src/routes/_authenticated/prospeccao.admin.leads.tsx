@@ -160,7 +160,7 @@ function LeadsAdminPage() {
                         <TableCell>{batch.total_leads}</TableCell>
                         <TableCell>{getStatusBadge(batch.status)}</TableCell>
                         <TableCell className="text-muted-foreground text-sm">
-                          {new Date(batch.created_at).toLocaleDateString()}
+                          {batch.created_at ? new Date(batch.created_at).toLocaleDateString() : "N/A"}
                         </TableCell>
                       </TableRow>
                     ))}
