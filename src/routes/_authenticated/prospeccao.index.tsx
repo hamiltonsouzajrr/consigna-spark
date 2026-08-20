@@ -58,6 +58,8 @@ type Lead = {
   first_response_at: string | null;
   created_at: string;
   import_batch?: string | null;
+  batch_id?: string | null;
+  raw_data?: any;
 };
 
 function fmtWhen(iso: string | null): string {
