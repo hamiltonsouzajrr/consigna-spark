@@ -1234,6 +1234,7 @@ export type Database = {
           orcamento: number | null
           origem: string | null
           quality_score: number
+          raw_data: Json | null
           respondeu_whatsapp: boolean
           score: number
           sexo: string | null
@@ -1264,6 +1265,7 @@ export type Database = {
           orcamento?: number | null
           origem?: string | null
           quality_score?: number
+          raw_data?: Json | null
           respondeu_whatsapp?: boolean
           score?: number
           sexo?: string | null
@@ -1294,6 +1296,7 @@ export type Database = {
           orcamento?: number | null
           origem?: string | null
           quality_score?: number
+          raw_data?: Json | null
           respondeu_whatsapp?: boolean
           score?: number
           sexo?: string | null
