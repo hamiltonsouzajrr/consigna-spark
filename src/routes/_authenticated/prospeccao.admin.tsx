@@ -503,7 +503,7 @@ function Page() {
 
         <Label className="text-xs">Consultoras participantes</Label>
         <div className="mt-2 flex flex-wrap gap-2">
-          {consultants.map((c) => {
+          {consultants.map((c: any) => {
             const on = selectedConsultants.has(c.id);
             return (
               <button
