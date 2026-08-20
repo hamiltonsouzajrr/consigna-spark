@@ -7,7 +7,7 @@ function Index() {
   const { user, loading } = useAuth();
   if (loading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Carregando…</div>;
   
-  /**
+   /**
    * **Prompt Aprimorado:**
    *
    * Analise as funcionalidades relacionadas às importações de planilhas no sistema, com foco nos seguintes pontos:
@@ -33,6 +33,23 @@ function Index() {
    *   - Relatório detalhado das causas dos problemas.
    *   - Soluções possíveis para cada ponto identificado (ex.: ajustes no formato da planilha, liberação de permissões).
    *   - Orientações claras sobre como proceder para concluir a importação com sucesso.
+   *
+   * For the code present, I get the error below.
+   *
+   * Please think step-by-step in order to resolve it.
+   * ```
+   * Error: aborted
+   *
+   * {
+   *   "timestamp": 1787251079991,
+   *   "error_type": "RUNTIME_ERROR",
+   *   "filename": "Unknown file",
+   *   "lineno": 0,
+   *   "colno": 0,
+   *   "stack": "Error: aborted\n    at abortIncoming (node:_http_server:838:17)\n    at socketOnClose (node:_http_server:832:3)\n    at Socket.emit (node:events:531:35)\n    at TCP.<anonymous> (node:net:346:12)\n    at TCP.callbackTrampoline (node:internal/async_hooks:130:17)",
+   *   "has_blank_screen": true
+   * }
+   * ```
    */
 
   
