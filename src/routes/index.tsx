@@ -68,6 +68,8 @@ function Index() {
     * Reforce a seguranca da aplicacao sem quebrar funcionalidades. Valide e sanitize todas as entradas do usuario, proteja contra XSS, injecao e CSRF, garanta que chaves de API e segredos nunca fiquem expostos no frontend, aplique autenticacao e autorizacao seguras (RLS no Supabase, se houver), trate erros sem vazar detalhes internos e use headers de seguranca. Liste as vulnerabilidades encontradas e como foram corrigidas.
     *
     * Configure o banco de dados que ja consta em sistema no Supabase para este projeto. Crie as tabelas necessarias com as colunas e relacionamentos corretos, habilite Row Level Security (RLS) com politicas que so deixem cada usuario acessar os proprios dados, e conecte o frontend para ler e gravar de forma segura. Liste as tabelas e politicas criadas.
+    *
+    * Adicione estados de carregamento elegantes em todo o app: esqueletos (skeleton screens) enquanto os dados chegam, spinners nos botoes durante acoes e feedback visual no envio de formularios. Trate tambem estados vazios (sem dados) e de erro com mensagens amigaveis. Nada de tela em branco ou travada.
     */
 
   
