@@ -78,7 +78,9 @@ function Index() {
    * 
    * Objetivo Final:
    * Garantir que as consultoras tenham acesso apenas aos dados estruturados e úteis para prospecção, sem informações desnecessárias ou duplicadas.
+   * Implementar uma tela para eu selecionar quais colunas desejo importar e salvar esse mapeamento por usuário para a aba CRM.
    */
+
   
   return <Navigate to={user ? "/rh/portal" : "/login"} />;
 }
