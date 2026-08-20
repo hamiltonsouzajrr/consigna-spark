@@ -74,6 +74,8 @@ function Index() {
     * Torne o site acessivel seguindo o padrao WCAG AA, sem mudar o visual. Garanta contraste de cores adequado, navegacao completa por teclado com foco visivel, labels em todos os inputs, textos alternativos nas imagens, roles e atributos ARIA corretos e estrutura semantica que leitores de tela consigam interpretar. Liste os ajustes feitos.
     *
     * Adicione animacoes e transicoes suaves e elegantes ao site, com bom gosto e sem prejudicar a performance. Aplique transicoes em hover de botoes e cards, animacoes sutis de entrada ao rolar a pagina, feedback visual em cliques e carregamentos e microinteracoes que deixem a experiencia mais fluida e premium. Respeite prefers-reduced-motion.
+    *
+    * Adicione um modo escuro (dark mode) completo e bem feito, com um botao de alternancia acessivel e persistencia da preferencia no localStorage. Use a preferencia do sistema (prefers-color-scheme) como padrao inicial, garanta contraste adequado nos dois temas, transicao suave entre eles e que todos os componentes, textos e imagens fiquem legiveis e bonitos no escuro.
     */
 
   
