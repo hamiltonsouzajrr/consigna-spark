@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +10,15 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Wallet, Search, Copy, Download, Upload, Users, Shuffle, UserCheck, Phone, RefreshCw, Briefcase, TrendingUp } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Wallet, Search, Copy, Download, Upload, Users, Shuffle, UserCheck, Phone, RefreshCw, Briefcase, TrendingUp, CalendarClock } from "lucide-react";
 import { MULT_PRINCIPAL, MULT_CARTAO_BENEFICIO, MULT_CARTAO_CONSIGNADO } from "@/lib/al/credito";
 import { COEF_MARGEM_AL_PADRAO } from "@/lib/al/margem";
 import { cn } from "@/lib/utils";
@@ -135,6 +144,7 @@ function MargemLinha({
 
 
 function Page() {
+  const { user } = useAuth();
   const { isAdmin } = useRhAccess();
   const fetchTomadores = useServerFn(getTomadoresAl);
   const abordagemFn = useServerFn(marcarAbordagemTomador);
@@ -811,12 +821,11 @@ function Page() {
           </div>
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
-
             {rows.map((r) => (
-              <article key={r.id} className="rounded-xl border border-border/60 bg-card p-4">
+              <article key={r.id} className="rounded-xl border border-border/60 bg-card p-4 transition-all hover:shadow-md">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="font-semibold text-foreground">{r.nome}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground truncate">{r.nome}</p>
                     <p className="text-xs text-muted-foreground">
                       CPF {fmtCpf(r.documento)} · mat. {r.matricula ?? "—"} · {r.descricao_cargo ?? "—"}
                     </p>
@@ -829,16 +838,58 @@ function Page() {
                     <Badge className={ABORDAGEM_STYLE[r.status_abordagem] ?? ""}>
                       {ABORDAGEM_LABEL[r.status_abordagem] ?? r.status_abordagem}
                     </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        navigator.clipboard.writeText(r.documento);
-                        toast.success("CPF copiado");
-                      }}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="Tratar lead"
+                          className="h-8 w-8 p-0"
+                        >
+                          <Phone className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="max-h-[70vh] overflow-y-auto">
+                        <DropdownMenuLabel>Agendar follow-up</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {[
+                          { label: "Em 1 hora", date: new Date(Date.now() + 60 * 60 * 1000) },
+                          { label: "Amanhã 9h", date: (() => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d; })() },
+                          { label: "Em 2 dias", date: (() => { const d = new Date(); d.setDate(d.getDate() + 2); d.setHours(9, 0, 0, 0); return d; })() },
+                        ].map((f) => (
+                          <DropdownMenuItem
+                            key={f.label}
+                            onSelect={async () => {
+                              try {
+                                const iso = f.date.toISOString();
+                                await supabase.from("tomadores_al").update({ next_follow_up_at: iso } as any).eq("id", r.id);
+                                // Also log event if possible
+                                await supabase.from("lead_events").insert({
+                                  lead_id: r.id,
+                                  consultant_id: user?.id,
+                                  kind: "followup",
+                                  body: `Follow-up agendado: ${f.label}`
+                                } as any);
+                                toast.success(`Follow-up agendado: ${f.label}`);
+                                load();
+                              } catch (e) {
+                                toast.error("Erro ao agendar follow-up");
+                              }
+                            }}
+                          >
+                            <CalendarClock className="mr-2 h-3.5 w-3.5" /> {f.label}
+                          </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem onSelect={() => {
+                          navigator.clipboard.writeText(r.documento);
+                          toast.success("CPF copiado");
+                        }}>
+                          <Copy className="mr-2 h-3.5 w-3.5" /> Copiar CPF
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
 
