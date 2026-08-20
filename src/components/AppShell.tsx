@@ -179,6 +179,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       ...s,
       items: s.items.filter((n) => {
         if (n.adminOnly && !isAdmin) return false;
+        // Abas operacionais do dia a dia: só para consultoras (ocultas do admin).
+        if (n.consultoraOnly && isAdmin) return false;
         // RH area only for admins or users the admin directed (granted access).
         if (n.to === "/rh" && !hasAnyAccess) return false;
         return true;
