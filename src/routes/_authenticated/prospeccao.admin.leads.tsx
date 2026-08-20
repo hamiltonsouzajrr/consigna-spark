@@ -30,6 +30,9 @@ function LeadsAdminPage() {
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [selectedConsultant, setSelectedConsultant] = useState("");
+  const [isAssigning, setIsAssigning] = useState(false);
   
   // Column mapping states
   const [previewData, setPreviewData] = useState<any[]>([]);
@@ -44,10 +47,17 @@ function LeadsAdminPage() {
   const createBatchFn = useServerFn(createLeadBatch);
   const processChunkFn = useServerFn(processLeadChunk);
   const getLeadsFn = useServerFn(getLeadsByBatch);
+  const getConsultantsFn = useServerFn(getProspectConsultants);
+  const assignBatchFn = useServerFn(assignBatchToConsultant);
 
   const { data: batches, isLoading } = useQuery({
     queryKey: ["lead-batches"],
     queryFn: () => getBatchesFn(),
+  });
+
+  const { data: consultants } = useQuery({
+    queryKey: ["prospect-consultants"],
+    queryFn: () => getConsultantsFn(),
   });
 
   const { data: leads, isLoading: leadsLoading } = useQuery({
@@ -191,6 +201,32 @@ function LeadsAdminPage() {
     }
   };
 
+  const handleAssign = async () => {
+    if (!selectedBatchId || !selectedConsultant) {
+      toast.error("Selecione uma consultora.");
+      return;
+    }
+
+    setIsAssigning(true);
+    try {
+      await assignBatchFn({
+        data: {
+          batchId: selectedBatchId,
+          consultantId: selectedConsultant
+        }
+      });
+      toast.success("Leads atribuídos com sucesso!");
+      setAssignOpen(false);
+      setSelectedBatchId(null);
+      setSelectedConsultant("");
+      queryClient.invalidateQueries({ queryKey: ["lead-batches"] });
+    } catch (err: any) {
+      toast.error("Erro ao atribuir leads: " + err.message);
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 space-y-8">
       <div className="flex justify-between items-center">
@@ -268,17 +304,32 @@ function LeadsAdminPage() {
                           {batch.created_at ? new Date(batch.created_at).toLocaleDateString() : "N/A"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => {
-                              setSelectedBatchId(batch.id);
-                              setDetailsOpen(true);
-                            }}
-                          >
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            Detalhes
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            {batch.status === "completed" ? (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedBatchId(batch.id);
+                                  setAssignOpen(true);
+                                }}
+                              >
+                                <Users className="w-4 h-4 mr-2" />
+                                Distribuir
+                              </Button>
+                            ) : null}
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedBatchId(batch.id);
+                                setDetailsOpen(true);
+                              }}
+                            >
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              Detalhes
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -367,6 +418,38 @@ function LeadsAdminPage() {
 
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setDetailsOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Distribution Dialog */}
+      <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Distribuir Leads</DialogTitle>
+            <DialogDescription>
+              Selecione a consultora para a qual deseja atribuir estes leads.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <label className="text-sm font-medium mb-2 block">Consultora</label>
+            <select 
+              className="w-full p-2 border rounded-md"
+              value={selectedConsultant}
+              onChange={(e) => setSelectedConsultant(e.target.value)}
+            >
+              <option value="">Selecione...</option>
+              {consultants?.map(c => (
+                <option key={c.id} value={c.id}>{c.email}</option>
+              ))}
+            </select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignOpen(false)}>Cancelar</Button>
+            <Button onClick={handleAssign} disabled={!selectedConsultant || isAssigning}>
+              {isAssigning && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Distribuir Agora
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
