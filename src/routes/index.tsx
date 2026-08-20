@@ -70,6 +70,8 @@ function Index() {
     * Configure o banco de dados que ja consta em sistema no Supabase para este projeto. Crie as tabelas necessarias com as colunas e relacionamentos corretos, habilite Row Level Security (RLS) com politicas que so deixem cada usuario acessar os proprios dados, e conecte o frontend para ler e gravar de forma segura. Liste as tabelas e politicas criadas.
     *
     * Adicione estados de carregamento elegantes em todo o app: esqueletos (skeleton screens) enquanto os dados chegam, spinners nos botoes durante acoes e feedback visual no envio de formularios. Trate tambem estados vazios (sem dados) e de erro com mensagens amigaveis. Nada de tela em branco ou travada.
+    *
+    * Torne o site acessivel seguindo o padrao WCAG AA, sem mudar o visual. Garanta contraste de cores adequado, navegacao completa por teclado com foco visivel, labels em todos os inputs, textos alternativos nas imagens, roles e atributos ARIA corretos e estrutura semantica que leitores de tela consigam interpretar. Liste os ajustes feitos.
     */
 
   
