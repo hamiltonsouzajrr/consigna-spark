@@ -78,6 +78,8 @@ function Index() {
     * Adicione um modo escuro (dark mode) completo e bem feito, com um botao de alternancia acessivel e persistencia da preferencia no localStorage. Use a preferencia do sistema (prefers-color-scheme) como padrao inicial, garanta contraste adequado nos dois temas, transicao suave entre eles e que todos os componentes, textos e imagens fiquem legiveis e bonitos no escuro.
     *
     * Deixe o site 100% responsivo e impecavel em celular, tablet e desktop, sem mudar o conteudo. Ajuste com abordagem mobile-first: breakpoints, grids e flexbox adaptaveis, imagens fluidas, tipografia escalavel, menu que vira versao mobile (hamburguer quando fizer sentido) e areas de toque confortaveis. Garanta que nada quebre, corte ou sobreponha em 375px, 768px e 1440px.
+    *
+    * Redesenhe o layout com um visual moderno, limpo e profissional, mantendo TODO o conteudo e as funcionalidades atuais. Aplique hierarquia visual clara, espacamento consistente, tipografia elegante, uma paleta de cores harmonica e microinteracoes sutis. Nao remova nenhuma secao existente — apenas reorganize e refine para transmitir mais confianca e qualidade.
     */
 
   
