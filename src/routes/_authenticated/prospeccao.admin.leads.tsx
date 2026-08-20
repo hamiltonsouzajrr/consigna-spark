@@ -78,7 +78,7 @@ function LeadsAdminPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    setIsUploading(true);
+    setCurrentFile(file);
     const reader = new FileReader();
     
     reader.onload = async (evt) => {
@@ -91,23 +91,71 @@ function LeadsAdminPage() {
         
         if (data.length === 0) {
           toast.error("O arquivo está vazio.");
-          setIsUploading(false);
           return;
         }
         
-        await uploadMutation.mutateAsync({
-          data: {
-            filename: file.name,
-            leads: data as any[],
-          }
-        });
+        // Identify available columns from the first row
+        const cols = Object.keys(data[0] as object);
+        setAvailableColumns(cols);
+        setPreviewData(data);
+        setMappingOpen(true);
       } catch (err: any) {
         toast.error("Erro ao ler o arquivo: " + err.message);
-        setIsUploading(false);
       }
     };
     
     reader.readAsBinaryString(file);
+  };
+
+  const confirmImport = async () => {
+    if (!currentFile || selectedColumns.length === 0) {
+      toast.error("Selecione pelo menos uma coluna para importar.");
+      return;
+    }
+
+    setIsUploading(true);
+    setMappingOpen(false);
+
+    try {
+      // Filter data to include only selected columns
+      const mappedLeads = previewData.map(row => {
+        const newRow: any = {};
+        selectedColumns.forEach(col => {
+          newRow[col] = row[col];
+        });
+        return newRow;
+      });
+
+      // Validation: Check for email if present (example requirement)
+      const hasEmail = selectedColumns.some(col => 
+        col.toLowerCase().includes("email") || col.toLowerCase().includes("e-mail")
+      );
+
+      if (!hasEmail) {
+        toast.warning("Atenção: Nenhuma coluna de e-mail foi identificada no mapeamento.");
+      }
+
+      await uploadMutation.mutateAsync({
+        data: {
+          filename: currentFile.name,
+          leads: mappedLeads,
+        }
+      });
+      
+      // Reset states
+      setSelectedColumns([]);
+      setPreviewData([]);
+      setCurrentFile(null);
+    } catch (err: any) {
+      toast.error("Erro na importação: " + err.message);
+      setIsUploading(false);
+    }
+  };
+
+  const toggleColumn = (col: string) => {
+    setSelectedColumns(prev => 
+      prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col]
+    );
   };
 
   const getStatusBadge = (status: string) => {
