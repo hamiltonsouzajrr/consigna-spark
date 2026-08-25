@@ -246,6 +246,45 @@ export function DistribuicaoTab({
             </Button>
           </ConfirmDialog>
 
+          <div className="mt-4 rounded-md border border-primary/30 bg-primary/5 p-3">
+            <p className="mb-1 flex items-center gap-2 text-sm font-medium">
+              <TrendingUp className="h-4 w-4" /> Entrega por desempenho (meritocracia)
+            </p>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Quem produz mais recebe mais leads e quem produz menos recebe menos. O desempenho é
+              medido nos últimos {diasDesempenho} dias (leads abordados no Radar + pontos da
+              competição). Leads já trabalhados permanecem com quem os abordou.
+            </p>
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <Label className="text-xs">Janela de desempenho (dias)</Label>
+                <Input
+                  type="number" min={1} max={180} value={diasDesempenho}
+                  onChange={(e) => setDiasDesempenho(Math.max(1, Number(e.target.value) || 14))}
+                  className="mt-1 h-8 w-24"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Vantagem do topo (x)</Label>
+                <Input
+                  type="number" min={1} max={10} step={0.5} value={pesoMax}
+                  onChange={(e) => setPesoMax(Math.min(10, Math.max(1, Number(e.target.value) || 4)))}
+                  className="mt-1 h-8 w-24"
+                />
+              </div>
+            </div>
+            <ConfirmDialog
+              title="Distribuir por desempenho?"
+              description="Os promovidos ainda não abordados serão redistribuídos: a consultora que mais produz recebe mais leads, a que menos produz recebe menos."
+              confirmLabel="Distribuir por desempenho"
+              onConfirm={runRedistribuirPorDesempenho}
+            >
+              <Button className="mt-3 w-full" disabled={busy}>
+                <TrendingUp className="mr-2 h-4 w-4" /> Distribuir por desempenho agora
+              </Button>
+            </ConfirmDialog>
+          </div>
+
           <div className="mt-4 max-h-64 overflow-auto rounded-md border">
             <table className="w-full text-xs">
               <thead className="sticky top-0 bg-muted/60">
