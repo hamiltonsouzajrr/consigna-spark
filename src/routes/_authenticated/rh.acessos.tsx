@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { IncidentesTab } from "@/components/security/IncidentesTab";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -477,6 +478,7 @@ function AcessosPage() {
           <TabsTrigger value="usuarios">Usuários e acessos</TabsTrigger>
           <TabsTrigger value="consultoras">Consultoras</TabsTrigger>
           {isAdmin && <TabsTrigger value="historico">Histórico</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="incidentes">Incidentes</TabsTrigger>}
         </TabsList>
 
 
