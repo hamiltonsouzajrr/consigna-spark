@@ -36,6 +36,7 @@ import { Route as AuthenticatedProspeccaoLeadIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedProspeccaoAdminRouteImport } from './routes/_authenticated/prospeccao.admin'
 import { Route as AuthenticatedProspeccaoFollowupsRouteImport } from './routes/_authenticated/prospeccao.followups'
 import { Route as AuthenticatedProspeccaoPromovidosRouteImport } from './routes/_authenticated/prospeccao.promovidos'
+import { Route as AuthenticatedProspeccaoPromovidosRecentesRouteImport } from './routes/_authenticated/prospeccao.promovidos-recentes'
 import { Route as AuthenticatedProspeccaoQualidadeRouteImport } from './routes/_authenticated/prospeccao.qualidade'
 import { Route as AuthenticatedProspeccaoRecentesRouteImport } from './routes/_authenticated/prospeccao.recentes'
 import { Route as AuthenticatedRadarIndexRouteImport } from './routes/_authenticated/radar.index'
@@ -225,6 +226,12 @@ const AuthenticatedProspeccaoPromovidosRoute =
   AuthenticatedProspeccaoPromovidosRouteImport.update({
     id: '/prospeccao/promovidos',
     path: '/prospeccao/promovidos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProspeccaoPromovidosRecentesRoute =
+  AuthenticatedProspeccaoPromovidosRecentesRouteImport.update({
+    id: '/prospeccao/promovidos-recentes',
+    path: '/prospeccao/promovidos-recentes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProspeccaoQualidadeRoute =
@@ -501,6 +508,7 @@ export interface FileRoutesByFullPath {
   '/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRouteWithChildren
   '/prospeccao/followups': typeof AuthenticatedProspeccaoFollowupsRoute
   '/prospeccao/promovidos': typeof AuthenticatedProspeccaoPromovidosRoute
+  '/prospeccao/promovidos-recentes': typeof AuthenticatedProspeccaoPromovidosRecentesRoute
   '/prospeccao/qualidade': typeof AuthenticatedProspeccaoQualidadeRoute
   '/prospeccao/recentes': typeof AuthenticatedProspeccaoRecentesRoute
   '/radar/arquivos': typeof AuthenticatedRadarArquivosRoute
@@ -570,6 +578,7 @@ export interface FileRoutesByTo {
   '/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRouteWithChildren
   '/prospeccao/followups': typeof AuthenticatedProspeccaoFollowupsRoute
   '/prospeccao/promovidos': typeof AuthenticatedProspeccaoPromovidosRoute
+  '/prospeccao/promovidos-recentes': typeof AuthenticatedProspeccaoPromovidosRecentesRoute
   '/prospeccao/qualidade': typeof AuthenticatedProspeccaoQualidadeRoute
   '/prospeccao/recentes': typeof AuthenticatedProspeccaoRecentesRoute
   '/radar/arquivos': typeof AuthenticatedRadarArquivosRoute
@@ -642,6 +651,7 @@ export interface FileRoutesById {
   '/_authenticated/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRouteWithChildren
   '/_authenticated/prospeccao/followups': typeof AuthenticatedProspeccaoFollowupsRoute
   '/_authenticated/prospeccao/promovidos': typeof AuthenticatedProspeccaoPromovidosRoute
+  '/_authenticated/prospeccao/promovidos-recentes': typeof AuthenticatedProspeccaoPromovidosRecentesRoute
   '/_authenticated/prospeccao/qualidade': typeof AuthenticatedProspeccaoQualidadeRoute
   '/_authenticated/prospeccao/recentes': typeof AuthenticatedProspeccaoRecentesRoute
   '/_authenticated/radar/arquivos': typeof AuthenticatedRadarArquivosRoute
@@ -715,6 +725,7 @@ export interface FileRouteTypes {
     | '/prospeccao/admin'
     | '/prospeccao/followups'
     | '/prospeccao/promovidos'
+    | '/prospeccao/promovidos-recentes'
     | '/prospeccao/qualidade'
     | '/prospeccao/recentes'
     | '/radar/arquivos'
@@ -784,6 +795,7 @@ export interface FileRouteTypes {
     | '/prospeccao/admin'
     | '/prospeccao/followups'
     | '/prospeccao/promovidos'
+    | '/prospeccao/promovidos-recentes'
     | '/prospeccao/qualidade'
     | '/prospeccao/recentes'
     | '/radar/arquivos'
@@ -855,6 +867,7 @@ export interface FileRouteTypes {
     | '/_authenticated/prospeccao/admin'
     | '/_authenticated/prospeccao/followups'
     | '/_authenticated/prospeccao/promovidos'
+    | '/_authenticated/prospeccao/promovidos-recentes'
     | '/_authenticated/prospeccao/qualidade'
     | '/_authenticated/prospeccao/recentes'
     | '/_authenticated/radar/arquivos'
@@ -1107,6 +1120,13 @@ declare module '@tanstack/react-router' {
       path: '/prospeccao/promovidos'
       fullPath: '/prospeccao/promovidos'
       preLoaderRoute: typeof AuthenticatedProspeccaoPromovidosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/prospeccao/promovidos-recentes': {
+      id: '/_authenticated/prospeccao/promovidos-recentes'
+      path: '/prospeccao/promovidos-recentes'
+      fullPath: '/prospeccao/promovidos-recentes'
+      preLoaderRoute: typeof AuthenticatedProspeccaoPromovidosRecentesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/prospeccao/qualidade': {
@@ -1557,6 +1577,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProspeccaoAdminRoute: typeof AuthenticatedProspeccaoAdminRouteWithChildren
   AuthenticatedProspeccaoFollowupsRoute: typeof AuthenticatedProspeccaoFollowupsRoute
   AuthenticatedProspeccaoPromovidosRoute: typeof AuthenticatedProspeccaoPromovidosRoute
+  AuthenticatedProspeccaoPromovidosRecentesRoute: typeof AuthenticatedProspeccaoPromovidosRecentesRoute
   AuthenticatedProspeccaoQualidadeRoute: typeof AuthenticatedProspeccaoQualidadeRoute
   AuthenticatedProspeccaoRecentesRoute: typeof AuthenticatedProspeccaoRecentesRoute
   AuthenticatedProspeccaoIndexRoute: typeof AuthenticatedProspeccaoIndexRoute
@@ -1584,6 +1605,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProspeccaoFollowupsRoute: AuthenticatedProspeccaoFollowupsRoute,
   AuthenticatedProspeccaoPromovidosRoute:
     AuthenticatedProspeccaoPromovidosRoute,
+  AuthenticatedProspeccaoPromovidosRecentesRoute:
+    AuthenticatedProspeccaoPromovidosRecentesRoute,
   AuthenticatedProspeccaoQualidadeRoute: AuthenticatedProspeccaoQualidadeRoute,
   AuthenticatedProspeccaoRecentesRoute: AuthenticatedProspeccaoRecentesRoute,
   AuthenticatedProspeccaoIndexRoute: AuthenticatedProspeccaoIndexRoute,
