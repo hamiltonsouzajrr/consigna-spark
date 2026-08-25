@@ -219,11 +219,16 @@ function Page() {
           </ol>
         </Card>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant={apenasNovos ? "default" : "outline"} size="sm" onClick={() => setApenasNovos((v) => !v)}>
             {apenasNovos ? "Mostrando só não abordados" : "Ver só não abordados"}
           </Button>
           <span className="text-xs text-muted-foreground">{total} lead(s) na janela</span>
+          {ultimaEntrega && (
+            <span className="text-xs text-muted-foreground">
+              · última entrega em {new Date(ultimaEntrega).toLocaleString("pt-BR")}
+            </span>
+          )}
         </div>
 
         {loading ? (
