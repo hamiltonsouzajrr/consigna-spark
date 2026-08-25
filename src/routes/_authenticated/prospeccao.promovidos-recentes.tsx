@@ -347,12 +347,9 @@ function Page() {
         )}
 
         <p className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Phone className="h-3.5 w-3.5" />
-          Depois do WhatsApp <WhatsAppIcon className="h-3.5 w-3.5" /> ligue pelo app do computador —{" "}
-          <a className="underline" href={whatsappLink("", "")} onClick={(e) => e.preventDefault()}>
-            use o número validado no Congonhas
-          </a>
-          .
+          <WhatsAppIcon className="h-3.5 w-3.5" />
+          Fluxo sugerido: WhatsApp primeiro, depois ligação
+          <Phone className="h-3.5 w-3.5" /> pelo app do computador, usando o número validado no Congonhas.
         </p>
       </div>
     </AppShell>
