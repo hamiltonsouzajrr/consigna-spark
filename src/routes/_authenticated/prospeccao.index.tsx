@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { useRhAccess } from "@/hooks/use-rh-access";
 import { supabase } from "@/integrations/supabase/client";
 import { refillMyQueue } from "@/lib/prospeccao/prospeccao.functions";
-import { CompeticaoRanking } from "@/components/prospeccao/CompeticaoRanking";
+import { CrmCockpit } from "@/components/prospeccao/CrmCockpit";
 import { registrarContato, registrarQualificacao, agendarFollowup } from "@/lib/prospeccao/competicao.functions";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
@@ -311,13 +311,12 @@ function Page() {
 
   return (
     <AppShell>
-      <div className="mb-4">
-        <Link to="/producao/competicao"><CompeticaoRanking compact /></Link>
-      </div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Prospecção</h1>
-          <p className="text-sm text-muted-foreground">Sua fila de leads priorizada por score e prazo de atendimento.</p>
+      <div className="mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="truncate text-2xl font-bold">CRM — Central de Prospecção</h1>
+          <p className="text-sm text-muted-foreground">
+            Meta do dia, qualidade das ligações, follow-ups, fila de leads e a competição da semana em uma só tela.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline">
@@ -336,7 +335,18 @@ function Page() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <CrmCockpit
+        chamadas={chamadas}
+        metaDiaria={META_DIARIA}
+        streak={streak}
+        prod={prod}
+        filaHoje={stats.hoje}
+        filaQuentes={stats.quentes}
+        filaAtrasados={stats.atrasados}
+        filaTotal={leads.length}
+      />
+
+      <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-5">
         <RhStatCard label="Leads de hoje" value={stats.hoje} icon={CalendarClock} tone="sky" />
         <RhStatCard label="Follow-ups atrasados" value={stats.atrasados} icon={Clock} tone="rose" />
         <RhStatCard label="Leads quentes" value={stats.quentes} icon={Flame} tone="amber" />
@@ -344,46 +354,6 @@ function Page() {
         <RhStatCard label="1ª resposta (méd.)" value={stats.avgMin ? `${stats.avgMin} min` : "—"} icon={Timer} tone="violet" />
       </div>
 
-      <Card className="mt-4 p-4">
-        {/* Daily goal + streak gamification */}
-        <div className="mb-4 rounded-lg border bg-gradient-to-r from-primary/10 to-transparent p-3">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Target className="h-4 w-4 text-primary" />
-              <p className="text-sm font-semibold">Meta diária de chamadas</p>
-            </div>
-            <div className="flex items-center gap-3 text-sm">
-              <span className="font-semibold tabular-nums">{chamadas}/{META_DIARIA}</span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-                <Flame className="h-3.5 w-3.5" /> {streak} {streak === 1 ? "dia" : "dias"} seguidos
-              </span>
-            </div>
-          </div>
-          <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className={`h-full rounded-full transition-all ${chamadas >= META_DIARIA ? "bg-emerald-500" : "bg-primary"}`}
-              style={{ width: `${Math.min(100, Math.round((chamadas / META_DIARIA) * 100))}%` }}
-            />
-          </div>
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            {chamadas >= META_DIARIA
-              ? "🎉 Meta batida! Continue para manter sua sequência amanhã."
-              : `Faltam ${META_DIARIA - chamadas} chamadas para bater a meta de hoje.`}
-          </p>
-        </div>
-        <div className="mb-3 flex items-center gap-2">
-          <Target className="h-4 w-4 text-primary" />
-          <p className="text-sm font-semibold">Minha produção de hoje</p>
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
-          <RhStatCard label="Chamadas concluídas" value={chamadas} icon={PhoneCall} tone="rose" />
-          <RhStatCard label="Leads abertos" value={prod.abertos} icon={DoorOpen} tone="sky" />
-          <RhStatCard label="Qualificados" value={prod.qualificados} icon={CheckCircle2} tone="violet" />
-          <RhStatCard label="Ligações feitas" value={prod.ligacoes} icon={PhoneCall} tone="emerald" />
-          <RhStatCard label="WhatsApps" value={prod.whats} icon={MessageCircle} tone="emerald" />
-          <RhStatCard label="Follow-ups pendentes" value={prod.followups} icon={CalendarClock} tone="amber" />
-        </div>
-      </Card>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
         {(["todos", "hoje", "quentes", "atrasados"] as const).map((f) => (
