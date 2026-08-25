@@ -11,6 +11,7 @@ import { Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/grupo-positive-logo-2026.png.asset.json";
 import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
 import { sendResetByCpf } from "@/lib/auth/account.functions";
+import { AVISO_PRIMEIRO_ACESSO_KEY, PrimeiroAcessoDialog } from "@/components/auth/PrimeiroAcessoDialog";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
