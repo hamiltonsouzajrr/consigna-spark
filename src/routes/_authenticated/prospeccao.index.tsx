@@ -499,14 +499,14 @@ function Page() {
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
                 {telLink(l.telefone) && (
-                  <a
-                    href={telLink(l.telefone)!}
+                  <button
+                    type="button"
                     title="Ligar pelo celular / discador"
-                    onClick={(e) => { e.stopPropagation(); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = telLink(l.telefone)!; }}
                     className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sky-500/15 text-sky-600 transition hover:bg-sky-500/25 dark:text-sky-400"
                   >
                     <PhoneCall className="h-4 w-4" />
-                  </a>
+                  </button>
                 )}
                 {whatsappLink(l.telefone) && (
                   <button
