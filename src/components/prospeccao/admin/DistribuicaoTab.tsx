@@ -318,9 +318,37 @@ export function DistribuicaoTab({
                 />
               </div>
             </div>
+
+            <div className="mt-3">
+              <Label className="text-xs">Quais promovidos redistribuir</Label>
+              <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-2">
+                {STATUS_REDIST.map((s) => (
+                  <label key={s.key} className="flex items-center gap-2 text-xs">
+                    <Checkbox
+                      checked={statusSel.has(s.key)}
+                      onCheckedChange={() => toggleStatus(s.key)}
+                    />
+                    {s.label}
+                  </label>
+                ))}
+              </div>
+              <label className="mt-2 flex items-center gap-2 text-xs">
+                <Checkbox
+                  checked={somenteNaoContatados}
+                  onCheckedChange={(v) => setSomenteNaoContatados(v === true)}
+                />
+                Apenas leads que nunca foram contatados (desmarque para incluir os que já tiveram contato registrado)
+              </label>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Selecionados: {statusSel.size ? [...statusSel].map((k) => STATUS_LABEL[k] ?? k).join(", ") : "nenhum"}
+              </p>
+            </div>
+
             <ConfirmDialog
               title="Distribuir por desempenho?"
-              description="Os promovidos ainda não abordados serão redistribuídos: a consultora que mais produz recebe mais leads, a que menos produz recebe menos."
+              description={`Serão redistribuídos apenas os promovidos com status: ${
+                statusSel.size ? [...statusSel].map((k) => STATUS_LABEL[k] ?? k).join(", ") : "nenhum"
+              }. Quem produz mais recebe mais leads; quem produz menos recebe menos.`}
               confirmLabel="Distribuir por desempenho"
               onConfirm={runRedistribuirPorDesempenho}
             >
