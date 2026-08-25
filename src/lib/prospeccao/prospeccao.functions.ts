@@ -1122,3 +1122,81 @@ export const getMyCallDetails = createServerFn({ method: "GET" })
     return out;
   });
 
+
+export type LeadTimelineItem = {
+  id: string;
+  at: string;
+  kind: string;
+  title: string;
+  body: string | null;
+  source: "event" | "task";
+  status?: string | null;
+};
+
+/** Linha do tempo do lead: ligações, whatsapps, notas, mudanças de status e follow-ups. */
+export const getLeadTimeline = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        leadId: z.string().uuid(),
+        limit: z.coerce.number().int().min(1).max(100).default(30),
+      })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<LeadTimelineItem[]> => {
+    const { supabase } = context;
+
+    const [{ data: evs, error: e1 }, { data: tasks, error: e2 }] = await Promise.all([
+      supabase
+        .from("lead_events")
+        .select("id, kind, body, created_at")
+        .eq("lead_id", data.leadId)
+        .order("created_at", { ascending: false })
+        .limit(data.limit),
+      supabase
+        .from("lead_tasks")
+        .select("id, title, due_at, status, created_at")
+        .eq("lead_id", data.leadId)
+        .order("due_at", { ascending: false })
+        .limit(data.limit),
+    ]);
+    if (e1) throw new Error(e1.message);
+    if (e2) throw new Error(e2.message);
+
+    const labels: Record<string, string> = {
+      ligacao: "Ligação",
+      whatsapp: "WhatsApp",
+      nota: "Anotação",
+      status: "Mudança de status",
+      followup: "Follow-up agendado",
+      sistema: "Sistema",
+    };
+
+    const items: LeadTimelineItem[] = [
+      ...((evs ?? []) as any[]).map((e) => ({
+        id: `e-${e.id}`,
+        at: e.created_at as string,
+        kind: (e.kind as string) ?? "sistema",
+        title: labels[e.kind as string] ?? "Evento",
+        body: (e.body as string) ?? null,
+        source: "event" as const,
+      })),
+      ...((tasks ?? []) as any[]).map((t) => ({
+        id: `t-${t.id}`,
+        at: t.due_at as string,
+        kind: "tarefa",
+        title:
+          t.status === "done"
+            ? "Follow-up concluído"
+            : t.status === "canceled"
+              ? "Follow-up cancelado"
+              : "Follow-up pendente",
+        body: (t.title as string) ?? null,
+        source: "task" as const,
+        status: (t.status as string) ?? null,
+      })),
+    ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
+    return items.slice(0, data.limit);
+  });
