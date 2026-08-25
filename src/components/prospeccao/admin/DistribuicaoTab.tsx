@@ -18,6 +18,7 @@ import {
 } from "@/lib/prospeccao/prospeccao.functions";
 import {
   redistribuirPromovidosIgualmente,
+  redistribuirPromovidosPorDesempenho,
   getResumoCarteiras,
 } from "@/lib/radar/promovidos-recentes.functions";
 import { previewSplit } from "@/lib/prospeccao/admin-import";
