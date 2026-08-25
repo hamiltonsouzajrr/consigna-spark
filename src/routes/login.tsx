@@ -161,8 +161,19 @@ function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center app-bg p-4 sm:p-6">
-      <Card className="w-full max-w-md p-6 shadow-[var(--shadow-glow)] sm:p-8">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden app-bg p-4 sm:p-6">
+      {/* Fundo da marca: desktop mostra a arte completa; mobile recorta pelo centro-direita */}
+      <img
+        src={loginBg.url}
+        alt=""
+        aria-hidden="true"
+        fetchPriority="high"
+        className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover object-[68%_center] sm:object-center"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-background/60 backdrop-blur-[1px] sm:bg-background/25" />
+
+      <Card className="relative z-10 w-full max-w-md border-white/60 bg-card/85 p-6 shadow-[var(--shadow-glow)] backdrop-blur-xl sm:p-8">
+
         <div className="mb-6 flex items-center gap-3">
           <img
             src={logo.url}
