@@ -67,11 +67,20 @@ export function CrmCockpit({
   chamadas, metaDiaria, streak, prod, filaHoje, filaQuentes, filaAtrasados, filaTotal,
 }: Props) {
   const fetchQuality = useServerFn(getMyCallQuality);
+  const [days, setDays] = useState(7);
   const { data: quality, isLoading: loadingQuality } = useQuery({
-    queryKey: ["my-call-quality"],
-    queryFn: () => fetchQuality(),
+    queryKey: ["my-call-quality", days],
+    queryFn: () => fetchQuality({ data: { days } }),
     refetchInterval: 120_000,
   });
+
+  const [detalheOpen, setDetalheOpen] = useState(false);
+  const [detalheFiltros, setDetalheFiltros] = useState<CallQualityFilters>({ days: 7, answered: "all" });
+  const openDetalhe = (patch: Partial<CallQualityFilters>) => {
+    setDetalheFiltros({ days, answered: "all", ...patch });
+    setDetalheOpen(true);
+  };
+
 
   const doContato = useServerFn(registrarContato);
   const doConcluir = useServerFn(concluirFollowup);
