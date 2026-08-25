@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/grupo-positive-logo.png.asset.json";
+import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
+import { sendResetByCpf } from "@/lib/auth/account.functions";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
