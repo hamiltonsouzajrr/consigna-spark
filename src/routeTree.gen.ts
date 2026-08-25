@@ -28,6 +28,7 @@ import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticat
 import { Route as AprovacaoTokenRouteImport } from './routes/aprovacao.$token'
 import { Route as ConsultoraTokenRouteImport } from './routes/consultora.$token'
 import { Route as AuthenticatedPosVendaAvaliacoesRouteImport } from './routes/_authenticated/pos-venda.avaliacoes'
+import { Route as AuthenticatedProducaoCompeticaoRouteImport } from './routes/_authenticated/producao.competicao'
 import { Route as AuthenticatedProducaoMetasRouteImport } from './routes/_authenticated/producao.metas'
 import { Route as AuthenticatedProducaoMeuDiaRouteImport } from './routes/_authenticated/producao.meu-dia'
 import { Route as AuthenticatedProducaoRankingRouteImport } from './routes/_authenticated/producao.ranking'
@@ -179,6 +180,12 @@ const AuthenticatedPosVendaAvaliacoesRoute =
   AuthenticatedPosVendaAvaliacoesRouteImport.update({
     id: '/pos-venda/avaliacoes',
     path: '/pos-venda/avaliacoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProducaoCompeticaoRoute =
+  AuthenticatedProducaoCompeticaoRouteImport.update({
+    id: '/producao/competicao',
+    path: '/producao/competicao',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProducaoMetasRoute =
@@ -508,6 +515,7 @@ export interface FileRoutesByFullPath {
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/consultora/$token': typeof ConsultoraTokenRoute
   '/pos-venda/avaliacoes': typeof AuthenticatedPosVendaAvaliacoesRoute
+  '/producao/competicao': typeof AuthenticatedProducaoCompeticaoRoute
   '/producao/metas': typeof AuthenticatedProducaoMetasRoute
   '/producao/meu-dia': typeof AuthenticatedProducaoMeuDiaRoute
   '/producao/ranking': typeof AuthenticatedProducaoRankingRoute
@@ -579,6 +587,7 @@ export interface FileRoutesByTo {
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/consultora/$token': typeof ConsultoraTokenRoute
   '/pos-venda/avaliacoes': typeof AuthenticatedPosVendaAvaliacoesRoute
+  '/producao/competicao': typeof AuthenticatedProducaoCompeticaoRoute
   '/producao/metas': typeof AuthenticatedProducaoMetasRoute
   '/producao/meu-dia': typeof AuthenticatedProducaoMeuDiaRoute
   '/producao/ranking': typeof AuthenticatedProducaoRankingRoute
@@ -653,6 +662,7 @@ export interface FileRoutesById {
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/consultora/$token': typeof ConsultoraTokenRoute
   '/_authenticated/pos-venda/avaliacoes': typeof AuthenticatedPosVendaAvaliacoesRoute
+  '/_authenticated/producao/competicao': typeof AuthenticatedProducaoCompeticaoRoute
   '/_authenticated/producao/metas': typeof AuthenticatedProducaoMetasRoute
   '/_authenticated/producao/meu-dia': typeof AuthenticatedProducaoMeuDiaRoute
   '/_authenticated/producao/ranking': typeof AuthenticatedProducaoRankingRoute
@@ -728,6 +738,7 @@ export interface FileRouteTypes {
     | '/aprovacao/$token'
     | '/consultora/$token'
     | '/pos-venda/avaliacoes'
+    | '/producao/competicao'
     | '/producao/metas'
     | '/producao/meu-dia'
     | '/producao/ranking'
@@ -799,6 +810,7 @@ export interface FileRouteTypes {
     | '/aprovacao/$token'
     | '/consultora/$token'
     | '/pos-venda/avaliacoes'
+    | '/producao/competicao'
     | '/producao/metas'
     | '/producao/meu-dia'
     | '/producao/ranking'
@@ -872,6 +884,7 @@ export interface FileRouteTypes {
     | '/aprovacao/$token'
     | '/consultora/$token'
     | '/_authenticated/pos-venda/avaliacoes'
+    | '/_authenticated/producao/competicao'
     | '/_authenticated/producao/metas'
     | '/_authenticated/producao/meu-dia'
     | '/_authenticated/producao/ranking'
@@ -1078,6 +1091,13 @@ declare module '@tanstack/react-router' {
       path: '/pos-venda/avaliacoes'
       fullPath: '/pos-venda/avaliacoes'
       preLoaderRoute: typeof AuthenticatedPosVendaAvaliacoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/producao/competicao': {
+      id: '/_authenticated/producao/competicao'
+      path: '/producao/competicao'
+      fullPath: '/producao/competicao'
+      preLoaderRoute: typeof AuthenticatedProducaoCompeticaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/producao/metas': {
@@ -1591,6 +1611,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTomadoresAlRoute: typeof AuthenticatedTomadoresAlRoute
   AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
   AuthenticatedPosVendaAvaliacoesRoute: typeof AuthenticatedPosVendaAvaliacoesRoute
+  AuthenticatedProducaoCompeticaoRoute: typeof AuthenticatedProducaoCompeticaoRoute
   AuthenticatedProducaoMetasRoute: typeof AuthenticatedProducaoMetasRoute
   AuthenticatedProducaoMeuDiaRoute: typeof AuthenticatedProducaoMeuDiaRoute
   AuthenticatedProducaoRankingRoute: typeof AuthenticatedProducaoRankingRoute
@@ -1617,6 +1638,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTomadoresAlRoute: AuthenticatedTomadoresAlRoute,
   AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
   AuthenticatedPosVendaAvaliacoesRoute: AuthenticatedPosVendaAvaliacoesRoute,
+  AuthenticatedProducaoCompeticaoRoute: AuthenticatedProducaoCompeticaoRoute,
   AuthenticatedProducaoMetasRoute: AuthenticatedProducaoMetasRoute,
   AuthenticatedProducaoMeuDiaRoute: AuthenticatedProducaoMeuDiaRoute,
   AuthenticatedProducaoRankingRoute: AuthenticatedProducaoRankingRoute,
