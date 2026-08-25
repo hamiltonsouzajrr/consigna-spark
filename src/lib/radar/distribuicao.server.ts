@@ -91,3 +91,32 @@ export async function resumoCarteiras(janelaDias = 15): Promise<CarteiraResumo[]
     };
   });
 }
+
+export type ResultadoDesempenho = ResultadoDistribuicao & {
+  topConsultora: string | null;
+  topPeso: number;
+};
+
+// Redistribui os leads ainda não abordados dando mais volume para quem produz
+// mais (contatos do Radar + pontos da competição na janela) e menos para quem
+// produz menos. Leads já trabalhados nunca saem de quem os abordou.
+export async function redistribuirPorDesempenho(
+  diasDesempenho = 14,
+  janelaDias: number | null = null,
+  pesoMax = 4,
+): Promise<ResultadoDesempenho> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin.rpc("redistribuir_do_registros_por_desempenho" as any, {
+    _dias_desempenho: diasDesempenho,
+    _janela_dias: janelaDias,
+    _peso_max: pesoMax,
+  } as any);
+  if (error) throw new Error(error.message);
+  const row = (Array.isArray(data) ? data[0] : data) as any;
+  return {
+    atribuidos: Number(row?.atribuidos ?? 0),
+    consultoras: Number(row?.consultoras ?? 0),
+    topConsultora: (row?.top_consultora as string | null) ?? null,
+    topPeso: Number(row?.top_peso ?? 0),
+  };
+}

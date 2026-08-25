@@ -266,3 +266,26 @@ export const getResumoCarteiras = createServerFn({ method: "POST" })
     const { resumoCarteiras } = await import("@/lib/radar/distribuicao.server");
     return resumoCarteiras(JANELA_DIAS);
   });
+
+// Admin: distribuição por desempenho — quem produz mais recebe mais leads.
+export const redistribuirPromovidosPorDesempenho = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        diasDesempenho: z.number().int().min(1).max(180).optional(),
+        janelaDias: z.number().int().min(1).max(365).nullable().optional(),
+        pesoMax: z.number().min(1).max(10).optional(),
+      })
+      .parse(data ?? {}),
+  )
+  .handler(
+    async ({
+      context,
+      data,
+    }): Promise<{ atribuidos: number; consultoras: number; topConsultora: string | null; topPeso: number }> => {
+      await assertAdminCtx(context);
+      const { redistribuirPorDesempenho } = await import("@/lib/radar/distribuicao.server");
+      return redistribuirPorDesempenho(data.diasDesempenho ?? 14, data.janelaDias ?? null, data.pesoMax ?? 4);
+    },
+  );

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Shuffle, RefreshCw, Dices, Eraser, Scale } from "lucide-react";
+import { Shuffle, RefreshCw, Dices, Eraser, Scale, TrendingUp } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
 } from "@/lib/prospeccao/prospeccao.functions";
 import {
   redistribuirPromovidosIgualmente,
+  redistribuirPromovidosPorDesempenho,
   getResumoCarteiras,
 } from "@/lib/radar/promovidos-recentes.functions";
 import { previewSplit } from "@/lib/prospeccao/admin-import";
@@ -48,6 +49,30 @@ export function DistribuicaoTab({
   const redistribuirRadar = useServerFn(redistribuirPromovidosIgualmente);
   const fetchResumo = useServerFn(getResumoCarteiras);
   const [incluirAbordados, setIncluirAbordados] = useState(false);
+  const redistribuirDesempenho = useServerFn(redistribuirPromovidosPorDesempenho);
+  const [diasDesempenho, setDiasDesempenho] = useState(14);
+  const [pesoMax, setPesoMax] = useState(4);
+
+  const runRedistribuirPorDesempenho = async () => {
+    setBusy(true);
+    try {
+      const d = await redistribuirDesempenho({
+        data: { diasDesempenho, janelaDias: null, pesoMax },
+      });
+      if (d.consultoras === 0) toast.error("Nenhuma consultora ativa com conta no sistema.");
+      else if (d.atribuidos === 0) toast.info("Nenhum lead disponível para redistribuir.");
+      else
+        toast.success(
+          `${d.atribuidos} lead(s) distribuídos por desempenho entre ${d.consultoras} consultora(s)` +
+            (d.topConsultora ? ` · destaque: ${d.topConsultora}` : "") + ".",
+        );
+      resumo.refetch();
+      qc.invalidateQueries({ queryKey: ["promovidos-recentes"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao distribuir por desempenho.");
+    }
+    setBusy(false);
+  };
 
   const resumo = useQuery({
     queryKey: ["radar", "resumo-carteiras"],
@@ -245,6 +270,45 @@ export function DistribuicaoTab({
               <Scale className="mr-2 h-4 w-4" /> Redistribuir igualmente agora
             </Button>
           </ConfirmDialog>
+
+          <div className="mt-4 rounded-md border border-primary/30 bg-primary/5 p-3">
+            <p className="mb-1 flex items-center gap-2 text-sm font-medium">
+              <TrendingUp className="h-4 w-4" /> Entrega por desempenho (meritocracia)
+            </p>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Quem produz mais recebe mais leads e quem produz menos recebe menos. O desempenho é
+              medido nos últimos {diasDesempenho} dias (leads abordados no Radar + pontos da
+              competição). Leads já trabalhados permanecem com quem os abordou.
+            </p>
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <Label className="text-xs">Janela de desempenho (dias)</Label>
+                <Input
+                  type="number" min={1} max={180} value={diasDesempenho}
+                  onChange={(e) => setDiasDesempenho(Math.max(1, Number(e.target.value) || 14))}
+                  className="mt-1 h-8 w-24"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Vantagem do topo (x)</Label>
+                <Input
+                  type="number" min={1} max={10} step={0.5} value={pesoMax}
+                  onChange={(e) => setPesoMax(Math.min(10, Math.max(1, Number(e.target.value) || 4)))}
+                  className="mt-1 h-8 w-24"
+                />
+              </div>
+            </div>
+            <ConfirmDialog
+              title="Distribuir por desempenho?"
+              description="Os promovidos ainda não abordados serão redistribuídos: a consultora que mais produz recebe mais leads, a que menos produz recebe menos."
+              confirmLabel="Distribuir por desempenho"
+              onConfirm={runRedistribuirPorDesempenho}
+            >
+              <Button className="mt-3 w-full" disabled={busy}>
+                <TrendingUp className="mr-2 h-4 w-4" /> Distribuir por desempenho agora
+              </Button>
+            </ConfirmDialog>
+          </div>
 
           <div className="mt-4 max-h-64 overflow-auto rounded-md border">
             <table className="w-full text-xs">
