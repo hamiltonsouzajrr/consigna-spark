@@ -334,7 +334,28 @@ function LoginPage() {
           ))}
         </Tabs>
         )}
+
+        <p className="mt-6 border-t pt-4 text-center text-xs text-muted-foreground">
+          Primeiro acesso após a atualização?{" "}
+          <button
+            type="button"
+            onClick={() => setAvisoOpen(true)}
+            className="text-primary hover:underline"
+          >
+            Ver instruções de primeiro acesso
+          </button>
+        </p>
       </Card>
+
+      <PrimeiroAcessoDialog
+        open={avisoOpen}
+        onOpenChange={fecharAviso}
+        onCriarConta={() => {
+          setRecovering(false);
+          setTab("up");
+          fecharAviso(false);
+        }}
+      />
     </main>
   );
 }
