@@ -223,3 +223,46 @@ export const distribuirPromovidosAgora = createServerFn({ method: "POST" })
     const { distribuirPendentes } = await import("@/lib/radar/distribuicao.server");
     return distribuirPendentes(2000);
   });
+
+async function assertAdminCtx(context: any) {
+  const { data: isAdminRaw } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "admin",
+  });
+  if (!isAdminRaw) throw new Error("Acesso restrito a administradores.");
+}
+
+// Admin: espalha os leads do Radar em partes iguais entre todas as consultoras ativas.
+export const redistribuirPromovidosIgualmente = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        janelaDias: z.number().int().min(1).max(365).nullable().optional(),
+        incluirAbordados: z.boolean().optional(),
+      })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<{ atribuidos: number; consultoras: number }> => {
+    await assertAdminCtx(context);
+    const { redistribuirIgualmente } = await import("@/lib/radar/distribuicao.server");
+    return redistribuirIgualmente(data.janelaDias ?? null, data.incluirAbordados ?? false);
+  });
+
+export type CarteiraResumoItem = {
+  nome: string;
+  email: string | null;
+  ativo: boolean;
+  total: number;
+  janela: number;
+  ultimaEntrega: string | null;
+};
+
+// Admin: quantos leads do Radar cada consultora tem (janela e total).
+export const getResumoCarteiras = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<CarteiraResumoItem[]> => {
+    await assertAdminCtx(context);
+    const { resumoCarteiras } = await import("@/lib/radar/distribuicao.server");
+    return resumoCarteiras(JANELA_DIAS);
+  });
