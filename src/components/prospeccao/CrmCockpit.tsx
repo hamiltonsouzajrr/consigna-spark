@@ -283,7 +283,7 @@ export function CrmCockpit({
             </Button>
           </div>
 
-          <div className="mt-3 space-y-1.5">
+          <div className="mt-3 space-y-2">
             {followups.length === 0 && (
               <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
                 Nenhum follow-up para hoje. Agende retornos direto no card do lead.
@@ -291,30 +291,84 @@ export function CrmCockpit({
             )}
             {followups.map((f) => {
               const atrasado = new Date(f.due_at).getTime() < Date.now();
+              const loading = busy === f.id;
+              const em1h = () => { const d = new Date(); d.setHours(d.getHours() + 1); return d; };
+              const hojeTarde = () => { const d = new Date(); d.setHours(17, 0, 0, 0); return d; };
+              const amanha = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d; };
+              const depois = () => { const d = new Date(); d.setDate(d.getDate() + 2); d.setHours(9, 0, 0, 0); return d; };
               return (
-                <Link
-                  key={f.id}
-                  to="/prospeccao/$leadId"
-                  params={{ leadId: f.lead_id }}
-                  className="flex items-center gap-2 rounded-lg border p-2 text-xs transition hover:bg-accent/50"
-                >
-                  <span className={cn(
-                    "grid h-7 w-7 shrink-0 place-items-center rounded-md",
-                    atrasado ? "bg-rose-500/15 text-rose-600 dark:text-rose-400" : "bg-muted text-muted-foreground",
-                  )}>
-                    {atrasado ? <AlertTriangle className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">{f.lead_nome ?? "Lead"}</span>
-                    <span className="block truncate text-muted-foreground">{f.title}</span>
-                  </span>
-                  <span className={cn("shrink-0 tabular-nums", atrasado ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground")}>
-                    {hora(f.due_at)}
-                  </span>
-                </Link>
+                <div key={f.id} className="rounded-lg border p-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "grid h-7 w-7 shrink-0 place-items-center rounded-md",
+                      atrasado ? "bg-rose-500/15 text-rose-600 dark:text-rose-400" : "bg-muted text-muted-foreground",
+                    )}>
+                      {atrasado ? <AlertTriangle className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
+                    </span>
+                    <Link
+                      to="/prospeccao/$leadId"
+                      params={{ leadId: f.lead_id }}
+                      className="min-w-0 flex-1 hover:underline"
+                    >
+                      <span className="block truncate font-medium">{f.lead_nome ?? "Lead"}</span>
+                      <span className="block truncate text-muted-foreground">{f.title}</span>
+                    </Link>
+                    <span className={cn("shrink-0 tabular-nums", atrasado ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground")}>
+                      {hora(f.due_at)}
+                    </span>
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-7 px-2 text-xs"
+                      disabled={loading}
+                      onClick={() => ligar(f)}
+                    >
+                      {loading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Phone className="mr-1 h-3 w-3" />}
+                      Ligar
+                    </Button>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="outline" className="h-7 px-2 text-xs" disabled={loading}>
+                          <CalendarPlus className="mr-1 h-3 w-3" /> Reagendar
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="text-xs">
+                        <DropdownMenuItem onClick={() => reagendar(f, em1h(), "1 hora")}>Em 1 hora</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => reagendar(f, hojeTarde(), "hoje 17h")}>Hoje às 17h</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => reagendar(f, amanha(), "amanhã 9h")}>Amanhã às 9h</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => reagendar(f, depois(), "depois de amanhã 9h")}>Em 2 dias</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-xs text-emerald-600 dark:text-emerald-400"
+                      disabled={loading}
+                      onClick={() => atender(f)}
+                    >
+                      <CheckCircle2 className="mr-1 h-3 w-3" /> Atendido
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-xs text-muted-foreground"
+                      disabled={loading}
+                      onClick={() => pular(f)}
+                    >
+                      <SkipForward className="mr-1 h-3 w-3" /> Pular
+                    </Button>
+                  </div>
+                </div>
               );
             })}
           </div>
+
 
           <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-500" /> Concluir no prazo pontua</span>
