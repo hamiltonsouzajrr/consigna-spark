@@ -45,8 +45,31 @@ export function DistribuicaoTab({
   const resetAll = useServerFn(adminResetAllAccess);
   const [includeOutras, setIncludeOutras] = useState(true);
   const [revokeAccess, setRevokeAccess] = useState(true);
+  const redistribuirRadar = useServerFn(redistribuirPromovidosIgualmente);
+  const fetchResumo = useServerFn(getResumoCarteiras);
+  const [incluirAbordados, setIncluirAbordados] = useState(false);
+
+  const resumo = useQuery({
+    queryKey: ["radar", "resumo-carteiras"],
+    queryFn: () => fetchResumo(),
+    staleTime: 30_000,
+  });
 
   const split = previewSplit(unassignedCount, selected.size);
+
+  const runRedistribuirRadar = async () => {
+    setBusy(true);
+    try {
+      const d = await redistribuirRadar({ data: { janelaDias: null, incluirAbordados } });
+      if (d.consultoras === 0) toast.error("Nenhuma consultora ativa com conta no sistema.");
+      else if (d.atribuidos === 0) toast.info("Os leads já estão distribuídos igualmente.");
+      else toast.success(`${d.atribuidos} lead(s) do Radar divididos igualmente entre ${d.consultoras} consultora(s).`);
+      resumo.refetch();
+      qc.invalidateQueries({ queryKey: ["promovidos-recentes"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Falha ao redistribuir."); }
+    setBusy(false);
+  };
+
 
   const runRandom = async () => {
     if (selected.size === 0) { toast.error("Selecione ao menos uma consultora."); return; }
