@@ -174,14 +174,14 @@ export function FollowupPopup() {
               <CalendarClock className="h-5 w-5 text-orange-500" />
               {leads.length === 1 ? "Você tem 1 follow-up agora" : `Você tem ${leads.length} follow-ups agora`}
             </DialogTitle>
-            <DialogDescription className="flex flex-wrap items-center gap-2">
-              Retorne o contato para não perder a venda.
+            <div className="flex flex-wrap items-center gap-2">
+              <DialogDescription>Retorne o contato para não perder a venda.</DialogDescription>
               {atrasados > 0 && (
                 <Badge variant="destructive" className="gap-1 text-[10px]">
                   <AlertTriangle className="h-3 w-3" /> {atrasados} atrasado(s)
                 </Badge>
               )}
-            </DialogDescription>
+            </div>
           </DialogHeader>
 
           <div className="space-y-2">
