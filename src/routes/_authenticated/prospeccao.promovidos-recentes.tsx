@@ -15,7 +15,6 @@ import {
   Phone, RefreshCw, IdCard,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
-import { whatsappLink } from "@/lib/prospeccao/constants";
 import { marcarAbordagem } from "@/lib/radar/radar.functions";
 import {
   getPromovidosRecentes, confirmarCpfPromovido, distribuirPromovidosAgora,
