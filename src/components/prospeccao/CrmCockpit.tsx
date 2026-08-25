@@ -89,25 +89,44 @@ export function CrmCockpit({
 
   const [followups, setFollowups] = useState<Followup[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [fuPeriodo, setFuPeriodo] = useState<"hoje" | "atrasados" | "7" | "30">("hoje");
+  const [fuStatus, setFuStatus] = useState<"pending" | "done" | "canceled" | "all">("pending");
 
   const loadFollowups = useCallback(async () => {
-    const end = new Date(); end.setHours(23, 59, 59, 999);
-    const { data } = await supabase
+    let q = supabase
       .from("lead_tasks")
-      .select("id,title,due_at,lead_id,prospect_leads(nome,telefone,telefones)")
-      .eq("status", "pending")
-      .lte("due_at", end.toISOString())
+      .select("id,title,due_at,status,lead_id,prospect_leads(nome,telefone,telefones)")
       .order("due_at", { ascending: true })
-      .limit(6);
+      .limit(fuPeriodo === "hoje" || fuPeriodo === "atrasados" ? 6 : 20);
+
+    if (fuStatus !== "all") q = q.eq("status", fuStatus);
+
+    const now = new Date();
+    if (fuPeriodo === "hoje") {
+      const end = new Date(); end.setHours(23, 59, 59, 999);
+      q = q.lte("due_at", end.toISOString());
+    } else if (fuPeriodo === "atrasados") {
+      q = q.lt("due_at", now.toISOString());
+    } else {
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - (Number(fuPeriodo) - 1));
+      const end = new Date(); end.setHours(23, 59, 59, 999);
+      end.setDate(end.getDate() + Number(fuPeriodo));
+      q = q.gte("due_at", start.toISOString()).lte("due_at", end.toISOString());
+    }
+
+    const { data } = await q;
     return ((data ?? []) as any[]).map((t) => ({
       id: t.id as string,
       title: t.title as string,
       due_at: t.due_at as string,
+      status: (t.status as string) ?? "pending",
       lead_id: t.lead_id as string,
       lead_nome: (t.prospect_leads?.nome as string) ?? null,
       telefone: (t.prospect_leads?.telefone as string) ?? t.prospect_leads?.telefones?.[0] ?? null,
     }));
-  }, []);
+  }, [fuPeriodo, fuStatus]);
+
 
   useEffect(() => {
     let cancelled = false;
