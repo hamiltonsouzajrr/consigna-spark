@@ -140,7 +140,7 @@ export type Incidente = {
   id: string;
   user_id: string;
   user_email: string | null;
-  detalhes: unknown;
+  detalhes: { sessoes?: { ip: string | null; navegador: string | null; ultimo_sinal: string; atual: boolean }[] } | null;
   created_at: string;
   resolvido_em: string | null;
 };
