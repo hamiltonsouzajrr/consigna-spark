@@ -313,6 +313,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             <img src={logo.url} alt="Grupo Positive" className="h-10 w-10 rounded-lg bg-white object-contain p-1" />
             <span className="font-semibold">Grupo Positive</span>
           </div>
+          <div className="flex items-center gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleSair}
+            className="gap-1 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+          >
+            <LogOut className="h-4 w-4" /> Sair
+          </Button>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/10">
