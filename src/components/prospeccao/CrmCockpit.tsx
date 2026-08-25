@@ -33,10 +33,12 @@ type Followup = {
   id: string;
   title: string;
   due_at: string;
+  status: string;
   lead_id: string;
   lead_nome: string | null;
   telefone: string | null;
 };
+
 
 
 type Props = {
