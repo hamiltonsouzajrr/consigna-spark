@@ -14,7 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getMyCallDetails } from "@/lib/prospeccao/prospeccao.functions";
 import { cn } from "@/lib/utils";
-import { PhoneIncoming, PhoneOff, ExternalLink, X } from "lucide-react";
+import { PhoneIncoming, PhoneOff, ExternalLink, X, History } from "lucide-react";
+import { LeadTimeline } from "@/components/prospeccao/LeadTimeline";
 
 export type CallQualityFilters = {
   days: number;
@@ -43,6 +44,7 @@ export function CallQualityDialog({
 }) {
   const fetchDetails = useServerFn(getMyCallDetails);
   const [local, setLocal] = useState(filters);
+  const [aberto, setAberto] = useState<string | null>(null);
   useEffect(() => { setLocal(filters); }, [filters]);
 
   const set = (patch: Partial<CallQualityFilters>) => {
@@ -166,7 +168,7 @@ export function CallQualityDialog({
                       size="sm"
                       variant="ghost"
                       className="h-7 gap-1 px-2 text-xs"
-                      onClick={() => setAberto((p) => (p === r.leadId ? null : r.leadId))}
+                      onClick={() => setAberto((p: string | null) => (p === r.leadId ? null : r.leadId))}
                     >
                       <History className="h-3 w-3" />
                       {aberto === r.leadId ? "Ocultar" : "Histórico"}
