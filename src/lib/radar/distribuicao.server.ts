@@ -104,12 +104,16 @@ export async function redistribuirPorDesempenho(
   diasDesempenho = 14,
   janelaDias: number | null = null,
   pesoMax = 4,
+  status: string[] = ["novo"],
+  somenteNaoContatados = true,
 ): Promise<ResultadoDesempenho> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin.rpc("redistribuir_do_registros_por_desempenho" as any, {
     _dias_desempenho: diasDesempenho,
     _janela_dias: janelaDias,
     _peso_max: pesoMax,
+    _status: status.length ? status : ["novo"],
+    _somente_nao_contatados: somenteNaoContatados,
   } as any);
   if (error) throw new Error(error.message);
   const row = (Array.isArray(data) ? data[0] : data) as any;

@@ -276,6 +276,8 @@ export const redistribuirPromovidosPorDesempenho = createServerFn({ method: "POS
         diasDesempenho: z.number().int().min(1).max(180).optional(),
         janelaDias: z.number().int().min(1).max(365).nullable().optional(),
         pesoMax: z.number().min(1).max(10).optional(),
+        status: z.array(z.string().min(1).max(40)).max(20).optional(),
+        somenteNaoContatados: z.boolean().optional(),
       })
       .parse(data ?? {}),
   )
@@ -286,6 +288,12 @@ export const redistribuirPromovidosPorDesempenho = createServerFn({ method: "POS
     }): Promise<{ atribuidos: number; consultoras: number; topConsultora: string | null; topPeso: number }> => {
       await assertAdminCtx(context);
       const { redistribuirPorDesempenho } = await import("@/lib/radar/distribuicao.server");
-      return redistribuirPorDesempenho(data.diasDesempenho ?? 14, data.janelaDias ?? null, data.pesoMax ?? 4);
+      return redistribuirPorDesempenho(
+        data.diasDesempenho ?? 14,
+        data.janelaDias ?? null,
+        data.pesoMax ?? 4,
+        data.status?.length ? data.status : ["novo"],
+        data.somenteNaoContatados ?? true,
+      );
     },
   );

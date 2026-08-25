@@ -25,6 +25,18 @@ import { previewSplit } from "@/lib/prospeccao/admin-import";
 
 type Consultant = { id: string; email: string };
 
+const STATUS_REDIST: { key: string; label: string }[] = [
+  { key: "novo", label: "Pendente / não abordado" },
+  { key: "contatado", label: "Contatado" },
+  { key: "proposta_enviada", label: "Proposta enviada" },
+  { key: "sem_interesse", label: "Sem interesse" },
+  { key: "erro", label: "Erro" },
+  { key: "convertido", label: "Convertido" },
+];
+const STATUS_LABEL: Record<string, string> = Object.fromEntries(
+  STATUS_REDIST.map((s) => [s.key, s.label]),
+);
+
 export function DistribuicaoTab({
   consultants, selected, onToggle, onSelectAll, onClear, unassignedCount,
 }: {
@@ -52,12 +64,32 @@ export function DistribuicaoTab({
   const redistribuirDesempenho = useServerFn(redistribuirPromovidosPorDesempenho);
   const [diasDesempenho, setDiasDesempenho] = useState(14);
   const [pesoMax, setPesoMax] = useState(4);
+  const [statusSel, setStatusSel] = useState<Set<string>>(new Set(["novo"]));
+  const [somenteNaoContatados, setSomenteNaoContatados] = useState(true);
+
+  const toggleStatus = (key: string) =>
+    setStatusSel((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   const runRedistribuirPorDesempenho = async () => {
+    if (statusSel.size === 0) {
+      toast.error("Selecione ao menos um status para redistribuir.");
+      return;
+    }
     setBusy(true);
     try {
       const d = await redistribuirDesempenho({
-        data: { diasDesempenho, janelaDias: null, pesoMax },
+        data: {
+          diasDesempenho,
+          janelaDias: null,
+          pesoMax,
+          status: [...statusSel],
+          somenteNaoContatados,
+        },
       });
       if (d.consultoras === 0) toast.error("Nenhuma consultora ativa com conta no sistema.");
       else if (d.atribuidos === 0) toast.info("Nenhum lead disponível para redistribuir.");
@@ -298,9 +330,37 @@ export function DistribuicaoTab({
                 />
               </div>
             </div>
+
+            <div className="mt-3">
+              <Label className="text-xs">Quais promovidos redistribuir</Label>
+              <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-2">
+                {STATUS_REDIST.map((s) => (
+                  <label key={s.key} className="flex items-center gap-2 text-xs">
+                    <Checkbox
+                      checked={statusSel.has(s.key)}
+                      onCheckedChange={() => toggleStatus(s.key)}
+                    />
+                    {s.label}
+                  </label>
+                ))}
+              </div>
+              <label className="mt-2 flex items-center gap-2 text-xs">
+                <Checkbox
+                  checked={somenteNaoContatados}
+                  onCheckedChange={(v) => setSomenteNaoContatados(v === true)}
+                />
+                Apenas leads que nunca foram contatados (desmarque para incluir os que já tiveram contato registrado)
+              </label>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Selecionados: {statusSel.size ? [...statusSel].map((k) => STATUS_LABEL[k] ?? k).join(", ") : "nenhum"}
+              </p>
+            </div>
+
             <ConfirmDialog
               title="Distribuir por desempenho?"
-              description="Os promovidos ainda não abordados serão redistribuídos: a consultora que mais produz recebe mais leads, a que menos produz recebe menos."
+              description={`Serão redistribuídos apenas os promovidos com status: ${
+                statusSel.size ? [...statusSel].map((k) => STATUS_LABEL[k] ?? k).join(", ") : "nenhum"
+              }. Quem produz mais recebe mais leads; quem produz menos recebe menos.`}
               confirmLabel="Distribuir por desempenho"
               onConfirm={runRedistribuirPorDesempenho}
             >
