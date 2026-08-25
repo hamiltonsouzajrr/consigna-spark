@@ -84,14 +84,27 @@ function LoginPage() {
   };
 
   const handle = async (mode: "in" | "up") => {
+    if (mode === "up") {
+      if (nome.trim().length < 3) {
+        toast.error("Informe seu nome completo");
+        return;
+      }
+      if (!isValidCpf(cpf)) {
+        toast.error("CPF inválido", { description: "Confira os números digitados." });
+        return;
+      }
+    }
     setBusy(true);
-    const { error } = mode === "in" ? await signIn(email, password) : await signUp(email, password);
+    const { error } =
+      mode === "in"
+        ? await signIn(email, password)
+        : await signUp({ nome: nome.trim(), cpf: normalizeCpf(cpf), email, password });
     setBusy(false);
     if (error) {
       const { title, description } = translateError(error);
       toast.error(title, { description, duration: 8000 });
     } else if (mode === "up") {
-      toast.success("Conta criada! Faça login.");
+      toast.success("Conta criada com sucesso!");
     }
   };
 
