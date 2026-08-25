@@ -10,6 +10,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { CallQualityDialog, type CallQualityFilters } from "@/components/prospeccao/CallQualityDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyCallQuality } from "@/lib/prospeccao/prospeccao.functions";
 import {
