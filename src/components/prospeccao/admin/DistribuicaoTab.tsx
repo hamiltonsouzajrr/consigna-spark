@@ -223,6 +223,66 @@ export function DistribuicaoTab({
           </ConfirmDialog>
         </div>
 
+        <div className="rounded-lg border p-4 md:col-span-2">
+          <p className="mb-2 flex items-center gap-2 text-sm font-medium">
+            <Scale className="h-4 w-4" /> Radar Diário Oficial — entrega igualitária
+          </p>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Divide os promovidos encontrados pelo Radar em partes iguais entre todas as consultoras
+            ativas com conta no sistema, começando pelos mais recentes (janela de ouro).
+          </p>
+          <label className="flex items-center gap-2 text-xs">
+            <Checkbox checked={incluirAbordados} onCheckedChange={(v) => setIncluirAbordados(v === true)} />
+            Incluir também os leads já abordados (por padrão, quem já trabalhou o lead permanece com ele)
+          </label>
+          <ConfirmDialog
+            title="Redistribuir igualmente os promovidos?"
+            description="Os leads do Radar serão divididos em partes iguais entre todas as consultoras ativas com conta no sistema."
+            confirmLabel="Redistribuir"
+            onConfirm={runRedistribuirRadar}
+          >
+            <Button className="mt-3 w-full" variant="secondary" disabled={busy}>
+              <Scale className="mr-2 h-4 w-4" /> Redistribuir igualmente agora
+            </Button>
+          </ConfirmDialog>
+
+          <div className="mt-4 max-h-64 overflow-auto rounded-md border">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-muted/60">
+                <tr className="text-left">
+                  <th className="px-2 py-1.5 font-medium">Consultora</th>
+                  <th className="px-2 py-1.5 font-medium">Últimos 15 dias</th>
+                  <th className="px-2 py-1.5 font-medium">Total</th>
+                  <th className="px-2 py-1.5 font-medium">Última entrega</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(resumo.data ?? []).filter((c) => c.ativo || c.total > 0).map((c) => (
+                  <tr key={c.nome} className="border-t">
+                    <td className="px-2 py-1.5">
+                      {c.nome}
+                      {!c.ativo && <span className="ml-1 text-muted-foreground">(inativa)</span>}
+                    </td>
+                    <td className="px-2 py-1.5">{c.janela}</td>
+                    <td className="px-2 py-1.5">{c.total}</td>
+                    <td className="px-2 py-1.5 text-muted-foreground">
+                      {c.ultimaEntrega ? new Date(c.ultimaEntrega).toLocaleDateString("pt-BR") : "—"}
+                    </td>
+                  </tr>
+                ))}
+                {!resumo.isLoading && (resumo.data ?? []).length === 0 && (
+                  <tr><td colSpan={4} className="px-2 py-3 text-center text-muted-foreground">Sem consultoras cadastradas.</td></tr>
+                )}
+                {resumo.isLoading && (
+                  <tr><td colSpan={4} className="px-2 py-3 text-center text-muted-foreground">Carregando…</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+
         <div className="rounded-lg border border-destructive/40 p-4">
           <p className="mb-2 text-sm font-medium text-destructive">Limpar vínculos e acessos</p>
           <p className="mb-3 text-xs text-muted-foreground">
