@@ -73,6 +73,7 @@ import { Route as AuthenticatedProspeccaoAdminLeadsRouteImport } from './routes/
 import { Route as AuthenticatedRhColaboradoresIdRouteImport } from './routes/_authenticated/rh.colaboradores.$id'
 import { Route as AuthenticatedRhPortalIndexRouteImport } from './routes/_authenticated/rh.portal.index'
 import { Route as AuthenticatedRhPortalKpiRouteImport } from './routes/_authenticated/rh.portal.$kpi'
+import { Route as ApiPublicHooksCompeticaoFecharRouteImport } from './routes/api/public/hooks/competicao-fechar'
 import { Route as ApiPublicHooksFollowupLembretesRouteImport } from './routes/api/public/hooks/followup-lembretes'
 import { Route as ApiPublicHooksRadarDiarioRouteImport } from './routes/api/public/hooks/radar-diario'
 import { Route as ApiPublicHooksRadarDiarioWorkerRouteImport } from './routes/api/public/hooks/radar-diario-worker'
@@ -439,6 +440,12 @@ const AuthenticatedRhPortalKpiRoute =
     path: '/$kpi',
     getParentRoute: () => AuthenticatedRhPortalRoute,
   } as any)
+const ApiPublicHooksCompeticaoFecharRoute =
+  ApiPublicHooksCompeticaoFecharRouteImport.update({
+    id: '/api/public/hooks/competicao-fechar',
+    path: '/api/public/hooks/competicao-fechar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksFollowupLembretesRoute =
   ApiPublicHooksFollowupLembretesRouteImport.update({
     id: '/api/public/hooks/followup-lembretes',
@@ -545,6 +552,7 @@ export interface FileRoutesByFullPath {
   '/prospeccao/admin/leads': typeof AuthenticatedProspeccaoAdminLeadsRoute
   '/rh/colaboradores/$id': typeof AuthenticatedRhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof AuthenticatedRhPortalKpiRoute
+  '/api/public/hooks/competicao-fechar': typeof ApiPublicHooksCompeticaoFecharRoute
   '/api/public/hooks/followup-lembretes': typeof ApiPublicHooksFollowupLembretesRoute
   '/api/public/hooks/radar-diario': typeof ApiPublicHooksRadarDiarioRoute
   '/api/public/hooks/radar-diario-worker': typeof ApiPublicHooksRadarDiarioWorkerRoute
@@ -614,6 +622,7 @@ export interface FileRoutesByTo {
   '/prospeccao/admin/leads': typeof AuthenticatedProspeccaoAdminLeadsRoute
   '/rh/colaboradores/$id': typeof AuthenticatedRhColaboradoresIdRoute
   '/rh/portal/$kpi': typeof AuthenticatedRhPortalKpiRoute
+  '/api/public/hooks/competicao-fechar': typeof ApiPublicHooksCompeticaoFecharRoute
   '/api/public/hooks/followup-lembretes': typeof ApiPublicHooksFollowupLembretesRoute
   '/api/public/hooks/radar-diario': typeof ApiPublicHooksRadarDiarioRoute
   '/api/public/hooks/radar-diario-worker': typeof ApiPublicHooksRadarDiarioWorkerRoute
@@ -688,6 +697,7 @@ export interface FileRoutesById {
   '/_authenticated/prospeccao/admin/leads': typeof AuthenticatedProspeccaoAdminLeadsRoute
   '/_authenticated/rh/colaboradores/$id': typeof AuthenticatedRhColaboradoresIdRoute
   '/_authenticated/rh/portal/$kpi': typeof AuthenticatedRhPortalKpiRoute
+  '/api/public/hooks/competicao-fechar': typeof ApiPublicHooksCompeticaoFecharRoute
   '/api/public/hooks/followup-lembretes': typeof ApiPublicHooksFollowupLembretesRoute
   '/api/public/hooks/radar-diario': typeof ApiPublicHooksRadarDiarioRoute
   '/api/public/hooks/radar-diario-worker': typeof ApiPublicHooksRadarDiarioWorkerRoute
@@ -762,6 +772,7 @@ export interface FileRouteTypes {
     | '/prospeccao/admin/leads'
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
+    | '/api/public/hooks/competicao-fechar'
     | '/api/public/hooks/followup-lembretes'
     | '/api/public/hooks/radar-diario'
     | '/api/public/hooks/radar-diario-worker'
@@ -831,6 +842,7 @@ export interface FileRouteTypes {
     | '/prospeccao/admin/leads'
     | '/rh/colaboradores/$id'
     | '/rh/portal/$kpi'
+    | '/api/public/hooks/competicao-fechar'
     | '/api/public/hooks/followup-lembretes'
     | '/api/public/hooks/radar-diario'
     | '/api/public/hooks/radar-diario-worker'
@@ -904,6 +916,7 @@ export interface FileRouteTypes {
     | '/_authenticated/prospeccao/admin/leads'
     | '/_authenticated/rh/colaboradores/$id'
     | '/_authenticated/rh/portal/$kpi'
+    | '/api/public/hooks/competicao-fechar'
     | '/api/public/hooks/followup-lembretes'
     | '/api/public/hooks/radar-diario'
     | '/api/public/hooks/radar-diario-worker'
@@ -922,6 +935,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AprovacaoTokenRoute: typeof AprovacaoTokenRoute
   ConsultoraTokenRoute: typeof ConsultoraTokenRoute
+  ApiPublicHooksCompeticaoFecharRoute: typeof ApiPublicHooksCompeticaoFecharRoute
   ApiPublicHooksFollowupLembretesRoute: typeof ApiPublicHooksFollowupLembretesRoute
   ApiPublicHooksRadarDiarioRoute: typeof ApiPublicHooksRadarDiarioRoute
   ApiPublicHooksRadarDiarioWorkerRoute: typeof ApiPublicHooksRadarDiarioWorkerRoute
@@ -1381,6 +1395,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRhPortalKpiRouteImport
       parentRoute: typeof AuthenticatedRhPortalRoute
     }
+    '/api/public/hooks/competicao-fechar': {
+      id: '/api/public/hooks/competicao-fechar'
+      path: '/api/public/hooks/competicao-fechar'
+      fullPath: '/api/public/hooks/competicao-fechar'
+      preLoaderRoute: typeof ApiPublicHooksCompeticaoFecharRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/followup-lembretes': {
       id: '/api/public/hooks/followup-lembretes'
       path: '/api/public/hooks/followup-lembretes'
@@ -1623,6 +1644,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AprovacaoTokenRoute: AprovacaoTokenRoute,
   ConsultoraTokenRoute: ConsultoraTokenRoute,
+  ApiPublicHooksCompeticaoFecharRoute: ApiPublicHooksCompeticaoFecharRoute,
   ApiPublicHooksFollowupLembretesRoute: ApiPublicHooksFollowupLembretesRoute,
   ApiPublicHooksRadarDiarioRoute: ApiPublicHooksRadarDiarioRoute,
   ApiPublicHooksRadarDiarioWorkerRoute: ApiPublicHooksRadarDiarioWorkerRoute,
