@@ -138,11 +138,22 @@ export const getPromovidosRecentes = createServerFn({ method: "POST" })
       return c ?? 0;
     };
 
-    const [novosHoje, novos7d, semCpf, naoAbordados] = await Promise.all([
+    const ultimaEntregaQuery = (async () => {
+      let q = context.supabase
+        .from("do_registros")
+        .select("atribuido_em")
+        .not("atribuido_em", "is", null);
+      if (nome) q = q.eq("consultora_responsavel", nome);
+      const { data: d } = await q.order("atribuido_em", { ascending: false }).limit(1);
+      return ((d?.[0] as any)?.atribuido_em as string | undefined) ?? null;
+    })();
+
+    const [novosHoje, novos7d, semCpf, naoAbordados, ultimaEntrega] = await Promise.all([
       contar((q) => q.eq("data_publicacao", hoje)),
       contar((q) => q.gte("data_publicacao", diasAtras(7))),
       contar((q) => q.is("cpf_confirmado", null)),
       contar((q) => q.eq("status_abordagem", "novo")),
+      ultimaEntregaQuery,
     ]);
 
     return {
@@ -155,6 +166,7 @@ export const getPromovidosRecentes = createServerFn({ method: "POST" })
       novos7d,
       semCpf,
       naoAbordados,
+      ultimaEntrega,
     };
   });
 
