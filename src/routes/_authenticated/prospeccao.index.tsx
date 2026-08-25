@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { useRhAccess } from "@/hooks/use-rh-access";
 import { supabase } from "@/integrations/supabase/client";
 import { refillMyQueue } from "@/lib/prospeccao/prospeccao.functions";
+import { CompeticaoRanking } from "@/components/prospeccao/CompeticaoRanking";
 import { registrarContato, registrarQualificacao, agendarFollowup } from "@/lib/prospeccao/competicao.functions";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
@@ -310,6 +311,9 @@ function Page() {
 
   return (
     <AppShell>
+      <div className="mb-4">
+        <Link to="/producao/competicao"><CompeticaoRanking compact /></Link>
+      </div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Prospecção</h1>

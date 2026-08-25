@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { CompeticaoRanking } from "@/components/prospeccao/CompeticaoRanking";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RhStatCard } from "@/components/rh/RhStatCard";
@@ -64,6 +65,10 @@ function Page() {
           <h1 className="text-2xl font-bold">Meu Dia</h1>
           <p className="text-sm text-muted-foreground">Seu resumo de prospecção e produção de hoje.</p>
         </div>
+      </div>
+
+      <div className="mb-4">
+        <Link to="/producao/competicao"><CompeticaoRanking compact /></Link>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
