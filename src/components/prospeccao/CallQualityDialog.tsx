@@ -14,7 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getMyCallDetails } from "@/lib/prospeccao/prospeccao.functions";
 import { cn } from "@/lib/utils";
-import { PhoneIncoming, PhoneOff, ExternalLink, X } from "lucide-react";
+import { PhoneIncoming, PhoneOff, ExternalLink, X, History } from "lucide-react";
+import { LeadTimeline } from "@/components/prospeccao/LeadTimeline";
 
 export type CallQualityFilters = {
   days: number;
@@ -43,6 +44,7 @@ export function CallQualityDialog({
 }) {
   const fetchDetails = useServerFn(getMyCallDetails);
   const [local, setLocal] = useState(filters);
+  const [aberto, setAberto] = useState<string | null>(null);
   useEffect(() => { setLocal(filters); }, [filters]);
 
   const set = (patch: Partial<CallQualityFilters>) => {
@@ -162,6 +164,15 @@ export function CallQualityDialog({
                     <Badge variant="secondary" className="text-xs">{r.outcome}</Badge>
                     <Badge variant="outline" className="text-xs capitalize">{r.status}</Badge>
                     <span className="text-xs text-muted-foreground">{dataHora(r.createdAt)}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 gap-1 px-2 text-xs"
+                      onClick={() => setAberto((p: string | null) => (p === r.leadId ? null : r.leadId))}
+                    >
+                      <History className="h-3 w-3" />
+                      {aberto === r.leadId ? "Ocultar" : "Histórico"}
+                    </Button>
                     <Button asChild size="sm" variant="ghost" className="h-7 gap-1 px-2 text-xs">
                       <Link to="/prospeccao/$leadId" params={{ leadId: r.leadId }}>
                         Abrir <ExternalLink className="h-3 w-3" />
@@ -171,11 +182,15 @@ export function CallQualityDialog({
                   {r.body && (
                     <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">{r.body}</p>
                   )}
+                  {aberto === r.leadId && (
+                    <LeadTimeline leadId={r.leadId} className="mt-3" limit={15} />
+                  )}
                 </li>
               ))}
             </ul>
           </ScrollArea>
         )}
+
       </DialogContent>
     </Dialog>
   );
