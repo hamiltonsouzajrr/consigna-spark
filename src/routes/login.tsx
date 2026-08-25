@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/grupo-positive-logo.png.asset.json";
+import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
+import { sendResetByCpf } from "@/lib/auth/account.functions";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -32,10 +34,44 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [recovering, setRecovering] = useState(false);
+  const [nome, setNome] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [recoverBy, setRecoverBy] = useState<"email" | "cpf">("email");
+  const [recoverCpf, setRecoverCpf] = useState("");
 
   useEffect(() => { if (user) nav({ to: "/dashboard" }); }, [user, nav]);
 
   const handleReset = async () => {
+    if (recoverBy === "cpf") {
+      if (!isValidCpf(recoverCpf)) {
+        toast.error("CPF inválido", { description: "Confira os números digitados." });
+        return;
+      }
+      setBusy(true);
+      try {
+        const res = await sendResetByCpf({
+          data: { cpf: normalizeCpf(recoverCpf), redirectTo: `${window.location.origin}/reset-password` },
+        });
+        if (res.found) {
+          toast.success("Email enviado!", {
+            description: `Enviamos o link de redefinição para ${res.emailMasked}.`,
+            duration: 10000,
+          });
+          setRecovering(false);
+        } else {
+          toast.error("CPF não encontrado", {
+            description: "Não localizamos uma conta com este CPF. Tente pelo e-mail.",
+            duration: 8000,
+          });
+        }
+      } catch (e: any) {
+        toast.error("Não foi possível enviar", { description: e?.message, duration: 8000 });
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+
     if (!email) {
       toast.error("Informe seu email", { description: "Digite o email da conta para enviar o link de recuperação." });
       return;
@@ -84,14 +120,27 @@ function LoginPage() {
   };
 
   const handle = async (mode: "in" | "up") => {
+    if (mode === "up") {
+      if (nome.trim().length < 3) {
+        toast.error("Informe seu nome completo");
+        return;
+      }
+      if (!isValidCpf(cpf)) {
+        toast.error("CPF inválido", { description: "Confira os números digitados." });
+        return;
+      }
+    }
     setBusy(true);
-    const { error } = mode === "in" ? await signIn(email, password) : await signUp(email, password);
+    const { error } =
+      mode === "in"
+        ? await signIn(email, password)
+        : await signUp({ nome: nome.trim(), cpf: normalizeCpf(cpf), email, password });
     setBusy(false);
     if (error) {
       const { title, description } = translateError(error);
       toast.error(title, { description, duration: 8000 });
     } else if (mode === "up") {
-      toast.success("Conta criada! Faça login.");
+      toast.success("Conta criada com sucesso!");
     }
   };
 
@@ -115,22 +164,56 @@ function LoginPage() {
             <div>
               <h2 className="text-base font-semibold">Recuperar conta</h2>
               <p className="text-sm text-muted-foreground">
-                Informe o email da sua conta e enviaremos um link para redefinir a senha.
+                Informe o e-mail ou o CPF da sua conta. O link de redefinição é sempre enviado para o
+                e-mail cadastrado.
               </p>
             </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                className="h-11"
-              />
+            <div className="grid grid-cols-2 gap-2">
+              {(["email", "cpf"] as const).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setRecoverBy(k)}
+                  className={`h-10 rounded-md border text-sm transition ${
+                    recoverBy === k
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {k === "email" ? "Por e-mail" : "Por CPF"}
+                </button>
+              ))}
             </div>
-            <Button className="h-11 w-full" disabled={busy || !email} onClick={handleReset}>
+            {recoverBy === "email" ? (
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  className="h-11"
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>CPF</Label>
+                <Input
+                  inputMode="numeric"
+                  value={recoverCpf}
+                  onChange={(e) => setRecoverCpf(formatCpf(normalizeCpf(e.target.value).slice(0, 11)))}
+                  placeholder="000.000.000-00"
+                  className="h-11"
+                />
+              </div>
+            )}
+            <Button
+              className="h-11 w-full"
+              disabled={busy || (recoverBy === "email" ? !email : !recoverCpf)}
+              onClick={handleReset}
+            >
               {busy ? "Aguarde…" : "Enviar link de recuperação"}
             </Button>
             <button
@@ -149,6 +232,34 @@ function LoginPage() {
           </TabsList>
           {(["in", "up"] as const).map((m) => (
             <TabsContent key={m} value={m} className="mt-4 space-y-4">
+              {m === "up" && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Nome completo</Label>
+                    <Input
+                      autoComplete="name"
+                      value={nome}
+                      onChange={(e) => setNome(e.target.value)}
+                      placeholder="Seu nome completo"
+                      className="h-11"
+                      maxLength={120}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>CPF</Label>
+                    <Input
+                      inputMode="numeric"
+                      value={cpf}
+                      onChange={(e) => setCpf(formatCpf(normalizeCpf(e.target.value).slice(0, 11)))}
+                      placeholder="000.000.000-00"
+                      className="h-11"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Permitida apenas uma conta por CPF.
+                    </p>
+                  </div>
+                </>
+              )}
               <div className="space-y-2">
                 <Label>Email</Label>
                 <Input
@@ -191,7 +302,11 @@ function LoginPage() {
                   Esqueceu a senha? Recuperar conta
                 </button>
               )}
-              <Button className="h-11 w-full" disabled={busy || !email || !password} onClick={() => handle(m)}>
+              <Button
+                className="h-11 w-full"
+                disabled={busy || !email || !password || (m === "up" && (!nome || !cpf))}
+                onClick={() => handle(m)}
+              >
                 {busy ? "Aguarde…" : m === "in" ? "Entrar" : "Criar conta"}
               </Button>
             </TabsContent>

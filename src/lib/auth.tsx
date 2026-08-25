@@ -1,13 +1,14 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
+import { signUpWithCpf } from "@/lib/auth/account.functions";
 
 interface AuthCtx {
   user: User | null;
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (input: { nome: string; cpf: string; email: string; password: string }) => Promise<{ error: string | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
   updatePassword: (password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -35,11 +36,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error?.message ?? null };
   };
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: window.location.origin },
+  const signUp = async (input: { nome: string; cpf: string; email: string; password: string }) => {
+    try {
+      await signUpWithCpf({ data: input });
+    } catch (e: any) {
+      return { error: e?.message ?? "Não foi possível criar a conta." };
+    }
+    const { error } = await supabase.auth.signInWithPassword({
+      email: input.email,
+      password: input.password,
     });
     return { error: error?.message ?? null };
   };
