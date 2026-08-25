@@ -1,0 +1,10 @@
+REVOKE EXECUTE ON FUNCTION public.competicao_week_start(timestamptz) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.competicao_garantir_semana(date) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.registrar_ponto(uuid, text, text, uuid, integer, text, integer) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.estornar_pontos(text, uuid, text[], text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.ranking_competicao(date) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.competicao_garantir_semana(date) TO service_role;
+GRANT EXECUTE ON FUNCTION public.registrar_ponto(uuid, text, text, uuid, integer, text, integer) TO service_role;
+GRANT EXECUTE ON FUNCTION public.estornar_pontos(text, uuid, text[], text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.ranking_competicao(date) TO service_role;
+GRANT EXECUTE ON FUNCTION public.competicao_week_start(timestamptz) TO service_role;
