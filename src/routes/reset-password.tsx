@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
-import logo from "@/assets/grupo-positive-logo.png.asset.json";
+import logo from "@/assets/grupo-positive-logo-2026.png.asset.json";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
