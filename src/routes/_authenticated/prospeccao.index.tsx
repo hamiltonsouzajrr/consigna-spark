@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { useRhAccess } from "@/hooks/use-rh-access";
 import { supabase } from "@/integrations/supabase/client";
 import { refillMyQueue } from "@/lib/prospeccao/prospeccao.functions";
+import { registrarContato, registrarQualificacao, agendarFollowup } from "@/lib/prospeccao/competicao.functions";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -88,6 +89,10 @@ function Page() {
   const [streak, setStreak] = useState(0);
 
   const refill = useServerFn(refillMyQueue);
+  // Atividades passam pelo servidor (pontuação da competição da semana).
+  const contatoFn = useServerFn(registrarContato);
+  const qualificarFn = useServerFn(registrarQualificacao);
+  const agendarFn = useServerFn(agendarFollowup);
 
   // Daily call goal used for gamification (progress bar + streak).
   const META_DIARIA = 250;
@@ -199,19 +204,28 @@ function Page() {
       toast.warning("Etiquete o lead (situação) antes de registrar a chamada.");
       return;
     }
-    const nowIso = new Date().toISOString();
-    await supabase.from("lead_events").insert({ lead_id: leadId, consultant_id: user.id, kind: "ligacao", body: `Resultado: ${outcome}` } as any);
-    await supabase.from("prospect_leads").update({ last_contact_at: nowIso } as any).eq("id", leadId);
-    bumpChamadas();
-    toast.success(`Ligação registrada: ${outcome} — próximo lead!`);
-    loadProd(user.id);
+    try {
+      const r = await contatoFn({ data: { leadId, kind: "ligacao", body: `Resultado: ${outcome}` } });
+      bumpChamadas();
+      toast.success(`Ligação registrada: ${outcome} — próximo lead!`);
+      if (r.pontos > 0) toast.success(`+${r.pontos} pontos na competição da semana!`);
+      else if (r.motivo) toast.info(r.motivo);
+      loadProd(user.id);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   };
 
   // Mark the situation tag (tratativa) straight from the card.
   const setSituacao = async (leadId: string, situacao: string) => {
     setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, situacao } : l)));
-    await supabase.from("prospect_leads").update({ situacao } as any).eq("id", leadId);
-    toast.success(`Marcado como: ${situacao}`);
+    try {
+      const r = await qualificarFn({ data: { leadId, situacao } });
+      toast.success(`Marcado como: ${situacao}`);
+      if (r.pontos > 0) toast.success(`+${r.pontos} pontos na competição da semana!`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   };
 
   // Quick follow-up scheduling (1h / amanhã 9h / 2 dias).
@@ -219,10 +233,13 @@ function Page() {
     if (!user) return;
     const iso = when.toISOString();
     setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, next_follow_up_at: iso } : l)));
-    await supabase.from("prospect_leads").update({ next_follow_up_at: iso } as any).eq("id", leadId);
-    await supabase.from("lead_tasks").insert({ lead_id: leadId, consultant_id: user.id, title: `Retornar contato (${label})`, due_at: iso, status: "pending" } as any);
-    toast.success(`Follow-up agendado: ${label}`);
-    loadProd(user.id);
+    try {
+      await agendarFn({ data: { leadId, title: `Retornar contato (${label})`, dueAt: iso } });
+      toast.success(`Follow-up agendado: ${label} — pontua ao concluir no prazo.`);
+      loadProd(user.id);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   };
 
   const followupOptions = (): { label: string; date: Date }[] => {

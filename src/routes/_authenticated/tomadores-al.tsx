@@ -863,13 +863,6 @@ function Page() {
                               try {
                                 const iso = f.date.toISOString();
                                 await supabase.from("tomadores_al").update({ next_follow_up_at: iso } as any).eq("id", r.id);
-                                // Also log event if possible
-                                await supabase.from("lead_events").insert({
-                                  lead_id: r.id,
-                                  consultant_id: user?.id,
-                                  kind: "followup",
-                                  body: `Follow-up agendado: ${f.label}`
-                                } as any);
                                 toast.success(`Follow-up agendado: ${f.label}`);
                                 load();
                               } catch (e) {
