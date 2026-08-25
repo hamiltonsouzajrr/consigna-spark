@@ -11,6 +11,7 @@ import { Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/grupo-positive-logo-2026.png.asset.json";
 import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
 import { sendResetByCpf } from "@/lib/auth/account.functions";
+import { AVISO_PRIMEIRO_ACESSO_KEY, PrimeiroAcessoDialog } from "@/components/auth/PrimeiroAcessoDialog";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -38,8 +39,23 @@ function LoginPage() {
   const [cpf, setCpf] = useState("");
   const [recoverBy, setRecoverBy] = useState<"email" | "cpf">("email");
   const [recoverCpf, setRecoverCpf] = useState("");
+  const [tab, setTab] = useState<"in" | "up">("in");
+  const [avisoOpen, setAvisoOpen] = useState(false);
 
   useEffect(() => { if (user) nav({ to: "/prospeccao" }); }, [user, nav]);
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(AVISO_PRIMEIRO_ACESSO_KEY)) setAvisoOpen(true);
+    } catch { /* storage indisponível */ }
+  }, []);
+
+  const fecharAviso = (open: boolean) => {
+    setAvisoOpen(open);
+    if (!open) {
+      try { localStorage.setItem(AVISO_PRIMEIRO_ACESSO_KEY, new Date().toISOString()); } catch { /* noop */ }
+    }
+  };
 
   const handleReset = async () => {
     if (recoverBy === "cpf") {
@@ -225,7 +241,7 @@ function LoginPage() {
             </button>
           </div>
         ) : (
-        <Tabs defaultValue="in">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "in" | "up")}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="in">Entrar</TabsTrigger>
             <TabsTrigger value="up">Criar conta</TabsTrigger>
@@ -271,6 +287,11 @@ function LoginPage() {
                   placeholder="seu@email.com"
                   className="h-11"
                 />
+                {m === "up" && (
+                  <p className="text-xs text-muted-foreground">
+                    Use um e-mail que você acessa — é para lá que vai o link de recuperação de senha.
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Senha</Label>
@@ -313,7 +334,28 @@ function LoginPage() {
           ))}
         </Tabs>
         )}
+
+        <p className="mt-6 border-t pt-4 text-center text-xs text-muted-foreground">
+          Primeiro acesso após a atualização?{" "}
+          <button
+            type="button"
+            onClick={() => setAvisoOpen(true)}
+            className="text-primary hover:underline"
+          >
+            Ver instruções de primeiro acesso
+          </button>
+        </p>
       </Card>
+
+      <PrimeiroAcessoDialog
+        open={avisoOpen}
+        onOpenChange={fecharAviso}
+        onCriarConta={() => {
+          setRecovering(false);
+          setTab("up");
+          fecharAviso(false);
+        }}
+      />
     </main>
   );
 }
