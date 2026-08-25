@@ -69,29 +69,88 @@ export function CrmCockpit({
     refetchInterval: 120_000,
   });
 
+  const doContato = useServerFn(registrarContato);
+  const doConcluir = useServerFn(concluirFollowup);
+  const doReagendar = useServerFn(reagendarFollowup);
+  const doPular = useServerFn(pularFollowup);
+
   const [followups, setFollowups] = useState<Followup[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const loadFollowups = useCallback(async () => {
+    const end = new Date(); end.setHours(23, 59, 59, 999);
+    const { data } = await supabase
+      .from("lead_tasks")
+      .select("id,title,due_at,lead_id,prospect_leads(nome,telefone,telefones)")
+      .eq("status", "pending")
+      .lte("due_at", end.toISOString())
+      .order("due_at", { ascending: true })
+      .limit(6);
+    return ((data ?? []) as any[]).map((t) => ({
+      id: t.id as string,
+      title: t.title as string,
+      due_at: t.due_at as string,
+      lead_id: t.lead_id as string,
+      lead_nome: (t.prospect_leads?.nome as string) ?? null,
+      telefone: (t.prospect_leads?.telefone as string) ?? t.prospect_leads?.telefones?.[0] ?? null,
+    }));
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
-    const load = async () => {
-      const end = new Date(); end.setHours(23, 59, 59, 999);
-      const { data } = await supabase
-        .from("lead_tasks")
-        .select("id,title,due_at,lead_id,prospect_leads(nome)")
-        .eq("status", "pending")
-        .lte("due_at", end.toISOString())
-        .order("due_at", { ascending: true })
-        .limit(6);
-      if (cancelled) return;
-      setFollowups(
-        ((data ?? []) as any[]).map((t) => ({
-          id: t.id, title: t.title, due_at: t.due_at, lead_id: t.lead_id,
-          lead_nome: t.prospect_leads?.nome ?? null,
-        })),
-      );
-    };
-    load();
+    loadFollowups().then((rows) => { if (!cancelled) setFollowups(rows); });
     return () => { cancelled = true; };
-  }, []);
+  }, [loadFollowups]);
+
+  const refresh = useCallback(async () => {
+    setFollowups(await loadFollowups());
+  }, [loadFollowups]);
+
+  const ligar = async (f: Followup) => {
+    if (!f.telefone) { toast.error("Lead sem telefone cadastrado."); return; }
+    setBusy(f.id);
+    try {
+      const r = await doContato({ data: { leadId: f.lead_id, kind: "ligacao", body: `Ligação do follow-up: ${f.title}` } });
+      window.location.href = `tel:${f.telefone.replace(/\D/g, "")}`;
+      toast.success(r.pontos ? `Ligação registrada (+${r.pontos} pts)` : "Ligação registrada", { description: r.motivo });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível registrar a ligação.");
+    } finally { setBusy(null); }
+  };
+
+  const atender = async (f: Followup) => {
+    setBusy(f.id);
+    try {
+      const r = await doConcluir({ data: { taskId: f.id } });
+      toast.success(r.pontos ? `Follow-up cumprido (+${r.pontos} pts)` : "Follow-up concluído", { description: r.motivo });
+      await refresh();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível concluir o follow-up.");
+    } finally { setBusy(null); }
+  };
+
+  const reagendar = async (f: Followup, when: Date, label: string) => {
+    setBusy(f.id);
+    try {
+      await doReagendar({ data: { taskId: f.id, dueAt: when.toISOString() } });
+      toast.success(`Reagendado para ${label}.`);
+      await refresh();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível reagendar.");
+    } finally { setBusy(null); }
+  };
+
+  const pular = async (f: Followup) => {
+    setBusy(f.id);
+    try {
+      await doPular({ data: { taskId: f.id, motivo: "pulado no CRM" } });
+      toast.success("Follow-up pulado.");
+      await refresh();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível pular.");
+    } finally { setBusy(null); }
+  };
+
 
   const pct = Math.min(100, Math.round((chamadas / metaDiaria) * 100));
   const maxDay = Math.max(1, ...(quality?.daily ?? []).map((d) => d.total));
