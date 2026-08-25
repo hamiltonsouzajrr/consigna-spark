@@ -118,7 +118,7 @@ export async function randomAssignByName(
   if (!names.length) return 0;
   const { data, error } = await supabaseAdmin.from(table).select("id").limit(20000);
   if (error) throw new Error(`${table}: ${error.message}`);
-  const ids = shuffle((data ?? []).map((r: any) => r.id as string));
+  const ids = shuffle<string>((data ?? []).map((r: any) => String(r.id)));
   if (!ids.length) return 0;
 
   const buckets = new Map<string, string[]>(names.map((n) => [n, [] as string[]]));
