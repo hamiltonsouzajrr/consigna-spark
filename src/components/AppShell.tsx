@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { LogOut, BadgeDollarSign, Calculator, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, PhoneCall, Flame, CalendarClock, Home, Trophy, Star, MessageSquare, Clock, Sparkles, Radar, Wallet, PartyPopper } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { useRhAccess } from "@/hooks/use-rh-access";
 import { supabase } from "@/integrations/supabase/client";
@@ -169,6 +170,15 @@ function useChamadas() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { signOut, user } = useAuth();
+  const qcShell = useQueryClient();
+  // Saída limpa: cancela consultas em voo, limpa o cache e volta ao login.
+  const handleSair = async () => {
+    await qcShell.cancelQueries();
+    qcShell.clear();
+    await signOut();
+    nav2({ to: "/login", replace: true });
+  };
+
   const now = useClock();
   const chamadas = useChamadas();
   const { isAdmin, hasAnyAccess } = useRhAccess();
@@ -255,7 +265,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Button
             variant="ghost"
             className="w-full justify-start gap-2 text-white/90 hover:bg-white/10 hover:text-white"
-            onClick={async () => { await signOut(); nav2({ to: "/login" }); }}
+            onClick={handleSair}
           >
             <LogOut className="h-4 w-4 shrink-0" /> <span className="whitespace-nowrap opacity-0 transition-opacity duration-300 ease-in-out group-hover/side:opacity-100 group-hover/side:delay-150">Sair</span>
           </Button>
@@ -286,6 +296,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
               <span className="max-w-[160px] truncate text-sm text-white/90">{user?.email}</span>
             </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleSair}
+              className="gap-2 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+            >
+              <LogOut className="h-4 w-4" /> Sair
+            </Button>
           </div>
         </header>
 
@@ -295,6 +313,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             <img src={logo.url} alt="Grupo Positive" className="h-10 w-10 rounded-lg bg-white object-contain p-1" />
             <span className="font-semibold">Grupo Positive</span>
           </div>
+          <div className="flex items-center gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleSair}
+            className="gap-1 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+          >
+            <LogOut className="h-4 w-4" /> Sair
+          </Button>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/10">
@@ -333,6 +360,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             </SheetContent>
           </Sheet>
+          </div>
         </div>
 
         <div className="p-3 md:p-5 print:p-0">
