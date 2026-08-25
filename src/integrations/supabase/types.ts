@@ -2595,6 +2595,8 @@ export type Database = {
           _dias_desempenho?: number
           _janela_dias?: number
           _peso_max?: number
+          _somente_nao_contatados?: boolean
+          _status?: string[]
         }
         Returns: {
           atribuidos: number
