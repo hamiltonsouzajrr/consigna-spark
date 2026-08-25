@@ -44,10 +44,20 @@ export type PromovidosRecentesResult = {
   novos7d: number;
   semCpf: number;
   naoAbordados: number;
+  ultimaEntrega: string | null;
 };
 
 function diasAtras(dias: number): string {
   return new Date(Date.now() - dias * 86_400_000).toISOString().slice(0, 10);
+}
+
+async function buscarNome(context: any, email: string): Promise<string | null> {
+  const { data } = await context.supabase
+    .from("radar_consultoras")
+    .select("nome")
+    .ilike("email", email)
+    .limit(1);
+  return (data?.[0]?.nome as string | undefined) ?? null;
 }
 
 async function identificar(context: any): Promise<{ isAdmin: boolean; nome: string | null }> {
@@ -58,12 +68,20 @@ async function identificar(context: any): Promise<{ isAdmin: boolean; nome: stri
   if (isAdminRaw) return { isAdmin: true, nome: null };
   const email = String(context.claims?.email ?? "").trim().toLowerCase();
   if (!email) return { isAdmin: false, nome: null };
-  const { data } = await context.supabase
-    .from("radar_consultoras")
-    .select("nome")
-    .ilike("email", email)
-    .limit(1);
-  return { isAdmin: false, nome: (data?.[0]?.nome as string | undefined) ?? null };
+
+  let nome = await buscarNome(context, email);
+  if (!nome) {
+    // Vínculo na hora: cria o cadastro da consultora a partir da conta e tenta de novo,
+    // para ninguém ficar preso na mensagem "conta não vinculada".
+    try {
+      const { sincronizarConsultoras } = await import("@/lib/radar/distribuicao.server");
+      await sincronizarConsultoras();
+      nome = await buscarNome(context, email);
+    } catch {
+      /* silencioso: segue sem vínculo */
+    }
+  }
+  return { isAdmin: false, nome };
 }
 
 export const getPromovidosRecentes = createServerFn({ method: "POST" })
@@ -89,9 +107,10 @@ export const getPromovidosRecentes = createServerFn({ method: "POST" })
     if (!isAdmin && !nome) {
       return {
         rows: [], total: 0, isAdmin: false, consultoraNome: null, vinculada: false,
-        novosHoje: 0, novos7d: 0, semCpf: 0, naoAbordados: 0,
+        novosHoje: 0, novos7d: 0, semCpf: 0, naoAbordados: 0, ultimaEntrega: null,
       };
     }
+
 
     const base = () => {
       let q = context.supabase.from("do_registros").select(COLS, { count: "exact" }).gte("data_publicacao", desde);
@@ -119,11 +138,22 @@ export const getPromovidosRecentes = createServerFn({ method: "POST" })
       return c ?? 0;
     };
 
-    const [novosHoje, novos7d, semCpf, naoAbordados] = await Promise.all([
+    const ultimaEntregaQuery = (async () => {
+      let q = context.supabase
+        .from("do_registros")
+        .select("atribuido_em")
+        .not("atribuido_em", "is", null);
+      if (nome) q = q.eq("consultora_responsavel", nome);
+      const { data: d } = await q.order("atribuido_em", { ascending: false }).limit(1);
+      return ((d?.[0] as any)?.atribuido_em as string | undefined) ?? null;
+    })();
+
+    const [novosHoje, novos7d, semCpf, naoAbordados, ultimaEntrega] = await Promise.all([
       contar((q) => q.eq("data_publicacao", hoje)),
       contar((q) => q.gte("data_publicacao", diasAtras(7))),
       contar((q) => q.is("cpf_confirmado", null)),
       contar((q) => q.eq("status_abordagem", "novo")),
+      ultimaEntregaQuery,
     ]);
 
     return {
@@ -136,6 +166,7 @@ export const getPromovidosRecentes = createServerFn({ method: "POST" })
       novos7d,
       semCpf,
       naoAbordados,
+      ultimaEntrega,
     };
   });
 
@@ -191,4 +222,47 @@ export const distribuirPromovidosAgora = createServerFn({ method: "POST" })
     if (!isAdminRaw) throw new Error("Acesso restrito a administradores.");
     const { distribuirPendentes } = await import("@/lib/radar/distribuicao.server");
     return distribuirPendentes(2000);
+  });
+
+async function assertAdminCtx(context: any) {
+  const { data: isAdminRaw } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "admin",
+  });
+  if (!isAdminRaw) throw new Error("Acesso restrito a administradores.");
+}
+
+// Admin: espalha os leads do Radar em partes iguais entre todas as consultoras ativas.
+export const redistribuirPromovidosIgualmente = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        janelaDias: z.number().int().min(1).max(365).nullable().optional(),
+        incluirAbordados: z.boolean().optional(),
+      })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<{ atribuidos: number; consultoras: number }> => {
+    await assertAdminCtx(context);
+    const { redistribuirIgualmente } = await import("@/lib/radar/distribuicao.server");
+    return redistribuirIgualmente(data.janelaDias ?? null, data.incluirAbordados ?? false);
+  });
+
+export type CarteiraResumoItem = {
+  nome: string;
+  email: string | null;
+  ativo: boolean;
+  total: number;
+  janela: number;
+  ultimaEntrega: string | null;
+};
+
+// Admin: quantos leads do Radar cada consultora tem (janela e total).
+export const getResumoCarteiras = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<CarteiraResumoItem[]> => {
+    await assertAdminCtx(context);
+    const { resumoCarteiras } = await import("@/lib/radar/distribuicao.server");
+    return resumoCarteiras(JANELA_DIAS);
   });

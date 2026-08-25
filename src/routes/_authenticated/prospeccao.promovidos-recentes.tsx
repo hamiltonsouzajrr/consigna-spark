@@ -77,6 +77,7 @@ function Page() {
   const [rows, setRows] = useState<PromovidoRecente[]>([]);
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState({ novosHoje: 0, novos7d: 0, semCpf: 0, naoAbordados: 0 });
+  const [ultimaEntrega, setUltimaEntrega] = useState<string | null>(null);
   const [consultoraNome, setConsultoraNome] = useState<string | null>(null);
   const [vinculada, setVinculada] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -94,6 +95,7 @@ function Page() {
       setTotal(res.total);
       setConsultoraNome(res.consultoraNome);
       setVinculada(res.vinculada);
+      setUltimaEntrega(res.ultimaEntrega);
       setStats({
         novosHoje: res.novosHoje, novos7d: res.novos7d,
         semCpf: res.semCpf, naoAbordados: res.naoAbordados,
@@ -217,11 +219,16 @@ function Page() {
           </ol>
         </Card>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant={apenasNovos ? "default" : "outline"} size="sm" onClick={() => setApenasNovos((v) => !v)}>
             {apenasNovos ? "Mostrando só não abordados" : "Ver só não abordados"}
           </Button>
           <span className="text-xs text-muted-foreground">{total} lead(s) na janela</span>
+          {ultimaEntrega && (
+            <span className="text-xs text-muted-foreground">
+              · última entrega em {new Date(ultimaEntrega).toLocaleString("pt-BR")}
+            </span>
+          )}
         </div>
 
         {loading ? (

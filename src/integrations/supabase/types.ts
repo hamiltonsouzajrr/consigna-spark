@@ -393,6 +393,7 @@ export type Database = {
       do_registros: {
         Row: {
           arquivo_id: string
+          atribuido_em: string | null
           cargo: string | null
           cargo_anterior: string | null
           cargo_atual: string | null
@@ -440,6 +441,7 @@ export type Database = {
         }
         Insert: {
           arquivo_id: string
+          atribuido_em?: string | null
           cargo?: string | null
           cargo_anterior?: string | null
           cargo_atual?: string | null
@@ -487,6 +489,7 @@ export type Database = {
         }
         Update: {
           arquivo_id?: string
+          atribuido_em?: string | null
           cargo?: string | null
           cargo_anterior?: string | null
           cargo_atual?: string | null
@@ -2578,6 +2581,13 @@ export type Database = {
           qualificacoes: number
           total: number
           user_id: string
+        }[]
+      }
+      redistribuir_do_registros_igualmente: {
+        Args: { _incluir_abordados?: boolean; _janela_dias?: number }
+        Returns: {
+          atribuidos: number
+          consultoras: number
         }[]
       }
       registrar_ponto: {

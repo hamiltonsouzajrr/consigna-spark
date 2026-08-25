@@ -1,0 +1,1 @@
+ALTER TABLE public.do_registros ADD COLUMN IF NOT EXISTS atribuido_em timestamp with time zone;
