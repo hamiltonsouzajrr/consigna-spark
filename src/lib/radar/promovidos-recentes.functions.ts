@@ -44,6 +44,7 @@ export type PromovidosRecentesResult = {
   novos7d: number;
   semCpf: number;
   naoAbordados: number;
+  ultimaEntrega: string | null;
 };
 
 function diasAtras(dias: number): string {
