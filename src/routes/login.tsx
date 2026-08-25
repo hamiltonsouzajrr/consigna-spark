@@ -39,7 +39,7 @@ function LoginPage() {
   const [recoverBy, setRecoverBy] = useState<"email" | "cpf">("email");
   const [recoverCpf, setRecoverCpf] = useState("");
 
-  useEffect(() => { if (user) nav({ to: "/dashboard" }); }, [user, nav]);
+  useEffect(() => { if (user) nav({ to: "/prospeccao" }); }, [user, nav]);
 
   const handleReset = async () => {
     if (recoverBy === "cpf") {

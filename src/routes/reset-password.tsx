@@ -56,7 +56,7 @@ function ResetPasswordPage() {
       toast.error("Não foi possível redefinir", { description: error, duration: 8000 });
     } else {
       toast.success("Senha redefinida com sucesso!");
-      nav({ to: "/dashboard" });
+      nav({ to: "/prospeccao" });
     }
   };
 
