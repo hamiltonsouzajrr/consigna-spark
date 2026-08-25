@@ -10,7 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { adminDistributeLeads, adminRecycleLeads } from "@/lib/prospeccao/prospeccao.functions";
+import {
+  adminDistributeLeads,
+  adminRecycleLeads,
+  adminRandomRedistribute,
+  adminResetAllAccess,
+} from "@/lib/prospeccao/prospeccao.functions";
 import { previewSplit } from "@/lib/prospeccao/admin-import";
 
 type Consultant = { id: string; email: string };
