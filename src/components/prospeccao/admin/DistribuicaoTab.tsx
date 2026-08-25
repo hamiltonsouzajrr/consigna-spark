@@ -49,6 +49,30 @@ export function DistribuicaoTab({
   const redistribuirRadar = useServerFn(redistribuirPromovidosIgualmente);
   const fetchResumo = useServerFn(getResumoCarteiras);
   const [incluirAbordados, setIncluirAbordados] = useState(false);
+  const redistribuirDesempenho = useServerFn(redistribuirPromovidosPorDesempenho);
+  const [diasDesempenho, setDiasDesempenho] = useState(14);
+  const [pesoMax, setPesoMax] = useState(4);
+
+  const runRedistribuirPorDesempenho = async () => {
+    setBusy(true);
+    try {
+      const d = await redistribuirDesempenho({
+        data: { diasDesempenho, janelaDias: null, pesoMax },
+      });
+      if (d.consultoras === 0) toast.error("Nenhuma consultora ativa com conta no sistema.");
+      else if (d.atribuidos === 0) toast.info("Nenhum lead disponível para redistribuir.");
+      else
+        toast.success(
+          `${d.atribuidos} lead(s) distribuídos por desempenho entre ${d.consultoras} consultora(s)` +
+            (d.topConsultora ? ` · destaque: ${d.topConsultora}` : "") + ".",
+        );
+      resumo.refetch();
+      qc.invalidateQueries({ queryKey: ["promovidos-recentes"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao distribuir por desempenho.");
+    }
+    setBusy(false);
+  };
 
   const resumo = useQuery({
     queryKey: ["radar", "resumo-carteiras"],
