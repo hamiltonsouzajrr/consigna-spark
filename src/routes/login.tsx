@@ -164,22 +164,56 @@ function LoginPage() {
             <div>
               <h2 className="text-base font-semibold">Recuperar conta</h2>
               <p className="text-sm text-muted-foreground">
-                Informe o email da sua conta e enviaremos um link para redefinir a senha.
+                Informe o e-mail ou o CPF da sua conta. O link de redefinição é sempre enviado para o
+                e-mail cadastrado.
               </p>
             </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                className="h-11"
-              />
+            <div className="grid grid-cols-2 gap-2">
+              {(["email", "cpf"] as const).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setRecoverBy(k)}
+                  className={`h-10 rounded-md border text-sm transition ${
+                    recoverBy === k
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {k === "email" ? "Por e-mail" : "Por CPF"}
+                </button>
+              ))}
             </div>
-            <Button className="h-11 w-full" disabled={busy || !email} onClick={handleReset}>
+            {recoverBy === "email" ? (
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  className="h-11"
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>CPF</Label>
+                <Input
+                  inputMode="numeric"
+                  value={recoverCpf}
+                  onChange={(e) => setRecoverCpf(formatCpf(normalizeCpf(e.target.value).slice(0, 11)))}
+                  placeholder="000.000.000-00"
+                  className="h-11"
+                />
+              </div>
+            )}
+            <Button
+              className="h-11 w-full"
+              disabled={busy || (recoverBy === "email" ? !email : !recoverCpf)}
+              onClick={handleReset}
+            >
               {busy ? "Aguarde…" : "Enviar link de recuperação"}
             </Button>
             <button
