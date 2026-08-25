@@ -302,7 +302,11 @@ function LoginPage() {
                   Esqueceu a senha? Recuperar conta
                 </button>
               )}
-              <Button className="h-11 w-full" disabled={busy || !email || !password} onClick={() => handle(m)}>
+              <Button
+                className="h-11 w-full"
+                disabled={busy || !email || !password || (m === "up" && (!nome || !cpf))}
+                onClick={() => handle(m)}
+              >
                 {busy ? "Aguarde…" : m === "in" ? "Entrar" : "Criar conta"}
               </Button>
             </TabsContent>
