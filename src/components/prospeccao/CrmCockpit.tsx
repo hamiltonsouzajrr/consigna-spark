@@ -380,7 +380,8 @@ export function CrmCockpit({
 
             )}
             {followups.map((f) => {
-              const atrasado = new Date(f.due_at).getTime() < Date.now();
+              const pendente = f.status === "pending";
+              const atrasado = pendente && new Date(f.due_at).getTime() < Date.now();
               const loading = busy === f.id;
               const em1h = () => { const d = new Date(); d.setHours(d.getHours() + 1); return d; };
               const hojeTarde = () => { const d = new Date(); d.setHours(17, 0, 0, 0); return d; };
