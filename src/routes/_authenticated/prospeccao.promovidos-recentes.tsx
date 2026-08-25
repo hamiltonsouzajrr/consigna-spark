@@ -95,6 +95,7 @@ function Page() {
       setTotal(res.total);
       setConsultoraNome(res.consultoraNome);
       setVinculada(res.vinculada);
+      setUltimaEntrega(res.ultimaEntrega);
       setStats({
         novosHoje: res.novosHoje, novos7d: res.novos7d,
         semCpf: res.semCpf, naoAbordados: res.naoAbordados,
