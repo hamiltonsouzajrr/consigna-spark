@@ -956,3 +956,85 @@ export const getCallQualityStats = createServerFn({ method: "GET" })
       byConsultant,
     };
   });
+
+export type MyCallQuality = {
+  today: number;
+  total7d: number;
+  avgPerDay: number;
+  answered7d: number;
+  answerRate: number;
+  qualified7d: number;
+  daily: { date: string; label: string; total: number; answered: number }[];
+  outcomes: { outcome: string; count: number }[];
+};
+
+/** Qualidade das ligações da própria consultora (últimos 7 dias). */
+export const getMyCallQuality = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<MyCallQuality> => {
+    const { supabase, userId } = context;
+    const ANSWERED = ["Atendeu", "Pediu pra retornar", "Agendou simulação"];
+    const parseOutcome = (body: string | null) => {
+      if (!body) return "Outro";
+      const m = body.match(/Resultado:\s*(.+)/i);
+      return (m ? m[1] : body).trim();
+    };
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - 6);
+
+    const { data: events, error } = await supabase
+      .from("lead_events")
+      .select("body, created_at, kind")
+      .eq("consultant_id", userId)
+      .eq("kind", "ligacao")
+      .gte("created_at", start.toISOString());
+    if (error) throw new Error(error.message);
+
+    const dayMap = new Map<string, { total: number; answered: number }>();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      dayMap.set(d.toISOString().slice(0, 10), { total: 0, answered: 0 });
+    }
+
+    const outcomeMap = new Map<string, number>();
+    let answered7d = 0;
+    for (const e of (events ?? []) as any[]) {
+      const outcome = parseOutcome(e.body);
+      const ok = ANSWERED.includes(outcome);
+      if (ok) answered7d++;
+      outcomeMap.set(outcome, (outcomeMap.get(outcome) ?? 0) + 1);
+      const bucket = dayMap.get((e.created_at as string).slice(0, 10));
+      if (bucket) { bucket.total++; if (ok) bucket.answered++; }
+    }
+
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const total7d = (events ?? []).length;
+
+    const { count: qualified7d } = await supabase
+      .from("prospect_leads")
+      .select("id", { count: "exact", head: true })
+      .eq("consultant_id", userId)
+      .in("status", ["qualificado", "proposta", "ganho"]);
+
+    return {
+      today: dayMap.get(todayKey)?.total ?? 0,
+      total7d,
+      avgPerDay: Math.round((total7d / 7) * 10) / 10,
+      answered7d,
+      answerRate: total7d ? Math.round((answered7d / total7d) * 100) : 0,
+      qualified7d: qualified7d ?? 0,
+      daily: [...dayMap.entries()].map(([date, v]) => ({
+        date,
+        label: new Date(date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", ""),
+        total: v.total,
+        answered: v.answered,
+      })),
+      outcomes: [...outcomeMap.entries()]
+        .map(([outcome, count]) => ({ outcome, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 4),
+    };
+  });
