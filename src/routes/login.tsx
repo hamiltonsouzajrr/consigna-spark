@@ -34,10 +34,44 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [recovering, setRecovering] = useState(false);
+  const [nome, setNome] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [recoverBy, setRecoverBy] = useState<"email" | "cpf">("email");
+  const [recoverCpf, setRecoverCpf] = useState("");
 
   useEffect(() => { if (user) nav({ to: "/dashboard" }); }, [user, nav]);
 
   const handleReset = async () => {
+    if (recoverBy === "cpf") {
+      if (!isValidCpf(recoverCpf)) {
+        toast.error("CPF inválido", { description: "Confira os números digitados." });
+        return;
+      }
+      setBusy(true);
+      try {
+        const res = await sendResetByCpf({
+          data: { cpf: normalizeCpf(recoverCpf), redirectTo: `${window.location.origin}/reset-password` },
+        });
+        if (res.found) {
+          toast.success("Email enviado!", {
+            description: `Enviamos o link de redefinição para ${res.emailMasked}.`,
+            duration: 10000,
+          });
+          setRecovering(false);
+        } else {
+          toast.error("CPF não encontrado", {
+            description: "Não localizamos uma conta com este CPF. Tente pelo e-mail.",
+            duration: 8000,
+          });
+        }
+      } catch (e: any) {
+        toast.error("Não foi possível enviar", { description: e?.message, duration: 8000 });
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+
     if (!email) {
       toast.error("Informe seu email", { description: "Digite o email da conta para enviar o link de recuperação." });
       return;
