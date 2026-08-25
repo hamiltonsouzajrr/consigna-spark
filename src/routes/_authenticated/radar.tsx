@@ -28,9 +28,10 @@ const tabs = [
 
 function RadarLayout() {
   const { user, loading } = useAuth();
+  const { isAdmin, isLoading: loadingAccess } = useRhAccess();
   const loc = useLocation();
 
-  if (loading) {
+  if (loading || loadingAccess) {
     return (
       <AppShell>
         <div className="flex min-h-[40vh] items-center justify-center text-muted-foreground">
@@ -40,6 +41,19 @@ function RadarLayout() {
     );
   }
   if (!user) return <Navigate to="/login" />;
+  if (!isAdmin) {
+    return (
+      <AppShell>
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
+          <ShieldAlert className="h-8 w-8 text-muted-foreground" />
+          <p className="font-medium">Área exclusiva do administrador</p>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            Os leads do Diário Oficial aparecem para você na aba “Promovidos Recentemente”.
+          </p>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>
