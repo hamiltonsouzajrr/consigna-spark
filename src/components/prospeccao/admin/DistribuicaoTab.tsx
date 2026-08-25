@@ -2,14 +2,20 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Shuffle, RefreshCw } from "lucide-react";
+import { Shuffle, RefreshCw, Dices, Eraser } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { adminDistributeLeads, adminRecycleLeads } from "@/lib/prospeccao/prospeccao.functions";
+import {
+  adminDistributeLeads,
+  adminRecycleLeads,
+  adminRandomRedistribute,
+  adminResetAllAccess,
+} from "@/lib/prospeccao/prospeccao.functions";
 import { previewSplit } from "@/lib/prospeccao/admin-import";
 
 type Consultant = { id: string; email: string };
@@ -31,8 +37,35 @@ export function DistribuicaoTab({
   const [recycleMode, setRecycleMode] = useState<"round_robin" | "score">("score");
   const [idleDays, setIdleDays] = useState(3);
   const [busy, setBusy] = useState(false);
+  const randomRedistribute = useServerFn(adminRandomRedistribute);
+  const resetAll = useServerFn(adminResetAllAccess);
+  const [includeOutras, setIncludeOutras] = useState(true);
+  const [revokeAccess, setRevokeAccess] = useState(true);
 
   const split = previewSplit(unassignedCount, selected.size);
+
+  const runRandom = async () => {
+    if (selected.size === 0) { toast.error("Selecione ao menos uma consultora."); return; }
+    setBusy(true);
+    try {
+      const d = await randomRedistribute({ data: { consultantIds: [...selected], includeOutrasAbas: includeOutras } });
+      const extra = includeOutras ? ` · promovidos: ${d.promovidos} · tomadores: ${d.tomadores}` : "";
+      if (!d.assigned && !d.promovidos && !d.tomadores) toast.info("Nenhum lead disponível para sortear.");
+      else toast.success(`${d.assigned} lead(s) sorteado(s) entre ${selected.size} consultora(s)${extra}.`);
+      qc.invalidateQueries({ queryKey: ["prospect"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Falha no sorteio."); }
+    setBusy(false);
+  };
+
+  const runReset = async () => {
+    setBusy(true);
+    try {
+      await resetAll({ data: { revokeAccess } });
+      toast.success("Vínculos limpos. Follow-ups e anotações foram preservados.");
+      qc.invalidateQueries({ queryKey: ["prospect"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Falha ao limpar."); }
+    setBusy(false);
+  };
 
   const runDistribute = async () => {
     if (selected.size === 0) { toast.error("Selecione ao menos uma consultora."); return; }
@@ -140,6 +173,47 @@ export function DistribuicaoTab({
             onConfirm={runRecycle}
           >
             <Button className="mt-3 w-full" variant="secondary" disabled={busy}><RefreshCw className="mr-2 h-4 w-4" /> Reciclar agora</Button>
+          </ConfirmDialog>
+        </div>
+
+        <div className="rounded-lg border p-4">
+          <p className="mb-2 text-sm font-medium">Sorteio aleatório geral</p>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Embaralha todos os leads em aberto (do pool e já atribuídos) e divide entre as consultoras
+            marcadas. Follow-ups e anotações salvos vão junto para o novo responsável.
+          </p>
+          <label className="flex items-center gap-2 text-xs">
+            <Checkbox checked={includeOutras} onCheckedChange={(v) => setIncludeOutras(v === true)} />
+            Incluir Promovidos (Diário Oficial) e Tomadores com Margem – AL
+          </label>
+          <ConfirmDialog
+            title="Sortear leads aleatoriamente?"
+            description={`Todos os leads em aberto serão embaralhados e divididos entre ${selected.size} consultora(s). Follow-ups e anotações seguem com o lead.`}
+            confirmLabel="Sortear"
+            onConfirm={runRandom}
+          >
+            <Button className="mt-3 w-full" disabled={busy}><Dices className="mr-2 h-4 w-4" /> Sortear agora</Button>
+          </ConfirmDialog>
+        </div>
+
+        <div className="rounded-lg border border-destructive/40 p-4">
+          <p className="mb-2 text-sm font-medium text-destructive">Limpar vínculos e acessos</p>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Devolve todos os leads ao pool (prospecção, promovidos e tomadores AL). Follow-ups e
+            anotações não são apagados — ficam guardados para a próxima distribuição.
+          </p>
+          <label className="flex items-center gap-2 text-xs">
+            <Checkbox checked={revokeAccess} onCheckedChange={(v) => setRevokeAccess(v === true)} />
+            Também revogar permissões de abas e papéis (administradores mantidos)
+          </label>
+          <ConfirmDialog
+            title="Limpar todos os vínculos?"
+            description="Todos os leads voltam ao pool sem responsável. Follow-ups e anotações são preservados. Esta ação não pode ser desfeita."
+            confirmLabel="Limpar tudo"
+            destructive
+            onConfirm={runReset}
+          >
+            <Button className="mt-3 w-full" variant="destructive" disabled={busy}><Eraser className="mr-2 h-4 w-4" /> Limpar agora</Button>
           </ConfirmDialog>
         </div>
       </div>

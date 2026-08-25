@@ -428,6 +428,82 @@ export const adminRecycleLeads = createServerFn({ method: "POST" })
     return { recycled: assignment.size, perConsultant };
   });
 
+// Wipe every lead ownership + system access. Follow-ups and notes are KEPT
+// (only detached), so they can follow the lead in the next distribution.
+export const adminResetAllAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ revokeAccess: z.boolean().optional() }).parse(data ?? {}))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    const { assertAdmin, resetAllOwnership, revokeAllAccess } = await import("./prospeccao.server");
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await resetAllOwnership(supabaseAdmin);
+    if (data.revokeAccess !== false) await revokeAllAccess(supabaseAdmin);
+    return { ok: true };
+  });
+
+// Random redistribution of ALL leads (pool + already assigned) across the
+// selected consultants, carrying stored follow-ups and notes to the new owner.
+export const adminRandomRedistribute = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        consultantIds: z.array(z.string().uuid()).min(1).max(100),
+        includeOutrasAbas: z.boolean().optional(),
+      })
+      .parse(data),
+  )
+  .handler(
+    async ({
+      context,
+      data,
+    }): Promise<{ assigned: number; perConsultant: Record<string, number>; promovidos: number; tomadores: number }> => {
+      const { supabase, userId } = context;
+      const {
+        assertAdmin,
+        applyAssignments,
+        reattachLeadHistory,
+        shuffle,
+        consultoraNamesFor,
+        randomAssignByName,
+      } = await import("./prospeccao.server");
+      await assertAdmin(supabase, userId);
+
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: leads, error } = await supabaseAdmin
+        .from("prospect_leads")
+        .select("id")
+        .not("status", "in", "(ganho,perdido)")
+        .limit(20000);
+      if (error) throw new Error(error.message);
+
+      const ids = data.consultantIds;
+      const assignment = new Map<string, string>();
+      shuffle<string>((leads ?? []).map((l: any) => String(l.id))).forEach((leadId, i) =>
+        assignment.set(leadId, ids[i % ids.length]),
+      );
+
+      let perConsultant: Record<string, number> = {};
+      if (assignment.size) {
+        perConsultant = await applyAssignments(supabaseAdmin, assignment);
+        await reattachLeadHistory(supabaseAdmin, assignment);
+      }
+
+      let promovidos = 0;
+      let tomadores = 0;
+      if (data.includeOutrasAbas) {
+        const names = await consultoraNamesFor(supabaseAdmin, ids);
+        promovidos = await randomAssignByName(supabaseAdmin, "do_registros", names);
+        tomadores = await randomAssignByName(supabaseAdmin, "tomadores_al", names);
+      }
+
+      return { assigned: assignment.size, perConsultant, promovidos, tomadores };
+    },
+  );
+
 export type AdminStats = {
   totalLeads: number;
   semTratativa: number;
