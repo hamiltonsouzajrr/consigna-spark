@@ -1,18 +1,26 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyCallQuality } from "@/lib/prospeccao/prospeccao.functions";
+import {
+  registrarContato, concluirFollowup, reagendarFollowup, pularFollowup,
+} from "@/lib/prospeccao/competicao.functions";
 import { CompeticaoRanking } from "@/components/prospeccao/CompeticaoRanking";
 import { cn } from "@/lib/utils";
 import {
   Target, Flame, PhoneCall, PhoneIncoming, Percent, CalendarClock, CheckCircle2,
-  MessageCircle, DoorOpen, ChevronRight, Clock, AlertTriangle,
+  MessageCircle, DoorOpen, ChevronRight, Clock, AlertTriangle, Phone, Loader2,
+  CalendarPlus, SkipForward,
 } from "lucide-react";
 
 type Prod = { abertos: number; qualificados: number; ligacoes: number; whats: number; followups: number };
@@ -23,7 +31,9 @@ type Followup = {
   due_at: string;
   lead_id: string;
   lead_nome: string | null;
+  telefone: string | null;
 };
+
 
 type Props = {
   chamadas: number;
