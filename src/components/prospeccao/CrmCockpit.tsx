@@ -20,12 +20,14 @@ import {
   registrarContato, concluirFollowup, reagendarFollowup, pularFollowup,
 } from "@/lib/prospeccao/competicao.functions";
 import { CompeticaoRanking } from "@/components/prospeccao/CompeticaoRanking";
+import { LeadTimeline } from "@/components/prospeccao/LeadTimeline";
 import { cn } from "@/lib/utils";
 import {
   Target, Flame, PhoneCall, PhoneIncoming, Percent, CalendarClock, CheckCircle2,
   MessageCircle, DoorOpen, ChevronRight, Clock, AlertTriangle, Phone, Loader2,
-  CalendarPlus, SkipForward,
+  CalendarPlus, SkipForward, History,
 } from "lucide-react";
+
 
 type Prod = { abertos: number; qualificados: number; ligacoes: number; whats: number; followups: number };
 
@@ -91,6 +93,7 @@ export function CrmCockpit({
 
   const [followups, setFollowups] = useState<Followup[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [histTask, setHistTask] = useState<string | null>(null);
   const [fuPeriodo, setFuPeriodo] = useState<"hoje" | "atrasados" | "7" | "30">("hoje");
   const [fuStatus, setFuStatus] = useState<"pending" | "done" | "canceled" | "all">("pending");
 
@@ -409,10 +412,25 @@ export function CrmCockpit({
                     </span>
                   </div>
 
-                  {!pendente && (
-                    <Badge variant="outline" className="mt-2 text-[10px] capitalize">
-                      {f.status === "done" ? "Concluído" : "Cancelado"}
-                    </Badge>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {!pendente && (
+                      <Badge variant="outline" className="text-[10px] capitalize">
+                        {f.status === "done" ? "Concluído" : "Cancelado"}
+                      </Badge>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-[11px] text-muted-foreground"
+                      onClick={() => setHistTask((p: string | null) => (p === f.id ? null : f.id))}
+                    >
+                      <History className="mr-1 h-3 w-3" />
+                      {histTask === f.id ? "Ocultar histórico" : "Histórico"}
+                    </Button>
+                  </div>
+
+                  {histTask === f.id && (
+                    <LeadTimeline leadId={f.lead_id} className="mt-2" limit={12} />
                   )}
 
                   {pendente && (
