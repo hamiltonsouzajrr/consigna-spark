@@ -16,10 +16,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAlagoasRouteImport } from './routes/_authenticated/alagoas'
 import { Route as AuthenticatedCalculadoraAlRouteImport } from './routes/_authenticated/calculadora-al'
-import { Route as AuthenticatedConsultasRouteImport } from './routes/_authenticated/consultas'
 import { Route as AuthenticatedContratoRouteImport } from './routes/_authenticated/contrato'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedLimpezaRouteImport } from './routes/_authenticated/limpeza'
 import { Route as AuthenticatedPesquisasRouteImport } from './routes/_authenticated/pesquisas'
 import { Route as AuthenticatedQrcodesRouteImport } from './routes/_authenticated/qrcodes'
 import { Route as AuthenticatedRadarRouteImport } from './routes/_authenticated/radar'
@@ -27,7 +24,6 @@ import { Route as AuthenticatedRhRouteImport } from './routes/_authenticated/rh'
 import { Route as AuthenticatedServidoresSemAcessoRouteImport } from './routes/_authenticated/servidores-sem-acesso'
 import { Route as AuthenticatedSimulacaoAlagoasRouteImport } from './routes/_authenticated/simulacao-alagoas'
 import { Route as AuthenticatedTomadoresAlRouteImport } from './routes/_authenticated/tomadores-al'
-import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AprovacaoTokenRouteImport } from './routes/aprovacao.$token'
 import { Route as ConsultoraTokenRouteImport } from './routes/consultora.$token'
@@ -117,24 +113,9 @@ const AuthenticatedCalculadoraAlRoute =
     path: '/calculadora-al',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedConsultasRoute = AuthenticatedConsultasRouteImport.update({
-  id: '/consultas',
-  path: '/consultas',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedContratoRoute = AuthenticatedContratoRouteImport.update({
   id: '/contrato',
   path: '/contrato',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedLimpezaRoute = AuthenticatedLimpezaRouteImport.update({
-  id: '/limpeza',
-  path: '/limpeza',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPesquisasRoute = AuthenticatedPesquisasRouteImport.update({
@@ -175,11 +156,6 @@ const AuthenticatedTomadoresAlRoute =
     path: '/tomadores-al',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedUploadRoute = AuthenticatedUploadRouteImport.update({
-  id: '/upload',
-  path: '/upload',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedWhatsappRoute = AuthenticatedWhatsappRouteImport.update({
   id: '/whatsapp',
   path: '/whatsapp',
@@ -492,10 +468,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/alagoas': typeof AuthenticatedAlagoasRoute
   '/calculadora-al': typeof AuthenticatedCalculadoraAlRoute
-  '/consultas': typeof AuthenticatedConsultasRoute
   '/contrato': typeof AuthenticatedContratoRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/limpeza': typeof AuthenticatedLimpezaRoute
   '/pesquisas': typeof AuthenticatedPesquisasRoute
   '/qrcodes': typeof AuthenticatedQrcodesRoute
   '/radar': typeof AuthenticatedRadarRouteWithChildren
@@ -503,7 +476,6 @@ export interface FileRoutesByFullPath {
   '/servidores-sem-acesso': typeof AuthenticatedServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof AuthenticatedSimulacaoAlagoasRoute
   '/tomadores-al': typeof AuthenticatedTomadoresAlRoute
-  '/upload': typeof AuthenticatedUploadRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/consultora/$token': typeof ConsultoraTokenRoute
@@ -565,16 +537,12 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/alagoas': typeof AuthenticatedAlagoasRoute
   '/calculadora-al': typeof AuthenticatedCalculadoraAlRoute
-  '/consultas': typeof AuthenticatedConsultasRoute
   '/contrato': typeof AuthenticatedContratoRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/limpeza': typeof AuthenticatedLimpezaRoute
   '/pesquisas': typeof AuthenticatedPesquisasRoute
   '/qrcodes': typeof AuthenticatedQrcodesRoute
   '/servidores-sem-acesso': typeof AuthenticatedServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof AuthenticatedSimulacaoAlagoasRoute
   '/tomadores-al': typeof AuthenticatedTomadoresAlRoute
-  '/upload': typeof AuthenticatedUploadRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/consultora/$token': typeof ConsultoraTokenRoute
@@ -637,10 +605,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/alagoas': typeof AuthenticatedAlagoasRoute
   '/_authenticated/calculadora-al': typeof AuthenticatedCalculadoraAlRoute
-  '/_authenticated/consultas': typeof AuthenticatedConsultasRoute
   '/_authenticated/contrato': typeof AuthenticatedContratoRoute
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/limpeza': typeof AuthenticatedLimpezaRoute
   '/_authenticated/pesquisas': typeof AuthenticatedPesquisasRoute
   '/_authenticated/qrcodes': typeof AuthenticatedQrcodesRoute
   '/_authenticated/radar': typeof AuthenticatedRadarRouteWithChildren
@@ -648,7 +613,6 @@ export interface FileRoutesById {
   '/_authenticated/servidores-sem-acesso': typeof AuthenticatedServidoresSemAcessoRoute
   '/_authenticated/simulacao-alagoas': typeof AuthenticatedSimulacaoAlagoasRoute
   '/_authenticated/tomadores-al': typeof AuthenticatedTomadoresAlRoute
-  '/_authenticated/upload': typeof AuthenticatedUploadRoute
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/consultora/$token': typeof ConsultoraTokenRoute
@@ -712,10 +676,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/alagoas'
     | '/calculadora-al'
-    | '/consultas'
     | '/contrato'
-    | '/dashboard'
-    | '/limpeza'
     | '/pesquisas'
     | '/qrcodes'
     | '/radar'
@@ -723,7 +684,6 @@ export interface FileRouteTypes {
     | '/servidores-sem-acesso'
     | '/simulacao-alagoas'
     | '/tomadores-al'
-    | '/upload'
     | '/whatsapp'
     | '/aprovacao/$token'
     | '/consultora/$token'
@@ -785,16 +745,12 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/alagoas'
     | '/calculadora-al'
-    | '/consultas'
     | '/contrato'
-    | '/dashboard'
-    | '/limpeza'
     | '/pesquisas'
     | '/qrcodes'
     | '/servidores-sem-acesso'
     | '/simulacao-alagoas'
     | '/tomadores-al'
-    | '/upload'
     | '/whatsapp'
     | '/aprovacao/$token'
     | '/consultora/$token'
@@ -856,10 +812,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/alagoas'
     | '/_authenticated/calculadora-al'
-    | '/_authenticated/consultas'
     | '/_authenticated/contrato'
-    | '/_authenticated/dashboard'
-    | '/_authenticated/limpeza'
     | '/_authenticated/pesquisas'
     | '/_authenticated/qrcodes'
     | '/_authenticated/radar'
@@ -867,7 +820,6 @@ export interface FileRouteTypes {
     | '/_authenticated/servidores-sem-acesso'
     | '/_authenticated/simulacao-alagoas'
     | '/_authenticated/tomadores-al'
-    | '/_authenticated/upload'
     | '/_authenticated/whatsapp'
     | '/aprovacao/$token'
     | '/consultora/$token'
@@ -989,32 +941,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCalculadoraAlRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/consultas': {
-      id: '/_authenticated/consultas'
-      path: '/consultas'
-      fullPath: '/consultas'
-      preLoaderRoute: typeof AuthenticatedConsultasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/contrato': {
       id: '/_authenticated/contrato'
       path: '/contrato'
       fullPath: '/contrato'
       preLoaderRoute: typeof AuthenticatedContratoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/limpeza': {
-      id: '/_authenticated/limpeza'
-      path: '/limpeza'
-      fullPath: '/limpeza'
-      preLoaderRoute: typeof AuthenticatedLimpezaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/pesquisas': {
@@ -1064,13 +995,6 @@ declare module '@tanstack/react-router' {
       path: '/tomadores-al'
       fullPath: '/tomadores-al'
       preLoaderRoute: typeof AuthenticatedTomadoresAlRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/upload': {
-      id: '/_authenticated/upload'
-      path: '/upload'
-      fullPath: '/upload'
-      preLoaderRoute: typeof AuthenticatedUploadRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/whatsapp': {
@@ -1574,10 +1498,7 @@ const AuthenticatedProspeccaoAdminRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAlagoasRoute: typeof AuthenticatedAlagoasRoute
   AuthenticatedCalculadoraAlRoute: typeof AuthenticatedCalculadoraAlRoute
-  AuthenticatedConsultasRoute: typeof AuthenticatedConsultasRoute
   AuthenticatedContratoRoute: typeof AuthenticatedContratoRoute
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedLimpezaRoute: typeof AuthenticatedLimpezaRoute
   AuthenticatedPesquisasRoute: typeof AuthenticatedPesquisasRoute
   AuthenticatedQrcodesRoute: typeof AuthenticatedQrcodesRoute
   AuthenticatedRadarRoute: typeof AuthenticatedRadarRouteWithChildren
@@ -1585,7 +1506,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedServidoresSemAcessoRoute: typeof AuthenticatedServidoresSemAcessoRoute
   AuthenticatedSimulacaoAlagoasRoute: typeof AuthenticatedSimulacaoAlagoasRoute
   AuthenticatedTomadoresAlRoute: typeof AuthenticatedTomadoresAlRoute
-  AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
   AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
   AuthenticatedPosVendaAvaliacoesRoute: typeof AuthenticatedPosVendaAvaliacoesRoute
   AuthenticatedProducaoMetasRoute: typeof AuthenticatedProducaoMetasRoute
@@ -1603,10 +1523,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAlagoasRoute: AuthenticatedAlagoasRoute,
   AuthenticatedCalculadoraAlRoute: AuthenticatedCalculadoraAlRoute,
-  AuthenticatedConsultasRoute: AuthenticatedConsultasRoute,
   AuthenticatedContratoRoute: AuthenticatedContratoRoute,
-  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedLimpezaRoute: AuthenticatedLimpezaRoute,
   AuthenticatedPesquisasRoute: AuthenticatedPesquisasRoute,
   AuthenticatedQrcodesRoute: AuthenticatedQrcodesRoute,
   AuthenticatedRadarRoute: AuthenticatedRadarRouteWithChildren,
@@ -1614,7 +1531,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedServidoresSemAcessoRoute: AuthenticatedServidoresSemAcessoRoute,
   AuthenticatedSimulacaoAlagoasRoute: AuthenticatedSimulacaoAlagoasRoute,
   AuthenticatedTomadoresAlRoute: AuthenticatedTomadoresAlRoute,
-  AuthenticatedUploadRoute: AuthenticatedUploadRoute,
   AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
   AuthenticatedPosVendaAvaliacoesRoute: AuthenticatedPosVendaAvaliacoesRoute,
   AuthenticatedProducaoMetasRoute: AuthenticatedProducaoMetasRoute,
