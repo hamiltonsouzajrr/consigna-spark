@@ -9,7 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/grupo-positive-logo-2026.png.asset.json";
-import loginBg from "@/assets/login-bg-positive.png.asset.json";
+import loginBgDesktop from "@/assets/login-bg-1600.webp.asset.json";
+import loginBgMobile from "@/assets/login-bg-900.webp.asset.json";
+
+/** Miniatura embutida (102 bytes) usada como placeholder enquanto o WebP carrega. */
+const LOGIN_BG_LQIP =
+  "data:image/webp;base64,UklGRl4AAABXRUJQVlA4IFIAAAAQBACdASoYAA4APu1mqk4ppaOiMAgBMB2JaACsAGlhsm0/CoqgyrtjYAD+/fsvyNt+nX70EIaSnekga9JJxiuz1opbcZ5ojjQCCUdGxU+Z5gAA";
 import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
 import { sendResetByCpf } from "@/lib/auth/account.functions";
 import { AVISO_PRIMEIRO_ACESSO_KEY, PrimeiroAcessoDialog } from "@/components/auth/PrimeiroAcessoDialog";
