@@ -19,6 +19,7 @@ import { ImportTab } from "@/components/prospeccao/admin/ImportTab";
 import { ManualLeadCard } from "@/components/prospeccao/admin/ManualLeadCard";
 import { DistribuicaoTab } from "@/components/prospeccao/admin/DistribuicaoTab";
 import { LeadsTab } from "@/components/prospeccao/admin/LeadsTab";
+import { CompeticaoTab } from "@/components/prospeccao/admin/CompeticaoTab";
 import { AcessosTab } from "@/components/prospeccao/admin/AcessosTab";
 import { ConfirmDialog } from "@/components/prospeccao/admin/ConfirmDialog";
 
@@ -117,6 +118,7 @@ function Page() {
           <TabsTrigger value="importar">Importar</TabsTrigger>
           <TabsTrigger value="distribuir">Distribuição</TabsTrigger>
           <TabsTrigger value="leads">Leads</TabsTrigger>
+          <TabsTrigger value="competicao">Competição</TabsTrigger>
           <TabsTrigger value="acessos">Acessos</TabsTrigger>
         </TabsList>
 
@@ -226,6 +228,10 @@ function Page() {
 
         <TabsContent value="leads" className="mt-4">
           <LeadsTab consultants={consultants} />
+        </TabsContent>
+
+        <TabsContent value="competicao" className="mt-4">
+          <CompeticaoTab />
         </TabsContent>
 
         <TabsContent value="acessos" className="mt-4">

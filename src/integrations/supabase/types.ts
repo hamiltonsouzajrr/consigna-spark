@@ -1262,6 +1262,48 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_competicao_semanas: {
+        Row: {
+          closes_at: string
+          created_at: string
+          fechado_em: string | null
+          id: string
+          placar_final: Json
+          premio_descricao: string | null
+          premio_titulo: string | null
+          revelado: boolean
+          updated_at: string
+          vencedor_user_id: string | null
+          week_start: string
+        }
+        Insert: {
+          closes_at: string
+          created_at?: string
+          fechado_em?: string | null
+          id?: string
+          placar_final?: Json
+          premio_descricao?: string | null
+          premio_titulo?: string | null
+          revelado?: boolean
+          updated_at?: string
+          vencedor_user_id?: string | null
+          week_start: string
+        }
+        Update: {
+          closes_at?: string
+          created_at?: string
+          fechado_em?: string | null
+          id?: string
+          placar_final?: Json
+          premio_descricao?: string | null
+          premio_titulo?: string | null
+          revelado?: boolean
+          updated_at?: string
+          vencedor_user_id?: string | null
+          week_start?: string
+        }
+        Relationships: []
+      }
       prospect_leads: {
         Row: {
           batch_id: string | null
@@ -1368,6 +1410,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      prospect_pontos: {
+        Row: {
+          anulado_em: string | null
+          anulado_por: string | null
+          categoria: string
+          created_at: string
+          id: string
+          motivo: string | null
+          pontos: number
+          ref_id: string
+          ref_tabela: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          anulado_em?: string | null
+          anulado_por?: string | null
+          categoria: string
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          pontos?: number
+          ref_id: string
+          ref_tabela: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          anulado_em?: string | null
+          anulado_por?: string | null
+          categoria?: string
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          pontos?: number
+          ref_id?: string
+          ref_tabela?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
       }
       radar_consultoras: {
         Row: {
@@ -2365,12 +2449,44 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      competicao_garantir_semana: {
+        Args: { _week_start?: string }
+        Returns: {
+          closes_at: string
+          created_at: string
+          fechado_em: string | null
+          id: string
+          placar_final: Json
+          premio_descricao: string | null
+          premio_titulo: string | null
+          revelado: boolean
+          updated_at: string
+          vencedor_user_id: string | null
+          week_start: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "prospect_competicao_semanas"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      competicao_week_start: { Args: { _at?: string }; Returns: string }
       distribuir_do_registros_pendentes: {
         Args: { _limit?: number }
         Returns: {
           atribuidos: number
           consultoras: number
         }[]
+      }
+      estornar_pontos: {
+        Args: {
+          _categorias?: string[]
+          _motivo?: string
+          _ref_id: string
+          _ref_tabela: string
+        }
+        Returns: number
       }
       has_role: {
         Args: {
@@ -2380,6 +2496,30 @@ export type Database = {
         Returns: boolean
       }
       minha_consultora_nome: { Args: never; Returns: string }
+      ranking_competicao: {
+        Args: { _week_start?: string }
+        Returns: {
+          contatos: number
+          followups: number
+          ganhos: number
+          nome: string
+          qualificacoes: number
+          total: number
+          user_id: string
+        }[]
+      }
+      registrar_ponto: {
+        Args: {
+          _categoria: string
+          _motivo?: string
+          _pontos: number
+          _ref_id: string
+          _ref_tabela: string
+          _teto_diario?: number
+          _user_id: string
+        }
+        Returns: number
+      }
       sync_radar_consultoras: { Args: never; Returns: number }
     }
     Enums: {

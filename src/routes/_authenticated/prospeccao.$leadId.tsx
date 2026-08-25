@@ -26,6 +26,9 @@ import {
 } from "@/lib/prospeccao/constants";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { markLeadOpened } from "@/lib/prospeccao/prospeccao.functions";
+import {
+  registrarContato, registrarQualificacao, agendarFollowup, concluirFollowup,
+} from "@/lib/prospeccao/competicao.functions";
 
 import { useRhAccess } from "@/hooks/use-rh-access";
 
@@ -87,6 +90,16 @@ function Page() {
   const { leadId } = useParams({ from: "/_authenticated/prospeccao/$leadId" });
   const navigate = useNavigate();
   const markOpened = useServerFn(markLeadOpened);
+  // Toda gravação de atividade passa pelo servidor (pontuação da competição).
+  const contatoFn = useServerFn(registrarContato);
+  const qualificarFn = useServerFn(registrarQualificacao);
+  const agendarFn = useServerFn(agendarFollowup);
+  const concluirFn = useServerFn(concluirFollowup);
+
+  const avisarPontos = (r: { pontos: number; motivo?: string }) => {
+    if (r.pontos > 0) toast.success(`+${r.pontos} pontos na competição da semana!`);
+    else if (r.motivo) toast.info(r.motivo);
+  };
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [events, setEvents] = useState<Ev[]>([]);
@@ -135,39 +148,43 @@ function Page() {
   const registerContact = useCallback(async () => {
     if (!contactBody.trim() || !lead) return;
     setBusy(true);
-    const nowIso = new Date().toISOString();
-    const { error: evErr } = await supabase.from("lead_events").insert({
-      lead_id: leadId, consultant_id: user!.id, kind: contactKind, body: contactBody.trim(),
-    } as any);
-    if (evErr) { toast.error(evErr.message); setBusy(false); return; }
-    const patch: any = { last_contact_at: nowIso };
-    if (!lead.first_response_at) patch.first_response_at = nowIso;
-    if (contactKind === "whatsapp") patch.respondeu_whatsapp = true;
-    await supabase.from("prospect_leads").update(patch).eq("id", leadId);
-    setContactBody("");
-    toast.success("Contato registrado.");
-    setBusy(false);
-    load();
-  }, [contactBody, contactKind, lead, leadId, user, load]);
+    try {
+      const r = await contatoFn({ data: { leadId, kind: contactKind, body: contactBody.trim() } });
+      setContactBody("");
+      toast.success("Contato registrado.");
+      avisarPontos(r);
+      load();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }, [contactBody, contactKind, lead, leadId, contatoFn, load]);
 
   // One-click call result, straight from the header (no typing required).
   const logOutcome = useCallback(async (outcome: string) => {
     if (!lead || !user) return;
-    const nowIso = new Date().toISOString();
-    await supabase.from("lead_events").insert({ lead_id: leadId, consultant_id: user.id, kind: "ligacao", body: `Resultado: ${outcome}` } as any);
-    const patch: any = { last_contact_at: nowIso };
-    if (!lead.first_response_at) patch.first_response_at = nowIso;
-    await supabase.from("prospect_leads").update(patch).eq("id", leadId);
-    toast.success(`Ligação registrada: ${outcome}`);
-    load();
-  }, [lead, user, leadId, load]);
+    try {
+      const r = await contatoFn({ data: { leadId, kind: "ligacao", body: `Resultado: ${outcome}` } });
+      toast.success(`Ligação registrada: ${outcome}`);
+      avisarPontos(r);
+      load();
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }, [lead, user, leadId, contatoFn, load]);
 
   const setSituacao = useCallback(async (situacao: string) => {
     if (!lead) return;
     setLead((prev) => (prev ? { ...prev, situacao } : prev));
-    await supabase.from("prospect_leads").update({ situacao } as any).eq("id", leadId);
-    toast.success(`Marcado como: ${situacao}`);
-  }, [lead, leadId]);
+    try {
+      const r = await qualificarFn({ data: { leadId, situacao } });
+      toast.success(`Marcado como: ${situacao}`);
+      if (r.pontos > 0) toast.success(`+${r.pontos} pontos na competição da semana!`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }, [lead, leadId, qualificarFn]);
 
   const scheduleFollowUp = async () => {
     if (!fuWhen || !lead) { toast.error("Defina data/hora do follow-up."); return; }
@@ -179,17 +196,16 @@ function Page() {
   const doScheduleFollowUp = useCallback(async (title: string, when: Date) => {
     if (!lead || !user) return;
     setBusy(true);
-    const dueIso = when.toISOString();
-    const { error } = await supabase.from("lead_tasks").insert({
-      lead_id: leadId, consultant_id: user.id, title, due_at: dueIso,
-    } as any);
-    if (error) { toast.error(error.message); setBusy(false); return; }
-    await supabase.from("prospect_leads").update({ next_follow_up_at: dueIso } as any).eq("id", leadId);
-    await supabase.from("lead_events").insert({ lead_id: leadId, consultant_id: user.id, kind: "followup", body: `Follow-up agendado: ${title} (${when.toLocaleString("pt-BR")})` } as any);
-    toast.success("Follow-up agendado.");
-    setBusy(false);
-    load();
-  }, [lead, user, leadId, load]);
+    try {
+      await agendarFn({ data: { leadId, title, dueAt: when.toISOString() } });
+      toast.success("Follow-up agendado. Pontua quando você concluir no prazo.");
+      load();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }, [lead, user, leadId, agendarFn, load]);
 
   const followupPresets = () => {
     const in1h = new Date(Date.now() + 60 * 60 * 1000);
@@ -206,21 +222,25 @@ function Page() {
     if (!lead) return;
     if (status === "perdido" && !lossReason) { toast.error("Selecione o motivo da perda."); return; }
     setBusy(true);
-    const patch: any = { status };
-    if (status === "perdido") patch.loss_reason = lossReason;
-    const { error } = await supabase.from("prospect_leads").update(patch).eq("id", leadId);
-    if (error) { toast.error(error.message); setBusy(false); return; }
-    await supabase.from("lead_events").insert({
-      lead_id: leadId, consultant_id: user!.id, kind: "status",
-      body: `Status → ${STATUS_LABEL[status]}${status === "perdido" ? ` (motivo: ${lossReason})` : ""}`,
-    } as any);
-    toast.success("Status atualizado.");
-    setBusy(false);
-    load();
+    try {
+      const r = await qualificarFn({ data: { leadId, status, lossReason: status === "perdido" ? lossReason : undefined } });
+      toast.success("Status atualizado.");
+      avisarPontos(r);
+      load();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const completeTask = async (id: string) => {
-    await supabase.from("lead_tasks").update({ status: "done" } as any).eq("id", id);
+    try {
+      const r = await concluirFn({ data: { taskId: id } });
+      avisarPontos(r);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
     load();
   };
 

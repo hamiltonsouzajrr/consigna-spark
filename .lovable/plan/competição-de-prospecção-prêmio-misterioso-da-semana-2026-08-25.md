@@ -12,12 +12,14 @@ Ranking exposto para todas as consultoras, com pontuação equilibrada entre **p
 
 ## Pontuação (equilíbrio entre as três frentes)
 
-| Ação | Pontos | Conta quando |
-|---|---|---|
-| Contato válido (prospecção) | 10 | Primeiro contato real registrado num lead com telefone válido |
-| Qualificação / etiquetagem | 10 | Lead marcado como qualificado **com** telefone, situação e margem/valor preenchidos |
-| Follow-up cumprido | 10 | Retorno agendado e concluído na data, com contato registrado |
-| Venda fechada (ganho) | 25 | Bônus de desempate |
+
+| Ação                        | Pontos | Conta quando                                                                        |
+| --------------------------- | ------ | ----------------------------------------------------------------------------------- |
+| Contato válido (prospecção) | 10     | Primeiro contato real registrado num lead com telefone válido                       |
+| Qualificação / etiquetagem  | 10     | Lead marcado como qualificado **com** telefone, situação e margem/valor preenchidos |
+| Follow-up cumprido          | 10     | Retorno agendado e concluído na data, com contato registrado                        |
+| Venda fechada (ganho)       | 25     | Bônus de desempate                                                                  |
+
 
 ## Regras anti-burla (o ponto central)
 
@@ -28,14 +30,14 @@ Volume de cliques não gera pontos. Cada ponto precisa de lastro:
 3. **Contato exige lead com telefone** e intervalo mínimo de 90 segundos entre contatos contados da mesma consultora — rajadas de cliques não pontuam.
 4. **Qualificação exige contato anterior** no mesmo lead com pelo menos 5 minutos de diferença, além dos campos obrigatórios preenchidos. Etiquetar sem falar com ninguém não pontua.
 5. **Follow-up só pontua cumprido**, nunca agendado. Agendar dezenas de retornos não muda o placar; agendar e não cumprir não pontua.
-6. **Tetos diários por categoria** (ex.: 25 contatos/dia contados), para achatar picos artificiais.
+6. **Tetos diários por categoria** (ex.: 170 contatos/dia contados), para achatar picos artificiais.
 7. **Reversão automática:** se o lead voltar para "novo", for marcado como duplicado, ou for fechado como perdido em menos de 2 minutos após pontuar, os pontos são estornados.
 8. **Auditoria do admin:** extrato de todos os pontos por consultora, com motivo, lead de origem e botão para anular pontos suspeitos (com registro de quem anulou).
 9. **Placar recalculado no fechamento** a partir do histórico bruto, então qualquer ponto anulado ou estornado já entra corrigido no resultado final.
 
 ## Telas
 
-- **`/producao/competicao` (nova, exposta no menu):** contador regressivo para sexta 16:00, pódio, ranking completo com nomes, colunas Contatos / Qualificados / Follow-ups / Bônus / Total, card do prêmio misterioso e link para as regras.
+- `**/producao/competicao` (nova, exposta no menu):** contador regressivo para sexta 16:00, pódio, ranking completo com nomes, colunas Contatos / Qualificados / Follow-ups / Bônus / Total, card do prêmio misterioso e link para as regras.
 - **Card resumido** no CRM (`/prospeccao`) e no **Meu Dia**: sua posição, seus pontos e o que falta para subir uma posição.
 - **Pop-up de fechamento** (todas as contas): som, confete, vencedora, pódio e prêmio revelado.
 - **Área do admin** (aba nova em `/prospeccao/admin`): cadastrar prêmio da semana, ver extrato de pontos, anular pontos, encerrar semana manualmente se precisar.
@@ -43,17 +45,20 @@ Volume de cliques não gera pontos. Cada ponto precisa de lastro:
 ## Detalhes técnicos
 
 **Banco (migração):**
+
 - `prospect_competicao_semanas`: `week_start`, `closes_at`, `premio_titulo`, `premio_descricao`, `revelado`, `vencedor_user_id`, `placar_final jsonb`, timestamps. Leitura para autenticados; escrita só admin/serviço. O prêmio (título/descrição) só é exposto após `revelado = true`.
 - `prospect_pontos` (ledger imutável): `user_id`, `week_start`, `categoria` (`contato` | `qualificacao` | `followup` | `ganho`), `ref_tabela`, `ref_id`, `pontos`, `motivo`, `anulado_em`, `anulado_por`. Índice `UNIQUE (user_id, week_start, categoria, ref_tabela, ref_id)` — a garantia real do "um ponto por lead".
 - `GRANT SELECT` para `authenticated` (ranking é público internamente); nenhum `INSERT`/`UPDATE` para `authenticated` — só `service_role`.
 - Função `registrar_ponto(...)` e `ranking_competicao(_week_start)` como `SECURITY DEFINER` com `EXECUTE` revogado de `anon`/`authenticated` (chamadas apenas via server functions com cliente de serviço).
 
 **Server functions (`src/lib/prospeccao/competicao.functions.ts`):**
+
 - `getCompeticao`: semana atual, ranking completo, minha linha, prêmio (mascarado até a revelação).
 - `registrarContato` / `registrarQualificacao` / `concluirFollowup`: passam a ser o único caminho de escrita de `lead_events` e `lead_tasks`, aplicando cooldown, campos obrigatórios, tetos e gravação do ponto.
 - `adminDefinirPremio`, `adminAnularPonto`, `adminFecharSemana` (verificação de `has_role` antes do cliente de serviço).
 
 **Fechamento automático:**
+
 - Rota `src/routes/api/public/hooks/competicao-fechar.ts` protegida por `apikey`, que recalcula o placar, define vencedora, marca `revelado` e cria notificações em `rh_notifications` para todas as contas.
 - `pg_cron` sexta-feira 19:00 UTC (16:00 Maceió) chamando essa rota.
 

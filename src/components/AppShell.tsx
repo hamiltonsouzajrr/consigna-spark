@@ -12,6 +12,7 @@ import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
 import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
 import { FollowupPopup } from "@/components/prospeccao/FollowupPopup";
 import { PromovidosPopup } from "@/components/prospeccao/PromovidosPopup";
+import { CompeticaoPopup } from "@/components/prospeccao/CompeticaoPopup";
 import { MetaTopIndicator } from "@/components/MetaTopIndicator";
 import { CompleteProfileDialog } from "@/components/CompleteProfileDialog";
 import type { ReactNode } from "react";
@@ -45,7 +46,8 @@ const navSections: NavSection[] = [
     section: "Produção",
     items: [
       { to: "/producao/meu-dia", label: "Meu Dia", icon: Home, consultoraOnly: true },
-      { to: "/producao/ranking", label: "Ranking", icon: Trophy },
+      { to: "/producao/competicao", label: "Competição da Semana", full: "COMPETIÇÃO DE PROSPECÇÃO - PRÊMIO MISTERIOSO DA SEMANA", icon: Trophy },
+      { to: "/producao/ranking", label: "Ranking de Produção", icon: Trophy },
       { to: "/producao/metas", label: "Metas", icon: Target },
     ],
   },
@@ -227,6 +229,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <HorariosOuroReminder />
       {!isAdmin && <FollowupPopup />}
       {!isAdmin && <PromovidosPopup />}
+      <CompeticaoPopup />
+
       <aside className="group/side hidden w-16 shrink-0 overflow-hidden sidebar-bg text-sidebar-foreground transition-[width] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] hover:w-64 md:flex md:flex-col print:!hidden">
         <div className="flex h-16 shrink-0 items-center gap-3 px-2">
           <img src={logo.url} alt="Grupo Positive" className="h-12 w-12 shrink-0 rounded-lg bg-white object-contain p-1" />
