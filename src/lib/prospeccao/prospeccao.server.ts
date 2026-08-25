@@ -40,8 +40,9 @@ export async function applyAssignments(
   await assertConsultantIds(supabaseAdmin, [...assignment.values()]);
   const byCons = new Map<string, string[]>();
   for (const [leadId, cons] of assignment) {
-    if (!byCons.has(cons)) byCons.set(cons, []);
-    byCons.get(cons)!.push(leadId);
+    const bucket = byCons.get(cons) ?? [];
+    bucket.push(leadId);
+    byCons.set(cons, bucket);
   }
   const perConsultant: Record<string, number> = {};
   for (const [cons, leadIds] of byCons) {
@@ -105,8 +106,9 @@ export async function revokeAllAccess(supabaseAdmin: any) {
 export async function reattachLeadHistory(supabaseAdmin: any, assignment: Map<string, string>) {
   const byCons = new Map<string, string[]>();
   for (const [leadId, cons] of assignment) {
-    if (!byCons.has(cons)) byCons.set(cons, []);
-    byCons.get(cons)!.push(leadId);
+    const bucket = byCons.get(cons) ?? [];
+    bucket.push(leadId);
+    byCons.set(cons, bucket);
   }
   for (const [cons, leadIds] of byCons) {
     for (let i = 0; i < leadIds.length; i += 500) {
@@ -149,7 +151,12 @@ export async function randomAssignByName(
   if (!ids.length) return 0;
 
   const buckets = new Map<string, string[]>(names.map((n) => [n, [] as string[]]));
-  ids.forEach((id, i) => buckets.get(names[i % names.length])!.push(id));
+  ids.forEach((id, i) => {
+    const nome = names[i % names.length];
+    const bucket = buckets.get(nome) ?? [];
+    bucket.push(id);
+    buckets.set(nome, bucket);
+  });
 
   let total = 0;
   for (const [nome, rowIds] of buckets) {

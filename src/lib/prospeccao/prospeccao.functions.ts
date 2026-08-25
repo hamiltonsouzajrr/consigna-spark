@@ -298,8 +298,9 @@ async function applyAssignments(
 ): Promise<Record<string, number>> {
   const byCons = new Map<string, string[]>();
   for (const [leadId, cons] of assignment) {
-    if (!byCons.has(cons)) byCons.set(cons, []);
-    byCons.get(cons)!.push(leadId);
+    const bucket = byCons.get(cons) ?? [];
+    bucket.push(leadId);
+    byCons.set(cons, bucket);
   }
   const perConsultant: Record<string, number> = {};
   for (const [cons, leadIds] of byCons) {
