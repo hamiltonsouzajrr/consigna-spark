@@ -15,6 +15,8 @@ import { PromovidosPopup } from "@/components/prospeccao/PromovidosPopup";
 import { CompeticaoPopup } from "@/components/prospeccao/CompeticaoPopup";
 import { MetaTopIndicator } from "@/components/MetaTopIndicator";
 import { CompleteProfileDialog } from "@/components/CompleteProfileDialog";
+import { AccessGuard } from "@/components/security/AccessGuard";
+import { SimultaneousAccessAlert } from "@/components/security/SimultaneousAccessAlert";
 import type { ReactNode } from "react";
 
 type BadgeKind = "leads" | "followups";
@@ -223,8 +225,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   return (
+    <AccessGuard>
     <div className="flex min-h-screen app-bg print:block print:min-h-0 print:bg-none">
       <CompleteProfileDialog />
+      {isAdmin && <SimultaneousAccessAlert />}
       <HorariosOuroDialog />
       <HorariosOuroReminder />
       {!isAdmin && <FollowupPopup />}
@@ -339,5 +343,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       </main>
     </div>
+    </AccessGuard>
   );
 }

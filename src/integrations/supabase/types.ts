@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_sessions: {
+        Row: {
+          blocked_at: string | null
+          created_at: string
+          id: string
+          ip: string | null
+          last_seen_at: string
+          session_key: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          blocked_at?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          last_seen_at?: string
+          session_key: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          blocked_at?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          last_seen_at?: string
+          session_key?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       consigup_sessions: {
         Row: {
           cookies: Json
@@ -2187,6 +2223,42 @@ export type Database = {
           id?: string
           mensagem?: string | null
           status?: string
+        }
+        Relationships: []
+      }
+      security_incidents: {
+        Row: {
+          created_at: string
+          detalhes: Json
+          id: string
+          resolvido_em: string | null
+          resolvido_por: string | null
+          tipo: string
+          updated_at: string
+          user_email: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          detalhes?: Json
+          id?: string
+          resolvido_em?: string | null
+          resolvido_por?: string | null
+          tipo?: string
+          updated_at?: string
+          user_email?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          detalhes?: Json
+          id?: string
+          resolvido_em?: string | null
+          resolvido_por?: string | null
+          tipo?: string
+          updated_at?: string
+          user_email?: string | null
+          user_id?: string
         }
         Relationships: []
       }
