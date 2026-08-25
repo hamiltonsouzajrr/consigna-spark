@@ -350,8 +350,9 @@ export const adminDistributeLeads = createServerFn({ method: "POST" })
       const cityMap = new Map<string, any[]>();
       for (const l of leads) {
         const c = (l.cidade || "—").toLowerCase().trim();
-        if (!cityMap.has(c)) cityMap.set(c, []);
-        cityMap.get(c)!.push(l);
+        const bucket = cityMap.get(c) ?? [];
+        bucket.push(l);
+        cityMap.set(c, bucket);
       }
       const cities = [...cityMap.entries()].sort((a, b) => b[1].length - a[1].length);
       let ci = 0;
