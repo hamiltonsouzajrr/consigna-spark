@@ -10,6 +10,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { CallQualityDialog, type CallQualityFilters } from "@/components/prospeccao/CallQualityDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyCallQuality } from "@/lib/prospeccao/prospeccao.functions";
 import {
@@ -63,11 +67,20 @@ export function CrmCockpit({
   chamadas, metaDiaria, streak, prod, filaHoje, filaQuentes, filaAtrasados, filaTotal,
 }: Props) {
   const fetchQuality = useServerFn(getMyCallQuality);
+  const [days, setDays] = useState(7);
   const { data: quality, isLoading: loadingQuality } = useQuery({
-    queryKey: ["my-call-quality"],
-    queryFn: () => fetchQuality(),
+    queryKey: ["my-call-quality", days],
+    queryFn: () => fetchQuality({ data: { days } }),
     refetchInterval: 120_000,
   });
+
+  const [detalheOpen, setDetalheOpen] = useState(false);
+  const [detalheFiltros, setDetalheFiltros] = useState<CallQualityFilters>({ days: 7, answered: "all" });
+  const openDetalhe = (patch: Partial<CallQualityFilters>) => {
+    setDetalheFiltros({ days, answered: "all", ...patch });
+    setDetalheOpen(true);
+  };
+
 
   const doContato = useServerFn(registrarContato);
   const doConcluir = useServerFn(concluirFollowup);
@@ -211,10 +224,21 @@ export function CrmCockpit({
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400">
             <PhoneCall className="h-4.5 w-4.5" />
           </span>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">Qualidade das minhas ligações</p>
-            <p className="text-xs text-muted-foreground">Últimos 7 dias</p>
+            <p className="text-xs text-muted-foreground">
+              {days === 1 ? "Hoje" : `Últimos ${days} dias`} · clique no gráfico para ver os leads
+            </p>
           </div>
+          <Select value={String(days)} onValueChange={(v) => setDays(Number(v))}>
+            <SelectTrigger className="h-8 w-[120px] text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">Hoje</SelectItem>
+              <SelectItem value="7">7 dias</SelectItem>
+              <SelectItem value="15">15 dias</SelectItem>
+              <SelectItem value="30">30 dias</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {loadingQuality && <Skeleton className="h-40 w-full" />}
@@ -233,37 +257,58 @@ export function CrmCockpit({
               </p>
               <div className="flex h-24 items-end gap-1.5">
                 {quality.daily.map((d) => (
-                  <div key={d.date} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                  <button
+                    key={d.date}
+                    type="button"
+                    onClick={() => openDetalhe({ date: d.date })}
+                    className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded outline-none transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
+                    title={`${d.total} ligações · ${d.answered} atendidas — ver leads`}
+                  >
                     <div className="flex h-16 w-full items-end justify-center rounded bg-muted/40">
                       <div
                         className="w-full rounded bg-primary/70"
                         style={{ height: `${Math.round((d.total / maxDay) * 100)}%` }}
-                        title={`${d.total} ligações · ${d.answered} atendidas`}
                       />
                     </div>
                     <span className="truncate text-[10px] text-muted-foreground">{d.label}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
 
             <div className="flex flex-wrap gap-1.5">
               {quality.outcomes.length === 0 && (
-                <p className="text-xs text-muted-foreground">Nenhuma ligação registrada nos últimos 7 dias.</p>
+                <p className="text-xs text-muted-foreground">Nenhuma ligação registrada no período.</p>
               )}
               {quality.outcomes.map((o) => (
-                <Badge key={o.outcome} variant="secondary" className="gap-1 text-xs">
-                  <PhoneIncoming className="h-3 w-3" /> {o.outcome} · {o.count}
-                </Badge>
+                <button key={o.outcome} type="button" onClick={() => openDetalhe({ outcome: o.outcome })}>
+                  <Badge variant="secondary" className="gap-1 text-xs hover:bg-secondary/70">
+                    <PhoneIncoming className="h-3 w-3" /> {o.outcome} · {o.count}
+                  </Badge>
+                </button>
               ))}
             </div>
 
-            <p className="mt-auto inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <Percent className="h-3 w-3" /> Etiquetar a situação antes de registrar melhora sua taxa.
-            </p>
+            <div className="mt-auto flex items-center justify-between gap-2">
+              <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <Percent className="h-3 w-3" /> Etiquetar a situação antes de registrar melhora sua taxa.
+              </p>
+              <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => openDetalhe({})}>
+                Ver métricas
+              </Button>
+            </div>
           </>
         )}
+
+        <CallQualityDialog
+          open={detalheOpen}
+          onOpenChange={setDetalheOpen}
+          filters={detalheFiltros}
+          onFiltersChange={setDetalheFiltros}
+          outcomes={(quality?.outcomes ?? []).map((o) => o.outcome)}
+        />
       </Card>
+
 
       {/* 3. Follow-ups + competição */}
       <div className="flex flex-col gap-4">
