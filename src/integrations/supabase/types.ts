@@ -369,7 +369,10 @@ export type Database = {
           consultora_responsavel: string | null
           contatado_em: string | null
           contatado_por: string | null
+          cpf_confirmado: string | null
           cpf_parcial: string | null
+          cpf_validado_em: string | null
+          cpf_validado_por: string | null
           created_at: string
           data_ato: string | null
           data_promocao: string | null
@@ -413,7 +416,10 @@ export type Database = {
           consultora_responsavel?: string | null
           contatado_em?: string | null
           contatado_por?: string | null
+          cpf_confirmado?: string | null
           cpf_parcial?: string | null
+          cpf_validado_em?: string | null
+          cpf_validado_por?: string | null
           created_at?: string
           data_ato?: string | null
           data_promocao?: string | null
@@ -457,7 +463,10 @@ export type Database = {
           consultora_responsavel?: string | null
           contatado_em?: string | null
           contatado_por?: string | null
+          cpf_confirmado?: string | null
           cpf_parcial?: string | null
+          cpf_validado_em?: string | null
+          cpf_validado_por?: string | null
           created_at?: string
           data_ato?: string | null
           data_promocao?: string | null
@@ -2356,6 +2365,13 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      distribuir_do_registros_pendentes: {
+        Args: { _limit?: number }
+        Returns: {
+          atribuidos: number
+          consultoras: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2364,6 +2380,7 @@ export type Database = {
         Returns: boolean
       }
       minha_consultora_nome: { Args: never; Returns: string }
+      sync_radar_consultoras: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "user" | "gestor_acessos"
