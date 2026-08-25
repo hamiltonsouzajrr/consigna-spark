@@ -39,8 +39,23 @@ function LoginPage() {
   const [cpf, setCpf] = useState("");
   const [recoverBy, setRecoverBy] = useState<"email" | "cpf">("email");
   const [recoverCpf, setRecoverCpf] = useState("");
+  const [tab, setTab] = useState<"in" | "up">("in");
+  const [avisoOpen, setAvisoOpen] = useState(false);
 
   useEffect(() => { if (user) nav({ to: "/prospeccao" }); }, [user, nav]);
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(AVISO_PRIMEIRO_ACESSO_KEY)) setAvisoOpen(true);
+    } catch { /* storage indisponível */ }
+  }, []);
+
+  const fecharAviso = (open: boolean) => {
+    setAvisoOpen(open);
+    if (!open) {
+      try { localStorage.setItem(AVISO_PRIMEIRO_ACESSO_KEY, new Date().toISOString()); } catch { /* noop */ }
+    }
+  };
 
   const handleReset = async () => {
     if (recoverBy === "cpf") {
