@@ -232,6 +232,34 @@ function LoginPage() {
           </TabsList>
           {(["in", "up"] as const).map((m) => (
             <TabsContent key={m} value={m} className="mt-4 space-y-4">
+              {m === "up" && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Nome completo</Label>
+                    <Input
+                      autoComplete="name"
+                      value={nome}
+                      onChange={(e) => setNome(e.target.value)}
+                      placeholder="Seu nome completo"
+                      className="h-11"
+                      maxLength={120}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>CPF</Label>
+                    <Input
+                      inputMode="numeric"
+                      value={cpf}
+                      onChange={(e) => setCpf(formatCpf(normalizeCpf(e.target.value).slice(0, 11)))}
+                      placeholder="000.000.000-00"
+                      className="h-11"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Permitida apenas uma conta por CPF.
+                    </p>
+                  </div>
+                </>
+              )}
               <div className="space-y-2">
                 <Label>Email</Label>
                 <Input
