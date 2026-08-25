@@ -287,6 +287,11 @@ function LoginPage() {
                   placeholder="seu@email.com"
                   className="h-11"
                 />
+                {m === "up" && (
+                  <p className="text-xs text-muted-foreground">
+                    Use um e-mail que você acessa — é para lá que vai o link de recuperação de senha.
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Senha</Label>
