@@ -2580,6 +2580,13 @@ export type Database = {
           user_id: string
         }[]
       }
+      redistribuir_do_registros_igualmente: {
+        Args: { _incluir_abordados?: boolean; _janela_dias?: number }
+        Returns: {
+          atribuidos: number
+          consultoras: number
+        }[]
+      }
       registrar_ponto: {
         Args: {
           _categoria: string
