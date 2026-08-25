@@ -52,12 +52,32 @@ export function DistribuicaoTab({
   const redistribuirDesempenho = useServerFn(redistribuirPromovidosPorDesempenho);
   const [diasDesempenho, setDiasDesempenho] = useState(14);
   const [pesoMax, setPesoMax] = useState(4);
+  const [statusSel, setStatusSel] = useState<Set<string>>(new Set(["novo"]));
+  const [somenteNaoContatados, setSomenteNaoContatados] = useState(true);
+
+  const toggleStatus = (key: string) =>
+    setStatusSel((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   const runRedistribuirPorDesempenho = async () => {
+    if (statusSel.size === 0) {
+      toast.error("Selecione ao menos um status para redistribuir.");
+      return;
+    }
     setBusy(true);
     try {
       const d = await redistribuirDesempenho({
-        data: { diasDesempenho, janelaDias: null, pesoMax },
+        data: {
+          diasDesempenho,
+          janelaDias: null,
+          pesoMax,
+          status: [...statusSel],
+          somenteNaoContatados,
+        },
       });
       if (d.consultoras === 0) toast.error("Nenhuma consultora ativa com conta no sistema.");
       else if (d.atribuidos === 0) toast.info("Nenhum lead disponível para redistribuir.");
