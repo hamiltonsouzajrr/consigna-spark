@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { LogOut, BadgeDollarSign, Calculator, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, PhoneCall, Flame, CalendarClock, Home, Trophy, Star, MessageSquare, Clock, Sparkles, Radar, Wallet, PartyPopper } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { useRhAccess } from "@/hooks/use-rh-access";
 import { supabase } from "@/integrations/supabase/client";
