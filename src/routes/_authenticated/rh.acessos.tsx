@@ -960,6 +960,10 @@ function AcessosPage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="incidentes">
+          <IncidentesTab />
+        </TabsContent>
+
         {/* Bloco 6 — auditoria */}
         <TabsContent value="historico">
           <Card>

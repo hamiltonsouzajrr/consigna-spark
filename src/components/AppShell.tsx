@@ -343,5 +343,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       </main>
     </div>
+    </AccessGuard>
   );
 }
