@@ -296,6 +296,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
               <span className="max-w-[160px] truncate text-sm text-white/90">{user?.email}</span>
             </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleSair}
+              className="gap-2 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+            >
+              <LogOut className="h-4 w-4" /> Sair
+            </Button>
           </div>
         </header>
 
