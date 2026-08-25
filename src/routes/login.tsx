@@ -241,7 +241,7 @@ function LoginPage() {
             </button>
           </div>
         ) : (
-        <Tabs defaultValue="in">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "in" | "up")}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="in">Entrar</TabsTrigger>
             <TabsTrigger value="up">Criar conta</TabsTrigger>
