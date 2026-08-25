@@ -175,6 +175,47 @@ export function DistribuicaoTab({
             <Button className="mt-3 w-full" variant="secondary" disabled={busy}><RefreshCw className="mr-2 h-4 w-4" /> Reciclar agora</Button>
           </ConfirmDialog>
         </div>
+
+        <div className="rounded-lg border p-4">
+          <p className="mb-2 text-sm font-medium">Sorteio aleatório geral</p>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Embaralha todos os leads em aberto (do pool e já atribuídos) e divide entre as consultoras
+            marcadas. Follow-ups e anotações salvos vão junto para o novo responsável.
+          </p>
+          <label className="flex items-center gap-2 text-xs">
+            <Checkbox checked={includeOutras} onCheckedChange={(v) => setIncludeOutras(v === true)} />
+            Incluir Promovidos (Diário Oficial) e Tomadores com Margem – AL
+          </label>
+          <ConfirmDialog
+            title="Sortear leads aleatoriamente?"
+            description={`Todos os leads em aberto serão embaralhados e divididos entre ${selected.size} consultora(s). Follow-ups e anotações seguem com o lead.`}
+            confirmLabel="Sortear"
+            onConfirm={runRandom}
+          >
+            <Button className="mt-3 w-full" disabled={busy}><Dices className="mr-2 h-4 w-4" /> Sortear agora</Button>
+          </ConfirmDialog>
+        </div>
+
+        <div className="rounded-lg border border-destructive/40 p-4">
+          <p className="mb-2 text-sm font-medium text-destructive">Limpar vínculos e acessos</p>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Devolve todos os leads ao pool (prospecção, promovidos e tomadores AL). Follow-ups e
+            anotações não são apagados — ficam guardados para a próxima distribuição.
+          </p>
+          <label className="flex items-center gap-2 text-xs">
+            <Checkbox checked={revokeAccess} onCheckedChange={(v) => setRevokeAccess(v === true)} />
+            Também revogar permissões de abas e papéis (administradores mantidos)
+          </label>
+          <ConfirmDialog
+            title="Limpar todos os vínculos?"
+            description="Todos os leads voltam ao pool sem responsável. Follow-ups e anotações são preservados. Esta ação não pode ser desfeita."
+            confirmLabel="Limpar tudo"
+            destructive
+            onConfirm={runReset}
+          >
+            <Button className="mt-3 w-full" variant="destructive" disabled={busy}><Eraser className="mr-2 h-4 w-4" /> Limpar agora</Button>
+          </ConfirmDialog>
+        </div>
       </div>
     </Card>
   );
