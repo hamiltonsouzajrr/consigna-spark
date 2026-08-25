@@ -360,6 +360,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             </SheetContent>
           </Sheet>
+          </div>
         </div>
 
         <div className="p-3 md:p-5 print:p-0">
