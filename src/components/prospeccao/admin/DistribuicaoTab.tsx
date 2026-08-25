@@ -37,8 +37,35 @@ export function DistribuicaoTab({
   const [recycleMode, setRecycleMode] = useState<"round_robin" | "score">("score");
   const [idleDays, setIdleDays] = useState(3);
   const [busy, setBusy] = useState(false);
+  const randomRedistribute = useServerFn(adminRandomRedistribute);
+  const resetAll = useServerFn(adminResetAllAccess);
+  const [includeOutras, setIncludeOutras] = useState(true);
+  const [revokeAccess, setRevokeAccess] = useState(true);
 
   const split = previewSplit(unassignedCount, selected.size);
+
+  const runRandom = async () => {
+    if (selected.size === 0) { toast.error("Selecione ao menos uma consultora."); return; }
+    setBusy(true);
+    try {
+      const d = await randomRedistribute({ data: { consultantIds: [...selected], includeOutrasAbas: includeOutras } });
+      const extra = includeOutras ? ` · promovidos: ${d.promovidos} · tomadores: ${d.tomadores}` : "";
+      if (!d.assigned && !d.promovidos && !d.tomadores) toast.info("Nenhum lead disponível para sortear.");
+      else toast.success(`${d.assigned} lead(s) sorteado(s) entre ${selected.size} consultora(s)${extra}.`);
+      qc.invalidateQueries({ queryKey: ["prospect"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Falha no sorteio."); }
+    setBusy(false);
+  };
+
+  const runReset = async () => {
+    setBusy(true);
+    try {
+      await resetAll({ data: { revokeAccess } });
+      toast.success("Vínculos limpos. Follow-ups e anotações foram preservados.");
+      qc.invalidateQueries({ queryKey: ["prospect"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Falha ao limpar."); }
+    setBusy(false);
+  };
 
   const runDistribute = async () => {
     if (selected.size === 0) { toast.error("Selecione ao menos uma consultora."); return; }
