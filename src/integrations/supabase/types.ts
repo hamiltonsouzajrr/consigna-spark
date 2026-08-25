@@ -2590,6 +2590,19 @@ export type Database = {
           consultoras: number
         }[]
       }
+      redistribuir_do_registros_por_desempenho: {
+        Args: {
+          _dias_desempenho?: number
+          _janela_dias?: number
+          _peso_max?: number
+        }
+        Returns: {
+          atribuidos: number
+          consultoras: number
+          top_consultora: string
+          top_peso: number
+        }[]
+      }
       registrar_ponto: {
         Args: {
           _categoria: string
