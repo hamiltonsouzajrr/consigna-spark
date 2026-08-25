@@ -12,6 +12,7 @@ import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
 import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
 import { FollowupPopup } from "@/components/prospeccao/FollowupPopup";
 import { MetaTopIndicator } from "@/components/MetaTopIndicator";
+import { CompleteProfileDialog } from "@/components/CompleteProfileDialog";
 import type { ReactNode } from "react";
 
 type BadgeKind = "leads" | "followups";
