@@ -50,6 +50,15 @@ function diasAtras(dias: number): string {
   return new Date(Date.now() - dias * 86_400_000).toISOString().slice(0, 10);
 }
 
+async function buscarNome(context: any, email: string): Promise<string | null> {
+  const { data } = await context.supabase
+    .from("radar_consultoras")
+    .select("nome")
+    .ilike("email", email)
+    .limit(1);
+  return (data?.[0]?.nome as string | undefined) ?? null;
+}
+
 async function identificar(context: any): Promise<{ isAdmin: boolean; nome: string | null }> {
   const { data: isAdminRaw } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
@@ -58,12 +67,20 @@ async function identificar(context: any): Promise<{ isAdmin: boolean; nome: stri
   if (isAdminRaw) return { isAdmin: true, nome: null };
   const email = String(context.claims?.email ?? "").trim().toLowerCase();
   if (!email) return { isAdmin: false, nome: null };
-  const { data } = await context.supabase
-    .from("radar_consultoras")
-    .select("nome")
-    .ilike("email", email)
-    .limit(1);
-  return { isAdmin: false, nome: (data?.[0]?.nome as string | undefined) ?? null };
+
+  let nome = await buscarNome(context, email);
+  if (!nome) {
+    // Vínculo na hora: cria o cadastro da consultora a partir da conta e tenta de novo,
+    // para ninguém ficar preso na mensagem "conta não vinculada".
+    try {
+      const { sincronizarConsultoras } = await import("@/lib/radar/distribuicao.server");
+      await sincronizarConsultoras();
+      nome = await buscarNome(context, email);
+    } catch {
+      /* silencioso: segue sem vínculo */
+    }
+  }
+  return { isAdmin: false, nome };
 }
 
 export const getPromovidosRecentes = createServerFn({ method: "POST" })
