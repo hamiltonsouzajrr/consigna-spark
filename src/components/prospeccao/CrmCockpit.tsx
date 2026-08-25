@@ -340,8 +340,10 @@ export function CrmCockpit({
                 <CalendarClock className="h-4.5 w-4.5" />
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">Follow-ups de hoje</p>
-                <p className="text-xs text-muted-foreground">{followups.length} pendente(s)</p>
+                <p className="truncate text-sm font-semibold">Follow-ups</p>
+                <p className="text-xs text-muted-foreground">
+                  {followups.length} registro(s) · {followups.filter((f) => new Date(f.due_at).getTime() < Date.now() && f.status === "pending").length} atrasado(s)
+                </p>
               </div>
             </div>
             <Button asChild size="sm" variant="ghost">
@@ -349,11 +351,33 @@ export function CrmCockpit({
             </Button>
           </div>
 
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Select value={fuPeriodo} onValueChange={(v) => setFuPeriodo(v as typeof fuPeriodo)}>
+              <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hoje">Até hoje</SelectItem>
+                <SelectItem value="atrasados">Só atrasados</SelectItem>
+                <SelectItem value="7">Janela 7 dias</SelectItem>
+                <SelectItem value="30">Janela 30 dias</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={fuStatus} onValueChange={(v) => setFuStatus(v as typeof fuStatus)}>
+              <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pendentes</SelectItem>
+                <SelectItem value="done">Concluídos</SelectItem>
+                <SelectItem value="canceled">Cancelados/pulados</SelectItem>
+                <SelectItem value="all">Todos os status</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="mt-3 space-y-2">
             {followups.length === 0 && (
               <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
-                Nenhum follow-up para hoje. Agende retornos direto no card do lead.
+                Nenhum follow-up com esses filtros. Agende retornos direto no card do lead.
               </p>
+
             )}
             {followups.map((f) => {
               const atrasado = new Date(f.due_at).getTime() < Date.now();
