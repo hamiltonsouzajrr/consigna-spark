@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.redistribuir_do_registros_por_desempenho(integer, integer, numeric) FROM authenticated;
