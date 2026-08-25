@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Shuffle, RefreshCw, Dices, Eraser } from "lucide-react";
+import { Shuffle, RefreshCw, Dices, Eraser, Scale } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,10 @@ import {
   adminRandomRedistribute,
   adminResetAllAccess,
 } from "@/lib/prospeccao/prospeccao.functions";
+import {
+  redistribuirPromovidosIgualmente,
+  getResumoCarteiras,
+} from "@/lib/radar/promovidos-recentes.functions";
 import { previewSplit } from "@/lib/prospeccao/admin-import";
 
 type Consultant = { id: string; email: string };
