@@ -1190,6 +1190,36 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          cpf: string
+          created_at: string
+          email: string | null
+          id: string
+          nome_completo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cpf: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome_completo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cpf?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome_completo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       promovidos: {
         Row: {
           cargo: string
@@ -1333,6 +1363,7 @@ export type Database = {
       radar_consultoras: {
         Row: {
           ativo: boolean
+          cpf: string | null
           created_at: string
           email: string | null
           id: string
@@ -1347,6 +1378,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          cpf?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -1361,6 +1393,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          cpf?: string | null
           created_at?: string
           email?: string | null
           id?: string
