@@ -409,6 +409,13 @@ export function CrmCockpit({
                     </span>
                   </div>
 
+                  {!pendente && (
+                    <Badge variant="outline" className="mt-2 text-[10px] capitalize">
+                      {f.status === "done" ? "Concluído" : "Cancelado"}
+                    </Badge>
+                  )}
+
+                  {pendente && (
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     <Button
                       size="sm"
@@ -455,6 +462,8 @@ export function CrmCockpit({
                       <SkipForward className="mr-1 h-3 w-3" /> Pular
                     </Button>
                   </div>
+                  )}
+
                 </div>
               );
             })}
