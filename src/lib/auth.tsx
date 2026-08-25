@@ -7,7 +7,7 @@ interface AuthCtx {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (input: { nome: string; cpf: string; email: string; password: string }) => Promise<{ error: string | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
   updatePassword: (password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
