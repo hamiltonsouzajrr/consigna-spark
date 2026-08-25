@@ -958,6 +958,7 @@ export const getCallQualityStats = createServerFn({ method: "GET" })
   });
 
 export type MyCallQuality = {
+  days: number;
   today: number;
   total7d: number;
   avgPerDay: number;
@@ -968,21 +969,29 @@ export type MyCallQuality = {
   outcomes: { outcome: string; count: number }[];
 };
 
-/** Qualidade das ligações da própria consultora (últimos 7 dias). */
+const ANSWERED_OUTCOMES = ["Atendeu", "Pediu pra retornar", "Agendou simulação"];
+const parseCallOutcome = (body: string | null) => {
+  if (!body) return "Outro";
+  const m = body.match(/Resultado:\s*(.+)/i);
+  return (m ? m[1] : body).trim();
+};
+const periodStart = (days: number) => {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - (days - 1));
+  return start;
+};
+
+/** Qualidade das ligações da própria consultora no período escolhido. */
 export const getMyCallQuality = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<MyCallQuality> => {
+  .inputValidator((data: unknown) =>
+    z.object({ days: z.coerce.number().int().min(1).max(90).default(7) }).parse(data ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<MyCallQuality> => {
     const { supabase, userId } = context;
-    const ANSWERED = ["Atendeu", "Pediu pra retornar", "Agendou simulação"];
-    const parseOutcome = (body: string | null) => {
-      if (!body) return "Outro";
-      const m = body.match(/Resultado:\s*(.+)/i);
-      return (m ? m[1] : body).trim();
-    };
-
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    start.setDate(start.getDate() - 6);
+    const days = data.days;
+    const start = periodStart(days);
 
     const { data: events, error } = await supabase
       .from("lead_events")
@@ -993,7 +1002,7 @@ export const getMyCallQuality = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     const dayMap = new Map<string, { total: number; answered: number }>();
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < days; i++) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
       dayMap.set(d.toISOString().slice(0, 10), { total: 0, answered: 0 });
@@ -1002,8 +1011,8 @@ export const getMyCallQuality = createServerFn({ method: "GET" })
     const outcomeMap = new Map<string, number>();
     let answered7d = 0;
     for (const e of (events ?? []) as any[]) {
-      const outcome = parseOutcome(e.body);
-      const ok = ANSWERED.includes(outcome);
+      const outcome = parseCallOutcome(e.body);
+      const ok = ANSWERED_OUTCOMES.includes(outcome);
       if (ok) answered7d++;
       outcomeMap.set(outcome, (outcomeMap.get(outcome) ?? 0) + 1);
       const bucket = dayMap.get((e.created_at as string).slice(0, 10));
@@ -1017,24 +1026,99 @@ export const getMyCallQuality = createServerFn({ method: "GET" })
       .from("prospect_leads")
       .select("id", { count: "exact", head: true })
       .eq("consultant_id", userId)
-      .in("status", ["qualificado", "proposta", "ganho"]);
+      .in("status", ["qualificado", "proposta", "ganho"])
+      .gte("updated_at", start.toISOString());
 
     return {
+      days,
       today: dayMap.get(todayKey)?.total ?? 0,
       total7d,
-      avgPerDay: Math.round((total7d / 7) * 10) / 10,
+      avgPerDay: Math.round((total7d / days) * 10) / 10,
       answered7d,
       answerRate: total7d ? Math.round((answered7d / total7d) * 100) : 0,
       qualified7d: qualified7d ?? 0,
       daily: [...dayMap.entries()].map(([date, v]) => ({
         date,
-        label: new Date(date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", ""),
+        label: new Date(date + "T12:00:00").toLocaleDateString("pt-BR", {
+          ...(days > 10 ? { day: "2-digit", month: "2-digit" } : { weekday: "short" }),
+        } as any).replace(".", ""),
         total: v.total,
         answered: v.answered,
       })),
       outcomes: [...outcomeMap.entries()]
         .map(([outcome, count]) => ({ outcome, count }))
         .sort((a, b) => b.count - a.count)
-        .slice(0, 4),
+        .slice(0, 8),
     };
   });
+
+export type CallDetailRow = {
+  eventId: string;
+  leadId: string;
+  nome: string;
+  telefone: string | null;
+  status: string;
+  outcome: string;
+  answered: boolean;
+  createdAt: string;
+  body: string | null;
+};
+
+/** Detalhe das ligações (leads) que geraram as métricas de qualidade. */
+export const getMyCallDetails = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        days: z.coerce.number().int().min(1).max(90).default(7),
+        date: z.string().optional(),
+        outcome: z.string().optional(),
+        leadStatus: z.string().optional(),
+        answered: z.enum(["all", "yes", "no"]).default("all"),
+        limit: z.coerce.number().int().min(1).max(200).default(100),
+      })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<CallDetailRow[]> => {
+    const { supabase, userId } = context;
+    let from = periodStart(data.days).toISOString();
+    let to: string | null = null;
+    if (data.date) {
+      from = new Date(data.date + "T00:00:00.000Z").toISOString();
+      to = new Date(data.date + "T23:59:59.999Z").toISOString();
+    }
+
+    let q = supabase
+      .from("lead_events")
+      .select("id, body, created_at, lead_id, prospect_leads(nome, telefone, status)")
+      .eq("consultant_id", userId)
+      .eq("kind", "ligacao")
+      .gte("created_at", from)
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (to) q = q.lte("created_at", to);
+
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+
+    let out: CallDetailRow[] = ((rows ?? []) as any[]).map((r) => {
+      const outcome = parseCallOutcome(r.body);
+      return {
+        eventId: r.id as string,
+        leadId: r.lead_id as string,
+        nome: r.prospect_leads?.nome ?? "Lead",
+        telefone: r.prospect_leads?.telefone ?? null,
+        status: r.prospect_leads?.status ?? "novo",
+        outcome,
+        answered: ANSWERED_OUTCOMES.includes(outcome),
+        createdAt: r.created_at as string,
+        body: r.body ?? null,
+      };
+    });
+
+    if (data.outcome) out = out.filter((r) => r.outcome === data.outcome);
+    if (data.leadStatus) out = out.filter((r) => r.status === data.leadStatus);
+    if (data.answered !== "all") out = out.filter((r) => r.answered === (data.answered === "yes"));
+    return out;
+  });
+
