@@ -25,6 +25,18 @@ import { previewSplit } from "@/lib/prospeccao/admin-import";
 
 type Consultant = { id: string; email: string };
 
+const STATUS_REDIST: { key: string; label: string }[] = [
+  { key: "novo", label: "Pendente / não abordado" },
+  { key: "contatado", label: "Contatado" },
+  { key: "proposta_enviada", label: "Proposta enviada" },
+  { key: "sem_interesse", label: "Sem interesse" },
+  { key: "erro", label: "Erro" },
+  { key: "convertido", label: "Convertido" },
+];
+const STATUS_LABEL: Record<string, string> = Object.fromEntries(
+  STATUS_REDIST.map((s) => [s.key, s.label]),
+);
+
 export function DistribuicaoTab({
   consultants, selected, onToggle, onSelectAll, onClear, unassignedCount,
 }: {
