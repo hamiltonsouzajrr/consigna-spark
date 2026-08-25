@@ -107,9 +107,10 @@ export const getPromovidosRecentes = createServerFn({ method: "POST" })
     if (!isAdmin && !nome) {
       return {
         rows: [], total: 0, isAdmin: false, consultoraNome: null, vinculada: false,
-        novosHoje: 0, novos7d: 0, semCpf: 0, naoAbordados: 0,
+        novosHoje: 0, novos7d: 0, semCpf: 0, naoAbordados: 0, ultimaEntrega: null,
       };
     }
+
 
     const base = () => {
       let q = context.supabase.from("do_registros").select(COLS, { count: "exact" }).gte("data_publicacao", desde);
