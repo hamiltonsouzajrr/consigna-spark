@@ -169,7 +169,7 @@ function LoginPage() {
         alt=""
         aria-hidden="true"
         fetchPriority="high"
-        className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover object-[58%_88%] sm:object-center"
+        className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover object-right sm:object-center"
       />
       <div className="pointer-events-none absolute inset-0 bg-background/35 sm:bg-background/25" />
 
