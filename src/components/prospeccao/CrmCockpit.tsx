@@ -1,18 +1,26 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyCallQuality } from "@/lib/prospeccao/prospeccao.functions";
+import {
+  registrarContato, concluirFollowup, reagendarFollowup, pularFollowup,
+} from "@/lib/prospeccao/competicao.functions";
 import { CompeticaoRanking } from "@/components/prospeccao/CompeticaoRanking";
 import { cn } from "@/lib/utils";
 import {
   Target, Flame, PhoneCall, PhoneIncoming, Percent, CalendarClock, CheckCircle2,
-  MessageCircle, DoorOpen, ChevronRight, Clock, AlertTriangle,
+  MessageCircle, DoorOpen, ChevronRight, Clock, AlertTriangle, Phone, Loader2,
+  CalendarPlus, SkipForward,
 } from "lucide-react";
 
 type Prod = { abertos: number; qualificados: number; ligacoes: number; whats: number; followups: number };
@@ -23,7 +31,9 @@ type Followup = {
   due_at: string;
   lead_id: string;
   lead_nome: string | null;
+  telefone: string | null;
 };
+
 
 type Props = {
   chamadas: number;
@@ -59,29 +69,88 @@ export function CrmCockpit({
     refetchInterval: 120_000,
   });
 
+  const doContato = useServerFn(registrarContato);
+  const doConcluir = useServerFn(concluirFollowup);
+  const doReagendar = useServerFn(reagendarFollowup);
+  const doPular = useServerFn(pularFollowup);
+
   const [followups, setFollowups] = useState<Followup[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const loadFollowups = useCallback(async () => {
+    const end = new Date(); end.setHours(23, 59, 59, 999);
+    const { data } = await supabase
+      .from("lead_tasks")
+      .select("id,title,due_at,lead_id,prospect_leads(nome,telefone,telefones)")
+      .eq("status", "pending")
+      .lte("due_at", end.toISOString())
+      .order("due_at", { ascending: true })
+      .limit(6);
+    return ((data ?? []) as any[]).map((t) => ({
+      id: t.id as string,
+      title: t.title as string,
+      due_at: t.due_at as string,
+      lead_id: t.lead_id as string,
+      lead_nome: (t.prospect_leads?.nome as string) ?? null,
+      telefone: (t.prospect_leads?.telefone as string) ?? t.prospect_leads?.telefones?.[0] ?? null,
+    }));
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
-    const load = async () => {
-      const end = new Date(); end.setHours(23, 59, 59, 999);
-      const { data } = await supabase
-        .from("lead_tasks")
-        .select("id,title,due_at,lead_id,prospect_leads(nome)")
-        .eq("status", "pending")
-        .lte("due_at", end.toISOString())
-        .order("due_at", { ascending: true })
-        .limit(6);
-      if (cancelled) return;
-      setFollowups(
-        ((data ?? []) as any[]).map((t) => ({
-          id: t.id, title: t.title, due_at: t.due_at, lead_id: t.lead_id,
-          lead_nome: t.prospect_leads?.nome ?? null,
-        })),
-      );
-    };
-    load();
+    loadFollowups().then((rows) => { if (!cancelled) setFollowups(rows); });
     return () => { cancelled = true; };
-  }, []);
+  }, [loadFollowups]);
+
+  const refresh = useCallback(async () => {
+    setFollowups(await loadFollowups());
+  }, [loadFollowups]);
+
+  const ligar = async (f: Followup) => {
+    if (!f.telefone) { toast.error("Lead sem telefone cadastrado."); return; }
+    setBusy(f.id);
+    try {
+      const r = await doContato({ data: { leadId: f.lead_id, kind: "ligacao", body: `Ligação do follow-up: ${f.title}` } });
+      window.location.href = `tel:${f.telefone.replace(/\D/g, "")}`;
+      toast.success(r.pontos ? `Ligação registrada (+${r.pontos} pts)` : "Ligação registrada", { description: r.motivo });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível registrar a ligação.");
+    } finally { setBusy(null); }
+  };
+
+  const atender = async (f: Followup) => {
+    setBusy(f.id);
+    try {
+      const r = await doConcluir({ data: { taskId: f.id } });
+      toast.success(r.pontos ? `Follow-up cumprido (+${r.pontos} pts)` : "Follow-up concluído", { description: r.motivo });
+      await refresh();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível concluir o follow-up.");
+    } finally { setBusy(null); }
+  };
+
+  const reagendar = async (f: Followup, when: Date, label: string) => {
+    setBusy(f.id);
+    try {
+      await doReagendar({ data: { taskId: f.id, dueAt: when.toISOString() } });
+      toast.success(`Reagendado para ${label}.`);
+      await refresh();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível reagendar.");
+    } finally { setBusy(null); }
+  };
+
+  const pular = async (f: Followup) => {
+    setBusy(f.id);
+    try {
+      await doPular({ data: { taskId: f.id, motivo: "pulado no CRM" } });
+      toast.success("Follow-up pulado.");
+      await refresh();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível pular.");
+    } finally { setBusy(null); }
+  };
+
 
   const pct = Math.min(100, Math.round((chamadas / metaDiaria) * 100));
   const maxDay = Math.max(1, ...(quality?.daily ?? []).map((d) => d.total));
@@ -214,7 +283,7 @@ export function CrmCockpit({
             </Button>
           </div>
 
-          <div className="mt-3 space-y-1.5">
+          <div className="mt-3 space-y-2">
             {followups.length === 0 && (
               <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
                 Nenhum follow-up para hoje. Agende retornos direto no card do lead.
@@ -222,30 +291,84 @@ export function CrmCockpit({
             )}
             {followups.map((f) => {
               const atrasado = new Date(f.due_at).getTime() < Date.now();
+              const loading = busy === f.id;
+              const em1h = () => { const d = new Date(); d.setHours(d.getHours() + 1); return d; };
+              const hojeTarde = () => { const d = new Date(); d.setHours(17, 0, 0, 0); return d; };
+              const amanha = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d; };
+              const depois = () => { const d = new Date(); d.setDate(d.getDate() + 2); d.setHours(9, 0, 0, 0); return d; };
               return (
-                <Link
-                  key={f.id}
-                  to="/prospeccao/$leadId"
-                  params={{ leadId: f.lead_id }}
-                  className="flex items-center gap-2 rounded-lg border p-2 text-xs transition hover:bg-accent/50"
-                >
-                  <span className={cn(
-                    "grid h-7 w-7 shrink-0 place-items-center rounded-md",
-                    atrasado ? "bg-rose-500/15 text-rose-600 dark:text-rose-400" : "bg-muted text-muted-foreground",
-                  )}>
-                    {atrasado ? <AlertTriangle className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">{f.lead_nome ?? "Lead"}</span>
-                    <span className="block truncate text-muted-foreground">{f.title}</span>
-                  </span>
-                  <span className={cn("shrink-0 tabular-nums", atrasado ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground")}>
-                    {hora(f.due_at)}
-                  </span>
-                </Link>
+                <div key={f.id} className="rounded-lg border p-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "grid h-7 w-7 shrink-0 place-items-center rounded-md",
+                      atrasado ? "bg-rose-500/15 text-rose-600 dark:text-rose-400" : "bg-muted text-muted-foreground",
+                    )}>
+                      {atrasado ? <AlertTriangle className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
+                    </span>
+                    <Link
+                      to="/prospeccao/$leadId"
+                      params={{ leadId: f.lead_id }}
+                      className="min-w-0 flex-1 hover:underline"
+                    >
+                      <span className="block truncate font-medium">{f.lead_nome ?? "Lead"}</span>
+                      <span className="block truncate text-muted-foreground">{f.title}</span>
+                    </Link>
+                    <span className={cn("shrink-0 tabular-nums", atrasado ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground")}>
+                      {hora(f.due_at)}
+                    </span>
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-7 px-2 text-xs"
+                      disabled={loading}
+                      onClick={() => ligar(f)}
+                    >
+                      {loading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Phone className="mr-1 h-3 w-3" />}
+                      Ligar
+                    </Button>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="outline" className="h-7 px-2 text-xs" disabled={loading}>
+                          <CalendarPlus className="mr-1 h-3 w-3" /> Reagendar
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="text-xs">
+                        <DropdownMenuItem onClick={() => reagendar(f, em1h(), "1 hora")}>Em 1 hora</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => reagendar(f, hojeTarde(), "hoje 17h")}>Hoje às 17h</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => reagendar(f, amanha(), "amanhã 9h")}>Amanhã às 9h</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => reagendar(f, depois(), "depois de amanhã 9h")}>Em 2 dias</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-xs text-emerald-600 dark:text-emerald-400"
+                      disabled={loading}
+                      onClick={() => atender(f)}
+                    >
+                      <CheckCircle2 className="mr-1 h-3 w-3" /> Atendido
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-xs text-muted-foreground"
+                      disabled={loading}
+                      onClick={() => pular(f)}
+                    >
+                      <SkipForward className="mr-1 h-3 w-3" /> Pular
+                    </Button>
+                  </div>
+                </div>
               );
             })}
           </div>
+
 
           <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-500" /> Concluir no prazo pontua</span>

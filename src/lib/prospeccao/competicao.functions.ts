@@ -242,6 +242,72 @@ export const concluirFollowup = createServerFn({ method: "POST" })
     return { pontos };
   });
 
+/** Reschedules a pending follow-up (never scores). */
+export const reagendarFollowup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ taskId: z.string().uuid(), dueAt: z.string().min(8) }).parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ dueAt: string }> => {
+    const { userId } = context;
+    const { adminClient } = await import("./competicao.server");
+    const db = await adminClient();
+
+    const { data: task } = await db
+      .from("lead_tasks")
+      .select("id,lead_id,status")
+      .eq("id", data.taskId)
+      .maybeSingle();
+    if (!task) throw new Error("Follow-up não encontrado.");
+    if (task.status !== "pending") throw new Error("Este follow-up já foi encerrado.");
+
+    const dueIso = new Date(data.dueAt).toISOString();
+    const { error } = await db.from("lead_tasks").update({ due_at: dueIso } as any).eq("id", data.taskId);
+    if (error) throw new Error(error.message);
+
+    await db.from("prospect_leads").update({ next_follow_up_at: dueIso } as any).eq("id", task.lead_id);
+    await db.from("lead_events").insert({
+      lead_id: task.lead_id,
+      consultant_id: userId,
+      kind: "followup",
+      body: `Follow-up reagendado para ${new Date(dueIso).toLocaleString("pt-BR")}`,
+    } as any);
+    return { dueAt: dueIso };
+  });
+
+/** Skips (cancels) a pending follow-up. Never scores. */
+export const pularFollowup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ taskId: z.string().uuid(), motivo: z.string().trim().max(200).optional() }).parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { userId } = context;
+    const { adminClient } = await import("./competicao.server");
+    const db = await adminClient();
+
+    const { data: task } = await db
+      .from("lead_tasks")
+      .select("id,lead_id,status")
+      .eq("id", data.taskId)
+      .maybeSingle();
+    if (!task) throw new Error("Follow-up não encontrado.");
+
+    const { error } = await db.from("lead_tasks").update({ status: "canceled" } as any).eq("id", data.taskId);
+    if (error) throw new Error(error.message);
+
+    await db.from("prospect_leads").update({ next_follow_up_at: null } as any).eq("id", task.lead_id);
+    await db.from("lead_events").insert({
+      lead_id: task.lead_id,
+      consultant_id: userId,
+      kind: "followup",
+      body: `Follow-up pulado${data.motivo ? `: ${data.motivo}` : ""}`,
+    } as any);
+    return { ok: true };
+  });
+
+
+
 // ---------------------------------------------------------------- admin
 
 export const adminDefinirPremio = createServerFn({ method: "POST" })
