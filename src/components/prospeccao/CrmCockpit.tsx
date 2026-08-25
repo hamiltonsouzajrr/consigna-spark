@@ -33,10 +33,12 @@ type Followup = {
   id: string;
   title: string;
   due_at: string;
+  status: string;
   lead_id: string;
   lead_nome: string | null;
   telefone: string | null;
 };
+
 
 
 type Props = {
@@ -89,25 +91,44 @@ export function CrmCockpit({
 
   const [followups, setFollowups] = useState<Followup[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [fuPeriodo, setFuPeriodo] = useState<"hoje" | "atrasados" | "7" | "30">("hoje");
+  const [fuStatus, setFuStatus] = useState<"pending" | "done" | "canceled" | "all">("pending");
 
   const loadFollowups = useCallback(async () => {
-    const end = new Date(); end.setHours(23, 59, 59, 999);
-    const { data } = await supabase
+    let q = supabase
       .from("lead_tasks")
-      .select("id,title,due_at,lead_id,prospect_leads(nome,telefone,telefones)")
-      .eq("status", "pending")
-      .lte("due_at", end.toISOString())
+      .select("id,title,due_at,status,lead_id,prospect_leads(nome,telefone,telefones)")
       .order("due_at", { ascending: true })
-      .limit(6);
+      .limit(fuPeriodo === "hoje" || fuPeriodo === "atrasados" ? 6 : 20);
+
+    if (fuStatus !== "all") q = q.eq("status", fuStatus);
+
+    const now = new Date();
+    if (fuPeriodo === "hoje") {
+      const end = new Date(); end.setHours(23, 59, 59, 999);
+      q = q.lte("due_at", end.toISOString());
+    } else if (fuPeriodo === "atrasados") {
+      q = q.lt("due_at", now.toISOString());
+    } else {
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - (Number(fuPeriodo) - 1));
+      const end = new Date(); end.setHours(23, 59, 59, 999);
+      end.setDate(end.getDate() + Number(fuPeriodo));
+      q = q.gte("due_at", start.toISOString()).lte("due_at", end.toISOString());
+    }
+
+    const { data } = await q;
     return ((data ?? []) as any[]).map((t) => ({
       id: t.id as string,
       title: t.title as string,
       due_at: t.due_at as string,
+      status: (t.status as string) ?? "pending",
       lead_id: t.lead_id as string,
       lead_nome: (t.prospect_leads?.nome as string) ?? null,
       telefone: (t.prospect_leads?.telefone as string) ?? t.prospect_leads?.telefones?.[0] ?? null,
     }));
-  }, []);
+  }, [fuPeriodo, fuStatus]);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -319,8 +340,10 @@ export function CrmCockpit({
                 <CalendarClock className="h-4.5 w-4.5" />
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">Follow-ups de hoje</p>
-                <p className="text-xs text-muted-foreground">{followups.length} pendente(s)</p>
+                <p className="truncate text-sm font-semibold">Follow-ups</p>
+                <p className="text-xs text-muted-foreground">
+                  {followups.length} registro(s) · {followups.filter((f) => new Date(f.due_at).getTime() < Date.now() && f.status === "pending").length} atrasado(s)
+                </p>
               </div>
             </div>
             <Button asChild size="sm" variant="ghost">
@@ -328,14 +351,37 @@ export function CrmCockpit({
             </Button>
           </div>
 
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Select value={fuPeriodo} onValueChange={(v) => setFuPeriodo(v as typeof fuPeriodo)}>
+              <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hoje">Até hoje</SelectItem>
+                <SelectItem value="atrasados">Só atrasados</SelectItem>
+                <SelectItem value="7">Janela 7 dias</SelectItem>
+                <SelectItem value="30">Janela 30 dias</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={fuStatus} onValueChange={(v) => setFuStatus(v as typeof fuStatus)}>
+              <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pendentes</SelectItem>
+                <SelectItem value="done">Concluídos</SelectItem>
+                <SelectItem value="canceled">Cancelados/pulados</SelectItem>
+                <SelectItem value="all">Todos os status</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="mt-3 space-y-2">
             {followups.length === 0 && (
               <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
-                Nenhum follow-up para hoje. Agende retornos direto no card do lead.
+                Nenhum follow-up com esses filtros. Agende retornos direto no card do lead.
               </p>
+
             )}
             {followups.map((f) => {
-              const atrasado = new Date(f.due_at).getTime() < Date.now();
+              const pendente = f.status === "pending";
+              const atrasado = pendente && new Date(f.due_at).getTime() < Date.now();
               const loading = busy === f.id;
               const em1h = () => { const d = new Date(); d.setHours(d.getHours() + 1); return d; };
               const hojeTarde = () => { const d = new Date(); d.setHours(17, 0, 0, 0); return d; };
@@ -363,6 +409,13 @@ export function CrmCockpit({
                     </span>
                   </div>
 
+                  {!pendente && (
+                    <Badge variant="outline" className="mt-2 text-[10px] capitalize">
+                      {f.status === "done" ? "Concluído" : "Cancelado"}
+                    </Badge>
+                  )}
+
+                  {pendente && (
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     <Button
                       size="sm"
@@ -409,6 +462,8 @@ export function CrmCockpit({
                       <SkipForward className="mr-1 h-3 w-3" /> Pular
                     </Button>
                   </div>
+                  )}
+
                 </div>
               );
             })}
