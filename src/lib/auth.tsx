@@ -35,11 +35,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error?.message ?? null };
   };
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: window.location.origin },
+  const signUp = async (input: { nome: string; cpf: string; email: string; password: string }) => {
+    try {
+      await signUpWithCpf({ data: input });
+    } catch (e: any) {
+      return { error: e?.message ?? "Não foi possível criar a conta." };
+    }
+    const { error } = await supabase.auth.signInWithPassword({
+      email: input.email,
+      password: input.password,
     });
     return { error: error?.message ?? null };
   };
