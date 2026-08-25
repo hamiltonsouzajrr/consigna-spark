@@ -9,13 +9,11 @@ export const getProspectConsultants = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ProspectConsultant[]> => {
     const { supabase, userId } = context;
-    const { assertAdmin } = await import("./prospeccao.server");
+    const { assertAdmin, listConsultantUsers } = await import("./prospeccao.server");
     await assertAdmin(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    if (error) throw new Error(error.message);
-    return data.users.map((u) => ({ id: u.id, email: u.email ?? "(sem e-mail)" }));
+    return listConsultantUsers(supabaseAdmin);
   });
 
 export const adminCreateLeads = createServerFn({ method: "POST" })
@@ -37,6 +35,11 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
 
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { assertConsultantIds } = await import("./prospeccao.server");
+    await assertConsultantIds(
+      supabaseAdmin,
+      data.leads.map((l) => l.consultant_id).filter((id): id is string => !!id),
+    );
 
     const batchLabel = (data.batch && data.batch.trim()) || `Importação ${new Date().toISOString().slice(0, 16).replace("T", " ")}`;
     const norm = (v?: string | null) => (v ? v.replace(/\D/g, "") : "");
@@ -162,6 +165,10 @@ export const adminAssignLeads = createServerFn({ method: "POST" })
 
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.consultantId) {
+      const { assertConsultantIds } = await import("./prospeccao.server");
+      await assertConsultantIds(supabaseAdmin, [data.consultantId]);
+    }
     const { error } = await supabaseAdmin
       .from("prospect_leads")
       .update({ consultant_id: data.consultantId } as any)
@@ -473,6 +480,8 @@ export const adminRandomRedistribute = createServerFn({ method: "POST" })
       await assertAdmin(supabase, userId);
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { assertConsultantIds } = await import("./prospeccao.server");
+      await assertConsultantIds(supabaseAdmin, data.consultantIds);
       const { data: leads, error } = await supabaseAdmin
         .from("prospect_leads")
         .select("id")

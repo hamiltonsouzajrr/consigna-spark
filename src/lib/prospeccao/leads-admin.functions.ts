@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const createLeadBatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({
     filename: z.string(),
     totalLeads: z.number(),
@@ -11,8 +11,9 @@ export const createLeadBatch = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data }) => {
     const { filename, totalLeads, columnMapping } = data;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
-    const { data: batch, error } = await supabase
+    const { data: batch, error } = await supabaseAdmin
       .from("lead_batches")
       .insert({
         filename,
@@ -30,6 +31,7 @@ export const createLeadBatch = createServerFn({ method: "POST" })
   });
 
 export const processLeadChunk = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({
     batchId: z.string(),
     leads: z.array(z.record(z.any())),
@@ -37,6 +39,7 @@ export const processLeadChunk = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data }) => {
     const { batchId, leads, isLastChunk } = data;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
     // Insert chunk
     const leadsToInsert = leads.map(lead => ({
@@ -45,17 +48,17 @@ export const processLeadChunk = createServerFn({ method: "POST" })
       status: "new"
     }));
     
-    const { error: leadsError } = await supabase
+    const { error: leadsError } = await supabaseAdmin
       .from("leads_raw")
       .insert(leadsToInsert);
       
     if (leadsError) {
-      await supabase.from("lead_batches").update({ status: "error", error_message: leadsError.message }).eq("id", batchId);
+      await supabaseAdmin.from("lead_batches").update({ status: "error", error_message: leadsError.message }).eq("id", batchId);
       throw new Error(`Failed to insert leads: ${leadsError.message}`);
     }
     
     // Update progress
-    const { data: batch } = await supabase
+    const { data: batch } = await supabaseAdmin
       .from("lead_batches")
       .select("processed_leads, total_leads")
       .eq("id", batchId)
@@ -68,15 +71,17 @@ export const processLeadChunk = createServerFn({ method: "POST" })
       status: isLastChunk ? "completed" : "processing"
     };
     
-    await supabase.from("lead_batches").update(updateData).eq("id", batchId);
+    await supabaseAdmin.from("lead_batches").update(updateData).eq("id", batchId);
     
     return { success: true, processed: newProcessedCount };
   });
 
 
 export const getLeadBatches = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .handler(async () => {
-    const { data, error } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("lead_batches")
       .select("*")
       .order("created_at", { ascending: false });
@@ -86,9 +91,11 @@ export const getLeadBatches = createServerFn({ method: "GET" })
   });
 
 export const getLeadsByBatch = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ batchId: z.string() }).parse(data))
   .handler(async ({ data }) => {
-    const { data: leads, error } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: leads, error } = await supabaseAdmin
       .from("leads_raw")
       .select("*")
       .eq("batch_id", data.batchId);
@@ -104,11 +111,15 @@ export const assignBatchToConsultant = createServerFn({ method: "POST" })
     consultantId: z.string().uuid(),
   }).parse(data))
   .handler(async ({ context, data }) => {
-    const { supabase: userSupabase, userId } = context;
+    const { supabase, userId } = context;
     const { batchId, consultantId } = data;
+    const { assertAdmin, assertConsultantIds } = await import("./prospeccao.server");
+    await assertAdmin(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await assertConsultantIds(supabaseAdmin, [consultantId]);
 
     // 1. Get the batch and its mapping
-    const { data: batch, error: batchError } = await supabase
+    const { data: batch, error: batchError } = await supabaseAdmin
       .from("lead_batches")
       .select("*")
       .eq("id", batchId)
@@ -116,7 +127,7 @@ export const assignBatchToConsultant = createServerFn({ method: "POST" })
     if (batchError) throw new Error(batchError.message);
 
     // 2. Get the leads from leads_raw
-    const { data: rawLeads, error: rawError } = await supabase
+    const { data: rawLeads, error: rawError } = await supabaseAdmin
       .from("leads_raw")
       .select("*")
       .eq("batch_id", batchId);
@@ -154,12 +165,12 @@ export const assignBatchToConsultant = createServerFn({ method: "POST" })
     const chunkSize = 500;
     for (let i = 0; i < prospectLeads.length; i += chunkSize) {
       const chunk = prospectLeads.slice(i, i + chunkSize);
-      const { error: insertError } = await supabase.from("prospect_leads").insert(chunk as any);
+      const { error: insertError } = await supabaseAdmin.from("prospect_leads").insert(chunk as any);
       if (insertError) throw new Error(insertError.message);
     }
 
     // 5. Mark batch as assigned
-    await supabase.from("lead_batches").update({ status: "completed" }).eq("id", batchId);
+    await supabaseAdmin.from("lead_batches").update({ status: "completed" }).eq("id", batchId);
 
     return { success: true, count: prospectLeads.length };
   });

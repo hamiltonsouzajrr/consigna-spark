@@ -7,10 +7,37 @@ export async function assertAdmin(supabase: any, userId: string) {
   if (!data) throw new Error("Acesso restrito a administradores.");
 }
 
+export type ConsultantUser = { id: string; email: string };
+
+export async function listConsultantUsers(supabaseAdmin: any): Promise<ConsultantUser[]> {
+  const [{ data: usersData, error }, { data: roles }] = await Promise.all([
+    supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+    supabaseAdmin.from("user_roles").select("user_id, role"),
+  ]);
+  if (error) throw new Error(error.message);
+
+  const adminIds = new Set((roles ?? []).filter((r: any) => r.role === "admin").map((r: any) => String(r.user_id)));
+  return (usersData.users ?? [])
+    .filter((u: any) => !u.deleted_at && u.email && !adminIds.has(u.id))
+    .map((u: any) => ({ id: String(u.id), email: String(u.email) }))
+    .sort((a: ConsultantUser, b: ConsultantUser) => a.email.localeCompare(b.email));
+}
+
+export async function assertConsultantIds(supabaseAdmin: any, consultantIds: string[]) {
+  const unique = [...new Set(consultantIds.filter(Boolean))];
+  if (!unique.length) return;
+  const allowed = new Set((await listConsultantUsers(supabaseAdmin)).map((c) => c.id));
+  const invalid = unique.filter((id) => !allowed.has(id));
+  if (invalid.length) {
+    throw new Error("Selecione apenas consultoras ativas. Atualize a lista e tente novamente.");
+  }
+}
+
 export async function applyAssignments(
   supabaseAdmin: any,
   assignment: Map<string, string>,
 ): Promise<Record<string, number>> {
+  await assertConsultantIds(supabaseAdmin, [...assignment.values()]);
   const byCons = new Map<string, string[]>();
   for (const [leadId, cons] of assignment) {
     if (!byCons.has(cons)) byCons.set(cons, []);
