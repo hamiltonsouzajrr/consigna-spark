@@ -169,6 +169,15 @@ function useChamadas() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { signOut, user } = useAuth();
+  const qcShell = useQueryClient();
+  // Saída limpa: cancela consultas em voo, limpa o cache e volta ao login.
+  const handleSair = async () => {
+    await qcShell.cancelQueries();
+    qcShell.clear();
+    await signOut();
+    nav2({ to: "/login", replace: true });
+  };
+
   const now = useClock();
   const chamadas = useChamadas();
   const { isAdmin, hasAnyAccess } = useRhAccess();
