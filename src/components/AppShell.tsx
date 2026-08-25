@@ -228,6 +228,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen app-bg print:block print:min-h-0 print:bg-none">
+      <CompleteProfileDialog />
       <HorariosOuroDialog />
       <HorariosOuroReminder />
       {!isAdmin && <FollowupPopup />}
