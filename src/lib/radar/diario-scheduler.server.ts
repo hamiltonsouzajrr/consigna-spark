@@ -114,8 +114,24 @@ async function salvarRegistros(arquivoId: string, registros: any[]): Promise<{ i
 
   const { error } = await supabaseAdmin.from("do_registros").insert(rows as any);
   if (error) throw new Error(error.message);
+
+  // Entrega imediata: sincroniza as contas das consultoras e distribui em
+  // rodízio o que ficou sem responsável, para o lead aparecer na aba
+  // "Promovidos Recentemente" sem depender do cron.
+  try {
+    const { sincronizarConsultoras, distribuirPendentes } = await import(
+      "@/lib/radar/distribuicao.server"
+    );
+    await sincronizarConsultoras();
+    const dist = await distribuirPendentes(2000);
+    console.log(`[radar] distribuídos ${dist.atribuidos} leads para ${dist.consultoras} consultoras`);
+  } catch (e: any) {
+    console.error("[radar] falha ao distribuir após extração:", e?.message ?? e);
+  }
+
   return { inserted: rows.length, duplicados };
 }
+
 
 // Processa UMA edição: baixa, salva no storage, cria a fonte + do_arquivos,
 // extrai texto e roda a IA. Retorna métricas. Atualiza/insere a fonte.
