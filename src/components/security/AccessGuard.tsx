@@ -47,8 +47,9 @@ export function AccessGuard({ children }: { children: React.ReactNode }) {
 
   // Aviso 10 minutos antes do corte.
   useEffect(() => {
-    const faltam = data?.janela.minutosParaFechar;
-    if (data?.isAdmin || faltam == null) return;
+    if (!data || data.isAdmin) return;
+    const faltam = data.janela.minutosParaFechar;
+    if (faltam == null) return;
     if (faltam <= 10 && faltam > 0 && !avisou.current) {
       avisou.current = true;
       toast.warning("O sistema fecha em breve", {
