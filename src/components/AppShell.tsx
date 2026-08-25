@@ -41,7 +41,7 @@ const navSections: NavSection[] = [
       { to: "/prospeccao/recentes", label: "Recentes Prospectados", icon: Flame, consultoraOnly: true },
       { to: "/prospeccao/promovidos-recentes", label: "Promovidos Recentemente", full: "PROMOVIDOS RECENTEMENTE - ALTA CHANCE DE CONVERSÃO", icon: PartyPopper },
       { to: "/prospeccao/followups", label: "Follow-ups", icon: CalendarClock, badge: "followups" },
-      { to: "/radar", label: "Radar Diário Oficial", full: "RADAR DIÁRIO OFICIAL - PROMOÇÕES E PROGRESSÕES", icon: Radar },
+      { to: "/radar", label: "Radar Diário Oficial", full: "RADAR DIÁRIO OFICIAL - PROMOÇÕES E PROGRESSÕES", icon: Radar, adminOnly: true },
     ],
   },
   {
