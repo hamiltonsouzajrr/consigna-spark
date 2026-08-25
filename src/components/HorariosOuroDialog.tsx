@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Clock, Sparkles } from "lucide-react";
 
@@ -33,6 +33,9 @@ export function HorariosOuroDialog() {
             <Sparkles className="h-5 w-5 text-warning" />
             ATENÇÃO: HORÁRIOS DE OURO
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Aviso sobre os horários com maior chance de atendimento e conversão.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 text-sm leading-relaxed">

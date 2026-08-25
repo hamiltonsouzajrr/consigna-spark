@@ -9,13 +9,11 @@ export const getProspectConsultants = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ProspectConsultant[]> => {
     const { supabase, userId } = context;
-    const { assertAdmin } = await import("./prospeccao.server");
+    const { assertAdmin, listConsultantUsers } = await import("./prospeccao.server");
     await assertAdmin(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    if (error) throw new Error(error.message);
-    return data.users.map((u) => ({ id: u.id, email: u.email ?? "(sem e-mail)" }));
+    return listConsultantUsers(supabaseAdmin);
   });
 
 export const adminCreateLeads = createServerFn({ method: "POST" })
@@ -37,6 +35,11 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
 
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { assertConsultantIds } = await import("./prospeccao.server");
+    await assertConsultantIds(
+      supabaseAdmin,
+      data.leads.map((l) => l.consultant_id).filter((id): id is string => !!id),
+    );
 
     const batchLabel = (data.batch && data.batch.trim()) || `Importação ${new Date().toISOString().slice(0, 16).replace("T", " ")}`;
     const norm = (v?: string | null) => (v ? v.replace(/\D/g, "") : "");
@@ -162,6 +165,10 @@ export const adminAssignLeads = createServerFn({ method: "POST" })
 
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.consultantId) {
+      const { assertConsultantIds } = await import("./prospeccao.server");
+      await assertConsultantIds(supabaseAdmin, [data.consultantId]);
+    }
     const { error } = await supabaseAdmin
       .from("prospect_leads")
       .update({ consultant_id: data.consultantId } as any)
@@ -291,8 +298,9 @@ async function applyAssignments(
 ): Promise<Record<string, number>> {
   const byCons = new Map<string, string[]>();
   for (const [leadId, cons] of assignment) {
-    if (!byCons.has(cons)) byCons.set(cons, []);
-    byCons.get(cons)!.push(leadId);
+    const bucket = byCons.get(cons) ?? [];
+    bucket.push(leadId);
+    byCons.set(cons, bucket);
   }
   const perConsultant: Record<string, number> = {};
   for (const [cons, leadIds] of byCons) {
@@ -342,8 +350,9 @@ export const adminDistributeLeads = createServerFn({ method: "POST" })
       const cityMap = new Map<string, any[]>();
       for (const l of leads) {
         const c = (l.cidade || "—").toLowerCase().trim();
-        if (!cityMap.has(c)) cityMap.set(c, []);
-        cityMap.get(c)!.push(l);
+        const bucket = cityMap.get(c) ?? [];
+        bucket.push(l);
+        cityMap.set(c, bucket);
       }
       const cities = [...cityMap.entries()].sort((a, b) => b[1].length - a[1].length);
       let ci = 0;
@@ -473,6 +482,8 @@ export const adminRandomRedistribute = createServerFn({ method: "POST" })
       await assertAdmin(supabase, userId);
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { assertConsultantIds } = await import("./prospeccao.server");
+      await assertConsultantIds(supabaseAdmin, data.consultantIds);
       const { data: leads, error } = await supabaseAdmin
         .from("prospect_leads")
         .select("id")

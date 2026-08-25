@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Bell, Clock } from "lucide-react";
 
@@ -59,6 +59,9 @@ export function HorariosOuroReminder() {
             <Bell className="h-5 w-5 text-warning" />
             Horário de Ouro em {LEAD_MINUTES} minutos
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Lembrete para preparar as ligações antes do próximo horário de maior conversão.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-sm">
           <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 font-medium">
