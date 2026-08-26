@@ -74,20 +74,31 @@ function LoginPage() {
         const res = await sendResetByCpf({
           data: { cpf: normalizeCpf(recoverCpf), redirectTo: `${window.location.origin}/reset-password` },
         });
-        if (res.found) {
-          toast.success("Email enviado!", {
-            description: `Enviamos o link de redefinição para ${res.emailMasked}.`,
-            duration: 10000,
-          });
-          setRecovering(false);
-        } else {
+        if (!res.found) {
           toast.error("CPF não encontrado", {
             description: "Não localizamos uma conta com este CPF. Tente pelo e-mail.",
             duration: 8000,
           });
+        } else if (!res.enviado) {
+          toast.error("Não foi possível enviar o e-mail", {
+            description:
+              "O envio de e-mails está indisponível no momento. Fale com o administrador para receber seu link de acesso.",
+            duration: 12000,
+          });
+        } else {
+          toast.success("Email enviado!", {
+            description: `Enviamos o link de redefinição para ${res.emailMasked}. Se não chegar em alguns minutos, peça o link ao administrador.`,
+            duration: 12000,
+          });
+          setRecovering(false);
         }
       } catch (e: any) {
-        toast.error("Não foi possível enviar", { description: e?.message, duration: 8000 });
+        toast.error("Não foi possível enviar", {
+          description:
+            (e?.message ?? "") +
+            " Fale com o administrador para receber seu link de acesso.",
+          duration: 10000,
+        });
       } finally {
         setBusy(false);
       }
@@ -103,15 +114,20 @@ function LoginPage() {
     setBusy(false);
     if (error) {
       const { title, description } = translateError(error);
-      toast.error(title, { description, duration: 8000 });
+      toast.error(title, {
+        description: `${description ?? ""} Se o problema continuar, peça o link de redefinição ao administrador.`,
+        duration: 10000,
+      });
     } else {
       toast.success("Email enviado!", {
-        description: "Se houver uma conta com esse email, você receberá um link para redefinir a senha.",
-        duration: 8000,
+        description:
+          "Se houver uma conta com esse email, você receberá um link para redefinir a senha. Não chegou? Peça o link ao administrador.",
+        duration: 12000,
       });
       setRecovering(false);
     }
   };
+
 
 
   const translateError = (msg: string): { title: string; description?: string } => {
