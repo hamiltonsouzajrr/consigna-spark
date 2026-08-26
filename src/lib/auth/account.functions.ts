@@ -97,7 +97,9 @@ export const resolveResetEmailByCpf = createServerFn({ method: "POST" })
 
 /**
  * Envia o link de redefinição de senha para o e-mail vinculado ao CPF.
- * O e-mail completo nunca é devolvido ao cliente.
+ * O e-mail completo nunca é devolvido ao cliente. Devolve `enviado: false`
+ * quando o provedor de e-mail recusa o envio (ex.: limite por hora), para que
+ * a tela possa orientar a consultora a pedir o link ao administrador.
  */
 export const sendResetByCpf = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
@@ -111,11 +113,20 @@ export const sendResetByCpf = createServerFn({ method: "POST" })
       .eq("cpf", data.cpf)
       .maybeSingle();
 
-    if (!row?.email) return { found: false as const, emailMasked: null };
+    if (!row?.email) return { found: false as const, emailMasked: null, enviado: false, motivo: null };
 
-    await supabaseAdmin.auth.resetPasswordForEmail(row.email, { redirectTo: data.redirectTo });
-    return { found: true as const, emailMasked: maskEmail(row.email) };
+    const { error } = await supabaseAdmin.auth.resetPasswordForEmail(row.email, {
+      redirectTo: data.redirectTo,
+    });
+
+    return {
+      found: true as const,
+      emailMasked: maskEmail(row.email),
+      enviado: !error,
+      motivo: error?.message ?? null,
+    };
   });
+
 
 /** Perfil do usuário logado (nome + CPF). */
 export const getMyProfile = createServerFn({ method: "POST" })

@@ -615,7 +615,14 @@ export const setRhUserBlocked = createServerFn({ method: "POST" })
 
 export const generateRhRecoveryLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ email: z.string().trim().email() }).parse(data))
+  .inputValidator((data) =>
+    z
+      .object({
+        email: z.string().trim().email(),
+        redirectTo: z.string().url().max(500).optional(),
+      })
+      .parse(data),
+  )
   .handler(async ({ context, data }): Promise<{ link: string }> => {
     const { supabase, userId, claims } = context;
     await assertAdmin(supabase, userId);
@@ -624,8 +631,12 @@ export const generateRhRecoveryLink = createServerFn({ method: "POST" })
     const { data: link, error } = await supabaseAdmin.auth.admin.generateLink({
       type: "recovery",
       email: data.email,
-    });
+      ...(data.redirectTo ? { options: { redirectTo: data.redirectTo } } : {}),
+    } as any);
     if (error) throw new Error(error.message);
+
+    const actionLink = (link as any)?.properties?.action_link ?? "";
+    if (!actionLink) throw new Error("Não foi possível gerar o link de redefinição.");
 
     await logAudit(supabaseAdmin, {
       actorId: userId,
@@ -634,8 +645,9 @@ export const generateRhRecoveryLink = createServerFn({ method: "POST" })
       action: "gerou_link_de_redefinicao",
     });
 
-    return { link: (link as any)?.properties?.action_link ?? "" };
+    return { link: actionLink };
   });
+
 
 export const bulkSetRhAccess = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
