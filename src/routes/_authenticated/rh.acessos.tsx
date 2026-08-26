@@ -1175,7 +1175,8 @@ function AcessosPage() {
           <DialogHeader>
             <DialogTitle>Link de redefinição de senha</DialogTitle>
             <DialogDescription>
-              Envie este link para <strong>{linkDialog?.email}</strong>. Ele é de uso único.
+              Envie este link para <strong>{linkDialog?.email}</strong>. Ele é de uso único e leva
+              direto à tela de nova senha.
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2">
@@ -1190,6 +1191,20 @@ function AcessosPage() {
               <Copy className="h-4 w-4" />
             </Button>
           </div>
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => {
+              const texto = `Olá! Para redefinir a senha do sistema Grupo Positive, abra este link (uso único): ${linkDialog?.link ?? ""}`;
+              window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank", "noopener");
+            }}
+          >
+            Enviar por WhatsApp
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            O link expira em cerca de 1 hora. Se expirar, gere um novo.
+          </p>
+
         </DialogContent>
       </Dialog>
 
