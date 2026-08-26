@@ -277,13 +277,17 @@ function AcessosPage() {
   });
 
   const recoveryMutation = useMutation({
-    mutationFn: (email: string) => recoveryLink({ data: { email } }),
+    mutationFn: (email: string) =>
+      recoveryLink({
+        data: { email, redirectTo: `${window.location.origin}/reset-password` },
+      }),
     onSuccess: (res, email) => {
       setLinkDialog({ email, link: res.link });
       queryClient.invalidateQueries({ queryKey: ["rh", "admin", "audit"] });
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao gerar link."),
   });
+
 
   const bulkMutation = useMutation({
     mutationFn: () =>
