@@ -273,6 +273,12 @@ function LoginPage() {
             >
               {busy ? "Aguarde…" : "Enviar link de recuperação"}
             </Button>
+            <p className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">Não recebeu o e-mail?</span> Peça ao
+              administrador para gerar seu link de redefinição de senha — ele envia o link
+              diretamente para você, sem depender de e-mail.
+            </p>
+
             <button
               type="button"
               onClick={() => setRecovering(false)}
