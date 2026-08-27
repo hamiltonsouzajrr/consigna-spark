@@ -607,11 +607,11 @@ function Page() {
             {(dist?.consultoras.length ?? consultoras.length) > 0 && (
               <ul className="divide-y divide-border/60 rounded-lg border border-border/60">
                 {(dist?.consultoras ?? consultoras.map((c) => ({
-                  id: c.id, nome: c.nome, email: c.email ?? null, ativo: c.ativo,
-                  atribuidos: c.total_leads_atribuidos ?? 0, trabalhados: 0,
-                  contador_cadastro: c.total_leads_atribuidos ?? 0,
+                  nome: c.nome, email: c.email ?? null, ativo: c.ativo,
+                  total: c.total_leads_atribuidos ?? 0, abertos: 0,
+                  convertidos: 0, semInteresse: 0, vagasLivres: 0,
                 }))).map((c) => (
-                  <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+                  <li key={c.nome} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{c.nome}</p>
                       <p className="truncate text-xs text-muted-foreground">
@@ -620,22 +620,32 @@ function Page() {
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge className="bg-sky-500/15 text-sky-700 dark:text-sky-300">
-                        {c.atribuidos.toLocaleString("pt-BR")} atribuídos
+                        {c.total.toLocaleString("pt-BR")} atribuídos
                       </Badge>
                       <Badge className="bg-violet-500/15 text-violet-700 dark:text-violet-300">
-                        {c.trabalhados.toLocaleString("pt-BR")} trabalhados
+                        {c.abertos.toLocaleString("pt-BR")} em aberto
                       </Badge>
                       <Badge className={c.ativo ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground"}>
                         {c.ativo ? "Ativa" : "Inativa"}
                       </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-[11px]"
-                        onClick={() => alternarConsultora({ ...(consultoras.find((x) => x.id === c.id) ?? ({} as Consultora)), id: c.id, ativo: c.ativo } as Consultora)}
-                      >
-                        {c.ativo ? "Desativar" : "Ativar"}
-                      </Button>
+                      {(() => {
+                        const cadastro = consultoras.find(
+                          (x) => x.nome.trim().toLowerCase() === c.nome.trim().toLowerCase(),
+                        );
+                        if (!cadastro) return null;
+                        return (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-[11px]"
+                            onClick={() => alternarConsultora(cadastro)}
+                          >
+                            {c.ativo ? "Desativar" : "Ativar"}
+                          </Button>
+                        );
+                      })()}
+                    </div>
+
                     </div>
                   </li>
                 ))}
