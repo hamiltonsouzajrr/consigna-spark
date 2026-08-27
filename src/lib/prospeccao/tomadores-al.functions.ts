@@ -177,11 +177,70 @@ async function bumpContador(client: any, nome: string, novos: number) {
 
 // Dias sem contato para um lead "novo" voltar ao estoque (reciclagem).
 const DIAS_RECICLAGEM = 14;
+// Dias após o "sem interesse" para o tomador poder voltar ao estoque. O
+// histórico do atendimento (motivo e data) é preservado no registro.
+export const DIAS_SEM_INTERESSE_PADRAO = 60;
+
+// Recalcula o contador de cadastro a partir da base real, para o painel admin
+// não mostrar número inflado depois de reposições/reciclagens.
+async function recalcularContador(client: any, nome: string) {
+  const { count } = await client
+    .from("tomadores_al")
+    .select("id", { count: "exact", head: true })
+    .eq("consultora_responsavel", nome);
+  await client
+    .from("radar_consultoras")
+    .update({ total_leads_atribuidos: Number(count ?? 0) })
+    .eq("nome", nome);
+}
+
+// Devolve ao estoque tomadores marcados como "sem interesse" há mais de
+// `dias`, nunca para a mesma consultora que os finalizou. Quando `previa` é
+// true apenas conta quantos seriam elegíveis.
+async function reciclarSemInteresseBase(
+  client: any,
+  opts: { dias: number; quantos: number; previa?: boolean; excluirConsultora?: string | null; faixaRange?: (q: any) => any },
+): Promise<{ elegiveis: number; reciclados: number }> {
+  const limite = new Date(Date.now() - Math.max(1, opts.dias) * 86400000).toISOString();
+  const base = (q: any) => {
+    let out = q.eq("status_abordagem", "sem_interesse").lt("finalizado_em", limite);
+    if (opts.excluirConsultora) out = out.neq("consultora_responsavel", opts.excluirConsultora);
+    return opts.faixaRange ? opts.faixaRange(out) : out;
+  };
+
+  const { count: elegiveis } = await base(
+    client.from("tomadores_al").select("id", { count: "exact", head: true }),
+  );
+
+  if (opts.previa || opts.quantos <= 0) return { elegiveis: Number(elegiveis ?? 0), reciclados: 0 };
+
+  const { data: alvos } = await base(client.from("tomadores_al").select("id"))
+    .order("finalizado_em", { ascending: true })
+    .limit(opts.quantos);
+  const ids = (alvos ?? []).map((r: any) => String(r.id));
+  if (!ids.length) return { elegiveis: Number(elegiveis ?? 0), reciclados: 0 };
+
+  const { data: upd } = await client
+    .from("tomadores_al")
+    .update({
+      consultora_responsavel: null,
+      atribuido_em: null,
+      status_abordagem: "novo",
+      contatado_em: null,
+      finalizado_em: null,
+    })
+    .in("id", ids)
+    .eq("status_abordagem", "sem_interesse")
+    .select("id");
+
+  return { elegiveis: Number(elegiveis ?? 0), reciclados: (upd ?? []).length };
+}
 
 // Quando o estoque livre de uma faixa acaba, devolvemos ao estoque leads que
 // estão parados: presos a consultoras inativas/descadastradas ou nunca
-// contatados há mais de DIAS_RECICLAGEM dias. Assim toda consultora consegue
-// completar as 10 vagas de cada faixa.
+// contatados há mais de DIAS_RECICLAGEM dias. Se ainda faltar, reaproveitamos
+// os "sem interesse" antigos. Assim toda consultora consegue completar as 10
+// vagas de cada faixa.
 async function reciclarFaixa(
   client: any,
   faixaRange: (q: any) => any,
@@ -210,14 +269,28 @@ async function reciclarFaixa(
   });
 
   const ids = candidatos.slice(0, quantos).map((r: any) => String(r.id));
-  if (!ids.length) return;
+  let liberados = 0;
+  if (ids.length) {
+    const { data: upd } = await client
+      .from("tomadores_al")
+      .update({ consultora_responsavel: null, atribuido_em: null })
+      .in("id", ids)
+      .eq("status_abordagem", "novo")
+      .select("id");
+    liberados = (upd ?? []).length;
+  }
 
-  await client
-    .from("tomadores_al")
-    .update({ consultora_responsavel: null, atribuido_em: null })
-    .in("id", ids)
-    .eq("status_abordagem", "novo");
+  const faltam = quantos - liberados;
+  if (faltam > 0) {
+    await reciclarSemInteresseBase(client, {
+      dias: DIAS_SEM_INTERESSE_PADRAO,
+      quantos: faltam,
+      excluirConsultora: nome,
+      faixaRange,
+    });
+  }
 }
+
 
 // Completa a carteira de uma faixa específica de empréstimo até POOL_ALVO.
 async function garantirPoolFaixa(nome: string, faixa: "alta" | "media" | "baixa"): Promise<number> {
