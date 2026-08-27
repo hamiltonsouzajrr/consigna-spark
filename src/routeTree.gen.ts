@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAlagoasRouteImport } from './routes/_authenticated/alagoas'
 import { Route as AuthenticatedCalculadoraAlRouteImport } from './routes/_authenticated/calculadora-al'
 import { Route as AuthenticatedContratoRouteImport } from './routes/_authenticated/contrato'
@@ -107,6 +108,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAlagoasRoute = AuthenticatedAlagoasRouteImport.update({
   id: '/alagoas',
@@ -508,6 +514,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/alagoas': typeof AuthenticatedAlagoasRoute
   '/calculadora-al': typeof AuthenticatedCalculadoraAlRoute
   '/contrato': typeof AuthenticatedContratoRoute
@@ -583,6 +590,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/alagoas': typeof AuthenticatedAlagoasRoute
   '/calculadora-al': typeof AuthenticatedCalculadoraAlRoute
   '/contrato': typeof AuthenticatedContratoRoute
@@ -657,6 +665,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/alagoas': typeof AuthenticatedAlagoasRoute
   '/_authenticated/calculadora-al': typeof AuthenticatedCalculadoraAlRoute
   '/_authenticated/contrato': typeof AuthenticatedContratoRoute
@@ -734,6 +743,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/admin'
     | '/alagoas'
     | '/calculadora-al'
     | '/contrato'
@@ -809,6 +819,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/admin'
     | '/alagoas'
     | '/calculadora-al'
     | '/contrato'
@@ -882,6 +893,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/_authenticated/admin'
     | '/_authenticated/alagoas'
     | '/_authenticated/calculadora-al'
     | '/_authenticated/contrato'
@@ -1007,6 +1019,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/alagoas': {
       id: '/_authenticated/alagoas'
@@ -1619,6 +1638,7 @@ const AuthenticatedProspeccaoAdminRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAlagoasRoute: typeof AuthenticatedAlagoasRoute
   AuthenticatedCalculadoraAlRoute: typeof AuthenticatedCalculadoraAlRoute
   AuthenticatedContratoRoute: typeof AuthenticatedContratoRoute
@@ -1647,6 +1667,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAlagoasRoute: AuthenticatedAlagoasRoute,
   AuthenticatedCalculadoraAlRoute: AuthenticatedCalculadoraAlRoute,
   AuthenticatedContratoRoute: AuthenticatedContratoRoute,
