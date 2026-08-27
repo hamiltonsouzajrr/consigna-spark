@@ -43,7 +43,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   PORTAL_ICON_NAMES, PORTAL_TONES, portalIcon, toneClass,
 } from "@/lib/rh/portal-icons";
-import { getResumoTomadoresAl } from "@/lib/prospeccao/tomadores-al.functions";
+import { getResumoCarteiraTomadores } from "@/lib/prospeccao/tomadores-al.functions";
 
 export const Route = createFileRoute("/_authenticated/rh/portal/")({
   component: PortalIndex,
@@ -89,7 +89,7 @@ function CarteiraLeadsCard({
   onRefresh,
   isAdmin,
 }: {
-  resumo: ReturnType<typeof getResumoTomadoresAl> extends Promise<infer T> ? T | undefined : undefined;
+  resumo: ReturnType<typeof getResumoCarteiraTomadores> extends Promise<infer T> ? T | undefined : undefined;
   loading: boolean;
   onRefresh: () => void;
   isAdmin: boolean;
@@ -205,7 +205,7 @@ function PortalIndex() {
   const isAdmin = content?.isAdmin ?? false;
   const invalidate = () => qc.invalidateQueries({ queryKey: ["rh", "portal-content"] });
 
-  const fetchResumoTomadores = useServerFn(getResumoTomadoresAl);
+  const fetchResumoTomadores = useServerFn(getResumoCarteiraTomadores);
   const { data: resumoTomadores, isLoading: resumoTomadoresLoading, refetch: refetchResumoTomadores } = useQuery({
     queryKey: ["tomadores-al", "resumo-portal"],
     queryFn: () => fetchResumoTomadores(),
