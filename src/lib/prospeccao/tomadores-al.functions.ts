@@ -704,7 +704,7 @@ export const getDistribuicaoTomadoresAl = createServerFn({ method: "POST" })
 
     for (const r of rows) {
       total += 1;
-      const faixa = faixaDaMargem(r.margem_disp_emprestimo, "emprestimo");
+      const faixa = faixaDaMargem(r.margem_disp_emprestimo, "emprestimo") as keyof FaixaContagem;
       const status = String(r.status_abordagem ?? "novo");
       const aberto = STATUS_ABERTOS.includes(status);
       const fim = STATUS_FINALIZADOS.includes(status);
