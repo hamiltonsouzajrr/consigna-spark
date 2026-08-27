@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Shuffle, RefreshCw, Dices, Eraser, Scale, TrendingUp } from "lucide-react";
+import { Shuffle, RefreshCw, Dices, Eraser, Scale, TrendingUp, UserX } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   redistribuirPromovidosPorDesempenho,
   getResumoCarteiras,
 } from "@/lib/radar/promovidos-recentes.functions";
+import { revogarAcessosInativosTomadoresAl } from "@/lib/prospeccao/tomadores-al.functions";
 import { previewSplit } from "@/lib/prospeccao/admin-import";
 
 type Consultant = { id: string; email: string };
@@ -66,6 +67,7 @@ export function DistribuicaoTab({
   const [pesoMax, setPesoMax] = useState(4);
   const [statusSel, setStatusSel] = useState<Set<string>>(new Set(["novo"]));
   const [somenteNaoContatados, setSomenteNaoContatados] = useState(true);
+  const revogarInativos = useServerFn(revogarAcessosInativosTomadoresAl);
 
   const toggleStatus = (key: string) =>
     setStatusSel((prev) => {
@@ -172,6 +174,25 @@ export function DistribuicaoTab({
       else toast.success(`${d.recycled} lead(s) reciclado(s) para ${Object.keys(d.perConsultant).length} consultora(s).`);
       qc.invalidateQueries({ queryKey: ["prospect"] });
     } catch (e) { toast.error(e instanceof Error ? e.message : "Falha ao reciclar."); }
+    setBusy(false);
+  };
+
+  const runRevogarInativos = async () => {
+    setBusy(true);
+    try {
+      const d = await revogarInativos();
+      if (d.acessosRevogados === 0 && d.leadsReciclados === 0) {
+        toast.info("Nenhum acesso parado há 10+ dias encontrado.");
+      } else {
+        toast.success(
+          `${d.acessosRevogados} acesso(s) revogado(s) · ${d.leadsReciclados} lead(s) reciclado(s) · ${d.distribuidos} distribuído(s) entre ${d.consultorasAtivas} consultora(s) ativa(s).`,
+        );
+      }
+      resumo.refetch();
+      qc.invalidateQueries({ queryKey: ["prospect"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao revogar acessos inativos.");
+    }
     setBusy(false);
   };
 
@@ -405,7 +426,25 @@ export function DistribuicaoTab({
           </div>
         </div>
 
-
+        <div className="rounded-lg border border-destructive/40 p-4">
+          <p className="mb-2 text-sm font-medium text-destructive">Revogar acessos inativos (Tomadores AL)</p>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Bloqueia o login de consultoras sem acesso há 10 dias ou mais (bloqueio reversível, a
+            conta não é excluída), devolve ao estoque os leads de Tomadores com Margem – AL que
+            ficaram parados com elas e distribui na hora entre as consultoras que continuam ativas.
+          </p>
+          <ConfirmDialog
+            title="Revogar acessos parados há 10+ dias?"
+            description="Consultoras sem login há 10 dias ou mais perdem o acesso (bloqueio reversível), ficam inativas na distribuição e os leads em aberto que estavam com elas voltam para o estoque e são redistribuídos agora entre quem está ativo."
+            confirmLabel="Revogar e reciclar"
+            destructive
+            onConfirm={runRevogarInativos}
+          >
+            <Button className="mt-3 w-full" variant="destructive" disabled={busy}>
+              <UserX className="mr-2 h-4 w-4" /> Revogar acessos parados e reciclar
+            </Button>
+          </ConfirmDialog>
+        </div>
 
         <div className="rounded-lg border border-destructive/40 p-4">
           <p className="mb-2 text-sm font-medium text-destructive">Limpar vínculos e acessos</p>
