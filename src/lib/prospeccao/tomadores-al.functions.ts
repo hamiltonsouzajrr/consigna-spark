@@ -715,9 +715,15 @@ export type ResumoCarteira = {
 
 export const getResumoCarteiraTomadores = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<ResumoCarteira> => {
+  .inputValidator((data) =>
+    z.object({ consultora: z.string().trim().min(1).optional() }).parse(data ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<ResumoCarteira> => {
     const admin = await isAdmin(context.supabase, context.userId);
-    const minha = await nomeConsultora(context.supabase, context.claims, !admin);
+    // Admin pode inspecionar a carteira de uma consultora específica.
+    const minha = admin && data.consultora
+      ? data.consultora
+      : await nomeConsultora(context.supabase, context.claims, !admin);
     const client = await getAdminClient();
 
     const contar = async (aplicar: (q: any) => any) => {
@@ -893,3 +899,6 @@ export const importarConsultorasDosAcessos = createServerFn({ method: "POST" })
 
     return { criadas, atualizadas, total: Number(count ?? 0) };
   });
+
+// Alias mantido para telas que já consumiam este nome (Portal do Colaborador).
+export const getResumoTomadoresAl = getResumoCarteiraTomadores;
