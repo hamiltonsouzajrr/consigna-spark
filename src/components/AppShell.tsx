@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LogOut, BadgeDollarSign, Calculator, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, PhoneCall, Flame, CalendarClock, Home, Trophy, Star, MessageSquare, Clock, Sparkles, Radar, Wallet, PartyPopper } from "lucide-react";
+import { LogOut, BadgeDollarSign, Calculator, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, PhoneCall, Flame, CalendarClock, Home, Trophy, Star, MessageSquare, Clock, Sparkles, Radar, Wallet, PartyPopper, LayoutDashboard } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -64,6 +64,7 @@ const navSections: NavSection[] = [
   {
     section: "Painel",
     items: [
+      { to: "/admin", label: "Administração", full: "PAINEL CENTRAL DE ADMINISTRAÇÃO", icon: LayoutDashboard, adminOnly: true },
       { to: "/rh", label: "RH", icon: Users },
       { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
     ],
