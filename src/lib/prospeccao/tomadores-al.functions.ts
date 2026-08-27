@@ -804,3 +804,81 @@ export const getDistribuicaoTomadoresAl = createServerFn({ method: "POST" })
       consultoras,
     };
   });
+
+// Revoga o acesso das consultoras sem login há DIAS_ACESSO_INATIVO dias ou
+// mais (bloqueio reversível, a conta não é excluída), marca a consultora como
+// inativa e devolve ao estoque os leads em aberto que estavam parados com ela —
+// em seguida distribui tudo na hora entre quem continua ativo.
+export const revogarAcessosInativosTomadoresAl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(
+    async ({
+      context,
+    }): Promise<{
+      acessosRevogados: number;
+      leadsReciclados: number;
+      distribuidos: number;
+      consultorasAtivas: number;
+    }> => {
+      if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Apenas administradores.");
+      const client = await getAdminClient();
+
+      const { data: consultoras, error } = await client
+        .from("radar_consultoras")
+        .select("id,nome,email")
+        .eq("ativo", true);
+      if (error) throw new Error(error.message);
+
+      const { data: usersData, error: usersErr } = await client.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      });
+      if (usersErr) throw new Error(usersErr.message);
+      const porEmail = new Map<string, any>();
+      for (const u of usersData.users) {
+        if (u.email) porEmail.set(String(u.email).toLowerCase(), u);
+      }
+
+      const limite = Date.now() - DIAS_ACESSO_INATIVO * 86400000;
+      const inativas: { id: string; nome: string; userId: string | null }[] = [];
+      for (const c of (consultoras ?? []) as any[]) {
+        const email = String(c.email ?? "").trim().toLowerCase();
+        if (!email) continue;
+        const u = porEmail.get(email);
+        if (!u) continue; // sem conta vinculada, nada a revogar
+        const referencia = (u as any).last_sign_in_at ?? u.created_at;
+        const ultimo = referencia ? new Date(referencia).getTime() : 0;
+        if (ultimo < limite) inativas.push({ id: c.id, nome: String(c.nome).trim(), userId: u.id });
+      }
+
+      let acessosRevogados = 0;
+      let leadsReciclados = 0;
+
+      for (const c of inativas) {
+        if (c.userId) {
+          const { error: banErr } = await client.auth.admin.updateUserById(c.userId, {
+            ban_duration: "876000h",
+          } as any);
+          if (!banErr) acessosRevogados++;
+        }
+        await client.from("radar_consultoras").update({ ativo: false }).eq("id", c.id);
+
+        const { data: upd } = await client
+          .from("tomadores_al")
+          .update({
+            consultora_responsavel: null,
+            atribuido_em: null,
+            status_abordagem: "novo",
+            contatado_em: null,
+          })
+          .eq("consultora_responsavel", c.nome)
+          .in("status_abordagem", ["novo", "contatado", "proposta_enviada"])
+          .select("id");
+        leadsReciclados += (upd ?? []).length;
+      }
+
+      const { atribuidos, consultoras: consultorasAtivas } = await reporTodasCarteiras();
+
+      return { acessosRevogados, leadsReciclados, distribuidos: atribuidos, consultorasAtivas };
+    },
+  );
