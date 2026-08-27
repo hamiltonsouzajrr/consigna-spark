@@ -646,7 +646,6 @@ function Page() {
                       })()}
                     </div>
 
-                    </div>
                   </li>
                 ))}
               </ul>
