@@ -698,3 +698,198 @@ export const revogarAcessosInativosTomadoresAl = createServerFn({ method: "POST"
       return { acessosRevogados, leadsReciclados, distribuidos: atribuidos, consultorasAtivas };
     },
   );
+
+// Resumo da carteira da consultora logada (usado na aba e no Portal do
+// Colaborador): quantos estão em aberto, finalizados e quantas vagas faltam.
+export type ResumoCarteira = {
+  consultoraNome: string | null;
+  pendentes: number;
+  emAndamento: number;
+  convertidos: number;
+  semInteresse: number;
+  ativos: number;
+  vagasLivres: number;
+  totalAtribuidos: number;
+  estoque: number;
+};
+
+export const getResumoCarteiraTomadores = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ResumoCarteira> => {
+    const admin = await isAdmin(context.supabase, context.userId);
+    const minha = await nomeConsultora(context.supabase, context.claims, !admin);
+    const client = await getAdminClient();
+
+    const contar = async (aplicar: (q: any) => any) => {
+      const { count } = await aplicar(
+        client.from("tomadores_al").select("id", { count: "exact", head: true }),
+      );
+      return Number(count ?? 0);
+    };
+
+    const { count: estoqueCount } = await client
+      .from("tomadores_al")
+      .select("id", { count: "exact", head: true })
+      .is("consultora_responsavel", null);
+    const estoque = Number(estoqueCount ?? 0);
+
+    if (!minha) {
+      return {
+        consultoraNome: null,
+        pendentes: 0,
+        emAndamento: 0,
+        convertidos: 0,
+        semInteresse: 0,
+        ativos: 0,
+        vagasLivres: POOL_TOTAL,
+        totalAtribuidos: 0,
+        estoque,
+      };
+    }
+
+    const meus = (q: any) => q.eq("consultora_responsavel", minha);
+    const pendentes = await contar((q) => meus(q).eq("status_abordagem", "novo"));
+    const emAndamento = await contar((q) =>
+      meus(q).in("status_abordagem", ["contatado", "proposta_enviada"]),
+    );
+    const convertidos = await contar((q) => meus(q).eq("status_abordagem", "convertido"));
+    const semInteresse = await contar((q) => meus(q).eq("status_abordagem", "sem_interesse"));
+    const totalAtribuidos = await contar((q) => meus(q));
+    const ativos = pendentes + emAndamento;
+
+    return {
+      consultoraNome: minha,
+      pendentes,
+      emAndamento,
+      convertidos,
+      semInteresse,
+      ativos,
+      vagasLivres: Math.max(0, POOL_TOTAL - ativos),
+      totalAtribuidos,
+      estoque,
+    };
+  });
+
+// Painel admin: quantos tomadores cada consultora recebeu, quantos já foram
+// trabalhados e quantos seguem sem responsável após a distribuição.
+export type DistribuicaoConsultora = {
+  id: string;
+  nome: string;
+  email: string | null;
+  ativo: boolean;
+  atribuidos: number;
+  trabalhados: number;
+  contador_cadastro: number;
+};
+
+export const getDistribuicaoTomadoresAl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(
+    async ({
+      context,
+    }): Promise<{
+      total: number;
+      semResponsavel: number;
+      atribuidos: number;
+      orfaos: number;
+      consultoras: DistribuicaoConsultora[];
+    }> => {
+      if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Apenas administradores.");
+      const client = await getAdminClient();
+
+      const { data: cs, error: cErr } = await client
+        .from("radar_consultoras")
+        .select("id,nome,email,ativo,total_leads_atribuidos")
+        .order("nome");
+      if (cErr) throw new Error(cErr.message);
+
+      const contar = async (aplicar: (q: any) => any) => {
+        const { count } = await aplicar(
+          client.from("tomadores_al").select("id", { count: "exact", head: true }),
+        );
+        return Number(count ?? 0);
+      };
+
+      const total = await contar((q) => q);
+      const semResponsavel = await contar((q) => q.is("consultora_responsavel", null));
+      const atribuidos = total - semResponsavel;
+
+      const nomesValidos = new Set(
+        (cs ?? []).map((c: any) => String(c.nome ?? "").trim()).filter(Boolean),
+      );
+
+      const consultoras: DistribuicaoConsultora[] = [];
+      let somaAtribuidos = 0;
+      for (const c of (cs ?? []) as any[]) {
+        const nome = String(c.nome ?? "").trim();
+        const meus = (q: any) => q.eq("consultora_responsavel", nome);
+        const qtd = nome ? await contar(meus) : 0;
+        const trabalhados = nome
+          ? await contar((q) => meus(q).neq("status_abordagem", "novo"))
+          : 0;
+        somaAtribuidos += qtd;
+        consultoras.push({
+          id: String(c.id),
+          nome,
+          email: c.email ?? null,
+          ativo: !!c.ativo,
+          atribuidos: qtd,
+          trabalhados,
+          contador_cadastro: Number(c.total_leads_atribuidos ?? 0),
+        });
+      }
+
+      const orfaos = Math.max(0, atribuidos - somaAtribuidos);
+      void nomesValidos;
+
+      return { total, semResponsavel, atribuidos, orfaos, consultoras };
+    },
+  );
+
+// Cria/atualiza cadastros em radar_consultoras a partir das contas de acesso
+// existentes, para não ser preciso digitar cada consultora manualmente.
+export const importarConsultorasDosAcessos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ criadas: number; atualizadas: number; total: number }> => {
+    if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Apenas administradores.");
+    const client = await getAdminClient();
+
+    const { data: usersData, error: usersErr } = await client.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+    if (usersErr) throw new Error(usersErr.message);
+
+    const { data: existentes } = await client.from("radar_consultoras").select("id,nome,email");
+    const porEmail = new Map<string, any>();
+    for (const c of (existentes ?? []) as any[]) {
+      const e = String(c.email ?? "").trim().toLowerCase();
+      if (e) porEmail.set(e, c);
+    }
+
+    let criadas = 0;
+    let atualizadas = 0;
+    for (const u of usersData.users) {
+      const email = String(u.email ?? "").trim().toLowerCase();
+      if (!email) continue;
+      const nome = nomeDoEmail(email);
+      const atual = porEmail.get(email);
+      if (atual) {
+        if (!atual.nome) {
+          await client.from("radar_consultoras").update({ nome }).eq("id", atual.id);
+          atualizadas++;
+        }
+        continue;
+      }
+      const { error } = await client
+        .from("radar_consultoras")
+        .insert({ nome, email, ativo: true, total_leads_atribuidos: 0 });
+      if (!error) criadas++;
+    }
+
+    const { count } = await client
+      .from("radar_consultoras")
+      .select("id", { count: "exact", head: true });
+
+    return { criadas, atualizadas, total: Number(count ?? 0) };
+  });
