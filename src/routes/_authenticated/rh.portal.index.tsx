@@ -94,12 +94,13 @@ function CarteiraLeadsCard({
   onRefresh: () => void;
   isAdmin: boolean;
 }) {
-  const ativos = resumo?.ativos ?? 0;
+  const ativos = (resumo?.pendentes ?? 0) + (resumo?.emAndamento ?? 0);
   const convertidos = resumo?.convertidos ?? 0;
   const semInteresse = resumo?.semInteresse ?? 0;
   const vagasLivres = resumo?.vagasLivres ?? 0;
-  const estoque = resumo?.estoque ?? 0;
-  const totalAtribuidos = resumo?.totalAtribuidos ?? 0;
+  const estoque = 0;
+  const totalAtribuidos = ativos + convertidos + semInteresse;
+
   const consultoraNome = resumo?.consultoraNome ?? null;
 
   const poolAlvo = 30; // 10 leads em aberto por faixa (alta, média, baixa)
