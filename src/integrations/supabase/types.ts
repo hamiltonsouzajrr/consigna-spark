@@ -1245,6 +1245,7 @@ export type Database = {
           email: string | null
           id: string
           nome_completo: string
+          senha_temporaria: boolean
           updated_at: string
           user_id: string
         }
@@ -1254,6 +1255,7 @@ export type Database = {
           email?: string | null
           id?: string
           nome_completo: string
+          senha_temporaria?: boolean
           updated_at?: string
           user_id: string
         }
@@ -1263,6 +1265,7 @@ export type Database = {
           email?: string | null
           id?: string
           nome_completo?: string
+          senha_temporaria?: boolean
           updated_at?: string
           user_id?: string
         }
