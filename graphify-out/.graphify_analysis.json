@@ -1,14 +1,20 @@
 {
   "communities": {
     "0": [
+      "src_routes_authenticated_admin_route",
       "src_routes_authenticated_contrato_route",
       "src_routes_authenticated_pos_venda_avaliacoes_route",
+      "src_routes_authenticated_producao_competicao_route",
+      "src_routes_authenticated_producao_metas_route",
+      "src_routes_authenticated_producao_meu_dia_route",
+      "src_routes_authenticated_producao_ranking_route",
       "src_routes_authenticated_prospeccao_admin_leads_route",
       "src_routes_authenticated_prospeccao_admin_route",
-      "src_routes_authenticated_prospeccao_index_route",
-      "src_routes_authenticated_prospeccao_leadid_route",
+      "src_routes_authenticated_prospeccao_promovidos_recentes_route",
       "src_routes_authenticated_prospeccao_qualidade_route",
       "src_routes_authenticated_prospeccao_recentes_route",
+      "src_routes_authenticated_radar_importar_route",
+      "src_routes_authenticated_radar_route",
       "src_routes_authenticated_rh_avaliacoes_route",
       "src_routes_authenticated_rh_banco_horas_route",
       "src_routes_authenticated_rh_cargos_route",
@@ -30,7 +36,7 @@
       "src_routes_authenticated_rh_recrutamento_route",
       "src_routes_authenticated_rh_treinamentos_route",
       "src_routes_authenticated_rh_turnover_route",
-      "src_routes_authenticated_route_route",
+      "src_routes_authenticated_servidores_sem_acesso_route",
       "src_routes_authenticated_simulacao_alagoas_route",
       "src_routes_consultora_token_route",
       "src_routes_reset_password_route",
@@ -231,7 +237,9 @@
       "src_components_ui_command_commanditem",
       "src_components_ui_command_commandlist",
       "src_components_ui_command_commandseparator",
-      "src_components_ui_command_commandshortcut"
+      "src_components_ui_command_commandshortcut",
+      "src_components_ui_spinner",
+      "src_components_ui_spinner_spinner"
     ],
     "2": [
       "src_components_ui_accordion",
@@ -247,6 +255,7 @@
       "src_components_ui_breadcrumb_breadcrumblist",
       "src_components_ui_breadcrumb_breadcrumbpage",
       "src_components_ui_breadcrumb_breadcrumbseparator",
+      "src_components_ui_button_buttonprops",
       "src_components_ui_card_cardfooter",
       "src_components_ui_context_menu",
       "src_components_ui_context_menu_contextmenucheckboxitem",
@@ -266,11 +275,6 @@
       "src_components_ui_drawer_drawerheader",
       "src_components_ui_drawer_draweroverlay",
       "src_components_ui_drawer_drawertitle",
-      "src_components_ui_input_otp",
-      "src_components_ui_input_otp_inputotp",
-      "src_components_ui_input_otp_inputotpgroup",
-      "src_components_ui_input_otp_inputotpseparator",
-      "src_components_ui_input_otp_inputotpslot",
       "src_components_ui_menubar",
       "src_components_ui_menubar_menubar",
       "src_components_ui_menubar_menubarcheckboxitem",
@@ -288,14 +292,15 @@
       "src_components_ui_menubar_menubarsubcontent",
       "src_components_ui_menubar_menubarsubtrigger",
       "src_components_ui_menubar_menubartrigger",
-      "src_components_ui_navigation_menu",
-      "src_components_ui_navigation_menu_navigationmenu",
-      "src_components_ui_navigation_menu_navigationmenucontent",
-      "src_components_ui_navigation_menu_navigationmenuindicator",
-      "src_components_ui_navigation_menu_navigationmenulist",
-      "src_components_ui_navigation_menu_navigationmenutrigger",
-      "src_components_ui_navigation_menu_navigationmenutriggerstyle",
-      "src_components_ui_navigation_menu_navigationmenuviewport",
+      "src_components_ui_pagination",
+      "src_components_ui_pagination_pagination",
+      "src_components_ui_pagination_paginationcontent",
+      "src_components_ui_pagination_paginationellipsis",
+      "src_components_ui_pagination_paginationitem",
+      "src_components_ui_pagination_paginationlink",
+      "src_components_ui_pagination_paginationlinkprops",
+      "src_components_ui_pagination_paginationnext",
+      "src_components_ui_pagination_paginationprevious",
       "src_components_ui_radio_group",
       "src_components_ui_radio_group_radiogroup",
       "src_components_ui_radio_group_radiogroupitem",
@@ -378,6 +383,287 @@
       "src_routes_authenticated_tomadores_al_route"
     ],
     "4": [
+      "src_components_auth_primeiroacessodialog",
+      "src_components_auth_primeiroacessodialog_itens",
+      "src_components_auth_primeiroacessodialog_props",
+      "src_components_horariosourodialog",
+      "src_components_horariosourodialog_horariosourodialog",
+      "src_components_horariosouroreminder",
+      "src_components_horariosouroreminder_firedmap",
+      "src_components_horariosouroreminder_golden_hours",
+      "src_components_horariosouroreminder_horariosouroreminder",
+      "src_components_horariosouroreminder_loadfired",
+      "src_components_horariosouroreminder_savefired",
+      "src_components_horariosouroreminder_todaykey",
+      "src_components_prospeccao_callqualitydialog",
+      "src_components_prospeccao_callqualitydialog_status",
+      "src_components_prospeccao_competicaopopup",
+      "src_components_prospeccao_competicaopopup_competicaopopup",
+      "src_components_prospeccao_competicaopopup_fechamento",
+      "src_components_prospeccao_competicaopopup_tocarsom",
+      "src_components_prospeccao_promovidospopup",
+      "src_components_prospeccao_promovidospopup_javistohoje",
+      "src_components_prospeccao_promovidospopup_promovidospopup",
+      "src_components_rh_elogiospopup",
+      "src_components_rh_importproducaodialog",
+      "src_components_rh_importproducaodialog_parsedrow",
+      "src_components_rh_reconhecimentospopup",
+      "src_components_rh_reconhecimentospopup_isactive",
+      "src_components_rh_reconhecimentospopup_reconhecimentospopup",
+      "src_components_rh_reconhecimentospopup_tipocor",
+      "src_components_security_incidentestab",
+      "src_components_security_simultaneousaccessalert",
+      "src_components_security_simultaneousaccessalert_simultaneousaccessalert",
+      "src_components_ui_avatar",
+      "src_components_ui_avatar_avatar",
+      "src_components_ui_avatar_avatarfallback",
+      "src_components_ui_badge",
+      "src_components_ui_badge_badge",
+      "src_components_ui_badge_badgeprops",
+      "src_components_ui_badge_badgevariants",
+      "src_components_ui_button",
+      "src_components_ui_button_button",
+      "src_components_ui_dialog",
+      "src_components_ui_dialog_dialogcontent",
+      "src_components_ui_dialog_dialogdescription",
+      "src_components_ui_dialog_dialogfooter",
+      "src_components_ui_dialog_dialogheader",
+      "src_components_ui_dialog_dialogoverlay",
+      "src_components_ui_dialog_dialogtitle",
+      "src_routes_authenticated_prospeccao_admin_leads",
+      "src_routes_authenticated_prospeccao_admin_leads_leadsadminpage",
+      "src_routes_authenticated_rh_reconhecimentos",
+      "src_routes_authenticated_rh_reconhecimentos_emptyform",
+      "src_routes_authenticated_rh_reconhecimentos_formstate",
+      "src_routes_authenticated_rh_reconhecimentos_periodicidadelabel",
+      "src_routes_authenticated_rh_reconhecimentos_reconhecimentos",
+      "src_routes_authenticated_rh_reconhecimentos_tipocor",
+      "src_routes_authenticated_rh_reconhecimentos_todaystr"
+    ],
+    "5": [
+      "src_components_prospeccao_admin_confirmdialog",
+      "src_components_prospeccao_admin_confirmdialog_props",
+      "src_components_rh_rhlayout",
+      "src_components_rh_rhlayout_admin_only",
+      "src_components_rh_rhlayout_rhadminnav",
+      "src_components_rh_rhlayout_rhpageheader",
+      "src_components_rh_rhlayout_statusbadge",
+      "src_components_rh_rhlayout_statusstyles",
+      "src_components_ui_alert_dialog",
+      "src_components_ui_alert_dialog_alertdialogaction",
+      "src_components_ui_alert_dialog_alertdialogcancel",
+      "src_components_ui_alert_dialog_alertdialogcontent",
+      "src_components_ui_alert_dialog_alertdialogdescription",
+      "src_components_ui_alert_dialog_alertdialogfooter",
+      "src_components_ui_alert_dialog_alertdialogheader",
+      "src_components_ui_alert_dialog_alertdialogtitle",
+      "src_components_ui_button_buttonvariants",
+      "src_lib_rh_export",
+      "src_lib_rh_export_exportexcel",
+      "src_lib_rh_export_exportpdf",
+      "src_lib_rh_mock_cargos",
+      "src_routes_authenticated_rh_banco_horas",
+      "src_routes_authenticated_rh_banco_horas_grafico",
+      "src_routes_authenticated_rh_colaboradores",
+      "src_routes_authenticated_rh_colaboradores_colaboradores",
+      "src_routes_authenticated_rh_colaboradores_novocolaboradordialog",
+      "src_routes_authenticated_rh_colaboradores_sortkey",
+      "src_routes_authenticated_rh_equipamentos",
+      "src_routes_authenticated_rh_equipamentos_emptyform",
+      "src_routes_authenticated_rh_equipamentos_equipstatus",
+      "src_routes_authenticated_rh_equipamentos_formstate",
+      "src_routes_authenticated_rh_equipamentos_status_options",
+      "src_routes_authenticated_rh_holerites",
+      "src_routes_authenticated_rh_ocorrencias",
+      "src_routes_authenticated_rh_ocorrencias_emptyform",
+      "src_routes_authenticated_rh_ocorrencias_formstate",
+      "src_routes_authenticated_rh_ocorrencias_ocorrencias",
+      "src_routes_authenticated_rh_ocorrencias_todaystr",
+      "src_routes_authenticated_rh_okrs",
+      "src_routes_authenticated_rh_okrs_avgprogress",
+      "src_routes_authenticated_rh_okrs_emptyform",
+      "src_routes_authenticated_rh_okrs_formstate",
+      "src_routes_authenticated_rh_okrs_kr",
+      "src_routes_authenticated_rh_okrs_niveis",
+      "src_routes_authenticated_rh_okrs_okrs",
+      "src_routes_authenticated_rh_onboarding",
+      "src_routes_authenticated_rh_onboarding_emptyform",
+      "src_routes_authenticated_rh_onboarding_formstate",
+      "src_routes_authenticated_rh_onboarding_onboardingpage",
+      "src_routes_authenticated_rh_onboarding_tarefas_padrao",
+      "src_routes_authenticated_rh_treinamentos",
+      "src_routes_authenticated_rh_treinamentos_emptyform",
+      "src_routes_authenticated_rh_treinamentos_formstate",
+      "src_routes_authenticated_rh_treinamentos_status_options",
+      "src_routes_authenticated_rh_treinamentos_treinostatus"
+    ],
+    "6": [
+      "src_components_prospeccao_callqualitydialog_callqualitydialog",
+      "src_components_prospeccao_callqualitydialog_callqualityfilters",
+      "src_components_prospeccao_callqualitydialog_datahora",
+      "src_components_prospeccao_crmcockpit",
+      "src_components_prospeccao_crmcockpit_crmcockpit",
+      "src_components_prospeccao_crmcockpit_followup",
+      "src_components_prospeccao_crmcockpit_hora",
+      "src_components_prospeccao_crmcockpit_ministat",
+      "src_components_prospeccao_crmcockpit_prod",
+      "src_components_prospeccao_crmcockpit_props",
+      "src_components_prospeccao_leadtimeline",
+      "src_components_prospeccao_leadtimeline_icons",
+      "src_components_prospeccao_leadtimeline_leadtimeline",
+      "src_components_prospeccao_leadtimeline_quando",
+      "src_components_prospeccao_leadtimeline_tones",
+      "src_lib_prospeccao_competicao_fechar_server",
+      "src_lib_prospeccao_competicao_fechar_server_fecharresultado",
+      "src_lib_prospeccao_competicao_fechar_server_fecharsemana",
+      "src_lib_prospeccao_competicao_functions",
+      "src_lib_prospeccao_competicao_functions_adminanularponto",
+      "src_lib_prospeccao_competicao_functions_admindefinirpremio",
+      "src_lib_prospeccao_competicao_functions_adminextratopontos",
+      "src_lib_prospeccao_competicao_functions_adminfecharsemana",
+      "src_lib_prospeccao_competicao_functions_agendarfollowup",
+      "src_lib_prospeccao_competicao_functions_competicaodata",
+      "src_lib_prospeccao_competicao_functions_concluirfollowup",
+      "src_lib_prospeccao_competicao_functions_getcompeticao",
+      "src_lib_prospeccao_competicao_functions_getfechamentopendente",
+      "src_lib_prospeccao_competicao_functions_pontoextrato",
+      "src_lib_prospeccao_competicao_functions_pularfollowup",
+      "src_lib_prospeccao_competicao_functions_reagendarfollowup",
+      "src_lib_prospeccao_competicao_functions_registrarcontato",
+      "src_lib_prospeccao_competicao_functions_registrarqualificacao",
+      "src_lib_prospeccao_competicao_server",
+      "src_lib_prospeccao_competicao_server_admin",
+      "src_lib_prospeccao_competicao_server_assertnaoadmin",
+      "src_lib_prospeccao_competicao_server_categoria",
+      "src_lib_prospeccao_competicao_server_closesat",
+      "src_lib_prospeccao_competicao_server_contato_cooldown_ms",
+      "src_lib_prospeccao_competicao_server_contatohoje",
+      "src_lib_prospeccao_competicao_server_cooldownliberado",
+      "src_lib_prospeccao_competicao_server_creditar",
+      "src_lib_prospeccao_competicao_server_estornar",
+      "src_lib_prospeccao_competicao_server_garantirsemana",
+      "src_lib_prospeccao_competicao_server_isadminuser",
+      "src_lib_prospeccao_competicao_server_pontos",
+      "src_lib_prospeccao_competicao_server_primeirocontatoem",
+      "src_lib_prospeccao_competicao_server_qualificacao_min_apos_contato_ms",
+      "src_lib_prospeccao_competicao_server_ranking",
+      "src_lib_prospeccao_competicao_server_rankingrow",
+      "src_lib_prospeccao_competicao_server_teto_diario",
+      "src_lib_prospeccao_competicao_server_weekstart",
+      "src_lib_prospeccao_prospeccao_functions_getleadtimeline",
+      "src_routes_api_public_hooks_competicao_fechar",
+      "src_routes_api_public_hooks_competicao_fechar_route"
+    ],
+    "7": [
+      "src_integrations_supabase_client_server",
+      "src_integrations_supabase_client_server_createsupabaseadminclient",
+      "src_lib_prospeccao_leads_admin_functions",
+      "src_lib_prospeccao_leads_admin_functions_assignbatchtoconsultant",
+      "src_lib_prospeccao_leads_admin_functions_createleadbatch",
+      "src_lib_prospeccao_leads_admin_functions_getleadbatches",
+      "src_lib_prospeccao_leads_admin_functions_getleadsbybatch",
+      "src_lib_prospeccao_leads_admin_functions_processleadchunk",
+      "src_lib_prospeccao_prospeccao_functions",
+      "src_lib_prospeccao_prospeccao_functions_adminassignleads",
+      "src_lib_prospeccao_prospeccao_functions_admincreateleads",
+      "src_lib_prospeccao_prospeccao_functions_admindeleteimportbatch",
+      "src_lib_prospeccao_prospeccao_functions_admindeletesystemuser",
+      "src_lib_prospeccao_prospeccao_functions_admindistributeleads",
+      "src_lib_prospeccao_prospeccao_functions_adminlistimportbatches",
+      "src_lib_prospeccao_prospeccao_functions_adminlistsystemusers",
+      "src_lib_prospeccao_prospeccao_functions_adminrandomredistribute",
+      "src_lib_prospeccao_prospeccao_functions_adminrecycleleads",
+      "src_lib_prospeccao_prospeccao_functions_adminresetallaccess",
+      "src_lib_prospeccao_prospeccao_functions_adminsetuserrole",
+      "src_lib_prospeccao_prospeccao_functions_adminstats",
+      "src_lib_prospeccao_prospeccao_functions_aileadassist",
+      "src_lib_prospeccao_prospeccao_functions_answered_outcomes",
+      "src_lib_prospeccao_prospeccao_functions_applyassignments",
+      "src_lib_prospeccao_prospeccao_functions_calldetailrow",
+      "src_lib_prospeccao_prospeccao_functions_callqualitystats",
+      "src_lib_prospeccao_prospeccao_functions_getadminstats",
+      "src_lib_prospeccao_prospeccao_functions_getcallqualitystats",
+      "src_lib_prospeccao_prospeccao_functions_getmycalldetails",
+      "src_lib_prospeccao_prospeccao_functions_getmycallquality",
+      "src_lib_prospeccao_prospeccao_functions_getprospectconsultants",
+      "src_lib_prospeccao_prospeccao_functions_importbatch",
+      "src_lib_prospeccao_prospeccao_functions_leadtimelineitem",
+      "src_lib_prospeccao_prospeccao_functions_markleadopened",
+      "src_lib_prospeccao_prospeccao_functions_mycallquality",
+      "src_lib_prospeccao_prospeccao_functions_parsecalloutcome",
+      "src_lib_prospeccao_prospeccao_functions_periodstart",
+      "src_lib_prospeccao_prospeccao_functions_prospectconsultant",
+      "src_lib_prospeccao_prospeccao_functions_refillmyqueue",
+      "src_lib_prospeccao_prospeccao_functions_systemuser",
+      "src_lib_prospeccao_prospeccao_server",
+      "src_lib_prospeccao_prospeccao_server_applyassignments",
+      "src_lib_prospeccao_prospeccao_server_assertadmin",
+      "src_lib_prospeccao_prospeccao_server_assertconsultantids",
+      "src_lib_prospeccao_prospeccao_server_consultantuser",
+      "src_lib_prospeccao_prospeccao_server_consultoranamesfor",
+      "src_lib_prospeccao_prospeccao_server_listconsultantusers",
+      "src_lib_prospeccao_prospeccao_server_randomassignbyname",
+      "src_lib_prospeccao_prospeccao_server_reattachleadhistory",
+      "src_lib_prospeccao_prospeccao_server_resetallownership",
+      "src_lib_prospeccao_prospeccao_server_revokeallaccess",
+      "src_lib_prospeccao_prospeccao_server_shuffle",
+      "src_lib_prospeccao_prospeccao_utils",
+      "src_lib_prospeccao_prospeccao_utils_leadinput"
+    ],
+    "8": [
+      "src_components_appshell",
+      "src_components_appshell_appshell",
+      "src_components_appshell_badgekind",
+      "src_components_appshell_chamadaskey",
+      "src_components_appshell_navitem",
+      "src_components_appshell_navsection",
+      "src_components_appshell_navsections",
+      "src_components_appshell_usechamadas",
+      "src_components_appshell_useclock",
+      "src_components_appshell_usefollowupscount",
+      "src_components_appshell_useleadscount",
+      "src_components_prospeccao_competicaoranking_competicaoranking",
+      "src_components_prospeccao_competicaoranking_usecountdown",
+      "src_components_security_accessguard",
+      "src_components_security_accessguard_accessguard",
+      "src_components_security_accessguard_getsessionkey",
+      "src_components_security_accessguard_overlay",
+      "src_hooks_use_rh_access",
+      "src_hooks_use_rh_access_always_allowed",
+      "src_hooks_use_rh_access_userhaccess",
+      "src_lib_auth_useauth",
+      "src_routes_authenticated_admin",
+      "src_routes_authenticated_admin_adminhubpage",
+      "src_routes_authenticated_admin_adminlink",
+      "src_routes_authenticated_admin_adminsection",
+      "src_routes_authenticated_admin_sections",
+      "src_routes_authenticated_pos_venda_avaliacoes",
+      "src_routes_authenticated_pos_venda_avaliacoes_page",
+      "src_routes_authenticated_producao_competicao",
+      "src_routes_authenticated_producao_competicao_page",
+      "src_routes_authenticated_producao_meu_dia",
+      "src_routes_authenticated_producao_meu_dia_page",
+      "src_routes_authenticated_producao_ranking",
+      "src_routes_authenticated_producao_ranking_page",
+      "src_routes_authenticated_prospeccao_admin_page",
+      "src_routes_authenticated_prospeccao_promovidos_recentes",
+      "src_routes_authenticated_prospeccao_promovidos_recentes_diasde",
+      "src_routes_authenticated_prospeccao_promovidos_recentes_fmtdata",
+      "src_routes_authenticated_prospeccao_promovidos_recentes_page",
+      "src_routes_authenticated_prospeccao_promovidos_recentes_stat",
+      "src_routes_authenticated_prospeccao_promovidos_recentes_status_label",
+      "src_routes_authenticated_prospeccao_promovidos_recentes_urgencia",
+      "src_routes_authenticated_prospeccao_qualidade_page",
+      "src_routes_authenticated_radar",
+      "src_routes_authenticated_radar_arquivos_arquivospage",
+      "src_routes_authenticated_radar_radarlayout",
+      "src_routes_authenticated_radar_tabs",
+      "src_routes_index",
+      "src_routes_index_index",
+      "src_routes_index_route",
+      "src_routes_reset_password_resetpasswordpage"
+    ],
+    "9": [
       "src_components_ui_dropdown_menu",
       "src_components_ui_dropdown_menu_dropdownmenucheckboxitem",
       "src_components_ui_dropdown_menu_dropdownmenucontent",
@@ -412,6 +698,7 @@
       "src_routes_authenticated_prospeccao_index_fmtwhen",
       "src_routes_authenticated_prospeccao_index_lead",
       "src_routes_authenticated_prospeccao_index_page",
+      "src_routes_authenticated_prospeccao_index_route",
       "src_routes_authenticated_prospeccao_leadid",
       "src_routes_authenticated_prospeccao_leadid_daykey",
       "src_routes_authenticated_prospeccao_leadid_ev",
@@ -420,6 +707,7 @@
       "src_routes_authenticated_prospeccao_leadid_lead",
       "src_routes_authenticated_prospeccao_leadid_leadphones",
       "src_routes_authenticated_prospeccao_leadid_page",
+      "src_routes_authenticated_prospeccao_leadid_route",
       "src_routes_authenticated_prospeccao_leadid_row",
       "src_routes_authenticated_prospeccao_leadid_task",
       "src_routes_authenticated_prospeccao_leadid_timeonly",
@@ -428,7 +716,7 @@
       "src_routes_authenticated_prospeccao_recentes_lead",
       "src_routes_authenticated_prospeccao_recentes_page"
     ],
-    "5": [
+    "10": [
       "src_components_rh_rhlayout_rhnav",
       "src_components_security_incidentestab_incidentestab",
       "src_hooks_use_rh_notifications",
@@ -478,7 +766,55 @@
       "src_routes_authenticated_rh_acessos_labelfortab",
       "src_routes_authenticated_rh_acessos_route"
     ],
-    "6": [
+    "11": [
+      "src_components_prospeccao_admin_acessostab",
+      "src_components_prospeccao_admin_acessostab_acessostab",
+      "src_components_prospeccao_admin_competicaotab",
+      "src_components_prospeccao_admin_competicaotab_competicaotab",
+      "src_components_prospeccao_admin_confirmdialog_confirmdialog",
+      "src_components_prospeccao_admin_importtab",
+      "src_components_prospeccao_admin_importtab_consultant",
+      "src_components_prospeccao_admin_leadstab",
+      "src_components_prospeccao_admin_leadstab_consultant",
+      "src_components_prospeccao_admin_leadstab_leadrow",
+      "src_components_prospeccao_admin_leadstab_leadstab",
+      "src_components_prospeccao_competicaoranking",
+      "src_components_prospeccao_competicaoranking_medalha",
+      "src_components_rh_rhstatcard",
+      "src_components_rh_rhstatcard_props",
+      "src_components_rh_rhstatcard_rhstatcard",
+      "src_components_rh_rhstatcard_tones",
+      "src_components_ui_alert",
+      "src_components_ui_alert_alert",
+      "src_components_ui_alert_alertdescription",
+      "src_components_ui_alert_alerttitle",
+      "src_components_ui_alert_alertvariants",
+      "src_components_ui_card",
+      "src_components_ui_card_card",
+      "src_components_ui_card_carddescription",
+      "src_components_ui_skeleton",
+      "src_components_ui_skeleton_skeleton",
+      "src_components_ui_table",
+      "src_components_ui_table_table",
+      "src_components_ui_table_tablebody",
+      "src_components_ui_table_tablecell",
+      "src_components_ui_table_tablehead",
+      "src_components_ui_table_tableheader",
+      "src_components_ui_table_tablerow",
+      "src_routes_authenticated_prospeccao_admin",
+      "src_routes_authenticated_prospeccao_admin_consultant",
+      "src_routes_authenticated_prospeccao_qualidade",
+      "src_routes_authenticated_rh_cargos",
+      "src_routes_authenticated_rh_clima",
+      "src_routes_authenticated_rh_clima_scale",
+      "src_routes_authenticated_rh_documentos",
+      "src_routes_authenticated_rh_documentos_diasparavencer",
+      "src_routes_authenticated_rh_documentos_documentos",
+      "src_routes_authenticated_rh_documentos_hoje",
+      "src_routes_authenticated_rh_documentos_vencimentobadge",
+      "src_routes_authenticated_rh_ferias"
+    ],
+    "12": [
       "eslint",
       "eslint_config_prettier",
       "eslint_js",
@@ -525,137 +861,51 @@
       "vite",
       "vitejs_plugin_react"
     ],
-    "7": [
-      "src_lib_prospeccao_prospeccao_functions",
-      "src_lib_prospeccao_prospeccao_functions_adminassignleads",
-      "src_lib_prospeccao_prospeccao_functions_admincreateleads",
-      "src_lib_prospeccao_prospeccao_functions_admindeleteimportbatch",
-      "src_lib_prospeccao_prospeccao_functions_admindeletesystemuser",
-      "src_lib_prospeccao_prospeccao_functions_admindistributeleads",
-      "src_lib_prospeccao_prospeccao_functions_adminlistimportbatches",
-      "src_lib_prospeccao_prospeccao_functions_adminlistsystemusers",
-      "src_lib_prospeccao_prospeccao_functions_adminrandomredistribute",
-      "src_lib_prospeccao_prospeccao_functions_adminrecycleleads",
-      "src_lib_prospeccao_prospeccao_functions_adminresetallaccess",
-      "src_lib_prospeccao_prospeccao_functions_adminsetuserrole",
-      "src_lib_prospeccao_prospeccao_functions_adminstats",
-      "src_lib_prospeccao_prospeccao_functions_aileadassist",
-      "src_lib_prospeccao_prospeccao_functions_answered_outcomes",
-      "src_lib_prospeccao_prospeccao_functions_applyassignments",
-      "src_lib_prospeccao_prospeccao_functions_calldetailrow",
-      "src_lib_prospeccao_prospeccao_functions_callqualitystats",
-      "src_lib_prospeccao_prospeccao_functions_getadminstats",
-      "src_lib_prospeccao_prospeccao_functions_getcallqualitystats",
-      "src_lib_prospeccao_prospeccao_functions_getprospectconsultants",
-      "src_lib_prospeccao_prospeccao_functions_importbatch",
-      "src_lib_prospeccao_prospeccao_functions_leadtimelineitem",
-      "src_lib_prospeccao_prospeccao_functions_markleadopened",
-      "src_lib_prospeccao_prospeccao_functions_mycallquality",
-      "src_lib_prospeccao_prospeccao_functions_prospectconsultant",
-      "src_lib_prospeccao_prospeccao_functions_refillmyqueue",
-      "src_lib_prospeccao_prospeccao_functions_systemuser",
-      "src_lib_prospeccao_prospeccao_server",
-      "src_lib_prospeccao_prospeccao_server_applyassignments",
-      "src_lib_prospeccao_prospeccao_server_assertadmin",
-      "src_lib_prospeccao_prospeccao_server_assertconsultantids",
-      "src_lib_prospeccao_prospeccao_server_consultantuser",
-      "src_lib_prospeccao_prospeccao_server_consultoranamesfor",
-      "src_lib_prospeccao_prospeccao_server_listconsultantusers",
-      "src_lib_prospeccao_prospeccao_server_randomassignbyname",
-      "src_lib_prospeccao_prospeccao_server_reattachleadhistory",
-      "src_lib_prospeccao_prospeccao_server_resetallownership",
-      "src_lib_prospeccao_prospeccao_server_revokeallaccess",
-      "src_lib_prospeccao_prospeccao_server_shuffle",
-      "src_lib_prospeccao_prospeccao_utils",
-      "src_lib_prospeccao_prospeccao_utils_leadinput"
+    "13": [
+      "src_components_metatopindicator",
+      "src_components_metatopindicator_metatopindicator",
+      "src_components_rh_importproducaodialog_importproducaodialog",
+      "src_components_rh_importproducaodialog_parsenumber",
+      "src_components_rh_importproducaodialog_pick",
+      "src_components_rh_producaoranking_fotode",
+      "src_components_rh_producaoranking_producaoranking",
+      "src_lib_rh_mock_brl",
+      "src_lib_rh_producao",
+      "src_lib_rh_producao_deleteproducao",
+      "src_lib_rh_producao_fetchmeses",
+      "src_lib_rh_producao_fetchproducaoconsultora",
+      "src_lib_rh_producao_fetchproducaomes",
+      "src_lib_rh_producao_formatmes",
+      "src_lib_rh_producao_functions",
+      "src_lib_rh_producao_functions_deleteproducaofn",
+      "src_lib_rh_producao_functions_fetchmesesfn",
+      "src_lib_rh_producao_functions_fetchproducaoconsultorafn",
+      "src_lib_rh_producao_functions_fetchproducaomesfn",
+      "src_lib_rh_producao_functions_producaorow",
+      "src_lib_rh_producao_functions_upsertproducaobatchfn",
+      "src_lib_rh_producao_functions_upsertproducaofn",
+      "src_lib_rh_producao_mesatual",
+      "src_lib_rh_producao_mesesqueryoptions",
+      "src_lib_rh_producao_producao",
+      "src_lib_rh_producao_producaoconsultoraqueryoptions",
+      "src_lib_rh_producao_producaoinput",
+      "src_lib_rh_producao_producaomesqueryoptions",
+      "src_lib_rh_producao_server",
+      "src_lib_rh_producao_server_assertadmin",
+      "src_lib_rh_producao_upsertproducao",
+      "src_lib_rh_producao_upsertproducaobatch",
+      "src_lib_rh_producao_utils",
+      "src_lib_rh_producao_utils_mesatual",
+      "src_lib_rh_producao_utils_producaoinputitem",
+      "src_lib_rh_producao_utils_producaorow",
+      "src_routes_authenticated_producao_metas",
+      "src_routes_authenticated_producao_metas_page",
+      "src_routes_authenticated_rh_avaliacoes_avaliacoes",
+      "src_routes_authenticated_rh_cargos_cargos",
+      "src_routes_authenticated_rh_portal_index_minhaproducao",
+      "src_routes_authenticated_rh_producao_producaoadmin"
     ],
-    "8": [
-      "src_components_prospeccao_admin_acessostab",
-      "src_components_prospeccao_admin_acessostab_acessostab",
-      "src_components_prospeccao_admin_competicaotab",
-      "src_components_prospeccao_admin_competicaotab_competicaotab",
-      "src_components_prospeccao_admin_confirmdialog_confirmdialog",
-      "src_components_prospeccao_admin_distribuicaotab",
-      "src_components_prospeccao_admin_distribuicaotab_consultant",
-      "src_components_prospeccao_admin_distribuicaotab_distribuicaotab",
-      "src_components_prospeccao_admin_distribuicaotab_status_label",
-      "src_components_prospeccao_admin_distribuicaotab_status_redist",
-      "src_components_prospeccao_admin_importtab",
-      "src_components_prospeccao_admin_importtab_consultant",
-      "src_components_prospeccao_admin_importtab_importtab",
-      "src_components_prospeccao_admin_leadstab",
-      "src_components_prospeccao_admin_leadstab_consultant",
-      "src_components_prospeccao_admin_leadstab_leadrow",
-      "src_components_prospeccao_admin_leadstab_leadstab",
-      "src_components_prospeccao_competicaoranking",
-      "src_components_prospeccao_competicaoranking_medalha",
-      "src_components_ui_skeleton",
-      "src_components_ui_skeleton_skeleton",
-      "src_components_ui_table",
-      "src_components_ui_table_table",
-      "src_components_ui_table_tablebody",
-      "src_components_ui_table_tablecell",
-      "src_components_ui_table_tablehead",
-      "src_components_ui_table_tableheader",
-      "src_components_ui_table_tablerow",
-      "src_lib_prospeccao_admin_import",
-      "src_lib_prospeccao_admin_import_buildparsed",
-      "src_lib_prospeccao_admin_import_detectphonecolumn",
-      "src_lib_prospeccao_admin_import_importmeta",
-      "src_lib_prospeccao_admin_import_parsedlead",
-      "src_lib_prospeccao_admin_import_phone_aliases",
-      "src_lib_prospeccao_admin_import_previewsplit",
-      "src_lib_prospeccao_admin_import_rejectedrow",
-      "src_routes_authenticated_prospeccao_admin",
-      "src_routes_authenticated_prospeccao_admin_consultant",
-      "src_routes_authenticated_prospeccao_qualidade",
-      "src_routes_authenticated_rh_cargos",
-      "src_routes_authenticated_rh_ferias"
-    ],
-    "9": [
-      "src_components_rh_rhstatcard",
-      "src_components_rh_rhstatcard_props",
-      "src_components_rh_rhstatcard_rhstatcard",
-      "src_components_rh_rhstatcard_tones",
-      "src_components_security_incidentestab",
-      "src_components_ui_card",
-      "src_components_ui_card_card",
-      "src_components_ui_card_cardcontent",
-      "src_components_ui_card_carddescription",
-      "src_components_ui_card_cardheader",
-      "src_components_ui_card_cardtitle",
-      "src_components_ui_input",
-      "src_components_ui_input_input",
-      "src_routes_authenticated_contrato",
-      "src_routes_authenticated_contrato_clause",
-      "src_routes_authenticated_contrato_contratopage",
-      "src_routes_authenticated_contrato_dataporextenso",
-      "src_routes_authenticated_contrato_form",
-      "src_routes_authenticated_contrato_formatarvalor",
-      "src_routes_authenticated_contrato_imagetodataurl",
-      "src_routes_authenticated_contrato_inicial",
-      "src_routes_authenticated_pos_venda_avaliacoes",
-      "src_routes_authenticated_prospeccao_admin_leads",
-      "src_routes_authenticated_prospeccao_admin_leads_leadsadminpage",
-      "src_routes_authenticated_rh_clima",
-      "src_routes_authenticated_rh_clima_scale",
-      "src_routes_authenticated_rh_departamentos",
-      "src_routes_authenticated_rh_departamentos_departamentos",
-      "src_routes_authenticated_rh_pdi",
-      "src_routes_authenticated_rh_portal_kpi",
-      "src_routes_authenticated_rh_portal_kpi_portalkpisearch",
-      "src_routes_authenticated_rh_producao",
-      "src_routes_authenticated_simulacao_alagoas",
-      "src_routes_authenticated_simulacao_alagoas_brl",
-      "src_routes_authenticated_simulacao_alagoas_coef4",
-      "src_routes_authenticated_simulacao_alagoas_coeficientes",
-      "src_routes_authenticated_simulacao_alagoas_coeficientes_principais",
-      "src_routes_authenticated_simulacao_alagoas_formatmoedainput",
-      "src_routes_authenticated_simulacao_alagoas_parsemoeda",
-      "src_routes_authenticated_simulacao_alagoas_simulacaoalagoaspage",
-      "src_routes_reset_password"
-    ],
-    "10": [
+    "14": [
       "src_components_ui_avatar_avatarimage",
       "src_lib_rh_extra",
       "src_lib_rh_extra_aiinsights",
@@ -697,7 +947,7 @@
       "src_routes_authenticated_rh_organograma_route",
       "src_routes_authenticated_rh_organograma_tree"
     ],
-    "11": [
+    "15": [
       "src_lib_radar_diario_functions",
       "src_lib_radar_diario_functions_alerta",
       "src_lib_radar_diario_functions_assertadmin",
@@ -739,7 +989,7 @@
       "src_routes_authenticated_radar_busca_diaria_sevtone",
       "src_routes_authenticated_radar_busca_diaria_statustone"
     ],
-    "12": [
+    "16": [
       "src_components_ui_sheet",
       "src_components_ui_sheet_sheetcontent",
       "src_components_ui_sheet_sheetcontentprops",
@@ -780,7 +1030,7 @@
       "src_hooks_use_mobile",
       "src_hooks_use_mobile_useismobile"
     ],
-    "13": [
+    "17": [
       "src_components_ai_elements_message",
       "src_components_ai_elements_message_message",
       "src_components_ai_elements_message_messageaction",
@@ -820,93 +1070,13 @@
       "src_components_ui_tooltip",
       "src_components_ui_tooltip_tooltipcontent"
     ],
-    "14": [
-      "src_components_prospeccao_admin_confirmdialog",
-      "src_components_prospeccao_admin_confirmdialog_props",
-      "src_components_rh_rhlayout_rhpageheader",
-      "src_components_ui_alert_dialog",
-      "src_components_ui_alert_dialog_alertdialogaction",
-      "src_components_ui_alert_dialog_alertdialogcancel",
-      "src_components_ui_alert_dialog_alertdialogcontent",
-      "src_components_ui_alert_dialog_alertdialogdescription",
-      "src_components_ui_alert_dialog_alertdialogfooter",
-      "src_components_ui_alert_dialog_alertdialogheader",
-      "src_components_ui_alert_dialog_alertdialogtitle",
-      "src_components_ui_progress",
-      "src_components_ui_progress_progress",
-      "src_routes_authenticated_rh_avaliacoes",
-      "src_routes_authenticated_rh_avaliacoes_avaliacao",
-      "src_routes_authenticated_rh_avaliacoes_formstate",
-      "src_routes_authenticated_rh_banco_horas",
-      "src_routes_authenticated_rh_banco_horas_grafico",
-      "src_routes_authenticated_rh_holerites",
-      "src_routes_authenticated_rh_okrs",
-      "src_routes_authenticated_rh_okrs_avgprogress",
-      "src_routes_authenticated_rh_okrs_emptyform",
-      "src_routes_authenticated_rh_okrs_formstate",
-      "src_routes_authenticated_rh_okrs_kr",
-      "src_routes_authenticated_rh_okrs_niveis",
-      "src_routes_authenticated_rh_okrs_okrs",
-      "src_routes_authenticated_rh_onboarding",
-      "src_routes_authenticated_rh_onboarding_emptyform",
-      "src_routes_authenticated_rh_onboarding_formstate",
-      "src_routes_authenticated_rh_onboarding_onboardingpage",
-      "src_routes_authenticated_rh_onboarding_tarefas_padrao",
-      "src_routes_authenticated_rh_reconhecimentos",
-      "src_routes_authenticated_rh_reconhecimentos_emptyform",
-      "src_routes_authenticated_rh_reconhecimentos_formstate",
-      "src_routes_authenticated_rh_reconhecimentos_periodicidadelabel",
-      "src_routes_authenticated_rh_reconhecimentos_reconhecimentos",
-      "src_routes_authenticated_rh_reconhecimentos_tipocor",
-      "src_routes_authenticated_rh_reconhecimentos_todaystr"
-    ],
-    "15": [
-      "src_lib_prospeccao_competicao_fechar_server",
-      "src_lib_prospeccao_competicao_fechar_server_fecharresultado",
-      "src_lib_prospeccao_competicao_fechar_server_fecharsemana",
-      "src_lib_prospeccao_competicao_functions",
-      "src_lib_prospeccao_competicao_functions_adminanularponto",
-      "src_lib_prospeccao_competicao_functions_admindefinirpremio",
-      "src_lib_prospeccao_competicao_functions_adminextratopontos",
-      "src_lib_prospeccao_competicao_functions_adminfecharsemana",
-      "src_lib_prospeccao_competicao_functions_agendarfollowup",
-      "src_lib_prospeccao_competicao_functions_competicaodata",
-      "src_lib_prospeccao_competicao_functions_concluirfollowup",
-      "src_lib_prospeccao_competicao_functions_getcompeticao",
-      "src_lib_prospeccao_competicao_functions_getfechamentopendente",
-      "src_lib_prospeccao_competicao_functions_pontoextrato",
-      "src_lib_prospeccao_competicao_functions_registrarcontato",
-      "src_lib_prospeccao_competicao_functions_registrarqualificacao",
-      "src_lib_prospeccao_competicao_server",
-      "src_lib_prospeccao_competicao_server_admin",
-      "src_lib_prospeccao_competicao_server_assertnaoadmin",
-      "src_lib_prospeccao_competicao_server_categoria",
-      "src_lib_prospeccao_competicao_server_closesat",
-      "src_lib_prospeccao_competicao_server_contato_cooldown_ms",
-      "src_lib_prospeccao_competicao_server_contatohoje",
-      "src_lib_prospeccao_competicao_server_cooldownliberado",
-      "src_lib_prospeccao_competicao_server_creditar",
-      "src_lib_prospeccao_competicao_server_estornar",
-      "src_lib_prospeccao_competicao_server_garantirsemana",
-      "src_lib_prospeccao_competicao_server_isadminuser",
-      "src_lib_prospeccao_competicao_server_pontos",
-      "src_lib_prospeccao_competicao_server_primeirocontatoem",
-      "src_lib_prospeccao_competicao_server_qualificacao_min_apos_contato_ms",
-      "src_lib_prospeccao_competicao_server_ranking",
-      "src_lib_prospeccao_competicao_server_rankingrow",
-      "src_lib_prospeccao_competicao_server_teto_diario",
-      "src_lib_prospeccao_competicao_server_weekstart",
-      "src_routes_api_public_hooks_competicao_fechar",
-      "src_routes_api_public_hooks_competicao_fechar_route"
-    ],
-    "16": [
+    "18": [
       "src_lib_rh_mock",
       "src_lib_rh_mock_avaliacao",
       "src_lib_rh_mock_avaliacoes",
       "src_lib_rh_mock_candidato",
       "src_lib_rh_mock_candidatos",
       "src_lib_rh_mock_cargo",
-      "src_lib_rh_mock_colaboradores",
       "src_lib_rh_mock_colaboradoresporcargo",
       "src_lib_rh_mock_colaboradorespordepartamento",
       "src_lib_rh_mock_colaboradorstatus",
@@ -938,45 +1108,7 @@
       "src_routes_authenticated_rh_dashboard_pie_colors",
       "src_routes_authenticated_rh_dashboard_route"
     ],
-    "17": [
-      "src_components_auth_primeiroacessodialog",
-      "src_components_auth_primeiroacessodialog_itens",
-      "src_components_auth_primeiroacessodialog_props",
-      "src_components_horariosourodialog",
-      "src_components_horariosouroreminder",
-      "src_components_horariosouroreminder_firedmap",
-      "src_components_horariosouroreminder_golden_hours",
-      "src_components_horariosouroreminder_horariosouroreminder",
-      "src_components_horariosouroreminder_loadfired",
-      "src_components_horariosouroreminder_savefired",
-      "src_components_horariosouroreminder_todaykey",
-      "src_components_prospeccao_callqualitydialog",
-      "src_components_prospeccao_callqualitydialog_status",
-      "src_components_prospeccao_competicaopopup",
-      "src_components_prospeccao_competicaopopup_fechamento",
-      "src_components_prospeccao_promovidospopup",
-      "src_components_rh_elogiospopup",
-      "src_components_rh_importproducaodialog",
-      "src_components_rh_importproducaodialog_parsedrow",
-      "src_components_rh_reconhecimentospopup",
-      "src_components_rh_reconhecimentospopup_isactive",
-      "src_components_rh_reconhecimentospopup_reconhecimentospopup",
-      "src_components_rh_reconhecimentospopup_tipocor",
-      "src_components_security_simultaneousaccessalert",
-      "src_components_ui_avatar",
-      "src_components_ui_avatar_avatar",
-      "src_components_ui_avatar_avatarfallback",
-      "src_components_ui_button",
-      "src_components_ui_button_button",
-      "src_components_ui_dialog",
-      "src_components_ui_dialog_dialogcontent",
-      "src_components_ui_dialog_dialogdescription",
-      "src_components_ui_dialog_dialogfooter",
-      "src_components_ui_dialog_dialogheader",
-      "src_components_ui_dialog_dialogoverlay",
-      "src_components_ui_dialog_dialogtitle"
-    ],
-    "18": [
+    "19": [
       "supabase_functions_processar_margens_index",
       "supabase_functions_processar_margens_index_carregarsessaosalva",
       "supabase_functions_processar_margens_index_classificarerro",
@@ -1013,137 +1145,139 @@
       "supabase_functions_processar_margens_index_supaclient",
       "supabase_functions_processar_margens_index_validarsessao"
     ],
-    "19": [
-      "src_components_prospeccao_competicaoranking_competicaoranking",
-      "src_components_prospeccao_competicaoranking_usecountdown",
-      "src_hooks_use_rh_access",
-      "src_hooks_use_rh_access_always_allowed",
-      "src_hooks_use_rh_access_userhaccess",
-      "src_lib_auth_useauth",
-      "src_routes_authenticated_admin",
-      "src_routes_authenticated_admin_adminhubpage",
-      "src_routes_authenticated_admin_adminlink",
-      "src_routes_authenticated_admin_adminsection",
-      "src_routes_authenticated_admin_route",
-      "src_routes_authenticated_admin_sections",
-      "src_routes_authenticated_pos_venda_avaliacoes_page",
-      "src_routes_authenticated_producao_meu_dia",
-      "src_routes_authenticated_producao_meu_dia_page",
-      "src_routes_authenticated_producao_meu_dia_route",
-      "src_routes_authenticated_producao_ranking",
-      "src_routes_authenticated_producao_ranking_page",
-      "src_routes_authenticated_producao_ranking_route",
-      "src_routes_authenticated_prospeccao_admin_page",
-      "src_routes_authenticated_prospeccao_qualidade_page",
-      "src_routes_authenticated_radar",
-      "src_routes_authenticated_radar_arquivos",
-      "src_routes_authenticated_radar_arquivos_arquivospage",
-      "src_routes_authenticated_radar_arquivos_route",
-      "src_routes_authenticated_radar_radarlayout",
-      "src_routes_authenticated_radar_route",
-      "src_routes_authenticated_radar_tabs",
-      "src_routes_index",
-      "src_routes_index_index",
-      "src_routes_index_route",
-      "src_routes_reset_password_resetpasswordpage"
-    ],
     "20": [
-      "src_components_rh_elogiospopup_elogiospopup",
-      "src_lib_rh_portal_admin_functions",
-      "src_lib_rh_portal_admin_functions_assertadmin",
-      "src_lib_rh_portal_admin_functions_atalho",
-      "src_lib_rh_portal_admin_functions_atalhoschema",
-      "src_lib_rh_portal_admin_functions_aviso",
-      "src_lib_rh_portal_admin_functions_avisoschema",
-      "src_lib_rh_portal_admin_functions_deleteatalho",
-      "src_lib_rh_portal_admin_functions_deleteaviso",
-      "src_lib_rh_portal_admin_functions_deleteprofilephoto",
-      "src_lib_rh_portal_admin_functions_getportalcontent",
-      "src_lib_rh_portal_admin_functions_kpisschema",
-      "src_lib_rh_portal_admin_functions_portalcontent",
-      "src_lib_rh_portal_admin_functions_portalkpis",
-      "src_lib_rh_portal_admin_functions_saveatalho",
-      "src_lib_rh_portal_admin_functions_saveaviso",
-      "src_lib_rh_portal_admin_functions_savekpis",
-      "src_lib_rh_portal_admin_functions_saveprofilephoto",
-      "src_lib_rh_portal_icons",
-      "src_lib_rh_portal_icons_portal_icon_names",
-      "src_lib_rh_portal_icons_portal_icons",
-      "src_lib_rh_portal_icons_portal_tones",
-      "src_lib_rh_portal_icons_portalicon",
-      "src_lib_rh_portal_icons_toneclass",
-      "src_routes_authenticated_rh_portal_index",
-      "src_routes_authenticated_rh_portal_index_carteiraleadscard",
-      "src_routes_authenticated_rh_portal_index_emptyatalho",
-      "src_routes_authenticated_rh_portal_index_emptyaviso",
-      "src_routes_authenticated_rh_portal_index_kpilink",
-      "src_routes_authenticated_rh_portal_index_portalindex",
-      "src_routes_authenticated_rh_portal_index_route",
-      "src_routes_authenticated_rh_portal_index_tones"
+      "src_components_ui_input",
+      "src_components_ui_input_input",
+      "src_components_ui_label",
+      "src_components_ui_label_label",
+      "src_components_ui_label_labelvariants",
+      "src_components_ui_textarea",
+      "src_components_ui_textarea_textarea",
+      "src_routes_authenticated_contrato",
+      "src_routes_authenticated_contrato_clause",
+      "src_routes_authenticated_contrato_contratopage",
+      "src_routes_authenticated_contrato_dataporextenso",
+      "src_routes_authenticated_contrato_form",
+      "src_routes_authenticated_contrato_formatarvalor",
+      "src_routes_authenticated_contrato_imagetodataurl",
+      "src_routes_authenticated_contrato_inicial",
+      "src_routes_authenticated_rh_desligamentos",
+      "src_routes_authenticated_rh_desligamentos_desligamentospage",
+      "src_routes_authenticated_rh_desligamentos_emptyform",
+      "src_routes_authenticated_rh_desligamentos_fmtdate",
+      "src_routes_authenticated_rh_desligamentos_formstate",
+      "src_routes_authenticated_rh_desligamentos_tempoempresa",
+      "src_routes_authenticated_rh_recrutamento",
+      "src_routes_authenticated_rh_recrutamento_areafor",
+      "src_routes_authenticated_rh_recrutamento_areastyle",
+      "src_routes_authenticated_rh_recrutamento_candform",
+      "src_routes_authenticated_rh_recrutamento_emptycand",
+      "src_routes_authenticated_rh_recrutamento_emptyvaga",
+      "src_routes_authenticated_rh_recrutamento_etapacolor",
+      "src_routes_authenticated_rh_recrutamento_fitcls",
+      "src_routes_authenticated_rh_recrutamento_initials",
+      "src_routes_authenticated_rh_recrutamento_recrutamento",
+      "src_routes_authenticated_rh_recrutamento_vagaform",
+      "src_routes_reset_password"
     ],
     "21": [
-      "src_lib_rh_mock_colaborador",
-      "src_lib_rh_mock_documentos",
-      "src_lib_rh_mock_ferias",
-      "src_lib_rh_mock_treinamentos",
-      "src_lib_rh_portal",
-      "src_lib_rh_portal_buildserie",
-      "src_lib_rh_portal_computekpidetail",
-      "src_lib_rh_portal_computeportaldata",
-      "src_lib_rh_portal_fetchkpidetail",
-      "src_lib_rh_portal_fetchportaldata",
-      "src_lib_rh_portal_functions",
-      "src_lib_rh_portal_functions_brl",
-      "src_lib_rh_portal_functions_fetchkpidetailfromdb",
-      "src_lib_rh_portal_functions_inputschema",
-      "src_lib_rh_portal_functions_meses",
-      "src_lib_rh_portal_functions_monthlabel",
-      "src_lib_rh_portal_functions_period_months",
-      "src_lib_rh_portal_kpi_keys",
-      "src_lib_rh_portal_kpidetail",
-      "src_lib_rh_portal_kpidetailqueryoptions",
-      "src_lib_rh_portal_kpikey",
-      "src_lib_rh_portal_meses",
-      "src_lib_rh_portal_periodkey",
-      "src_lib_rh_portal_periods",
-      "src_lib_rh_portal_portaldata",
-      "src_lib_rh_portal_portalqueryoptions",
-      "src_lib_rh_portal_portalsolicitacao",
-      "src_lib_rh_portal_seeded",
-      "src_lib_rh_portal_tosolicitacao",
-      "src_routes_authenticated_rh_portal_kpi_kpidetailpage"
+      "src_integrations_supabase_auth_middleware",
+      "src_integrations_supabase_auth_middleware_requiresupabaseauth",
+      "src_integrations_supabase_types",
+      "src_integrations_supabase_types_compositetypes",
+      "src_integrations_supabase_types_constants",
+      "src_integrations_supabase_types_database",
+      "src_integrations_supabase_types_databasewithoutinternals",
+      "src_integrations_supabase_types_defaultschema",
+      "src_integrations_supabase_types_enums",
+      "src_integrations_supabase_types_json",
+      "src_integrations_supabase_types_tables",
+      "src_integrations_supabase_types_tablesinsert",
+      "src_integrations_supabase_types_tablesupdate",
+      "src_lib_prospeccao_followups_functions",
+      "src_lib_prospeccao_followups_functions_enviarlembretesfollowup",
+      "src_lib_prospeccao_followups_server",
+      "src_lib_prospeccao_followups_server_dispararlembretesfollowup",
+      "src_lib_rh_reconhecimentos_functions",
+      "src_lib_rh_reconhecimentos_functions_assertadmin",
+      "src_lib_rh_reconhecimentos_functions_categorias_reconhecimento",
+      "src_lib_rh_reconhecimentos_functions_deletereconhecimento",
+      "src_lib_rh_reconhecimentos_functions_getreconhecimentos",
+      "src_lib_rh_reconhecimentos_functions_periodicidades",
+      "src_lib_rh_reconhecimentos_functions_reconhecimento",
+      "src_lib_rh_reconhecimentos_functions_reconhecimentosresult",
+      "src_lib_rh_reconhecimentos_functions_savereconhecimento",
+      "src_lib_rh_reconhecimentos_functions_schema",
+      "src_lib_rh_reconhecimentos_functions_tipos",
+      "src_routes_api_public_hooks_followup_lembretes",
+      "src_routes_api_public_hooks_followup_lembretes_route",
+      "src_routes_api_public_hooks_followup_lembretes_run"
     ],
     "22": [
-      "src_components_appshell",
-      "src_components_appshell_appshell",
-      "src_components_appshell_badgekind",
-      "src_components_appshell_chamadaskey",
-      "src_components_appshell_navitem",
-      "src_components_appshell_navsection",
-      "src_components_appshell_navsections",
-      "src_components_appshell_usechamadas",
-      "src_components_appshell_useclock",
-      "src_components_appshell_usefollowupscount",
-      "src_components_appshell_useleadscount",
-      "src_components_horariosourodialog_horariosourodialog",
-      "src_components_prospeccao_competicaopopup_competicaopopup",
-      "src_components_prospeccao_competicaopopup_tocarsom",
-      "src_components_prospeccao_promovidospopup_javistohoje",
-      "src_components_prospeccao_promovidospopup_promovidospopup",
-      "src_components_rh_rhlayout_rhlayout",
-      "src_components_security_accessguard",
-      "src_components_security_accessguard_accessguard",
-      "src_components_security_accessguard_getsessionkey",
-      "src_components_security_accessguard_overlay",
-      "src_components_security_simultaneousaccessalert_simultaneousaccessalert",
-      "src_routes_authenticated_producao_competicao",
-      "src_routes_authenticated_producao_competicao_page",
-      "src_routes_authenticated_producao_competicao_route",
-      "src_routes_authenticated_rh",
-      "src_routes_authenticated_rh_rhroot",
-      "src_routes_authenticated_rh_route"
+      "src_components_legal_centralaprovacao",
+      "src_components_legal_centralaprovacao_approval",
+      "src_components_legal_centralaprovacao_centralaprovacao",
+      "src_components_legal_centralaprovacao_field",
+      "src_components_legal_centralaprovacao_statusbadge",
+      "src_components_ui_sonner",
+      "src_components_ui_sonner_toaster",
+      "src_components_ui_sonner_toasterprops",
+      "src_integrations_supabase_client",
+      "src_integrations_supabase_client_createsupabaseclient",
+      "src_integrations_supabase_client_supabase",
+      "src_integrations_supabase_previewauthstorage",
+      "src_integrations_supabase_previewauthstorage_brokeredpreviewstorage",
+      "src_lib_auth",
+      "src_lib_auth_account_functions_signupwithcpf",
+      "src_lib_auth_authctx",
+      "src_lib_auth_authprovider",
+      "src_lib_auth_ctx",
+      "src_routes_authenticated_radar_importar",
+      "src_routes_authenticated_radar_importar_batch",
+      "src_routes_authenticated_radar_importar_field",
+      "src_routes_authenticated_radar_importar_importarpage",
+      "src_routes_authenticated_servidores_sem_acesso",
+      "src_routes_authenticated_servidores_sem_acesso_lead",
+      "src_routes_root",
+      "src_routes_root_authsync",
+      "src_routes_root_notfoundcomponent",
+      "src_routes_root_rootcomponent",
+      "src_routes_root_rootshell",
+      "src_routes_root_route"
     ],
     "23": [
+      "src_components_prospeccao_admin_manualleadcard",
+      "src_components_prospeccao_admin_manualleadcard_consultant",
+      "src_components_prospeccao_admin_manualleadcard_manualleadcard",
+      "src_components_rh_producaoranking",
+      "src_components_rh_producaoranking_medalcor",
+      "src_components_ui_card_cardheader",
+      "src_components_ui_select",
+      "src_components_ui_select_selectcontent",
+      "src_components_ui_select_selectitem",
+      "src_components_ui_select_selectlabel",
+      "src_components_ui_select_selecttrigger",
+      "src_lib_rh_mock_colaboradores",
+      "src_routes_authenticated_rh_producao",
+      "src_routes_authenticated_simulacao_alagoas",
+      "src_routes_authenticated_simulacao_alagoas_brl",
+      "src_routes_authenticated_simulacao_alagoas_coef4",
+      "src_routes_authenticated_simulacao_alagoas_coeficientes",
+      "src_routes_authenticated_simulacao_alagoas_coeficientes_principais",
+      "src_routes_authenticated_simulacao_alagoas_formatmoedainput",
+      "src_routes_authenticated_simulacao_alagoas_parsemoeda",
+      "src_routes_authenticated_simulacao_alagoas_simulacaoalagoaspage",
+      "src_routes_consultora_token",
+      "src_routes_consultora_token_abordagem_options",
+      "src_routes_consultora_token_center",
+      "src_routes_consultora_token_consultoraportalpage",
+      "src_routes_consultora_token_consultoraportalpage_mudarstatus",
+      "src_routes_consultora_token_fmtbr",
+      "src_routes_consultora_token_invalidlink",
+      "src_routes_consultora_token_join",
+      "src_routes_consultora_token_leadcard"
+    ],
+    "24": [
       "ref_dom",
       "ref_dom_iterable",
       "ref_es2022",
@@ -1172,65 +1306,7 @@
       "tsconfig_compileroptions_verbatimmodulesyntax",
       "tsconfig_include"
     ],
-    "24": [
-      "src_components_ai_elements_shimmer",
-      "src_components_ai_elements_shimmer_getmotioncomponent",
-      "src_components_ai_elements_shimmer_motioncomponentcache",
-      "src_components_ai_elements_shimmer_motionhtmlprops",
-      "src_components_ai_elements_shimmer_shimmer",
-      "src_components_ai_elements_shimmer_shimmercomponent",
-      "src_components_ai_elements_shimmer_textshimmerprops",
-      "src_components_rh_notificationbell",
-      "src_components_rh_notificationbell_notificationbell",
-      "src_components_rh_notificationbell_timeago",
-      "src_components_ui_checkbox",
-      "src_components_ui_checkbox_checkbox",
-      "src_components_ui_hover_card",
-      "src_components_ui_hover_card_hovercardcontent",
-      "src_components_ui_popover",
-      "src_components_ui_popover_popovercontent",
-      "src_components_ui_scroll_area",
-      "src_components_ui_scroll_area_scrollarea",
-      "src_components_ui_scroll_area_scrollbar",
-      "src_components_ui_slider",
-      "src_components_ui_slider_slider",
-      "src_components_ui_spinner",
-      "src_components_ui_spinner_spinner",
-      "src_components_ui_switch",
-      "src_components_ui_switch_switch",
-      "src_hooks_use_rh_notifications_userhnotifications",
-      "src_lib_utils"
-    ],
     "25": [
-      "src_components_legal_centralaprovacao",
-      "src_components_legal_centralaprovacao_approval",
-      "src_components_legal_centralaprovacao_centralaprovacao",
-      "src_components_legal_centralaprovacao_field",
-      "src_components_legal_centralaprovacao_statusbadge",
-      "src_components_legal_hostcall",
-      "src_components_legal_hostcall_approval",
-      "src_components_legal_hostcall_brl",
-      "src_components_legal_hostcall_hostcall",
-      "src_components_legal_hostcall_row",
-      "src_components_legal_hostcall_sha256hex",
-      "src_integrations_supabase_client",
-      "src_integrations_supabase_client_createsupabaseclient",
-      "src_integrations_supabase_client_supabase",
-      "src_integrations_supabase_previewauthstorage",
-      "src_integrations_supabase_previewauthstorage_brokeredpreviewstorage",
-      "src_lib_legal_legal_functions_getapprovalbytoken",
-      "src_lib_legal_useapprovalcall",
-      "src_lib_legal_useapprovalcall_callrole",
-      "src_lib_legal_useapprovalcall_callstatus",
-      "src_lib_legal_useapprovalcall_ice_servers",
-      "src_lib_legal_useapprovalcall_useapprovalcall",
-      "src_routes_aprovacao_token",
-      "src_routes_aprovacao_token_center",
-      "src_routes_aprovacao_token_guestpage",
-      "src_routes_aprovacao_token_route",
-      "src_routes_authenticated_route"
-    ],
-    "26": [
       "src_routes_authenticated_pesquisas",
       "src_routes_authenticated_pesquisas_blank",
       "src_routes_authenticated_pesquisas_calcidade",
@@ -1259,7 +1335,7 @@
       "src_routes_authenticated_pesquisas_vinculobadge",
       "src_routes_authenticated_pesquisas_vinculoempregaticio"
     ],
-    "27": [
+    "26": [
       "src_components_prospeccao_promovidospdfimport",
       "src_components_prospeccao_promovidospdfimport_cleanname",
       "src_components_prospeccao_promovidospdfimport_currentmonth",
@@ -1287,7 +1363,83 @@
       "src_lib_prospeccao_promovidos_functions_promovidoai",
       "src_lib_prospeccao_promovidos_functions_savepromovidos"
     ],
+    "27": [
+      "src_components_rh_elogiospopup_elogiospopup",
+      "src_lib_rh_portal_admin_functions",
+      "src_lib_rh_portal_admin_functions_assertadmin",
+      "src_lib_rh_portal_admin_functions_atalho",
+      "src_lib_rh_portal_admin_functions_atalhoschema",
+      "src_lib_rh_portal_admin_functions_aviso",
+      "src_lib_rh_portal_admin_functions_avisoschema",
+      "src_lib_rh_portal_admin_functions_deleteatalho",
+      "src_lib_rh_portal_admin_functions_deleteaviso",
+      "src_lib_rh_portal_admin_functions_deleteprofilephoto",
+      "src_lib_rh_portal_admin_functions_getportalcontent",
+      "src_lib_rh_portal_admin_functions_kpisschema",
+      "src_lib_rh_portal_admin_functions_portalcontent",
+      "src_lib_rh_portal_admin_functions_portalkpis",
+      "src_lib_rh_portal_admin_functions_saveatalho",
+      "src_lib_rh_portal_admin_functions_saveaviso",
+      "src_lib_rh_portal_admin_functions_savekpis",
+      "src_lib_rh_portal_admin_functions_saveprofilephoto",
+      "src_routes_authenticated_rh_portal_index",
+      "src_routes_authenticated_rh_portal_index_carteiraleadscard",
+      "src_routes_authenticated_rh_portal_index_emptyatalho",
+      "src_routes_authenticated_rh_portal_index_emptyaviso",
+      "src_routes_authenticated_rh_portal_index_kpilink",
+      "src_routes_authenticated_rh_portal_index_route",
+      "src_routes_authenticated_rh_portal_index_tones"
+    ],
     "28": [
+      "src_components_rh_notificationbell",
+      "src_components_rh_notificationbell_notificationbell",
+      "src_components_rh_notificationbell_timeago",
+      "src_components_ui_checkbox",
+      "src_components_ui_checkbox_checkbox",
+      "src_components_ui_hover_card",
+      "src_components_ui_hover_card_hovercardcontent",
+      "src_components_ui_input_otp",
+      "src_components_ui_input_otp_inputotp",
+      "src_components_ui_input_otp_inputotpgroup",
+      "src_components_ui_input_otp_inputotpseparator",
+      "src_components_ui_input_otp_inputotpslot",
+      "src_components_ui_popover",
+      "src_components_ui_popover_popovercontent",
+      "src_components_ui_scroll_area",
+      "src_components_ui_scroll_area_scrollarea",
+      "src_components_ui_scroll_area_scrollbar",
+      "src_components_ui_slider",
+      "src_components_ui_slider_slider",
+      "src_components_ui_switch",
+      "src_components_ui_switch_switch",
+      "src_hooks_use_rh_notifications_userhnotifications",
+      "src_lib_utils"
+    ],
+    "29": [
+      "src_components_prospeccao_followuppopup",
+      "src_components_prospeccao_followuppopup_config",
+      "src_components_prospeccao_followuppopup_default_config",
+      "src_components_prospeccao_followuppopup_dentrodajanela",
+      "src_components_prospeccao_followuppopup_followuppopup",
+      "src_components_prospeccao_followuppopup_janotificados",
+      "src_components_prospeccao_followuppopup_lead",
+      "src_components_prospeccao_followuppopup_marcarnotificados",
+      "src_components_prospeccao_followuppopup_readconfig",
+      "src_components_prospeccao_followuppopup_snoozeduntil",
+      "src_components_whatsappicon",
+      "src_components_whatsappicon_whatsappicon",
+      "src_lib_prospeccao_constants_whatsapplink",
+      "src_routes_authenticated_prospeccao_followups",
+      "src_routes_authenticated_prospeccao_followups_amanhaas",
+      "src_routes_authenticated_prospeccao_followups_filtro",
+      "src_routes_authenticated_prospeccao_followups_filtros",
+      "src_routes_authenticated_prospeccao_followups_fimdodia",
+      "src_routes_authenticated_prospeccao_followups_fmtwhen",
+      "src_routes_authenticated_prospeccao_followups_lead",
+      "src_routes_authenticated_prospeccao_followups_page",
+      "src_routes_authenticated_prospeccao_followups_route"
+    ],
+    "30": [
       "src_components_auth_primeiroacessodialog_aviso_primeiro_acesso_key",
       "src_components_auth_primeiroacessodialog_primeiroacessodialog",
       "src_components_completeprofiledialog",
@@ -1305,95 +1457,13 @@
       "src_lib_cpf_isvalidcpf",
       "src_lib_cpf_normalizecpf",
       "src_lib_radar_promovidos_recentes_functions_confirmarcpfpromovido",
-      "src_routes_authenticated_servidores_sem_acesso",
-      "src_routes_authenticated_servidores_sem_acesso_lead",
       "src_routes_authenticated_servidores_sem_acesso_page",
-      "src_routes_authenticated_servidores_sem_acesso_route",
       "src_routes_login",
       "src_routes_login_loginpage",
       "src_routes_login_route"
     ],
-    "29": [
-      "src_integrations_supabase_client_server",
-      "src_integrations_supabase_client_server_createsupabaseadminclient",
-      "src_lib_legal_legal_functions",
-      "src_lib_legal_legal_functions_adminapproval",
-      "src_lib_legal_legal_functions_adminapprovalmediaurl",
-      "src_lib_legal_legal_functions_admindeleteapproval",
-      "src_lib_legal_legal_functions_adminlistapprovals",
-      "src_lib_legal_legal_functions_adminregeneratetoken",
-      "src_lib_legal_legal_functions_aitranscribeapproval",
-      "src_lib_legal_legal_functions_assertadmin",
-      "src_lib_legal_legal_functions_guestapproval",
-      "src_lib_legal_legal_functions_makeshorttoken",
-      "src_lib_prospeccao_leads_admin_functions",
-      "src_lib_prospeccao_leads_admin_functions_assignbatchtoconsultant",
-      "src_lib_prospeccao_leads_admin_functions_createleadbatch",
-      "src_lib_prospeccao_leads_admin_functions_getleadbatches",
-      "src_lib_prospeccao_leads_admin_functions_getleadsbybatch",
-      "src_lib_prospeccao_leads_admin_functions_processleadchunk",
-      "src_lib_radar_consultora_portal_functions",
-      "src_lib_radar_consultora_portal_functions_consultoralead",
-      "src_lib_radar_consultora_portal_functions_consultoraportal",
-      "src_lib_radar_consultora_portal_functions_getconsultoraportal",
-      "src_lib_radar_consultora_portal_functions_resolverconsultora",
-      "src_lib_radar_consultora_portal_functions_setconsultoraleadstatus"
-    ],
-    "30": [
-      "src_lib_rh_producao",
-      "src_lib_rh_producao_deleteproducao",
-      "src_lib_rh_producao_fetchmeses",
-      "src_lib_rh_producao_fetchproducaoconsultora",
-      "src_lib_rh_producao_fetchproducaomes",
-      "src_lib_rh_producao_functions",
-      "src_lib_rh_producao_functions_deleteproducaofn",
-      "src_lib_rh_producao_functions_fetchmesesfn",
-      "src_lib_rh_producao_functions_fetchproducaoconsultorafn",
-      "src_lib_rh_producao_functions_fetchproducaomesfn",
-      "src_lib_rh_producao_functions_producaorow",
-      "src_lib_rh_producao_functions_upsertproducaobatchfn",
-      "src_lib_rh_producao_functions_upsertproducaofn",
-      "src_lib_rh_producao_producao",
-      "src_lib_rh_producao_producaoconsultoraqueryoptions",
-      "src_lib_rh_producao_producaoinput",
-      "src_lib_rh_producao_server",
-      "src_lib_rh_producao_server_assertadmin",
-      "src_lib_rh_producao_upsertproducao",
-      "src_lib_rh_producao_upsertproducaobatch",
-      "src_lib_rh_producao_utils",
-      "src_lib_rh_producao_utils_mesatual",
-      "src_lib_rh_producao_utils_producaoinputitem",
-      "src_lib_rh_producao_utils_producaorow"
-    ],
     "31": [
-      "src_lib_radar_radar_functions",
-      "src_lib_radar_radar_functions_adicionarconsultora",
-      "src_lib_radar_radar_functions_assertadmin",
-      "src_lib_radar_radar_functions_atualizarregistro",
-      "src_lib_radar_radar_functions_coberturames",
-      "src_lib_radar_radar_functions_deletararquivo",
-      "src_lib_radar_radar_functions_distribuirleadsautomatico",
-      "src_lib_radar_radar_functions_distribuirroundrobin",
-      "src_lib_radar_radar_functions_distribuirtodosleads",
-      "src_lib_radar_radar_functions_distribuirtodosroundrobin",
-      "src_lib_radar_radar_functions_getadminclient",
-      "src_lib_radar_radar_functions_getcobertura2026",
-      "src_lib_radar_radar_functions_getmeusleadsradar",
-      "src_lib_radar_radar_functions_getminhaconsultora",
-      "src_lib_radar_radar_functions_leadcasapreferencias",
-      "src_lib_radar_radar_functions_leadspromovidosresult",
-      "src_lib_radar_radar_functions_potencial_rank",
-      "src_lib_radar_radar_functions_registroentry",
-      "src_lib_radar_radar_functions_removerconsultora",
-      "src_lib_radar_radar_functions_reprocessararquivo",
-      "src_lib_radar_radar_functions_salvarpreferenciasconsultora",
-      "src_lib_radar_radar_functions_str",
-      "src_lib_radar_radar_functions_toggleconsultora"
-    ],
-    "32": [
       "src_lib_radar_radar_functions_distribuicaoconsultora",
-      "src_lib_radar_radar_functions_doarquivo",
-      "src_lib_radar_radar_functions_getarquivos",
       "src_lib_radar_radar_functions_getarquivourl",
       "src_lib_radar_radar_functions_getdistribuicaoconsultoras",
       "src_lib_radar_radar_functions_getregistros",
@@ -1415,99 +1485,29 @@
       "src_routes_authenticated_radar_registros_status",
       "src_routes_authenticated_radar_registros_statustone"
     ],
+    "32": [
+      "src_components_ui_card_cardcontent",
+      "src_components_ui_card_cardtitle",
+      "src_components_ui_progress",
+      "src_components_ui_progress_progress",
+      "src_lib_rh_mock_departamentos",
+      "src_lib_rh_mock_formatdate",
+      "src_routes_authenticated_rh_avaliacoes",
+      "src_routes_authenticated_rh_avaliacoes_avaliacao",
+      "src_routes_authenticated_rh_avaliacoes_formstate",
+      "src_routes_authenticated_rh_banco_horas_bancohoras",
+      "src_routes_authenticated_rh_colaboradores_id_perfil",
+      "src_routes_authenticated_rh_departamentos",
+      "src_routes_authenticated_rh_departamentos_departamentos",
+      "src_routes_authenticated_rh_equipamentos_equipamentos",
+      "src_routes_authenticated_rh_ferias_feriaspage",
+      "src_routes_authenticated_rh_pdi",
+      "src_routes_authenticated_rh_pdi_pdipage",
+      "src_routes_authenticated_rh_portal_kpi",
+      "src_routes_authenticated_rh_portal_kpi_portalkpisearch",
+      "src_routes_authenticated_rh_treinamentos_treinamentos"
+    ],
     "33": [
-      "src_components_prospeccao_admin_manualleadcard",
-      "src_components_prospeccao_admin_manualleadcard_consultant",
-      "src_components_prospeccao_admin_manualleadcard_manualleadcard",
-      "src_components_ui_select",
-      "src_components_ui_select_selectcontent",
-      "src_components_ui_select_selectitem",
-      "src_components_ui_select_selectlabel",
-      "src_components_ui_select_selecttrigger",
-      "src_routes_authenticated_rh_treinamentos",
-      "src_routes_authenticated_rh_treinamentos_emptyform",
-      "src_routes_authenticated_rh_treinamentos_formstate",
-      "src_routes_authenticated_rh_treinamentos_status_options",
-      "src_routes_authenticated_rh_treinamentos_treinostatus",
-      "src_routes_consultora_token",
-      "src_routes_consultora_token_abordagem_options",
-      "src_routes_consultora_token_center",
-      "src_routes_consultora_token_consultoraportalpage",
-      "src_routes_consultora_token_consultoraportalpage_mudarstatus",
-      "src_routes_consultora_token_fmtbr",
-      "src_routes_consultora_token_invalidlink",
-      "src_routes_consultora_token_join",
-      "src_routes_consultora_token_leadcard"
-    ],
-    "34": [
-      "src_components_metatopindicator",
-      "src_components_metatopindicator_metatopindicator",
-      "src_components_rh_importproducaodialog_importproducaodialog",
-      "src_components_rh_importproducaodialog_parsenumber",
-      "src_components_rh_importproducaodialog_pick",
-      "src_components_rh_producaoranking",
-      "src_components_rh_producaoranking_fotode",
-      "src_components_rh_producaoranking_medalcor",
-      "src_components_rh_producaoranking_producaoranking",
-      "src_lib_rh_mock_brl",
-      "src_lib_rh_producao_formatmes",
-      "src_lib_rh_producao_mesatual",
-      "src_lib_rh_producao_mesesqueryoptions",
-      "src_lib_rh_producao_producaomesqueryoptions",
-      "src_routes_authenticated_producao_metas",
-      "src_routes_authenticated_producao_metas_page",
-      "src_routes_authenticated_producao_metas_route",
-      "src_routes_authenticated_rh_avaliacoes_avaliacoes",
-      "src_routes_authenticated_rh_cargos_cargos",
-      "src_routes_authenticated_rh_portal_index_minhaproducao",
-      "src_routes_authenticated_rh_producao_producaoadmin"
-    ],
-    "35": [
-      "src_components_ui_label",
-      "src_components_ui_label_label",
-      "src_components_ui_label_labelvariants",
-      "src_components_ui_textarea",
-      "src_components_ui_textarea_textarea",
-      "src_routes_authenticated_rh_ocorrencias",
-      "src_routes_authenticated_rh_ocorrencias_emptyform",
-      "src_routes_authenticated_rh_ocorrencias_formstate",
-      "src_routes_authenticated_rh_ocorrencias_ocorrencias",
-      "src_routes_authenticated_rh_ocorrencias_todaystr",
-      "src_routes_authenticated_rh_recrutamento",
-      "src_routes_authenticated_rh_recrutamento_areafor",
-      "src_routes_authenticated_rh_recrutamento_areastyle",
-      "src_routes_authenticated_rh_recrutamento_candform",
-      "src_routes_authenticated_rh_recrutamento_emptycand",
-      "src_routes_authenticated_rh_recrutamento_emptyvaga",
-      "src_routes_authenticated_rh_recrutamento_etapacolor",
-      "src_routes_authenticated_rh_recrutamento_fitcls",
-      "src_routes_authenticated_rh_recrutamento_initials",
-      "src_routes_authenticated_rh_recrutamento_recrutamento",
-      "src_routes_authenticated_rh_recrutamento_vagaform"
-    ],
-    "36": [
-      "src_integrations_supabase_auth_middleware",
-      "src_integrations_supabase_auth_middleware_requiresupabaseauth",
-      "src_integrations_supabase_types",
-      "src_integrations_supabase_types_compositetypes",
-      "src_integrations_supabase_types_constants",
-      "src_integrations_supabase_types_database",
-      "src_integrations_supabase_types_databasewithoutinternals",
-      "src_integrations_supabase_types_defaultschema",
-      "src_integrations_supabase_types_enums",
-      "src_integrations_supabase_types_json",
-      "src_integrations_supabase_types_tables",
-      "src_integrations_supabase_types_tablesinsert",
-      "src_integrations_supabase_types_tablesupdate",
-      "src_lib_prospeccao_followups_functions",
-      "src_lib_prospeccao_followups_functions_enviarlembretesfollowup",
-      "src_lib_prospeccao_followups_server",
-      "src_lib_prospeccao_followups_server_dispararlembretesfollowup",
-      "src_routes_api_public_hooks_followup_lembretes",
-      "src_routes_api_public_hooks_followup_lembretes_route",
-      "src_routes_api_public_hooks_followup_lembretes_run"
-    ],
-    "37": [
       "src_integrations_supabase_client_server_supabaseadmin",
       "src_lib_radar_diario_crawler_server_baixarpdf",
       "src_lib_radar_diario_crawler_server_sleep",
@@ -1529,7 +1529,7 @@
       "src_routes_api_public_hooks_radar_diario_worker",
       "src_routes_api_public_hooks_radar_diario_worker_route"
     ],
-    "38": [
+    "34": [
       "src_lib_al_index",
       "src_lib_al_index_lerlogs",
       "src_lib_al_index_logsimulacao",
@@ -1551,7 +1551,7 @@
       "src_lib_al_previdencia_faixa",
       "src_lib_al_previdencia_faixas_previdencia_al"
     ],
-    "39": [
+    "35": [
       "src_lib_al_index_brl",
       "src_lib_al_index_gerartextowhatsapp",
       "src_lib_al_index_orgaoal",
@@ -1573,7 +1573,51 @@
       "src_routes_authenticated_calculadora_al_simulacaoreajusteal",
       "src_routes_authenticated_calculadora_al_statcard"
     ],
-    "40": [
+    "36": [
+      "src_lib_radar_radar_functions",
+      "src_lib_radar_radar_functions_analisardiarioai",
+      "src_lib_radar_radar_functions_chunktext",
+      "src_lib_radar_radar_functions_coberturames",
+      "src_lib_radar_radar_functions_deletararquivo",
+      "src_lib_radar_radar_functions_doarquivo",
+      "src_lib_radar_radar_functions_extractcpf",
+      "src_lib_radar_radar_functions_getarquivos",
+      "src_lib_radar_radar_functions_getcobertura2026",
+      "src_lib_radar_radar_functions_getmeusleadsradar",
+      "src_lib_radar_radar_functions_getminhaconsultora",
+      "src_lib_radar_radar_functions_leadspromovidosresult",
+      "src_lib_radar_radar_functions_potencial_rank",
+      "src_lib_radar_radar_functions_registroai",
+      "src_lib_radar_radar_functions_registroentry",
+      "src_lib_radar_radar_functions_reprocessararquivo",
+      "src_lib_radar_radar_functions_secoes_radar",
+      "src_lib_radar_radar_functions_str",
+      "src_routes_authenticated_radar_arquivos",
+      "src_routes_authenticated_radar_arquivos_route"
+    ],
+    "37": [
+      "src_lib_rh_mock_colaborador",
+      "src_lib_rh_mock_documentos",
+      "src_lib_rh_mock_ferias",
+      "src_lib_rh_mock_treinamentos",
+      "src_lib_rh_portal",
+      "src_lib_rh_portal_buildserie",
+      "src_lib_rh_portal_computekpidetail",
+      "src_lib_rh_portal_computeportaldata",
+      "src_lib_rh_portal_fetchkpidetail",
+      "src_lib_rh_portal_fetchportaldata",
+      "src_lib_rh_portal_kpi_keys",
+      "src_lib_rh_portal_kpidetailqueryoptions",
+      "src_lib_rh_portal_meses",
+      "src_lib_rh_portal_periods",
+      "src_lib_rh_portal_portaldata",
+      "src_lib_rh_portal_portalqueryoptions",
+      "src_lib_rh_portal_portalsolicitacao",
+      "src_lib_rh_portal_seeded",
+      "src_lib_rh_portal_tosolicitacao",
+      "src_routes_authenticated_rh_portal_kpi_kpidetailpage"
+    ],
+    "38": [
       "src_lib_wa_whatsapp_functions",
       "src_lib_wa_whatsapp_functions_addwaaccount",
       "src_lib_wa_whatsapp_functions_assertwaadmin",
@@ -1595,7 +1639,7 @@
       "src_routes_authenticated_whatsapp_route",
       "src_routes_authenticated_whatsapp_whatsapppage"
     ],
-    "41": [
+    "39": [
       "clsx",
       "hookform_resolvers",
       "nanoid",
@@ -1616,7 +1660,7 @@
       "streamdown_mermaid",
       "tanstack_router_plugin"
     ],
-    "42": [
+    "40": [
       "components",
       "components_aliases",
       "components_aliases_components",
@@ -1637,7 +1681,7 @@
       "components_tailwind_prefix",
       "components_tsx"
     ],
-    "43": [
+    "41": [
       "src_lib_ai_gateway_server",
       "src_lib_ai_gateway_server_createlovableaigatewayprovider",
       "src_lib_radar_diario_extraction_server",
@@ -1658,27 +1702,7 @@
       "src_lib_radar_diario_extraction_server_secoes_radar_padrao",
       "src_lib_radar_diario_extraction_server_str"
     ],
-    "44": [
-      "src_components_prospeccao_callqualitydialog_callqualitydialog",
-      "src_components_prospeccao_callqualitydialog_callqualityfilters",
-      "src_components_prospeccao_callqualitydialog_datahora",
-      "src_components_prospeccao_crmcockpit",
-      "src_components_prospeccao_crmcockpit_crmcockpit",
-      "src_components_prospeccao_crmcockpit_followup",
-      "src_components_prospeccao_crmcockpit_hora",
-      "src_components_prospeccao_crmcockpit_ministat",
-      "src_components_prospeccao_crmcockpit_prod",
-      "src_components_prospeccao_crmcockpit_props",
-      "src_components_prospeccao_leadtimeline",
-      "src_components_prospeccao_leadtimeline_icons",
-      "src_components_prospeccao_leadtimeline_leadtimeline",
-      "src_components_prospeccao_leadtimeline_quando",
-      "src_components_prospeccao_leadtimeline_tones",
-      "src_lib_prospeccao_competicao_functions_pularfollowup",
-      "src_lib_prospeccao_competicao_functions_reagendarfollowup",
-      "src_lib_prospeccao_prospeccao_functions_getleadtimeline"
-    ],
-    "45": [
+    "42": [
       "src_components_ui_tabs",
       "src_components_ui_tabs_tabscontent",
       "src_components_ui_tabs_tabslist",
@@ -1698,26 +1722,7 @@
       "src_routes_authenticated_rh_colaboradores_id_field",
       "src_routes_authenticated_rh_colaboradores_id_route"
     ],
-    "46": [
-      "src_components_ui_alert",
-      "src_components_ui_alert_alert",
-      "src_components_ui_alert_alertdescription",
-      "src_components_ui_alert_alerttitle",
-      "src_components_ui_alert_alertvariants",
-      "src_lib_rh_mock_formatdate",
-      "src_routes_authenticated_rh_banco_horas_bancohoras",
-      "src_routes_authenticated_rh_colaboradores_id_perfil",
-      "src_routes_authenticated_rh_documentos",
-      "src_routes_authenticated_rh_documentos_diasparavencer",
-      "src_routes_authenticated_rh_documentos_documentos",
-      "src_routes_authenticated_rh_documentos_hoje",
-      "src_routes_authenticated_rh_documentos_vencimentobadge",
-      "src_routes_authenticated_rh_equipamentos_equipamentos",
-      "src_routes_authenticated_rh_ferias_feriaspage",
-      "src_routes_authenticated_rh_pdi_pdipage",
-      "src_routes_authenticated_rh_treinamentos_treinamentos"
-    ],
-    "47": [
+    "43": [
       "src_lib_security_access_server",
       "src_lib_security_access_server_avaliarjanela",
       "src_lib_security_access_server_dias",
@@ -1736,7 +1741,43 @@
       "src_lib_security_session_functions_pulseaccess",
       "src_lib_security_session_functions_releaseaccount"
     ],
-    "48": [
+    "44": [
+      "src_components_legal_hostcall",
+      "src_components_legal_hostcall_approval",
+      "src_components_legal_hostcall_brl",
+      "src_components_legal_hostcall_hostcall",
+      "src_components_legal_hostcall_row",
+      "src_components_legal_hostcall_sha256hex",
+      "src_lib_legal_legal_functions_getapprovalbytoken",
+      "src_lib_legal_useapprovalcall",
+      "src_lib_legal_useapprovalcall_callrole",
+      "src_lib_legal_useapprovalcall_callstatus",
+      "src_lib_legal_useapprovalcall_ice_servers",
+      "src_lib_legal_useapprovalcall_useapprovalcall",
+      "src_routes_aprovacao_token",
+      "src_routes_aprovacao_token_center",
+      "src_routes_aprovacao_token_guestpage",
+      "src_routes_aprovacao_token_route"
+    ],
+    "45": [
+      "src_lib_radar_radar_functions_adicionarconsultora",
+      "src_lib_radar_radar_functions_assertadmin",
+      "src_lib_radar_radar_functions_atualizarregistro",
+      "src_lib_radar_radar_functions_criararquivo",
+      "src_lib_radar_radar_functions_distribuirleadsautomatico",
+      "src_lib_radar_radar_functions_distribuirroundrobin",
+      "src_lib_radar_radar_functions_distribuirtodosleads",
+      "src_lib_radar_radar_functions_distribuirtodosroundrobin",
+      "src_lib_radar_radar_functions_getadminclient",
+      "src_lib_radar_radar_functions_leadcasapreferencias",
+      "src_lib_radar_radar_functions_marcarabordagem",
+      "src_lib_radar_radar_functions_removerconsultora",
+      "src_lib_radar_radar_functions_salvarpreferenciasconsultora",
+      "src_lib_radar_radar_functions_salvarregistros",
+      "src_lib_radar_radar_functions_todateornull",
+      "src_lib_radar_radar_functions_toggleconsultora"
+    ],
+    "46": [
       "src_lib_radar_distribuicao_server",
       "src_lib_radar_distribuicao_server_carteiraresumo",
       "src_lib_radar_distribuicao_server_distribuirpendentes",
@@ -1753,7 +1794,7 @@
       "src_routes_api_public_hooks_radar_semanal_isodias",
       "src_routes_api_public_hooks_radar_semanal_route"
     ],
-    "49": [
+    "47": [
       "src_lib_rh_recrutamento_functions",
       "src_lib_rh_recrutamento_functions_assertadmin",
       "src_lib_rh_recrutamento_functions_candidato",
@@ -1770,7 +1811,7 @@
       "src_lib_rh_recrutamento_functions_vaga",
       "src_lib_rh_recrutamento_functions_vagaschema"
     ],
-    "50": [
+    "48": [
       "src_components_ai_elements_conversation",
       "src_components_ai_elements_conversation_conversation",
       "src_components_ai_elements_conversation_conversationcontent",
@@ -1786,39 +1827,23 @@
       "src_components_ai_elements_conversation_getmessagetext",
       "src_components_ai_elements_conversation_messagestomarkdown"
     ],
-    "51": [
-      "src_components_rh_rhlayout",
-      "src_components_rh_rhlayout_admin_only",
-      "src_components_rh_rhlayout_rhadminnav",
-      "src_components_rh_rhlayout_statusbadge",
-      "src_components_rh_rhlayout_statusstyles",
-      "src_components_ui_badge",
-      "src_components_ui_badge_badge",
-      "src_components_ui_badge_badgeprops",
-      "src_components_ui_badge_badgevariants",
-      "src_routes_authenticated_rh_equipamentos",
-      "src_routes_authenticated_rh_equipamentos_emptyform",
-      "src_routes_authenticated_rh_equipamentos_equipstatus",
-      "src_routes_authenticated_rh_equipamentos_formstate",
-      "src_routes_authenticated_rh_equipamentos_status_options"
+    "49": [
+      "src_components_prospeccao_admin_distribuicaotab",
+      "src_components_prospeccao_admin_distribuicaotab_consultant",
+      "src_components_prospeccao_admin_distribuicaotab_distribuicaotab",
+      "src_components_prospeccao_admin_distribuicaotab_status_label",
+      "src_components_prospeccao_admin_distribuicaotab_status_redist",
+      "src_components_prospeccao_admin_importtab_importtab",
+      "src_lib_prospeccao_admin_import",
+      "src_lib_prospeccao_admin_import_buildparsed",
+      "src_lib_prospeccao_admin_import_detectphonecolumn",
+      "src_lib_prospeccao_admin_import_importmeta",
+      "src_lib_prospeccao_admin_import_parsedlead",
+      "src_lib_prospeccao_admin_import_phone_aliases",
+      "src_lib_prospeccao_admin_import_previewsplit",
+      "src_lib_prospeccao_admin_import_rejectedrow"
     ],
-    "52": [
-      "src_components_ui_button_buttonprops",
-      "src_components_ui_button_buttonvariants",
-      "src_components_ui_calendar",
-      "src_components_ui_calendar_calendar",
-      "src_components_ui_calendar_calendardaybutton",
-      "src_components_ui_pagination",
-      "src_components_ui_pagination_pagination",
-      "src_components_ui_pagination_paginationcontent",
-      "src_components_ui_pagination_paginationellipsis",
-      "src_components_ui_pagination_paginationitem",
-      "src_components_ui_pagination_paginationlink",
-      "src_components_ui_pagination_paginationlinkprops",
-      "src_components_ui_pagination_paginationnext",
-      "src_components_ui_pagination_paginationprevious"
-    ],
-    "53": [
+    "50": [
       "src_components_ui_carousel",
       "src_components_ui_carousel_carousel",
       "src_components_ui_carousel_carouselapi",
@@ -1834,54 +1859,7 @@
       "src_components_ui_carousel_usecarousel",
       "src_components_ui_carousel_usecarouselparameters"
     ],
-    "54": [
-      "src_components_ui_sonner",
-      "src_components_ui_sonner_toaster",
-      "src_components_ui_sonner_toasterprops",
-      "src_lib_auth",
-      "src_lib_auth_account_functions_signupwithcpf",
-      "src_lib_auth_authctx",
-      "src_lib_auth_authprovider",
-      "src_lib_auth_ctx",
-      "src_routes_root",
-      "src_routes_root_authsync",
-      "src_routes_root_notfoundcomponent",
-      "src_routes_root_rootcomponent",
-      "src_routes_root_rootshell",
-      "src_routes_root_route"
-    ],
-    "55": [
-      "src_lib_radar_radar_functions_consultora",
-      "src_lib_radar_radar_functions_doregistro",
-      "src_lib_radar_radar_functions_getconsultoras",
-      "src_lib_radar_radar_functions_getleadspromovidos",
-      "src_lib_radar_radar_functions_marcarabordagem",
-      "src_routes_authenticated_prospeccao_promovidos",
-      "src_routes_authenticated_prospeccao_promovidos_abordagem_label",
-      "src_routes_authenticated_prospeccao_promovidos_abordagem_opts",
-      "src_routes_authenticated_prospeccao_promovidos_abordagem_style",
-      "src_routes_authenticated_prospeccao_promovidos_fmtdata",
-      "src_routes_authenticated_prospeccao_promovidos_page",
-      "src_routes_authenticated_prospeccao_promovidos_potencialbadge",
-      "src_routes_authenticated_prospeccao_promovidos_roteiro",
-      "src_routes_authenticated_prospeccao_promovidos_route"
-    ],
-    "56": [
-      "src_lib_radar_extract",
-      "src_lib_radar_extract_detectdatapublicacao",
-      "src_lib_radar_extract_detectedicao",
-      "src_lib_radar_extract_detectorgao",
-      "src_lib_radar_extract_extractdocx",
-      "src_lib_radar_extract_extractfile",
-      "src_lib_radar_extract_extracthtml",
-      "src_lib_radar_extract_extractpdf",
-      "src_lib_radar_extract_extractresult",
-      "src_lib_radar_extract_months",
-      "src_lib_radar_extract_readtextcontent",
-      "src_lib_radar_extract_textitem",
-      "src_routes_authenticated_radar_importar_importarpage"
-    ],
-    "57": [
+    "51": [
       "src_lib_radar_promovidos_recentes_functions",
       "src_lib_radar_promovidos_recentes_functions_assertadminctx",
       "src_lib_radar_promovidos_recentes_functions_buscarnome",
@@ -1896,7 +1874,22 @@
       "src_lib_radar_promovidos_recentes_functions_redistribuirpromovidosigualmente",
       "src_lib_radar_promovidos_recentes_functions_redistribuirpromovidospordesempenho"
     ],
-    "58": [
+    "52": [
+      "src_lib_radar_radar_functions_consultora",
+      "src_lib_radar_radar_functions_doregistro",
+      "src_lib_radar_radar_functions_getconsultoras",
+      "src_lib_radar_radar_functions_getleadspromovidos",
+      "src_routes_authenticated_prospeccao_promovidos",
+      "src_routes_authenticated_prospeccao_promovidos_abordagem_label",
+      "src_routes_authenticated_prospeccao_promovidos_abordagem_opts",
+      "src_routes_authenticated_prospeccao_promovidos_abordagem_style",
+      "src_routes_authenticated_prospeccao_promovidos_fmtdata",
+      "src_routes_authenticated_prospeccao_promovidos_page",
+      "src_routes_authenticated_prospeccao_promovidos_potencialbadge",
+      "src_routes_authenticated_prospeccao_promovidos_roteiro",
+      "src_routes_authenticated_prospeccao_promovidos_route"
+    ],
+    "53": [
       "src_components_ui_form",
       "src_components_ui_form_formcontrol",
       "src_components_ui_form_formdescription",
@@ -1910,7 +1903,7 @@
       "src_components_ui_form_formmessage",
       "src_components_ui_form_useformfield"
     ],
-    "59": [
+    "54": [
       "src_lib_radar_diario_crawler_server",
       "src_lib_radar_diario_crawler_server_ano_alvo",
       "src_lib_radar_diario_crawler_server_diario_api",
@@ -1924,21 +1917,21 @@
       "src_lib_radar_diario_crawler_server_toymd",
       "src_lib_radar_diario_scheduler_server_iniciarbuscajob"
     ],
-    "60": [
-      "src_lib_radar_radar_functions_analisardiarioai",
-      "src_lib_radar_radar_functions_chunktext",
-      "src_lib_radar_radar_functions_criararquivo",
-      "src_lib_radar_radar_functions_extractcpf",
-      "src_lib_radar_radar_functions_registroai",
-      "src_lib_radar_radar_functions_salvarregistros",
-      "src_lib_radar_radar_functions_secoes_radar",
-      "src_lib_radar_radar_functions_todateornull",
-      "src_routes_authenticated_radar_importar",
-      "src_routes_authenticated_radar_importar_batch",
-      "src_routes_authenticated_radar_importar_field",
-      "src_routes_authenticated_radar_importar_route"
+    "55": [
+      "src_lib_radar_extract",
+      "src_lib_radar_extract_detectdatapublicacao",
+      "src_lib_radar_extract_detectedicao",
+      "src_lib_radar_extract_detectorgao",
+      "src_lib_radar_extract_extractdocx",
+      "src_lib_radar_extract_extractfile",
+      "src_lib_radar_extract_extracthtml",
+      "src_lib_radar_extract_extractpdf",
+      "src_lib_radar_extract_extractresult",
+      "src_lib_radar_extract_months",
+      "src_lib_radar_extract_readtextcontent",
+      "src_lib_radar_extract_textitem"
     ],
-    "61": [
+    "56": [
       "supabase_functions_pesquisa_nvcheck_index",
       "supabase_functions_pesquisa_nvcheck_index_auth_error_terms",
       "supabase_functions_pesquisa_nvcheck_index_b64",
@@ -1952,7 +1945,7 @@
       "supabase_functions_pesquisa_nvcheck_index_requireauth",
       "supabase_functions_pesquisa_nvcheck_index_trygerartoken"
     ],
-    "62": [
+    "57": [
       "src_components_ui_chart",
       "src_components_ui_chart_chartconfig",
       "src_components_ui_chart_chartcontainer",
@@ -1965,7 +1958,7 @@
       "src_components_ui_chart_themes",
       "src_components_ui_chart_usechart"
     ],
-    "63": [
+    "58": [
       "src_lib_rh_clima_functions",
       "src_lib_rh_clima_functions_clima_questions",
       "src_lib_rh_clima_functions_climaadminresponse",
@@ -1978,7 +1971,7 @@
       "src_lib_rh_clima_functions_weekstartof",
       "src_routes_authenticated_rh_clima_clima"
     ],
-    "64": [
+    "59": [
       "src_lib_rh_desligamentos_functions",
       "src_lib_rh_desligamentos_functions_aiaprendizados",
       "src_lib_rh_desligamentos_functions_assertadmin",
@@ -1991,7 +1984,7 @@
       "src_lib_rh_desligamentos_functions_schema",
       "src_lib_rh_desligamentos_functions_tipos_desligamento"
     ],
-    "65": [
+    "60": [
       "src_lib_rh_extra_turnovernivel",
       "src_routes_authenticated_rh_turnover",
       "src_routes_authenticated_rh_turnover_badge",
@@ -2004,7 +1997,7 @@
       "src_routes_authenticated_rh_turnover_tagbadge",
       "src_routes_authenticated_rh_turnover_turnover"
     ],
-    "66": [
+    "61": [
       "src_lib_rh_ocorrencias_functions",
       "src_lib_rh_ocorrencias_functions_assertadmin",
       "src_lib_rh_ocorrencias_functions_consultora",
@@ -2017,56 +2010,19 @@
       "src_lib_rh_ocorrencias_functions_schema",
       "src_lib_rh_ocorrencias_functions_tipos_ocorrencia"
     ],
-    "67": [
-      "src_lib_rh_reconhecimentos_functions",
-      "src_lib_rh_reconhecimentos_functions_assertadmin",
-      "src_lib_rh_reconhecimentos_functions_categorias_reconhecimento",
-      "src_lib_rh_reconhecimentos_functions_deletereconhecimento",
-      "src_lib_rh_reconhecimentos_functions_getreconhecimentos",
-      "src_lib_rh_reconhecimentos_functions_periodicidades",
-      "src_lib_rh_reconhecimentos_functions_reconhecimento",
-      "src_lib_rh_reconhecimentos_functions_reconhecimentosresult",
-      "src_lib_rh_reconhecimentos_functions_savereconhecimento",
-      "src_lib_rh_reconhecimentos_functions_schema",
-      "src_lib_rh_reconhecimentos_functions_tipos"
+    "62": [
+      "src_lib_legal_legal_functions",
+      "src_lib_legal_legal_functions_adminapproval",
+      "src_lib_legal_legal_functions_adminapprovalmediaurl",
+      "src_lib_legal_legal_functions_admindeleteapproval",
+      "src_lib_legal_legal_functions_adminlistapprovals",
+      "src_lib_legal_legal_functions_adminregeneratetoken",
+      "src_lib_legal_legal_functions_aitranscribeapproval",
+      "src_lib_legal_legal_functions_assertadmin",
+      "src_lib_legal_legal_functions_guestapproval",
+      "src_lib_legal_legal_functions_makeshorttoken"
     ],
-    "68": [
-      "src_components_prospeccao_followuppopup",
-      "src_components_prospeccao_followuppopup_config",
-      "src_components_prospeccao_followuppopup_default_config",
-      "src_components_prospeccao_followuppopup_dentrodajanela",
-      "src_components_prospeccao_followuppopup_followuppopup",
-      "src_components_prospeccao_followuppopup_janotificados",
-      "src_components_prospeccao_followuppopup_lead",
-      "src_components_prospeccao_followuppopup_marcarnotificados",
-      "src_components_prospeccao_followuppopup_readconfig",
-      "src_components_prospeccao_followuppopup_snoozeduntil"
-    ],
-    "69": [
-      "src_components_whatsappicon",
-      "src_components_whatsappicon_whatsappicon",
-      "src_routes_authenticated_prospeccao_promovidos_recentes",
-      "src_routes_authenticated_prospeccao_promovidos_recentes_diasde",
-      "src_routes_authenticated_prospeccao_promovidos_recentes_fmtdata",
-      "src_routes_authenticated_prospeccao_promovidos_recentes_page",
-      "src_routes_authenticated_prospeccao_promovidos_recentes_route",
-      "src_routes_authenticated_prospeccao_promovidos_recentes_stat",
-      "src_routes_authenticated_prospeccao_promovidos_recentes_status_label",
-      "src_routes_authenticated_prospeccao_promovidos_recentes_urgencia"
-    ],
-    "70": [
-      "src_lib_prospeccao_constants_whatsapplink",
-      "src_routes_authenticated_prospeccao_followups",
-      "src_routes_authenticated_prospeccao_followups_amanhaas",
-      "src_routes_authenticated_prospeccao_followups_filtro",
-      "src_routes_authenticated_prospeccao_followups_filtros",
-      "src_routes_authenticated_prospeccao_followups_fimdodia",
-      "src_routes_authenticated_prospeccao_followups_fmtwhen",
-      "src_routes_authenticated_prospeccao_followups_lead",
-      "src_routes_authenticated_prospeccao_followups_page",
-      "src_routes_authenticated_prospeccao_followups_route"
-    ],
-    "71": [
+    "63": [
       "src_lib_rh_onboarding_functions",
       "src_lib_rh_onboarding_functions_assertadmin",
       "src_lib_rh_onboarding_functions_deleteonboarding",
@@ -2078,7 +2034,19 @@
       "src_lib_rh_onboarding_functions_tarefa",
       "src_lib_rh_onboarding_functions_tarefaschema"
     ],
-    "72": [
+    "64": [
+      "src_lib_rh_portal_functions",
+      "src_lib_rh_portal_functions_brl",
+      "src_lib_rh_portal_functions_fetchkpidetailfromdb",
+      "src_lib_rh_portal_functions_inputschema",
+      "src_lib_rh_portal_functions_meses",
+      "src_lib_rh_portal_functions_monthlabel",
+      "src_lib_rh_portal_functions_period_months",
+      "src_lib_rh_portal_kpidetail",
+      "src_lib_rh_portal_kpikey",
+      "src_lib_rh_portal_periodkey"
+    ],
+    "65": [
       "src_components_ui_input_group",
       "src_components_ui_input_group_inputgroup",
       "src_components_ui_input_group_inputgroupaddon",
@@ -2089,7 +2057,7 @@
       "src_components_ui_input_group_inputgrouptext",
       "src_components_ui_input_group_inputgrouptextarea"
     ],
-    "73": [
+    "66": [
       "src_lib_al_credito",
       "src_lib_al_credito_aplicar",
       "src_lib_al_credito_estimarcredito",
@@ -2100,18 +2068,26 @@
       "src_lib_al_credito_multiplicadorcredito",
       "src_routes_authenticated_calculadora_al_calcularsimulacao"
     ],
-    "74": [
-      "src_lib_rh_export",
-      "src_lib_rh_export_exportexcel",
-      "src_lib_rh_export_exportpdf",
-      "src_lib_rh_mock_cargos",
-      "src_lib_rh_mock_departamentos",
-      "src_routes_authenticated_rh_colaboradores",
-      "src_routes_authenticated_rh_colaboradores_colaboradores",
-      "src_routes_authenticated_rh_colaboradores_novocolaboradordialog",
-      "src_routes_authenticated_rh_colaboradores_sortkey"
+    "67": [
+      "src_components_ui_navigation_menu",
+      "src_components_ui_navigation_menu_navigationmenu",
+      "src_components_ui_navigation_menu_navigationmenucontent",
+      "src_components_ui_navigation_menu_navigationmenuindicator",
+      "src_components_ui_navigation_menu_navigationmenulist",
+      "src_components_ui_navigation_menu_navigationmenutrigger",
+      "src_components_ui_navigation_menu_navigationmenutriggerstyle",
+      "src_components_ui_navigation_menu_navigationmenuviewport"
     ],
-    "75": [
+    "68": [
+      "src_components_ai_elements_shimmer",
+      "src_components_ai_elements_shimmer_getmotioncomponent",
+      "src_components_ai_elements_shimmer_motioncomponentcache",
+      "src_components_ai_elements_shimmer_motionhtmlprops",
+      "src_components_ai_elements_shimmer_shimmer",
+      "src_components_ai_elements_shimmer_shimmercomponent",
+      "src_components_ai_elements_shimmer_textshimmerprops"
+    ],
+    "69": [
       "src_components_ui_toggle",
       "src_components_ui_toggle_group",
       "src_components_ui_toggle_group_togglegroup",
@@ -2120,7 +2096,7 @@
       "src_components_ui_toggle_toggle",
       "src_components_ui_toggle_togglevariants"
     ],
-    "76": [
+    "70": [
       "src_lib_al_imposto",
       "src_lib_al_imposto_aliquotair",
       "src_lib_al_imposto_calcirincremental",
@@ -2129,7 +2105,16 @@
       "src_lib_al_imposto_faixapara",
       "src_lib_al_imposto_faixas_ir"
     ],
-    "77": [
+    "71": [
+      "src_lib_rh_portal_icons",
+      "src_lib_rh_portal_icons_portal_icon_names",
+      "src_lib_rh_portal_icons_portal_icons",
+      "src_lib_rh_portal_icons_portal_tones",
+      "src_lib_rh_portal_icons_portalicon",
+      "src_lib_rh_portal_icons_toneclass",
+      "src_routes_authenticated_rh_portal_index_portalindex"
+    ],
+    "72": [
       "supabase_functions_nv_check_index",
       "supabase_functions_nv_check_index_b64",
       "supabase_functions_nv_check_index_corsheaders",
@@ -2138,7 +2123,7 @@
       "supabase_functions_nv_check_index_parseconsulta",
       "supabase_functions_nv_check_index_requireauth"
     ],
-    "78": [
+    "73": [
       "supabase_functions_pesquisa_nvbook_cel_index",
       "supabase_functions_pesquisa_nvbook_cel_index_b64",
       "supabase_functions_pesquisa_nvbook_cel_index_corsheaders",
@@ -2147,7 +2132,15 @@
       "supabase_functions_pesquisa_nvbook_cel_index_parseconsulta",
       "supabase_functions_pesquisa_nvbook_cel_index_requireauth"
     ],
-    "79": [
+    "74": [
+      "src_lib_radar_consultora_portal_functions",
+      "src_lib_radar_consultora_portal_functions_consultoralead",
+      "src_lib_radar_consultora_portal_functions_consultoraportal",
+      "src_lib_radar_consultora_portal_functions_getconsultoraportal",
+      "src_lib_radar_consultora_portal_functions_resolverconsultora",
+      "src_lib_radar_consultora_portal_functions_setconsultoraleadstatus"
+    ],
+    "75": [
       "src_lib_radar_radar_functions_dashboarddata",
       "src_lib_radar_radar_functions_getdashboard",
       "src_routes_authenticated_radar_index",
@@ -2155,7 +2148,7 @@
       "src_routes_authenticated_radar_index_empty",
       "src_routes_authenticated_radar_index_route"
     ],
-    "80": [
+    "76": [
       "src_routes_authenticated_qrcodes",
       "src_routes_authenticated_qrcodes_itens",
       "src_routes_authenticated_qrcodes_qrcard",
@@ -2163,433 +2156,434 @@
       "src_routes_authenticated_qrcodes_qritem",
       "src_routes_authenticated_qrcodes_route"
     ],
-    "81": [
-      "src_routes_authenticated_rh_desligamentos",
-      "src_routes_authenticated_rh_desligamentos_desligamentospage",
-      "src_routes_authenticated_rh_desligamentos_emptyform",
-      "src_routes_authenticated_rh_desligamentos_fmtdate",
-      "src_routes_authenticated_rh_desligamentos_formstate",
-      "src_routes_authenticated_rh_desligamentos_tempoempresa"
+    "77": [
+      "src_components_rh_rhlayout_rhlayout",
+      "src_routes_authenticated_rh",
+      "src_routes_authenticated_rh_rhroot",
+      "src_routes_authenticated_rh_route"
     ],
-    "82": [
+    "78": [
       "src_integrations_supabase_auth_attacher",
       "src_integrations_supabase_auth_attacher_attachsupabaseauth",
       "src_start",
       "src_start_startinstance"
     ],
-    "83": [
-      "src_lib_prospeccao_prospeccao_functions_getmycalldetails",
-      "src_lib_prospeccao_prospeccao_functions_getmycallquality",
-      "src_lib_prospeccao_prospeccao_functions_parsecalloutcome",
-      "src_lib_prospeccao_prospeccao_functions_periodstart"
-    ],
-    "84": [
+    "79": [
       "src_router",
       "src_router_defaulterrorcomponent",
       "src_router_getrouter",
       "src_routetree_gen_routetree"
     ],
-    "85": [
+    "80": [
+      "src_components_ui_calendar",
+      "src_components_ui_calendar_calendar",
+      "src_components_ui_calendar_calendardaybutton"
+    ],
+    "81": [
       "src_routes_api_public_whatsapp_webhook",
       "src_routes_api_public_whatsapp_webhook_route",
       "src_routes_api_public_whatsapp_webhook_verifysignature"
     ],
-    "86": [
+    "82": [
       "src_routes_sitemap_xml",
       "src_routes_sitemap_xml_route",
       "src_routes_sitemap_xml_sitemapentry"
     ],
-    "87": [
+    "83": [
       "supabase_functions_nova_vida_post_index",
       "supabase_functions_nova_vida_post_index_corsheaders",
       "supabase_functions_nova_vida_post_index_requireauth"
     ],
-    "88": [
+    "84": [
       "ai_sdk_openai_compatible",
       "package_dependencies_ai_sdk_openai_compatible"
     ],
-    "89": [
+    "85": [
       "ai_sdk_react",
       "package_dependencies_ai_sdk_react"
     ],
-    "90": [
+    "86": [
       "class_variance_authority",
       "package_dependencies_class_variance_authority"
     ],
-    "91": [
+    "87": [
       "cloudflare_vite_plugin",
       "package_dependencies_cloudflare_vite_plugin"
     ],
-    "92": [
+    "88": [
       "cmdk",
       "package_dependencies_cmdk"
     ],
-    "93": [
+    "89": [
       "date_fns",
       "package_dependencies_date_fns"
     ],
-    "94": [
+    "90": [
       "embla_carousel_react",
       "package_dependencies_embla_carousel_react"
     ],
-    "95": [
+    "91": [
       "input_otp",
       "package_dependencies_input_otp"
     ],
-    "96": [
+    "92": [
       "lucide_react",
       "package_dependencies_lucide_react"
     ],
-    "97": [
+    "93": [
       "motion",
       "package_dependencies_motion"
     ],
-    "98": [
+    "94": [
       "nitro",
       "package_dependencies_nitro"
     ],
-    "99": [
+    "95": [
       "package_dependencies_ai",
       "package_json_ai"
     ],
-    "100": [
+    "96": [
       "package_dependencies_html2canvas",
       "package_json_html2canvas"
     ],
-    "101": [
+    "97": [
       "package_dependencies_jspdf",
       "package_json_jspdf"
     ],
-    "102": [
+    "98": [
       "package_dependencies_jspdf_autotable",
       "package_json_jspdf_autotable"
     ],
-    "103": [
+    "99": [
       "package_dependencies_mammoth",
       "package_json_mammoth"
     ],
-    "104": [
+    "100": [
       "package_dependencies_papaparse",
       "papaparse"
     ],
-    "105": [
+    "101": [
       "package_dependencies_pdfjs_dist",
       "package_json_pdfjs_dist"
     ],
-    "106": [
+    "102": [
       "package_dependencies_radix_ui_react_accordion",
       "radix_ui_react_accordion"
     ],
-    "107": [
+    "103": [
       "package_dependencies_radix_ui_react_aspect_ratio",
       "radix_ui_react_aspect_ratio"
     ],
-    "108": [
+    "104": [
       "package_dependencies_radix_ui_react_avatar",
       "radix_ui_react_avatar"
     ],
-    "109": [
+    "105": [
       "package_dependencies_radix_ui_react_checkbox",
       "radix_ui_react_checkbox"
     ],
-    "110": [
+    "106": [
       "package_dependencies_radix_ui_react_collapsible",
       "radix_ui_react_collapsible"
     ],
-    "111": [
+    "107": [
       "package_dependencies_radix_ui_react_context_menu",
       "radix_ui_react_context_menu"
     ],
-    "112": [
+    "108": [
       "package_dependencies_radix_ui_react_dialog",
       "radix_ui_react_dialog"
     ],
-    "113": [
+    "109": [
       "package_dependencies_radix_ui_react_dropdown_menu",
       "radix_ui_react_dropdown_menu"
     ],
-    "114": [
+    "110": [
       "package_dependencies_radix_ui_react_hover_card",
       "radix_ui_react_hover_card"
     ],
-    "115": [
+    "111": [
       "package_dependencies_radix_ui_react_label",
       "radix_ui_react_label"
     ],
-    "116": [
+    "112": [
       "package_dependencies_radix_ui_react_menubar",
       "radix_ui_react_menubar"
     ],
-    "117": [
+    "113": [
       "package_dependencies_radix_ui_react_navigation_menu",
       "radix_ui_react_navigation_menu"
     ],
-    "118": [
+    "114": [
       "package_dependencies_radix_ui_react_popover",
       "radix_ui_react_popover"
     ],
-    "119": [
+    "115": [
       "package_dependencies_radix_ui_react_progress",
       "radix_ui_react_progress"
     ],
-    "120": [
+    "116": [
       "package_dependencies_radix_ui_react_radio_group",
       "radix_ui_react_radio_group"
     ],
-    "121": [
+    "117": [
       "package_dependencies_radix_ui_react_select",
       "radix_ui_react_select"
     ],
-    "122": [
+    "118": [
       "package_dependencies_radix_ui_react_separator",
       "radix_ui_react_separator"
     ],
-    "123": [
+    "119": [
       "package_dependencies_radix_ui_react_slider",
       "radix_ui_react_slider"
     ],
-    "124": [
+    "120": [
       "package_dependencies_radix_ui_react_slot",
       "radix_ui_react_slot"
     ],
-    "125": [
+    "121": [
       "package_dependencies_radix_ui_react_switch",
       "radix_ui_react_switch"
     ],
-    "126": [
+    "122": [
       "package_dependencies_radix_ui_react_tabs",
       "radix_ui_react_tabs"
     ],
-    "127": [
+    "123": [
       "package_dependencies_radix_ui_react_toggle",
       "radix_ui_react_toggle"
     ],
-    "128": [
+    "124": [
       "package_dependencies_radix_ui_react_toggle_group",
       "radix_ui_react_toggle_group"
     ],
-    "129": [
+    "125": [
       "package_dependencies_radix_ui_react_tooltip",
       "radix_ui_react_tooltip"
     ],
-    "130": [
+    "126": [
       "package_dependencies_react",
       "react"
     ],
-    "131": [
+    "127": [
       "package_dependencies_react_day_picker",
       "react_day_picker"
     ],
-    "132": [
+    "128": [
       "package_dependencies_react_dom",
       "react_dom"
     ],
-    "133": [
+    "129": [
       "package_dependencies_react_hook_form",
       "react_hook_form"
     ],
-    "134": [
+    "130": [
       "package_dependencies_react_qr_code",
       "react_qr_code"
     ],
-    "135": [
+    "131": [
       "package_dependencies_react_resizable_panels",
       "react_resizable_panels"
     ],
-    "136": [
+    "132": [
       "package_dependencies_recharts",
       "recharts"
     ],
-    "137": [
+    "133": [
       "package_dependencies_sonner",
       "sonner"
     ],
-    "138": [
+    "134": [
       "package_dependencies_streamdown_cjk",
       "streamdown_cjk"
     ],
-    "139": [
+    "135": [
       "package_dependencies_streamdown_code",
       "streamdown_code"
     ],
-    "140": [
+    "136": [
       "package_dependencies_streamdown_math",
       "streamdown_math"
     ],
-    "141": [
+    "137": [
       "package_dependencies_supabase_supabase_js",
       "supabase_supabase_js"
     ],
-    "142": [
+    "138": [
       "package_dependencies_tailwind_merge",
       "tailwind_merge"
     ],
-    "143": [
+    "139": [
       "package_dependencies_tailwindcss",
       "tailwindcss"
     ],
-    "144": [
+    "140": [
       "package_dependencies_tailwindcss_vite",
       "tailwindcss_vite"
     ],
-    "145": [
+    "141": [
       "package_dependencies_tanstack_react_query",
       "tanstack_react_query"
     ],
-    "146": [
+    "142": [
       "package_dependencies_tanstack_react_router",
       "tanstack_react_router"
     ],
-    "147": [
+    "143": [
       "package_dependencies_tanstack_react_start",
       "tanstack_react_start"
     ],
-    "148": [
+    "144": [
       "package_dependencies_tw_animate_css",
       "tw_animate_css"
     ],
-    "149": [
+    "145": [
       "package_dependencies_types_papaparse",
       "types_papaparse"
     ],
-    "150": [
+    "146": [
       "package_dependencies_unpdf",
       "package_json_unpdf"
     ],
-    "151": [
+    "147": [
       "package_dependencies_use_stick_to_bottom",
       "use_stick_to_bottom"
     ],
-    "152": [
+    "148": [
       "package_dependencies_vaul",
       "vaul"
     ],
-    "153": [
+    "149": [
       "package_dependencies_vite_tsconfig_paths",
       "vite_tsconfig_paths"
     ],
-    "154": [
+    "150": [
       "package_dependencies_xlsx",
       "package_json_xlsx"
     ],
-    "155": [
+    "151": [
       "package_dependencies_zod",
       "zod"
     ],
-    "156": [
+    "152": [
       "src_routes_authenticated_prospeccao_promovidos_recentemente",
       "src_routes_authenticated_prospeccao_promovidos_recentemente_route"
     ],
-    "157": [
+    "153": [
       "src_routes_authenticated_rh_index",
       "src_routes_authenticated_rh_index_route"
     ],
-    "158": [
+    "154": [
       "src_routes_authenticated_rh_portal",
       "src_routes_authenticated_rh_portal_route"
     ],
-    "159": [
+    "155": [
+      "src_routes_authenticated_route",
+      "src_routes_authenticated_route_route"
+    ],
+    "156": [
       "eslint_config"
     ],
-    "160": [
+    "157": [
       "src_components_ui_aspect_ratio"
     ],
-    "161": [
+    "158": [
       "src_components_ui_collapsible"
     ],
-    "162": [
+    "159": [
       "vite_config"
     ]
   },
   "cohesion": {
-    "0": 0.015384615384615385,
-    "1": 0.02329416615130901,
-    "2": 0.04432432432432432,
+    "0": 0.014705882352941176,
+    "1": 0.02297029702970297,
+    "2": 0.045774647887323945,
     "3": 0.06634615384615385,
-    "4": 0.07738095238095238,
-    "5": 0.0975177304964539,
-    "6": 0.044444444444444446,
-    "7": 0.07200929152148665,
-    "8": 0.14878048780487804,
-    "9": 0.11951219512195121,
-    "10": 0.052564102564102565,
-    "11": 0.09871794871794871,
-    "12": 0.06747638326585695,
-    "13": 0.06685633001422475,
-    "14": 0.1422475106685633,
-    "15": 0.12162162162162163,
-    "16": 0.06456456456456457,
-    "17": 0.17142857142857143,
-    "18": 0.10084033613445378,
-    "19": 0.1028225806451613,
-    "20": 0.10685483870967742,
-    "21": 0.09885057471264368,
-    "22": 0.09523809523809523,
-    "23": 0.07407407407407407,
-    "24": 0.09401709401709402,
-    "25": 0.1168091168091168,
-    "26": 0.09116809116809117,
-    "27": 0.15384615384615385,
-    "28": 0.1956521739130435,
-    "29": 0.15579710144927536,
-    "30": 0.15579710144927536,
-    "31": 0.16205533596837945,
-    "32": 0.11067193675889328,
-    "33": 0.13852813852813853,
-    "34": 0.21428571428571427,
-    "35": 0.15714285714285714,
-    "36": 0.12631578947368421,
-    "37": 0.18421052631578946,
-    "38": 0.15263157894736842,
-    "39": 0.15263157894736842,
-    "40": 0.2,
-    "41": 0.10526315789473684,
-    "42": 0.10526315789473684,
-    "43": 0.17543859649122806,
-    "44": 0.13071895424836602,
-    "45": 0.16993464052287582,
-    "46": 0.17647058823529413,
-    "47": 0.17647058823529413,
-    "48": 0.1619047619047619,
-    "49": 0.18095238095238095,
-    "50": 0.16483516483516483,
-    "51": 0.1978021978021978,
-    "52": 0.17582417582417584,
-    "53": 0.18681318681318682,
-    "54": 0.17582417582417584,
-    "55": 0.17582417582417584,
-    "56": 0.24358974358974358,
-    "57": 0.23076923076923078,
-    "58": 0.22727272727272727,
-    "59": 0.24242424242424243,
-    "60": 0.18181818181818182,
-    "61": 0.22727272727272727,
-    "62": 0.2545454545454545,
-    "63": 0.21818181818181817,
-    "64": 0.23636363636363636,
-    "65": 0.2545454545454545,
-    "66": 0.21818181818181817,
-    "67": 0.21818181818181817,
+    "4": 0.10714285714285714,
+    "5": 0.09831649831649832,
+    "6": 0.07272727272727272,
+    "7": 0.07058001397624039,
+    "8": 0.08,
+    "9": 0.07294117647058823,
+    "10": 0.0975177304964539,
+    "11": 0.1603864734299517,
+    "12": 0.044444444444444446,
+    "13": 0.10569105691056911,
+    "14": 0.052564102564102565,
+    "15": 0.09871794871794871,
+    "16": 0.06747638326585695,
+    "17": 0.06685633001422475,
+    "18": 0.06507936507936508,
+    "19": 0.10084033613445378,
+    "20": 0.10984848484848485,
+    "21": 0.08172043010752689,
+    "22": 0.09885057471264368,
+    "23": 0.12183908045977011,
+    "24": 0.07407407407407407,
+    "25": 0.09116809116809117,
+    "26": 0.15384615384615385,
+    "27": 0.13333333333333333,
+    "28": 0.11067193675889328,
+    "29": 0.15151515151515152,
+    "30": 0.22857142857142856,
+    "31": 0.12380952380952381,
+    "32": 0.1368421052631579,
+    "33": 0.18421052631578946,
+    "34": 0.15263157894736842,
+    "35": 0.15263157894736842,
+    "36": 0.1368421052631579,
+    "37": 0.14210526315789473,
+    "38": 0.2,
+    "39": 0.10526315789473684,
+    "40": 0.10526315789473684,
+    "41": 0.17543859649122806,
+    "42": 0.16993464052287582,
+    "43": 0.17647058823529413,
+    "44": 0.175,
+    "45": 0.18333333333333332,
+    "46": 0.1619047619047619,
+    "47": 0.18095238095238095,
+    "48": 0.16483516483516483,
+    "49": 0.18681318681318682,
+    "50": 0.18681318681318682,
+    "51": 0.23076923076923078,
+    "52": 0.19230769230769232,
+    "53": 0.22727272727272727,
+    "54": 0.24242424242424243,
+    "55": 0.2727272727272727,
+    "56": 0.22727272727272727,
+    "57": 0.2545454545454545,
+    "58": 0.21818181818181817,
+    "59": 0.23636363636363636,
+    "60": 0.2545454545454545,
+    "61": 0.21818181818181817,
+    "62": 0.3333333333333333,
+    "63": 0.24444444444444444,
+    "64": 0.24444444444444444,
+    "65": 0.2777777777777778,
+    "66": 0.25,
+    "67": 0.2857142857142857,
     "68": 0.3333333333333333,
-    "69": 0.28888888888888886,
-    "70": 0.28888888888888886,
-    "71": 0.24444444444444444,
-    "72": 0.2777777777777778,
-    "73": 0.25,
-    "74": 0.3333333333333333,
-    "75": 0.42857142857142855,
-    "76": 0.42857142857142855,
-    "77": 0.3333333333333333,
-    "78": 0.3333333333333333,
-    "79": 0.3333333333333333,
-    "80": 0.3333333333333333,
-    "81": 0.5333333333333333,
+    "69": 0.42857142857142855,
+    "70": 0.42857142857142855,
+    "71": 0.3333333333333333,
+    "72": 0.3333333333333333,
+    "73": 0.3333333333333333,
+    "74": 0.4666666666666667,
+    "75": 0.3333333333333333,
+    "76": 0.3333333333333333,
+    "77": 0.5,
+    "78": 0.6666666666666666,
+    "79": 0.6666666666666666,
+    "80": 1.0,
+    "81": 1.0,
     "82": 0.6666666666666666,
     "83": 0.6666666666666666,
-    "84": 0.6666666666666666,
+    "84": 1.0,
     "85": 1.0,
-    "86": 0.6666666666666666,
-    "87": 0.6666666666666666,
+    "86": 1.0,
+    "87": 1.0,
     "88": 1.0,
     "89": 1.0,
     "90": 1.0,
@@ -2661,10 +2655,7 @@
     "156": 1.0,
     "157": 1.0,
     "158": 1.0,
-    "159": 1.0,
-    "160": 1.0,
-    "161": 1.0,
-    "162": 1.0
+    "159": 1.0
   },
   "gods": [
     {
