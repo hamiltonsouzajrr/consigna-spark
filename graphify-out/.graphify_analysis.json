@@ -555,62 +555,6 @@
       "src_routes_api_public_hooks_competicao_fechar_route"
     ],
     "7": [
-      "src_integrations_supabase_client_server",
-      "src_integrations_supabase_client_server_createsupabaseadminclient",
-      "src_lib_prospeccao_leads_admin_functions",
-      "src_lib_prospeccao_leads_admin_functions_assignbatchtoconsultant",
-      "src_lib_prospeccao_leads_admin_functions_createleadbatch",
-      "src_lib_prospeccao_leads_admin_functions_getleadbatches",
-      "src_lib_prospeccao_leads_admin_functions_getleadsbybatch",
-      "src_lib_prospeccao_leads_admin_functions_processleadchunk",
-      "src_lib_prospeccao_prospeccao_functions",
-      "src_lib_prospeccao_prospeccao_functions_adminassignleads",
-      "src_lib_prospeccao_prospeccao_functions_admincreateleads",
-      "src_lib_prospeccao_prospeccao_functions_admindeleteimportbatch",
-      "src_lib_prospeccao_prospeccao_functions_admindeletesystemuser",
-      "src_lib_prospeccao_prospeccao_functions_admindistributeleads",
-      "src_lib_prospeccao_prospeccao_functions_adminlistimportbatches",
-      "src_lib_prospeccao_prospeccao_functions_adminlistsystemusers",
-      "src_lib_prospeccao_prospeccao_functions_adminrandomredistribute",
-      "src_lib_prospeccao_prospeccao_functions_adminrecycleleads",
-      "src_lib_prospeccao_prospeccao_functions_adminresetallaccess",
-      "src_lib_prospeccao_prospeccao_functions_adminsetuserrole",
-      "src_lib_prospeccao_prospeccao_functions_adminstats",
-      "src_lib_prospeccao_prospeccao_functions_aileadassist",
-      "src_lib_prospeccao_prospeccao_functions_answered_outcomes",
-      "src_lib_prospeccao_prospeccao_functions_applyassignments",
-      "src_lib_prospeccao_prospeccao_functions_calldetailrow",
-      "src_lib_prospeccao_prospeccao_functions_callqualitystats",
-      "src_lib_prospeccao_prospeccao_functions_getadminstats",
-      "src_lib_prospeccao_prospeccao_functions_getcallqualitystats",
-      "src_lib_prospeccao_prospeccao_functions_getmycalldetails",
-      "src_lib_prospeccao_prospeccao_functions_getmycallquality",
-      "src_lib_prospeccao_prospeccao_functions_getprospectconsultants",
-      "src_lib_prospeccao_prospeccao_functions_importbatch",
-      "src_lib_prospeccao_prospeccao_functions_leadtimelineitem",
-      "src_lib_prospeccao_prospeccao_functions_markleadopened",
-      "src_lib_prospeccao_prospeccao_functions_mycallquality",
-      "src_lib_prospeccao_prospeccao_functions_parsecalloutcome",
-      "src_lib_prospeccao_prospeccao_functions_periodstart",
-      "src_lib_prospeccao_prospeccao_functions_prospectconsultant",
-      "src_lib_prospeccao_prospeccao_functions_refillmyqueue",
-      "src_lib_prospeccao_prospeccao_functions_systemuser",
-      "src_lib_prospeccao_prospeccao_server",
-      "src_lib_prospeccao_prospeccao_server_applyassignments",
-      "src_lib_prospeccao_prospeccao_server_assertadmin",
-      "src_lib_prospeccao_prospeccao_server_assertconsultantids",
-      "src_lib_prospeccao_prospeccao_server_consultantuser",
-      "src_lib_prospeccao_prospeccao_server_consultoranamesfor",
-      "src_lib_prospeccao_prospeccao_server_listconsultantusers",
-      "src_lib_prospeccao_prospeccao_server_randomassignbyname",
-      "src_lib_prospeccao_prospeccao_server_reattachleadhistory",
-      "src_lib_prospeccao_prospeccao_server_resetallownership",
-      "src_lib_prospeccao_prospeccao_server_revokeallaccess",
-      "src_lib_prospeccao_prospeccao_server_shuffle",
-      "src_lib_prospeccao_prospeccao_utils",
-      "src_lib_prospeccao_prospeccao_utils_leadinput"
-    ],
-    "8": [
       "src_components_appshell",
       "src_components_appshell_appshell",
       "src_components_appshell_badgekind",
@@ -663,7 +607,7 @@
       "src_routes_index_route",
       "src_routes_reset_password_resetpasswordpage"
     ],
-    "9": [
+    "8": [
       "src_components_ui_dropdown_menu",
       "src_components_ui_dropdown_menu_dropdownmenucheckboxitem",
       "src_components_ui_dropdown_menu_dropdownmenucontent",
@@ -716,7 +660,7 @@
       "src_routes_authenticated_prospeccao_recentes_lead",
       "src_routes_authenticated_prospeccao_recentes_page"
     ],
-    "10": [
+    "9": [
       "src_components_rh_rhlayout_rhnav",
       "src_components_security_incidentestab_incidentestab",
       "src_hooks_use_rh_notifications",
@@ -766,7 +710,7 @@
       "src_routes_authenticated_rh_acessos_labelfortab",
       "src_routes_authenticated_rh_acessos_route"
     ],
-    "11": [
+    "10": [
       "src_components_prospeccao_admin_acessostab",
       "src_components_prospeccao_admin_acessostab_acessostab",
       "src_components_prospeccao_admin_competicaotab",
@@ -813,6 +757,54 @@
       "src_routes_authenticated_rh_documentos_hoje",
       "src_routes_authenticated_rh_documentos_vencimentobadge",
       "src_routes_authenticated_rh_ferias"
+    ],
+    "11": [
+      "src_lib_prospeccao_prospeccao_functions",
+      "src_lib_prospeccao_prospeccao_functions_adminassignleads",
+      "src_lib_prospeccao_prospeccao_functions_admincreateleads",
+      "src_lib_prospeccao_prospeccao_functions_admindeleteimportbatch",
+      "src_lib_prospeccao_prospeccao_functions_admindeletesystemuser",
+      "src_lib_prospeccao_prospeccao_functions_admindistributeleads",
+      "src_lib_prospeccao_prospeccao_functions_adminlistimportbatches",
+      "src_lib_prospeccao_prospeccao_functions_adminlistsystemusers",
+      "src_lib_prospeccao_prospeccao_functions_adminrandomredistribute",
+      "src_lib_prospeccao_prospeccao_functions_adminrecycleleads",
+      "src_lib_prospeccao_prospeccao_functions_adminresetallaccess",
+      "src_lib_prospeccao_prospeccao_functions_adminsetuserrole",
+      "src_lib_prospeccao_prospeccao_functions_adminstats",
+      "src_lib_prospeccao_prospeccao_functions_aileadassist",
+      "src_lib_prospeccao_prospeccao_functions_answered_outcomes",
+      "src_lib_prospeccao_prospeccao_functions_applyassignments",
+      "src_lib_prospeccao_prospeccao_functions_calldetailrow",
+      "src_lib_prospeccao_prospeccao_functions_callqualitystats",
+      "src_lib_prospeccao_prospeccao_functions_getadminstats",
+      "src_lib_prospeccao_prospeccao_functions_getcallqualitystats",
+      "src_lib_prospeccao_prospeccao_functions_getmycalldetails",
+      "src_lib_prospeccao_prospeccao_functions_getmycallquality",
+      "src_lib_prospeccao_prospeccao_functions_getprospectconsultants",
+      "src_lib_prospeccao_prospeccao_functions_importbatch",
+      "src_lib_prospeccao_prospeccao_functions_leadtimelineitem",
+      "src_lib_prospeccao_prospeccao_functions_markleadopened",
+      "src_lib_prospeccao_prospeccao_functions_mycallquality",
+      "src_lib_prospeccao_prospeccao_functions_parsecalloutcome",
+      "src_lib_prospeccao_prospeccao_functions_periodstart",
+      "src_lib_prospeccao_prospeccao_functions_prospectconsultant",
+      "src_lib_prospeccao_prospeccao_functions_refillmyqueue",
+      "src_lib_prospeccao_prospeccao_functions_systemuser",
+      "src_lib_prospeccao_prospeccao_server",
+      "src_lib_prospeccao_prospeccao_server_applyassignments",
+      "src_lib_prospeccao_prospeccao_server_assertadmin",
+      "src_lib_prospeccao_prospeccao_server_assertconsultantids",
+      "src_lib_prospeccao_prospeccao_server_consultantuser",
+      "src_lib_prospeccao_prospeccao_server_consultoranamesfor",
+      "src_lib_prospeccao_prospeccao_server_listconsultantusers",
+      "src_lib_prospeccao_prospeccao_server_randomassignbyname",
+      "src_lib_prospeccao_prospeccao_server_reattachleadhistory",
+      "src_lib_prospeccao_prospeccao_server_resetallownership",
+      "src_lib_prospeccao_prospeccao_server_revokeallaccess",
+      "src_lib_prospeccao_prospeccao_server_shuffle",
+      "src_lib_prospeccao_prospeccao_utils",
+      "src_lib_prospeccao_prospeccao_utils_leadinput"
     ],
     "12": [
       "eslint",
@@ -1181,39 +1173,6 @@
       "src_routes_reset_password"
     ],
     "21": [
-      "src_integrations_supabase_auth_middleware",
-      "src_integrations_supabase_auth_middleware_requiresupabaseauth",
-      "src_integrations_supabase_types",
-      "src_integrations_supabase_types_compositetypes",
-      "src_integrations_supabase_types_constants",
-      "src_integrations_supabase_types_database",
-      "src_integrations_supabase_types_databasewithoutinternals",
-      "src_integrations_supabase_types_defaultschema",
-      "src_integrations_supabase_types_enums",
-      "src_integrations_supabase_types_json",
-      "src_integrations_supabase_types_tables",
-      "src_integrations_supabase_types_tablesinsert",
-      "src_integrations_supabase_types_tablesupdate",
-      "src_lib_prospeccao_followups_functions",
-      "src_lib_prospeccao_followups_functions_enviarlembretesfollowup",
-      "src_lib_prospeccao_followups_server",
-      "src_lib_prospeccao_followups_server_dispararlembretesfollowup",
-      "src_lib_rh_reconhecimentos_functions",
-      "src_lib_rh_reconhecimentos_functions_assertadmin",
-      "src_lib_rh_reconhecimentos_functions_categorias_reconhecimento",
-      "src_lib_rh_reconhecimentos_functions_deletereconhecimento",
-      "src_lib_rh_reconhecimentos_functions_getreconhecimentos",
-      "src_lib_rh_reconhecimentos_functions_periodicidades",
-      "src_lib_rh_reconhecimentos_functions_reconhecimento",
-      "src_lib_rh_reconhecimentos_functions_reconhecimentosresult",
-      "src_lib_rh_reconhecimentos_functions_savereconhecimento",
-      "src_lib_rh_reconhecimentos_functions_schema",
-      "src_lib_rh_reconhecimentos_functions_tipos",
-      "src_routes_api_public_hooks_followup_lembretes",
-      "src_routes_api_public_hooks_followup_lembretes_route",
-      "src_routes_api_public_hooks_followup_lembretes_run"
-    ],
-    "22": [
       "src_components_legal_centralaprovacao",
       "src_components_legal_centralaprovacao_approval",
       "src_components_legal_centralaprovacao_centralaprovacao",
@@ -1245,7 +1204,7 @@
       "src_routes_root_rootshell",
       "src_routes_root_route"
     ],
-    "23": [
+    "22": [
       "src_components_prospeccao_admin_manualleadcard",
       "src_components_prospeccao_admin_manualleadcard_consultant",
       "src_components_prospeccao_admin_manualleadcard_manualleadcard",
@@ -1277,7 +1236,7 @@
       "src_routes_consultora_token_join",
       "src_routes_consultora_token_leadcard"
     ],
-    "24": [
+    "23": [
       "ref_dom",
       "ref_dom_iterable",
       "ref_es2022",
@@ -1306,7 +1265,7 @@
       "tsconfig_compileroptions_verbatimmodulesyntax",
       "tsconfig_include"
     ],
-    "25": [
+    "24": [
       "src_routes_authenticated_pesquisas",
       "src_routes_authenticated_pesquisas_blank",
       "src_routes_authenticated_pesquisas_calcidade",
@@ -1335,7 +1294,7 @@
       "src_routes_authenticated_pesquisas_vinculobadge",
       "src_routes_authenticated_pesquisas_vinculoempregaticio"
     ],
-    "26": [
+    "25": [
       "src_components_prospeccao_promovidospdfimport",
       "src_components_prospeccao_promovidospdfimport_cleanname",
       "src_components_prospeccao_promovidospdfimport_currentmonth",
@@ -1363,7 +1322,7 @@
       "src_lib_prospeccao_promovidos_functions_promovidoai",
       "src_lib_prospeccao_promovidos_functions_savepromovidos"
     ],
-    "27": [
+    "26": [
       "src_components_rh_elogiospopup_elogiospopup",
       "src_lib_rh_portal_admin_functions",
       "src_lib_rh_portal_admin_functions_assertadmin",
@@ -1390,7 +1349,7 @@
       "src_routes_authenticated_rh_portal_index_route",
       "src_routes_authenticated_rh_portal_index_tones"
     ],
-    "28": [
+    "27": [
       "src_components_rh_notificationbell",
       "src_components_rh_notificationbell_notificationbell",
       "src_components_rh_notificationbell_timeago",
@@ -1415,7 +1374,7 @@
       "src_hooks_use_rh_notifications_userhnotifications",
       "src_lib_utils"
     ],
-    "29": [
+    "28": [
       "src_components_prospeccao_followuppopup",
       "src_components_prospeccao_followuppopup_config",
       "src_components_prospeccao_followuppopup_default_config",
@@ -1439,7 +1398,7 @@
       "src_routes_authenticated_prospeccao_followups_page",
       "src_routes_authenticated_prospeccao_followups_route"
     ],
-    "30": [
+    "29": [
       "src_components_auth_primeiroacessodialog_aviso_primeiro_acesso_key",
       "src_components_auth_primeiroacessodialog_primeiroacessodialog",
       "src_components_completeprofiledialog",
@@ -1462,7 +1421,7 @@
       "src_routes_login_loginpage",
       "src_routes_login_route"
     ],
-    "31": [
+    "30": [
       "src_lib_radar_radar_functions_distribuicaoconsultora",
       "src_lib_radar_radar_functions_getarquivourl",
       "src_lib_radar_radar_functions_getdistribuicaoconsultoras",
@@ -1485,7 +1444,7 @@
       "src_routes_authenticated_radar_registros_status",
       "src_routes_authenticated_radar_registros_statustone"
     ],
-    "32": [
+    "31": [
       "src_components_ui_card_cardcontent",
       "src_components_ui_card_cardtitle",
       "src_components_ui_progress",
@@ -1507,7 +1466,7 @@
       "src_routes_authenticated_rh_portal_kpi_portalkpisearch",
       "src_routes_authenticated_rh_treinamentos_treinamentos"
     ],
-    "33": [
+    "32": [
       "src_integrations_supabase_client_server_supabaseadmin",
       "src_lib_radar_diario_crawler_server_baixarpdf",
       "src_lib_radar_diario_crawler_server_sleep",
@@ -1529,7 +1488,7 @@
       "src_routes_api_public_hooks_radar_diario_worker",
       "src_routes_api_public_hooks_radar_diario_worker_route"
     ],
-    "34": [
+    "33": [
       "src_lib_al_index",
       "src_lib_al_index_lerlogs",
       "src_lib_al_index_logsimulacao",
@@ -1551,7 +1510,7 @@
       "src_lib_al_previdencia_faixa",
       "src_lib_al_previdencia_faixas_previdencia_al"
     ],
-    "35": [
+    "34": [
       "src_lib_al_index_brl",
       "src_lib_al_index_gerartextowhatsapp",
       "src_lib_al_index_orgaoal",
@@ -1573,7 +1532,7 @@
       "src_routes_authenticated_calculadora_al_simulacaoreajusteal",
       "src_routes_authenticated_calculadora_al_statcard"
     ],
-    "36": [
+    "35": [
       "src_lib_radar_radar_functions",
       "src_lib_radar_radar_functions_analisardiarioai",
       "src_lib_radar_radar_functions_chunktext",
@@ -1595,7 +1554,7 @@
       "src_routes_authenticated_radar_arquivos",
       "src_routes_authenticated_radar_arquivos_route"
     ],
-    "37": [
+    "36": [
       "src_lib_rh_mock_colaborador",
       "src_lib_rh_mock_documentos",
       "src_lib_rh_mock_ferias",
@@ -1617,7 +1576,7 @@
       "src_lib_rh_portal_tosolicitacao",
       "src_routes_authenticated_rh_portal_kpi_kpidetailpage"
     ],
-    "38": [
+    "37": [
       "src_lib_wa_whatsapp_functions",
       "src_lib_wa_whatsapp_functions_addwaaccount",
       "src_lib_wa_whatsapp_functions_assertwaadmin",
@@ -1639,28 +1598,7 @@
       "src_routes_authenticated_whatsapp_route",
       "src_routes_authenticated_whatsapp_whatsapppage"
     ],
-    "39": [
-      "clsx",
-      "hookform_resolvers",
-      "nanoid",
-      "package_dependencies",
-      "package_dependencies_clsx",
-      "package_dependencies_hookform_resolvers",
-      "package_dependencies_nanoid",
-      "package_dependencies_radix_ui_react_alert_dialog",
-      "package_dependencies_radix_ui_react_scroll_area",
-      "package_dependencies_streamdown",
-      "package_dependencies_streamdown_mermaid",
-      "package_dependencies_tanstack_router_plugin",
-      "package_dependencies_tesseract_js",
-      "package_json_tesseract_js",
-      "radix_ui_react_alert_dialog",
-      "radix_ui_react_scroll_area",
-      "streamdown",
-      "streamdown_mermaid",
-      "tanstack_router_plugin"
-    ],
-    "40": [
+    "38": [
       "components",
       "components_aliases",
       "components_aliases_components",
@@ -1681,7 +1619,28 @@
       "components_tailwind_prefix",
       "components_tsx"
     ],
-    "41": [
+    "39": [
+      "hookform_resolvers",
+      "nanoid",
+      "package_dependencies",
+      "package_dependencies_hookform_resolvers",
+      "package_dependencies_jspdf",
+      "package_dependencies_nanoid",
+      "package_dependencies_radix_ui_react_alert_dialog",
+      "package_dependencies_radix_ui_react_scroll_area",
+      "package_dependencies_streamdown",
+      "package_dependencies_streamdown_mermaid",
+      "package_dependencies_tanstack_router_plugin",
+      "package_dependencies_tesseract_js",
+      "package_json_jspdf",
+      "package_json_tesseract_js",
+      "radix_ui_react_alert_dialog",
+      "radix_ui_react_scroll_area",
+      "streamdown",
+      "streamdown_mermaid",
+      "tanstack_router_plugin"
+    ],
+    "40": [
       "src_lib_ai_gateway_server",
       "src_lib_ai_gateway_server_createlovableaigatewayprovider",
       "src_lib_radar_diario_extraction_server",
@@ -1702,7 +1661,7 @@
       "src_lib_radar_diario_extraction_server_secoes_radar_padrao",
       "src_lib_radar_diario_extraction_server_str"
     ],
-    "42": [
+    "41": [
       "src_components_ui_tabs",
       "src_components_ui_tabs_tabscontent",
       "src_components_ui_tabs_tabslist",
@@ -1721,6 +1680,25 @@
       "src_routes_authenticated_rh_colaboradores_id",
       "src_routes_authenticated_rh_colaboradores_id_field",
       "src_routes_authenticated_rh_colaboradores_id_route"
+    ],
+    "42": [
+      "src_integrations_supabase_client_server",
+      "src_integrations_supabase_client_server_createsupabaseadminclient",
+      "src_lib_prospeccao_leads_admin_functions",
+      "src_lib_prospeccao_leads_admin_functions_assignbatchtoconsultant",
+      "src_lib_prospeccao_leads_admin_functions_createleadbatch",
+      "src_lib_prospeccao_leads_admin_functions_getleadbatches",
+      "src_lib_prospeccao_leads_admin_functions_getleadsbybatch",
+      "src_lib_prospeccao_leads_admin_functions_processleadchunk",
+      "src_lib_radar_consultora_portal_functions",
+      "src_lib_radar_consultora_portal_functions_consultoralead",
+      "src_lib_radar_consultora_portal_functions_consultoraportal",
+      "src_lib_radar_consultora_portal_functions_getconsultoraportal",
+      "src_lib_radar_consultora_portal_functions_resolverconsultora",
+      "src_lib_radar_consultora_portal_functions_setconsultoraleadstatus",
+      "src_routes_api_public_whatsapp_webhook",
+      "src_routes_api_public_whatsapp_webhook_route",
+      "src_routes_api_public_whatsapp_webhook_verifysignature"
     ],
     "43": [
       "src_lib_security_access_server",
@@ -1959,6 +1937,19 @@
       "src_components_ui_chart_usechart"
     ],
     "58": [
+      "src_integrations_supabase_types",
+      "src_integrations_supabase_types_compositetypes",
+      "src_integrations_supabase_types_constants",
+      "src_integrations_supabase_types_database",
+      "src_integrations_supabase_types_databasewithoutinternals",
+      "src_integrations_supabase_types_defaultschema",
+      "src_integrations_supabase_types_enums",
+      "src_integrations_supabase_types_json",
+      "src_integrations_supabase_types_tables",
+      "src_integrations_supabase_types_tablesinsert",
+      "src_integrations_supabase_types_tablesupdate"
+    ],
+    "59": [
       "src_lib_rh_clima_functions",
       "src_lib_rh_clima_functions_clima_questions",
       "src_lib_rh_clima_functions_climaadminresponse",
@@ -1971,7 +1962,7 @@
       "src_lib_rh_clima_functions_weekstartof",
       "src_routes_authenticated_rh_clima_clima"
     ],
-    "59": [
+    "60": [
       "src_lib_rh_desligamentos_functions",
       "src_lib_rh_desligamentos_functions_aiaprendizados",
       "src_lib_rh_desligamentos_functions_assertadmin",
@@ -1984,7 +1975,7 @@
       "src_lib_rh_desligamentos_functions_schema",
       "src_lib_rh_desligamentos_functions_tipos_desligamento"
     ],
-    "60": [
+    "61": [
       "src_lib_rh_extra_turnovernivel",
       "src_routes_authenticated_rh_turnover",
       "src_routes_authenticated_rh_turnover_badge",
@@ -1997,7 +1988,7 @@
       "src_routes_authenticated_rh_turnover_tagbadge",
       "src_routes_authenticated_rh_turnover_turnover"
     ],
-    "61": [
+    "62": [
       "src_lib_rh_ocorrencias_functions",
       "src_lib_rh_ocorrencias_functions_assertadmin",
       "src_lib_rh_ocorrencias_functions_consultora",
@@ -2010,7 +2001,20 @@
       "src_lib_rh_ocorrencias_functions_schema",
       "src_lib_rh_ocorrencias_functions_tipos_ocorrencia"
     ],
-    "62": [
+    "63": [
+      "src_lib_rh_reconhecimentos_functions",
+      "src_lib_rh_reconhecimentos_functions_assertadmin",
+      "src_lib_rh_reconhecimentos_functions_categorias_reconhecimento",
+      "src_lib_rh_reconhecimentos_functions_deletereconhecimento",
+      "src_lib_rh_reconhecimentos_functions_getreconhecimentos",
+      "src_lib_rh_reconhecimentos_functions_periodicidades",
+      "src_lib_rh_reconhecimentos_functions_reconhecimento",
+      "src_lib_rh_reconhecimentos_functions_reconhecimentosresult",
+      "src_lib_rh_reconhecimentos_functions_savereconhecimento",
+      "src_lib_rh_reconhecimentos_functions_schema",
+      "src_lib_rh_reconhecimentos_functions_tipos"
+    ],
+    "64": [
       "src_lib_legal_legal_functions",
       "src_lib_legal_legal_functions_adminapproval",
       "src_lib_legal_legal_functions_adminapprovalmediaurl",
@@ -2022,7 +2026,7 @@
       "src_lib_legal_legal_functions_guestapproval",
       "src_lib_legal_legal_functions_makeshorttoken"
     ],
-    "63": [
+    "65": [
       "src_lib_rh_onboarding_functions",
       "src_lib_rh_onboarding_functions_assertadmin",
       "src_lib_rh_onboarding_functions_deleteonboarding",
@@ -2034,7 +2038,7 @@
       "src_lib_rh_onboarding_functions_tarefa",
       "src_lib_rh_onboarding_functions_tarefaschema"
     ],
-    "64": [
+    "66": [
       "src_lib_rh_portal_functions",
       "src_lib_rh_portal_functions_brl",
       "src_lib_rh_portal_functions_fetchkpidetailfromdb",
@@ -2046,7 +2050,7 @@
       "src_lib_rh_portal_kpikey",
       "src_lib_rh_portal_periodkey"
     ],
-    "65": [
+    "67": [
       "src_components_ui_input_group",
       "src_components_ui_input_group_inputgroup",
       "src_components_ui_input_group_inputgroupaddon",
@@ -2057,7 +2061,18 @@
       "src_components_ui_input_group_inputgrouptext",
       "src_components_ui_input_group_inputgrouptextarea"
     ],
-    "66": [
+    "68": [
+      "src_integrations_supabase_auth_middleware",
+      "src_integrations_supabase_auth_middleware_requiresupabaseauth",
+      "src_lib_prospeccao_followups_functions",
+      "src_lib_prospeccao_followups_functions_enviarlembretesfollowup",
+      "src_lib_prospeccao_followups_server",
+      "src_lib_prospeccao_followups_server_dispararlembretesfollowup",
+      "src_routes_api_public_hooks_followup_lembretes",
+      "src_routes_api_public_hooks_followup_lembretes_route",
+      "src_routes_api_public_hooks_followup_lembretes_run"
+    ],
+    "69": [
       "src_lib_al_credito",
       "src_lib_al_credito_aplicar",
       "src_lib_al_credito_estimarcredito",
@@ -2068,7 +2083,7 @@
       "src_lib_al_credito_multiplicadorcredito",
       "src_routes_authenticated_calculadora_al_calcularsimulacao"
     ],
-    "67": [
+    "70": [
       "src_components_ui_navigation_menu",
       "src_components_ui_navigation_menu_navigationmenu",
       "src_components_ui_navigation_menu_navigationmenucontent",
@@ -2078,7 +2093,7 @@
       "src_components_ui_navigation_menu_navigationmenutriggerstyle",
       "src_components_ui_navigation_menu_navigationmenuviewport"
     ],
-    "68": [
+    "71": [
       "src_components_ai_elements_shimmer",
       "src_components_ai_elements_shimmer_getmotioncomponent",
       "src_components_ai_elements_shimmer_motioncomponentcache",
@@ -2087,7 +2102,7 @@
       "src_components_ai_elements_shimmer_shimmercomponent",
       "src_components_ai_elements_shimmer_textshimmerprops"
     ],
-    "69": [
+    "72": [
       "src_components_ui_toggle",
       "src_components_ui_toggle_group",
       "src_components_ui_toggle_group_togglegroup",
@@ -2096,7 +2111,7 @@
       "src_components_ui_toggle_toggle",
       "src_components_ui_toggle_togglevariants"
     ],
-    "70": [
+    "73": [
       "src_lib_al_imposto",
       "src_lib_al_imposto_aliquotair",
       "src_lib_al_imposto_calcirincremental",
@@ -2105,7 +2120,7 @@
       "src_lib_al_imposto_faixapara",
       "src_lib_al_imposto_faixas_ir"
     ],
-    "71": [
+    "74": [
       "src_lib_rh_portal_icons",
       "src_lib_rh_portal_icons_portal_icon_names",
       "src_lib_rh_portal_icons_portal_icons",
@@ -2114,7 +2129,7 @@
       "src_lib_rh_portal_icons_toneclass",
       "src_routes_authenticated_rh_portal_index_portalindex"
     ],
-    "72": [
+    "75": [
       "supabase_functions_nv_check_index",
       "supabase_functions_nv_check_index_b64",
       "supabase_functions_nv_check_index_corsheaders",
@@ -2123,7 +2138,7 @@
       "supabase_functions_nv_check_index_parseconsulta",
       "supabase_functions_nv_check_index_requireauth"
     ],
-    "73": [
+    "76": [
       "supabase_functions_pesquisa_nvbook_cel_index",
       "supabase_functions_pesquisa_nvbook_cel_index_b64",
       "supabase_functions_pesquisa_nvbook_cel_index_corsheaders",
@@ -2132,15 +2147,7 @@
       "supabase_functions_pesquisa_nvbook_cel_index_parseconsulta",
       "supabase_functions_pesquisa_nvbook_cel_index_requireauth"
     ],
-    "74": [
-      "src_lib_radar_consultora_portal_functions",
-      "src_lib_radar_consultora_portal_functions_consultoralead",
-      "src_lib_radar_consultora_portal_functions_consultoraportal",
-      "src_lib_radar_consultora_portal_functions_getconsultoraportal",
-      "src_lib_radar_consultora_portal_functions_resolverconsultora",
-      "src_lib_radar_consultora_portal_functions_setconsultoraleadstatus"
-    ],
-    "75": [
+    "77": [
       "src_lib_radar_radar_functions_dashboarddata",
       "src_lib_radar_radar_functions_getdashboard",
       "src_routes_authenticated_radar_index",
@@ -2148,7 +2155,7 @@
       "src_routes_authenticated_radar_index_empty",
       "src_routes_authenticated_radar_index_route"
     ],
-    "76": [
+    "78": [
       "src_routes_authenticated_qrcodes",
       "src_routes_authenticated_qrcodes_itens",
       "src_routes_authenticated_qrcodes_qrcard",
@@ -2156,342 +2163,337 @@
       "src_routes_authenticated_qrcodes_qritem",
       "src_routes_authenticated_qrcodes_route"
     ],
-    "77": [
+    "79": [
       "src_components_rh_rhlayout_rhlayout",
       "src_routes_authenticated_rh",
       "src_routes_authenticated_rh_rhroot",
       "src_routes_authenticated_rh_route"
     ],
-    "78": [
+    "80": [
       "src_integrations_supabase_auth_attacher",
       "src_integrations_supabase_auth_attacher_attachsupabaseauth",
       "src_start",
       "src_start_startinstance"
     ],
-    "79": [
+    "81": [
       "src_router",
       "src_router_defaulterrorcomponent",
       "src_router_getrouter",
       "src_routetree_gen_routetree"
     ],
-    "80": [
+    "82": [
       "src_components_ui_calendar",
       "src_components_ui_calendar_calendar",
       "src_components_ui_calendar_calendardaybutton"
     ],
-    "81": [
-      "src_routes_api_public_whatsapp_webhook",
-      "src_routes_api_public_whatsapp_webhook_route",
-      "src_routes_api_public_whatsapp_webhook_verifysignature"
-    ],
-    "82": [
+    "83": [
       "src_routes_sitemap_xml",
       "src_routes_sitemap_xml_route",
       "src_routes_sitemap_xml_sitemapentry"
     ],
-    "83": [
+    "84": [
       "supabase_functions_nova_vida_post_index",
       "supabase_functions_nova_vida_post_index_corsheaders",
       "supabase_functions_nova_vida_post_index_requireauth"
     ],
-    "84": [
+    "85": [
       "ai_sdk_openai_compatible",
       "package_dependencies_ai_sdk_openai_compatible"
     ],
-    "85": [
+    "86": [
       "ai_sdk_react",
       "package_dependencies_ai_sdk_react"
     ],
-    "86": [
+    "87": [
       "class_variance_authority",
       "package_dependencies_class_variance_authority"
     ],
-    "87": [
+    "88": [
       "cloudflare_vite_plugin",
       "package_dependencies_cloudflare_vite_plugin"
     ],
-    "88": [
+    "89": [
+      "clsx",
+      "package_dependencies_clsx"
+    ],
+    "90": [
       "cmdk",
       "package_dependencies_cmdk"
     ],
-    "89": [
+    "91": [
       "date_fns",
       "package_dependencies_date_fns"
     ],
-    "90": [
+    "92": [
       "embla_carousel_react",
       "package_dependencies_embla_carousel_react"
     ],
-    "91": [
+    "93": [
       "input_otp",
       "package_dependencies_input_otp"
     ],
-    "92": [
+    "94": [
       "lucide_react",
       "package_dependencies_lucide_react"
     ],
-    "93": [
+    "95": [
       "motion",
       "package_dependencies_motion"
     ],
-    "94": [
+    "96": [
       "nitro",
       "package_dependencies_nitro"
     ],
-    "95": [
+    "97": [
       "package_dependencies_ai",
       "package_json_ai"
     ],
-    "96": [
+    "98": [
       "package_dependencies_html2canvas",
       "package_json_html2canvas"
     ],
-    "97": [
-      "package_dependencies_jspdf",
-      "package_json_jspdf"
-    ],
-    "98": [
+    "99": [
       "package_dependencies_jspdf_autotable",
       "package_json_jspdf_autotable"
     ],
-    "99": [
+    "100": [
       "package_dependencies_mammoth",
       "package_json_mammoth"
     ],
-    "100": [
+    "101": [
       "package_dependencies_papaparse",
       "papaparse"
     ],
-    "101": [
+    "102": [
       "package_dependencies_pdfjs_dist",
       "package_json_pdfjs_dist"
     ],
-    "102": [
+    "103": [
       "package_dependencies_radix_ui_react_accordion",
       "radix_ui_react_accordion"
     ],
-    "103": [
+    "104": [
       "package_dependencies_radix_ui_react_aspect_ratio",
       "radix_ui_react_aspect_ratio"
     ],
-    "104": [
+    "105": [
       "package_dependencies_radix_ui_react_avatar",
       "radix_ui_react_avatar"
     ],
-    "105": [
+    "106": [
       "package_dependencies_radix_ui_react_checkbox",
       "radix_ui_react_checkbox"
     ],
-    "106": [
+    "107": [
       "package_dependencies_radix_ui_react_collapsible",
       "radix_ui_react_collapsible"
     ],
-    "107": [
+    "108": [
       "package_dependencies_radix_ui_react_context_menu",
       "radix_ui_react_context_menu"
     ],
-    "108": [
+    "109": [
       "package_dependencies_radix_ui_react_dialog",
       "radix_ui_react_dialog"
     ],
-    "109": [
+    "110": [
       "package_dependencies_radix_ui_react_dropdown_menu",
       "radix_ui_react_dropdown_menu"
     ],
-    "110": [
+    "111": [
       "package_dependencies_radix_ui_react_hover_card",
       "radix_ui_react_hover_card"
     ],
-    "111": [
+    "112": [
       "package_dependencies_radix_ui_react_label",
       "radix_ui_react_label"
     ],
-    "112": [
+    "113": [
       "package_dependencies_radix_ui_react_menubar",
       "radix_ui_react_menubar"
     ],
-    "113": [
+    "114": [
       "package_dependencies_radix_ui_react_navigation_menu",
       "radix_ui_react_navigation_menu"
     ],
-    "114": [
+    "115": [
       "package_dependencies_radix_ui_react_popover",
       "radix_ui_react_popover"
     ],
-    "115": [
+    "116": [
       "package_dependencies_radix_ui_react_progress",
       "radix_ui_react_progress"
     ],
-    "116": [
+    "117": [
       "package_dependencies_radix_ui_react_radio_group",
       "radix_ui_react_radio_group"
     ],
-    "117": [
+    "118": [
       "package_dependencies_radix_ui_react_select",
       "radix_ui_react_select"
     ],
-    "118": [
+    "119": [
       "package_dependencies_radix_ui_react_separator",
       "radix_ui_react_separator"
     ],
-    "119": [
+    "120": [
       "package_dependencies_radix_ui_react_slider",
       "radix_ui_react_slider"
     ],
-    "120": [
+    "121": [
       "package_dependencies_radix_ui_react_slot",
       "radix_ui_react_slot"
     ],
-    "121": [
+    "122": [
       "package_dependencies_radix_ui_react_switch",
       "radix_ui_react_switch"
     ],
-    "122": [
+    "123": [
       "package_dependencies_radix_ui_react_tabs",
       "radix_ui_react_tabs"
     ],
-    "123": [
+    "124": [
       "package_dependencies_radix_ui_react_toggle",
       "radix_ui_react_toggle"
     ],
-    "124": [
+    "125": [
       "package_dependencies_radix_ui_react_toggle_group",
       "radix_ui_react_toggle_group"
     ],
-    "125": [
+    "126": [
       "package_dependencies_radix_ui_react_tooltip",
       "radix_ui_react_tooltip"
     ],
-    "126": [
+    "127": [
       "package_dependencies_react",
       "react"
     ],
-    "127": [
+    "128": [
       "package_dependencies_react_day_picker",
       "react_day_picker"
     ],
-    "128": [
+    "129": [
       "package_dependencies_react_dom",
       "react_dom"
     ],
-    "129": [
+    "130": [
       "package_dependencies_react_hook_form",
       "react_hook_form"
     ],
-    "130": [
+    "131": [
       "package_dependencies_react_qr_code",
       "react_qr_code"
     ],
-    "131": [
+    "132": [
       "package_dependencies_react_resizable_panels",
       "react_resizable_panels"
     ],
-    "132": [
+    "133": [
       "package_dependencies_recharts",
       "recharts"
     ],
-    "133": [
+    "134": [
       "package_dependencies_sonner",
       "sonner"
     ],
-    "134": [
+    "135": [
       "package_dependencies_streamdown_cjk",
       "streamdown_cjk"
     ],
-    "135": [
+    "136": [
       "package_dependencies_streamdown_code",
       "streamdown_code"
     ],
-    "136": [
+    "137": [
       "package_dependencies_streamdown_math",
       "streamdown_math"
     ],
-    "137": [
+    "138": [
       "package_dependencies_supabase_supabase_js",
       "supabase_supabase_js"
     ],
-    "138": [
+    "139": [
       "package_dependencies_tailwind_merge",
       "tailwind_merge"
     ],
-    "139": [
+    "140": [
       "package_dependencies_tailwindcss",
       "tailwindcss"
     ],
-    "140": [
+    "141": [
       "package_dependencies_tailwindcss_vite",
       "tailwindcss_vite"
     ],
-    "141": [
+    "142": [
       "package_dependencies_tanstack_react_query",
       "tanstack_react_query"
     ],
-    "142": [
+    "143": [
       "package_dependencies_tanstack_react_router",
       "tanstack_react_router"
     ],
-    "143": [
+    "144": [
       "package_dependencies_tanstack_react_start",
       "tanstack_react_start"
     ],
-    "144": [
+    "145": [
       "package_dependencies_tw_animate_css",
       "tw_animate_css"
     ],
-    "145": [
+    "146": [
       "package_dependencies_types_papaparse",
       "types_papaparse"
     ],
-    "146": [
+    "147": [
       "package_dependencies_unpdf",
       "package_json_unpdf"
     ],
-    "147": [
+    "148": [
       "package_dependencies_use_stick_to_bottom",
       "use_stick_to_bottom"
     ],
-    "148": [
+    "149": [
       "package_dependencies_vaul",
       "vaul"
     ],
-    "149": [
+    "150": [
       "package_dependencies_vite_tsconfig_paths",
       "vite_tsconfig_paths"
     ],
-    "150": [
+    "151": [
       "package_dependencies_xlsx",
       "package_json_xlsx"
     ],
-    "151": [
+    "152": [
       "package_dependencies_zod",
       "zod"
     ],
-    "152": [
+    "153": [
       "src_routes_authenticated_prospeccao_promovidos_recentemente",
       "src_routes_authenticated_prospeccao_promovidos_recentemente_route"
     ],
-    "153": [
+    "154": [
       "src_routes_authenticated_rh_index",
       "src_routes_authenticated_rh_index_route"
     ],
-    "154": [
+    "155": [
       "src_routes_authenticated_rh_portal",
       "src_routes_authenticated_rh_portal_route"
     ],
-    "155": [
+    "156": [
       "src_routes_authenticated_route",
       "src_routes_authenticated_route_route"
     ],
-    "156": [
+    "157": [
       "eslint_config"
     ],
-    "157": [
+    "158": [
       "src_components_ui_aspect_ratio"
     ],
-    "158": [
+    "159": [
       "src_components_ui_collapsible"
     ],
-    "159": [
+    "160": [
       "vite_config"
     ]
   },
@@ -2503,11 +2505,11 @@
     "4": 0.10714285714285714,
     "5": 0.09831649831649832,
     "6": 0.07272727272727272,
-    "7": 0.07058001397624039,
-    "8": 0.08,
-    "9": 0.07294117647058823,
-    "10": 0.0975177304964539,
-    "11": 0.1603864734299517,
+    "7": 0.08,
+    "8": 0.07294117647058823,
+    "9": 0.0975177304964539,
+    "10": 0.1603864734299517,
+    "11": 0.06763285024154589,
     "12": 0.044444444444444446,
     "13": 0.10569105691056911,
     "14": 0.052564102564102565,
@@ -2517,28 +2519,28 @@
     "18": 0.06507936507936508,
     "19": 0.10084033613445378,
     "20": 0.10984848484848485,
-    "21": 0.08172043010752689,
-    "22": 0.09885057471264368,
-    "23": 0.12183908045977011,
-    "24": 0.07407407407407407,
-    "25": 0.09116809116809117,
-    "26": 0.15384615384615385,
-    "27": 0.13333333333333333,
-    "28": 0.11067193675889328,
-    "29": 0.15151515151515152,
-    "30": 0.22857142857142856,
-    "31": 0.12380952380952381,
-    "32": 0.1368421052631579,
-    "33": 0.18421052631578946,
+    "21": 0.09885057471264368,
+    "22": 0.12183908045977011,
+    "23": 0.07407407407407407,
+    "24": 0.09116809116809117,
+    "25": 0.15384615384615385,
+    "26": 0.13333333333333333,
+    "27": 0.11067193675889328,
+    "28": 0.15151515151515152,
+    "29": 0.22857142857142856,
+    "30": 0.12380952380952381,
+    "31": 0.1368421052631579,
+    "32": 0.18421052631578946,
+    "33": 0.15263157894736842,
     "34": 0.15263157894736842,
-    "35": 0.15263157894736842,
-    "36": 0.1368421052631579,
-    "37": 0.14210526315789473,
-    "38": 0.2,
+    "35": 0.1368421052631579,
+    "36": 0.14210526315789473,
+    "37": 0.2,
+    "38": 0.10526315789473684,
     "39": 0.10526315789473684,
-    "40": 0.10526315789473684,
-    "41": 0.17543859649122806,
-    "42": 0.16993464052287582,
+    "40": 0.17543859649122806,
+    "41": 0.16993464052287582,
+    "42": 0.19852941176470587,
     "43": 0.17647058823529413,
     "44": 0.175,
     "45": 0.18333333333333332,
@@ -2554,33 +2556,33 @@
     "55": 0.2727272727272727,
     "56": 0.22727272727272727,
     "57": 0.2545454545454545,
-    "58": 0.21818181818181817,
-    "59": 0.23636363636363636,
-    "60": 0.2545454545454545,
-    "61": 0.21818181818181817,
-    "62": 0.3333333333333333,
-    "63": 0.24444444444444444,
-    "64": 0.24444444444444444,
-    "65": 0.2777777777777778,
-    "66": 0.25,
-    "67": 0.2857142857142857,
+    "58": 0.18181818181818182,
+    "59": 0.21818181818181817,
+    "60": 0.23636363636363636,
+    "61": 0.2545454545454545,
+    "62": 0.21818181818181817,
+    "63": 0.21818181818181817,
+    "64": 0.3333333333333333,
+    "65": 0.24444444444444444,
+    "66": 0.24444444444444444,
+    "67": 0.2777777777777778,
     "68": 0.3333333333333333,
-    "69": 0.42857142857142855,
-    "70": 0.42857142857142855,
+    "69": 0.25,
+    "70": 0.2857142857142857,
     "71": 0.3333333333333333,
-    "72": 0.3333333333333333,
-    "73": 0.3333333333333333,
-    "74": 0.4666666666666667,
+    "72": 0.42857142857142855,
+    "73": 0.42857142857142855,
+    "74": 0.3333333333333333,
     "75": 0.3333333333333333,
     "76": 0.3333333333333333,
-    "77": 0.5,
-    "78": 0.6666666666666666,
-    "79": 0.6666666666666666,
-    "80": 1.0,
-    "81": 1.0,
-    "82": 0.6666666666666666,
+    "77": 0.3333333333333333,
+    "78": 0.3333333333333333,
+    "79": 0.5,
+    "80": 0.6666666666666666,
+    "81": 0.6666666666666666,
+    "82": 1.0,
     "83": 0.6666666666666666,
-    "84": 1.0,
+    "84": 0.6666666666666666,
     "85": 1.0,
     "86": 1.0,
     "87": 1.0,
@@ -2655,7 +2657,8 @@
     "156": 1.0,
     "157": 1.0,
     "158": 1.0,
-    "159": 1.0
+    "159": 1.0,
+    "160": 1.0
   },
   "gods": [
     {
