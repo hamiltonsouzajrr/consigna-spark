@@ -28,6 +28,7 @@ import { Route as AuthenticatedTomadoresAlRouteImport } from './routes/_authenti
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AprovacaoTokenRouteImport } from './routes/aprovacao.$token'
 import { Route as ConsultoraTokenRouteImport } from './routes/consultora.$token'
+import { Route as AuthenticatedContaSenhaRouteImport } from './routes/_authenticated/conta.senha'
 import { Route as AuthenticatedPosVendaAvaliacoesRouteImport } from './routes/_authenticated/pos-venda.avaliacoes'
 import { Route as AuthenticatedProducaoCompeticaoRouteImport } from './routes/_authenticated/producao.competicao'
 import { Route as AuthenticatedProducaoMetasRouteImport } from './routes/_authenticated/producao.metas'
@@ -182,6 +183,11 @@ const ConsultoraTokenRoute = ConsultoraTokenRouteImport.update({
   id: '/consultora/$token',
   path: '/consultora/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedContaSenhaRoute = AuthenticatedContaSenhaRouteImport.update({
+  id: '/conta/senha',
+  path: '/conta/senha',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPosVendaAvaliacoesRoute =
   AuthenticatedPosVendaAvaliacoesRouteImport.update({
@@ -528,6 +534,7 @@ export interface FileRoutesByFullPath {
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/consultora/$token': typeof ConsultoraTokenRoute
+  '/conta/senha': typeof AuthenticatedContaSenhaRoute
   '/pos-venda/avaliacoes': typeof AuthenticatedPosVendaAvaliacoesRoute
   '/producao/competicao': typeof AuthenticatedProducaoCompeticaoRoute
   '/producao/metas': typeof AuthenticatedProducaoMetasRoute
@@ -602,6 +609,7 @@ export interface FileRoutesByTo {
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/consultora/$token': typeof ConsultoraTokenRoute
+  '/conta/senha': typeof AuthenticatedContaSenhaRoute
   '/pos-venda/avaliacoes': typeof AuthenticatedPosVendaAvaliacoesRoute
   '/producao/competicao': typeof AuthenticatedProducaoCompeticaoRoute
   '/producao/metas': typeof AuthenticatedProducaoMetasRoute
@@ -679,6 +687,7 @@ export interface FileRoutesById {
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/aprovacao/$token': typeof AprovacaoTokenRoute
   '/consultora/$token': typeof ConsultoraTokenRoute
+  '/_authenticated/conta/senha': typeof AuthenticatedContaSenhaRoute
   '/_authenticated/pos-venda/avaliacoes': typeof AuthenticatedPosVendaAvaliacoesRoute
   '/_authenticated/producao/competicao': typeof AuthenticatedProducaoCompeticaoRoute
   '/_authenticated/producao/metas': typeof AuthenticatedProducaoMetasRoute
@@ -757,6 +766,7 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/aprovacao/$token'
     | '/consultora/$token'
+    | '/conta/senha'
     | '/pos-venda/avaliacoes'
     | '/producao/competicao'
     | '/producao/metas'
@@ -831,6 +841,7 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/aprovacao/$token'
     | '/consultora/$token'
+    | '/conta/senha'
     | '/pos-venda/avaliacoes'
     | '/producao/competicao'
     | '/producao/metas'
@@ -907,6 +918,7 @@ export interface FileRouteTypes {
     | '/_authenticated/whatsapp'
     | '/aprovacao/$token'
     | '/consultora/$token'
+    | '/_authenticated/conta/senha'
     | '/_authenticated/pos-venda/avaliacoes'
     | '/_authenticated/producao/competicao'
     | '/_authenticated/producao/metas'
@@ -1117,6 +1129,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/consultora/$token'
       preLoaderRoute: typeof ConsultoraTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/conta/senha': {
+      id: '/_authenticated/conta/senha'
+      path: '/conta/senha'
+      fullPath: '/conta/senha'
+      preLoaderRoute: typeof AuthenticatedContaSenhaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/pos-venda/avaliacoes': {
       id: '/_authenticated/pos-venda/avaliacoes'
@@ -1650,6 +1669,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSimulacaoAlagoasRoute: typeof AuthenticatedSimulacaoAlagoasRoute
   AuthenticatedTomadoresAlRoute: typeof AuthenticatedTomadoresAlRoute
   AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
+  AuthenticatedContaSenhaRoute: typeof AuthenticatedContaSenhaRoute
   AuthenticatedPosVendaAvaliacoesRoute: typeof AuthenticatedPosVendaAvaliacoesRoute
   AuthenticatedProducaoCompeticaoRoute: typeof AuthenticatedProducaoCompeticaoRoute
   AuthenticatedProducaoMetasRoute: typeof AuthenticatedProducaoMetasRoute
@@ -1679,6 +1699,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSimulacaoAlagoasRoute: AuthenticatedSimulacaoAlagoasRoute,
   AuthenticatedTomadoresAlRoute: AuthenticatedTomadoresAlRoute,
   AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
+  AuthenticatedContaSenhaRoute: AuthenticatedContaSenhaRoute,
   AuthenticatedPosVendaAvaliacoesRoute: AuthenticatedPosVendaAvaliacoesRoute,
   AuthenticatedProducaoCompeticaoRoute: AuthenticatedProducaoCompeticaoRoute,
   AuthenticatedProducaoMetasRoute: AuthenticatedProducaoMetasRoute,
