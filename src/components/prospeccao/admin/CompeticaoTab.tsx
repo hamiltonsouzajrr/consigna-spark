@@ -8,14 +8,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Gift, Ban, Flag } from "lucide-react";
+import { Gift, Ban, Flag, Pause, Play, Trash2 } from "lucide-react";
 import {
   adminDefinirPremio,
   adminExtratoPontos,
   adminAnularPonto,
   adminFecharSemana,
+  adminPausarCompeticao,
+  adminRetomarCompeticao,
+  adminExcluirCompeticao,
   getCompeticao,
 } from "@/lib/prospeccao/competicao.functions";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 export function CompeticaoTab() {
   const qc = useQueryClient();
@@ -23,11 +27,15 @@ export function CompeticaoTab() {
   const extrato = useServerFn(adminExtratoPontos);
   const anular = useServerFn(adminAnularPonto);
   const fechar = useServerFn(adminFecharSemana);
+  const pausar = useServerFn(adminPausarCompeticao);
+  const retomar = useServerFn(adminRetomarCompeticao);
+  const excluir = useServerFn(adminExcluirCompeticao);
   const competicao = useServerFn(getCompeticao);
 
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirmExcluir, setConfirmExcluir] = useState(false);
 
   const { data: semana } = useQuery({ queryKey: ["competicao"], queryFn: () => competicao() });
   const { data: pontos } = useQuery({ queryKey: ["competicao-extrato"], queryFn: () => extrato({ data: {} }) });
@@ -52,6 +60,34 @@ export function CompeticaoTab() {
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
+  const handlePausar = async () => {
+    setBusy(true);
+    try {
+      await pausar({ data: {} });
+      toast.success("Competição pausada. Nenhum ponto será creditado até retomar.");
+      qc.invalidateQueries({ queryKey: ["competicao"] });
+    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+  };
+
+  const handleRetomar = async () => {
+    setBusy(true);
+    try {
+      await retomar({ data: {} });
+      toast.success("Competição retomada. Pontos voltam a ser creditados normalmente.");
+      qc.invalidateQueries({ queryKey: ["competicao"] });
+    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+  };
+
+  const handleExcluir = async () => {
+    setBusy(true);
+    try {
+      const r = await excluir({ data: {} });
+      toast.success(`Competição da semana excluída. ${r.pontosExcluidos} ponto(s) removido(s).`);
+      qc.invalidateQueries({ queryKey: ["competicao"] });
+      qc.invalidateQueries({ queryKey: ["competicao-extrato"] });
+    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); setConfirmExcluir(false); }
+  };
+
   const anularPonto = async (id: string) => {
     try {
       await anular({ data: { pontoId: id, motivo: "suspeita de volume artificial" } });
@@ -61,28 +97,62 @@ export function CompeticaoTab() {
     } catch (e) { toast.error((e as Error).message); }
   };
 
+  const isPausada = Boolean(semana?.pausada);
+
   return (
     <div className="space-y-4">
+      {/* Status e controles da competição */}
       <Card className="p-4">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <Gift className="h-4 w-4 text-amber-600" /> Prêmio Misterioso da semana
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <Gift className="h-4 w-4 text-amber-600" /> Competição da semana
+          </div>
+          {isPausada && (
+            <Badge variant="destructive" className="text-xs">
+              <Pause className="mr-1 h-3 w-3" /> Pausada
+            </Badge>
+          )}
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
           Semana atual: {semana?.week_start} · encerra {semana?.closes_at ? new Date(semana.closes_at).toLocaleString("pt-BR") : "—"}
-          {semana?.premio_titulo ? ` · atual: ${semana.premio_titulo}` : " · nenhum prêmio cadastrado"}
+          {semana?.premio_titulo ? ` · prêmio: ${semana.premio_titulo}` : " · nenhum prêmio cadastrado"}
+          {isPausada && semana?.pausada_em ? ` · pausada em ${new Date(semana.pausada_em).toLocaleString("pt-BR")}` : ""}
         </p>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          <Input placeholder="Prêmio (ex.: Day off + R$ 200)" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
-          <Textarea placeholder="Detalhes (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} className="sm:col-span-2" />
-        </div>
+
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button onClick={salvar} disabled={busy}>Salvar prêmio</Button>
+          {!isPausada ? (
+            <Button variant="outline" onClick={handlePausar} disabled={busy} className="border-amber-300 text-amber-700 hover:bg-amber-50">
+              <Pause className="mr-2 h-4 w-4" /> Pausar competição
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={handleRetomar} disabled={busy} className="border-green-300 text-green-700 hover:bg-green-50">
+              <Play className="mr-2 h-4 w-4" /> Retomar competição
+            </Button>
+          )}
           <Button variant="outline" onClick={encerrar} disabled={busy}>
             <Flag className="mr-2 h-4 w-4" /> Encerrar semana agora
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => setConfirmExcluir(true)} disabled={busy}>
+            <Trash2 className="mr-2 h-4 w-4" /> Excluir competição
           </Button>
         </div>
       </Card>
 
+      {/* Prêmio */}
+      <Card className="p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <Gift className="h-4 w-4 text-amber-600" /> Prêmio Misterioso da semana
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <Input placeholder="Prêmio (ex.: Day off + R$ 200)" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
+          <Textarea placeholder="Detalhes (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} className="sm:col-span-2" />
+        </div>
+        <div className="mt-3">
+          <Button onClick={salvar} disabled={busy}>Salvar prêmio</Button>
+        </div>
+      </Card>
+
+      {/* Extrato */}
       <Card className="overflow-x-auto">
         <div className="border-b p-3 text-sm font-semibold">Extrato de pontos da semana</div>
         <Table>
@@ -123,6 +193,17 @@ export function CompeticaoTab() {
           </TableBody>
         </Table>
       </Card>
+
+      {/* Dialog de confirmação para excluir */}
+      <ConfirmDialog
+        open={confirmExcluir}
+        onOpenChange={setConfirmExcluir}
+        title="Excluir competição da semana"
+        description="Isso vai apagar TODOS os pontos e o registro da semana atual. Essa ação é irreversível. Deseja continuar?"
+        confirmLabel="Sim, excluir tudo"
+        variant="destructive"
+        onConfirm={handleExcluir}
+      />
     </div>
   );
 }

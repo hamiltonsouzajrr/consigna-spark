@@ -18,6 +18,8 @@ export type CompeticaoData = {
   minha_linha: RankingRow | null;
   faltam_para_subir: number | null;
   sou_admin: boolean;
+  pausada: boolean;
+  pausada_em: string | null;
 };
 
 export const getCompeticao = createServerFn({ method: "GET" })
@@ -47,6 +49,8 @@ export const getCompeticao = createServerFn({ method: "GET" })
       minha_linha: minha,
       faltam_para_subir: acima && minha ? Math.max(1, acima.total - minha.total + 1) : null,
       sou_admin: souAdmin,
+      pausada: Boolean(semana.pausada),
+      pausada_em: semana.pausada_em ?? null,
     };
   });
 
@@ -64,7 +68,7 @@ export const registrarContato = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ pontos: number; motivo?: string }> => {
     const { userId } = context;
-    const { adminClient, creditar, cooldownLiberado } = await import("./competicao.server");
+    const { adminClient, creditar, cooldownLiberado, garantirSemana } = await import("./competicao.server");
     const db = await adminClient();
 
     const { data: lead } = await db
@@ -87,6 +91,10 @@ export const registrarContato = createServerFn({ method: "POST" })
     if (!lead.first_response_at) patch.first_response_at = nowIso;
     if (data.kind === "whatsapp") patch.respondeu_whatsapp = true;
     await db.from("prospect_leads").update(patch).eq("id", data.leadId);
+
+    // Verifica se a competição está pausada
+    const semana = await garantirSemana();
+    if (semana.pausada) return { pontos: 0, motivo: "Competição pausada pelo administrador." };
 
     // Pontuação: só contatos reais, com telefone, fora do cooldown.
     if (data.kind === "nota") return { pontos: 0, motivo: "Anotação não pontua." };
@@ -114,7 +122,7 @@ export const registrarQualificacao = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ pontos: number; motivo?: string }> => {
     const { userId } = context;
-    const { adminClient, creditar, estornar, primeiroContatoEm, QUALIFICACAO_MIN_APOS_CONTATO_MS } =
+    const { adminClient, creditar, estornar, primeiroContatoEm, QUALIFICACAO_MIN_APOS_CONTATO_MS, garantirSemana } =
       await import("./competicao.server");
     const db = await adminClient();
 
@@ -147,6 +155,10 @@ export const registrarQualificacao = createServerFn({ method: "POST" })
       await estornar("prospect_leads", data.leadId, ["qualificacao", "ganho"], "lead voltou para novo");
       return { pontos: 0, motivo: "Pontos de qualificação estornados." };
     }
+
+    // Verifica se a competição está pausada
+    const semana = await garantirSemana();
+    if (semana.pausada) return { pontos: 0, motivo: "Competição pausada pelo administrador." };
 
     if (data.status === "ganho") {
       const pontos = await creditar(userId, "ganho", "prospect_leads", data.leadId, "Venda fechada");
@@ -215,7 +227,7 @@ export const concluirFollowup = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ taskId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }): Promise<{ pontos: number; motivo?: string }> => {
     const { userId } = context;
-    const { adminClient, creditar, contatoHoje } = await import("./competicao.server");
+    const { adminClient, creditar, contatoHoje, garantirSemana } = await import("./competicao.server");
     const db = await adminClient();
 
     const { data: task } = await db
@@ -232,6 +244,10 @@ export const concluirFollowup = createServerFn({ method: "POST" })
       kind: "followup",
       body: "Follow-up concluído",
     } as any);
+
+    // Verifica se a competição está pausada
+    const semana = await garantirSemana();
+    if (semana.pausada) return { pontos: 0, motivo: "Competição pausada pelo administrador." };
 
     const venceu = new Date(task.due_at).getTime() <= Date.now() + 60 * 60 * 1000;
     if (!venceu) return { pontos: 0, motivo: "Follow-up concluído antes da hora não pontua." };
@@ -409,6 +425,72 @@ export const adminFecharSemana = createServerFn({ method: "POST" })
     await assertAdmin(supabase, userId);
     const { fecharSemana } = await import("./competicao-fechar.server");
     return fecharSemana(data.weekStart, data.force ?? true);
+  });
+
+/** Pausa a competição da semana atual. Enquanto pausada, nenhum ponto é creditado. */
+export const adminPausarCompeticao = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ weekStart: z.string().optional() }).parse(data ?? {}))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
+    await assertAdmin(supabase, userId);
+    const { adminClient, garantirSemana } = await import("./competicao.server");
+    const semana = await garantirSemana(data.weekStart);
+    const db = await adminClient();
+    const { error } = await db
+      .from("prospect_competicao_semanas")
+      .update({ pausada: true, pausada_em: new Date().toISOString(), pausada_por: userId } as any)
+      .eq("week_start", semana.week_start);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Retoma a competição pausada. */
+export const adminRetomarCompeticao = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ weekStart: z.string().optional() }).parse(data ?? {}))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
+    await assertAdmin(supabase, userId);
+    const { adminClient, garantirSemana } = await import("./competicao.server");
+    const semana = await garantirSemana(data.weekStart);
+    const db = await adminClient();
+    const { error } = await db
+      .from("prospect_competicao_semanas")
+      .update({ pausada: false, pausada_em: null, pausada_por: null } as any)
+      .eq("week_start", semana.week_start);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Exclui (deleta) a competição da semana atual — apaga a semana e todos os pontos associados. */
+export const adminExcluirCompeticao = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ weekStart: z.string().optional() }).parse(data ?? {}))
+  .handler(async ({ context, data }): Promise<{ ok: true; pontosExcluidos: number }> => {
+    const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
+    await assertAdmin(supabase, userId);
+    const { adminClient, garantirSemana } = await import("./competicao.server");
+    const semana = await garantirSemana(data.weekStart);
+    const db = await adminClient();
+
+    // Primeiro exclui os pontos da semana
+    const { count } = await db
+      .from("prospect_pontos")
+      .delete({ count: "exact" })
+      .eq("week_start", semana.week_start);
+
+    // Depois exclui o registro da semana
+    const { error } = await db
+      .from("prospect_competicao_semanas")
+      .delete()
+      .eq("week_start", semana.week_start);
+    if (error) throw new Error(error.message);
+
+    return { ok: true, pontosExcluidos: count ?? 0 };
   });
 
 /** Last closed week the current user has not acknowledged yet (pop-up source). */
