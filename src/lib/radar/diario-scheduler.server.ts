@@ -130,19 +130,45 @@ async function salvarRegistros(
 
   // Entrega imediata: sincroniza as contas das consultoras e distribui em
   // rodízio o que ficou sem responsável, para o lead aparecer na aba
-  // "Promovidos Recentemente" sem depender do cron.
+  // "Promovidos Recentemente" sem depender do cron. Durante buscas retroativas
+  // em lote (job de período em andamento), adiamos a distribuição para o fim
+  // do lote, para não golpear o banco a cada edição processada.
+  try {
+    const { data: jobsAtivos } = await supabaseAdmin
+      .from("diario_busca_jobs")
+      .select("id")
+      .eq("status", "running")
+      .limit(1);
+    if ((jobsAtivos ?? []).length === 0) {
+      const { sincronizarConsultoras, distribuirPendentes } = await import(
+        "@/lib/radar/distribuicao.server"
+      );
+      await sincronizarConsultoras();
+      const dist = await distribuirPendentes(500);
+      console.log(`[radar] distribuídos ${dist.atribuidos} leads para ${dist.consultoras} consultoras`);
+    } else {
+      console.log("[radar] job de período em andamento — distribuição adiada para o fim do lote");
+    }
+  } catch (e: any) {
+    console.error("[radar] falha ao distribuir após extração:", e?.message ?? e);
+  }
+
+  return { inserted: rows.length, duplicados };
+}
+
+// Roda uma única vez ao final de um lote (job). Evita disparar distribuição a
+// cada edição quando o processamento retroativo está varrendo muitas edições.
+async function distribuirAposLote() {
   try {
     const { sincronizarConsultoras, distribuirPendentes } = await import(
       "@/lib/radar/distribuicao.server"
     );
     await sincronizarConsultoras();
     const dist = await distribuirPendentes(2000);
-    console.log(`[radar] distribuídos ${dist.atribuidos} leads para ${dist.consultoras} consultoras`);
+    console.log(`[radar] distribuição pós-lote: ${dist.atribuidos} leads para ${dist.consultoras} consultoras`);
   } catch (e: any) {
-    console.error("[radar] falha ao distribuir após extração:", e?.message ?? e);
+    console.error("[radar] falha na distribuição pós-lote:", e?.message ?? e);
   }
-
-  return { inserted: rows.length, duplicados };
 }
 
 
@@ -562,6 +588,7 @@ export async function processarProximoDaFila(jobId: string): Promise<JobProgress
       .select("total,processed,registros")
       .eq("id", jobId)
       .single();
+    await distribuirAposLote();
     return {
       done: true,
       processed: j?.processed ?? prog.processed,
@@ -600,6 +627,9 @@ export async function processarProximoDaFila(jobId: string): Promise<JobProgress
     .single();
   const total = j?.total ?? 0;
   const processed = j?.processed ?? prog.processed;
+  if (prog.finalizado) {
+    await distribuirAposLote();
+  }
   return {
     done: prog.finalizado,
     processed,
