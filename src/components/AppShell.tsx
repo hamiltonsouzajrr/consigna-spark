@@ -19,6 +19,7 @@ import { CompleteProfileDialog } from "@/components/CompleteProfileDialog";
 import { AccessGuard } from "@/components/security/AccessGuard";
 import { SimultaneousAccessAlert } from "@/components/security/SimultaneousAccessAlert";
 import { TempPasswordBanner } from "@/components/security/TempPasswordBanner";
+import { BaseTomadoresEsgotadaBanner } from "@/components/prospeccao/admin/BaseTomadoresEsgotadaBanner";
 
 import type { ReactNode } from "react";
 
@@ -369,6 +370,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <TempPasswordBanner />
 
         <div className="p-3 md:p-5 print:p-0">
+          {isAdmin && loc.pathname === "/tomadores-al" && <BaseTomadoresEsgotadaBanner />}
 
           <div className="mx-auto max-w-7xl rounded-2xl bg-card p-4 shadow-xl ring-1 ring-black/5 md:p-8 print:max-w-none print:rounded-none print:bg-transparent print:p-0 print:shadow-none print:ring-0">
             {children}
