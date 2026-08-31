@@ -9215,7 +9215,7 @@
       "file_type": "code",
       "norm_label": "stat()",
       "source_file": "src/routes/_authenticated/prospeccao.promovidos-recentes.tsx",
-      "source_location": "L365"
+      "source_location": "L386"
     },
     {
       "id": "src_routes_authenticated_prospeccao_promovidos_recentes_urgencia",
@@ -32354,7 +32354,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/routes/_authenticated/prospeccao.promovidos-recentes.tsx",
-      "source_location": "L251",
+      "source_location": "L269",
       "weight": 1.0
     },
     {
@@ -32366,7 +32366,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/routes/_authenticated/prospeccao.promovidos-recentes.tsx",
-      "source_location": "L256",
+      "source_location": "L274",
       "weight": 1.0
     },
     {
@@ -87836,7 +87836,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/routes/_authenticated/prospeccao.promovidos-recentes.tsx",
-      "source_location": "L365",
+      "source_location": "L386",
       "weight": 1.0
     },
     {
@@ -93104,5 +93104,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "ba93201b7251f2a813eb7a49b3ec9133acfe71c1"
+  "built_at_commit": "de04c9b26c792bcbc192a6ff075ef8e8f85d93b3"
 }
