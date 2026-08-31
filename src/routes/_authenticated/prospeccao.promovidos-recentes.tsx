@@ -1,7 +1,7 @@
 // PROMOVIDOS RECENTEMENTE — leads do Radar Diário Oficial dos últimos 15 dias,
 // entregues automaticamente à consultora logada (rodízio no banco).
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { AppShell } from "@/components/AppShell";
@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/prospeccao/promovidos-rece
   component: Page,
 });
 
-const PAGE = 12;
+const PAGE = 30;
 
 function fmtData(iso: string | null): string {
   if (!iso) return "—";
@@ -85,6 +85,7 @@ function Page() {
   const [apenasNovos, setApenasNovos] = useState(false);
   const [cpfDraft, setCpfDraft] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const carregar = useCallback(async () => {
     if (!user) return;
@@ -109,7 +110,8 @@ function Page() {
 
   useEffect(() => { void carregar(); }, [carregar]);
 
-  const carregarMais = async () => {
+  const carregarMais = useCallback(async () => {
+    if (more || loading || rows.length >= total) return;
     setMore(true);
     try {
       const res = await fetchLeads({ data: { offset: rows.length, limit: PAGE, apenasNovos } });
@@ -120,7 +122,23 @@ function Page() {
     } finally {
       setMore(false);
     }
-  };
+  }, [fetchLeads, apenasNovos, rows.length, total, more, loading]);
+
+  // Carregamento automático 30 em 30: ao chegar perto do fim da lista,
+  // a próxima página entra sozinha, sem a consultora precisar clicar.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    if (loading || more || rows.length >= total) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void carregarMais();
+      },
+      { rootMargin: "250px 0px" },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [carregarMais, loading, more, rows.length, total]);
 
   const abordar = async (id: string, status: PromovidoRecente["status_abordagem"]) => {
     setBusy(id);
@@ -343,11 +361,14 @@ function Page() {
           </div>
         )}
 
+        {/* Sentinela: quando fica visível, carrega os próximos 30 automaticamente. */}
+        <div ref={sentinelRef} aria-hidden="true" />
+
         {rows.length < total && (
           <div className="flex justify-center">
             <Button variant="outline" onClick={carregarMais} disabled={more}>
               {more ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Carregar mais
+              Carregar mais ({Math.min(PAGE, total - rows.length)} restantes)
             </Button>
           </div>
         )}
