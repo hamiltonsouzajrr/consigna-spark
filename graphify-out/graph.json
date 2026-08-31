@@ -1945,7 +1945,7 @@
       "file_type": "code",
       "norm_label": "jobprogresso",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L465"
+      "source_location": "L478"
     },
     {
       "id": "src_lib_radar_diario_scheduler_server_resultadobusca",
@@ -2005,7 +2005,7 @@
       "file_type": "code",
       "norm_label": "resultadodesempenho",
       "source_file": "src/lib/radar/distribuicao.server.ts",
-      "source_location": "L95"
+      "source_location": "L96"
     },
     {
       "id": "src_lib_radar_distribuicao_server_resultadodistribuicao",
@@ -6564,7 +6564,7 @@
       "file_type": "code",
       "norm_label": "atualizarprogressojob()",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L512"
+      "source_location": "L525"
     },
     {
       "id": "src_lib_radar_diario_scheduler_server_criaralerta",
@@ -6586,7 +6586,7 @@
       "file_type": "code",
       "norm_label": "executarbusca()",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L315"
+      "source_location": "L328"
     },
     {
       "id": "src_lib_radar_diario_scheduler_server_executarbuscames",
@@ -6597,7 +6597,7 @@
       "file_type": "code",
       "norm_label": "executarbuscames()",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L416"
+      "source_location": "L429"
     },
     {
       "id": "src_lib_radar_diario_scheduler_server_iniciarbuscajob",
@@ -6608,7 +6608,7 @@
       "file_type": "code",
       "norm_label": "iniciarbuscajob()",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L475"
+      "source_location": "L488"
     },
     {
       "id": "src_lib_radar_diario_scheduler_server_processaredicao",
@@ -6619,7 +6619,7 @@
       "file_type": "code",
       "norm_label": "processaredicao()",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L138"
+      "source_location": "L151"
     },
     {
       "id": "src_lib_radar_diario_scheduler_server_processarjobspendentes",
@@ -6630,7 +6630,7 @@
       "file_type": "code",
       "norm_label": "processarjobspendentes()",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L602"
+      "source_location": "L613"
     },
     {
       "id": "src_lib_radar_diario_scheduler_server_processarproximodafila",
@@ -6641,7 +6641,7 @@
       "file_type": "code",
       "norm_label": "processarproximodafila()",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L541"
+      "source_location": "L554"
     },
     {
       "id": "src_lib_radar_diario_scheduler_server_reprocessarfonte",
@@ -6652,7 +6652,7 @@
       "file_type": "code",
       "norm_label": "reprocessarfonte()",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L364"
+      "source_location": "L377"
     },
     {
       "id": "src_lib_radar_diario_scheduler_server_salvarregistros",
@@ -6729,7 +6729,7 @@
       "file_type": "code",
       "norm_label": "redistribuirpordesempenho()",
       "source_file": "src/lib/radar/distribuicao.server.ts",
-      "source_location": "L103"
+      "source_location": "L104"
     },
     {
       "id": "src_lib_radar_distribuicao_server_resumocarteiras",
@@ -29512,7 +29512,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L334",
+      "source_location": "L347",
       "weight": 1.0
     },
     {
@@ -29524,7 +29524,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L339",
+      "source_location": "L352",
       "weight": 1.0
     },
     {
@@ -29536,7 +29536,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L343",
+      "source_location": "L356",
       "weight": 1.0
     },
     {
@@ -29548,7 +29548,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L344",
+      "source_location": "L357",
       "weight": 1.0
     },
     {
@@ -29560,7 +29560,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L431",
+      "source_location": "L444",
       "weight": 1.0
     },
     {
@@ -29572,7 +29572,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L436",
+      "source_location": "L449",
       "weight": 1.0
     },
     {
@@ -29584,7 +29584,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L440",
+      "source_location": "L453",
       "weight": 1.0
     },
     {
@@ -29596,7 +29596,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L441",
+      "source_location": "L454",
       "weight": 1.0
     },
     {
@@ -29608,7 +29608,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L483",
+      "source_location": "L496",
       "weight": 1.0
     },
     {
@@ -29620,7 +29620,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L190",
+      "source_location": "L203",
       "weight": 1.0
     },
     {
@@ -29632,7 +29632,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L203",
+      "source_location": "L216",
       "weight": 1.0
     },
     {
@@ -29644,7 +29644,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L212",
+      "source_location": "L225",
       "weight": 1.0
     },
     {
@@ -29656,7 +29656,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L255",
+      "source_location": "L268",
       "weight": 1.0
     },
     {
@@ -29668,7 +29668,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L260",
+      "source_location": "L273",
       "weight": 1.0
     },
     {
@@ -29680,7 +29680,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L612",
+      "source_location": "L623",
       "weight": 1.0
     },
     {
@@ -29692,7 +29692,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L615",
+      "source_location": "L626",
       "weight": 1.0
     },
     {
@@ -29704,7 +29704,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L546",
+      "source_location": "L559",
       "weight": 1.0
     },
     {
@@ -29716,7 +29716,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L571",
+      "source_location": "L584",
       "weight": 1.0
     },
     {
@@ -29728,7 +29728,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L396",
+      "source_location": "L409",
       "weight": 1.0
     },
     {
@@ -36357,7 +36357,7 @@
       "context": "import",
       "deferred": true,
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L122",
+      "source_location": "L135",
       "weight": 1.0
     },
     {
@@ -36396,7 +36396,7 @@
       "context": "import",
       "deferred": true,
       "source_file": "src/lib/radar/distribuicao.server.ts",
-      "source_location": "L110",
+      "source_location": "L111",
       "weight": 1.0
     },
     {
@@ -82349,7 +82349,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L138",
+      "source_location": "L151",
       "weight": 1.0
     },
     {
@@ -82382,7 +82382,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L315",
+      "source_location": "L328",
       "weight": 1.0
     },
     {
@@ -82404,7 +82404,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L364",
+      "source_location": "L377",
       "weight": 1.0
     },
     {
@@ -82415,7 +82415,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L416",
+      "source_location": "L429",
       "weight": 1.0
     },
     {
@@ -82426,7 +82426,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L465",
+      "source_location": "L478",
       "weight": 1.0
     },
     {
@@ -82437,7 +82437,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L475",
+      "source_location": "L488",
       "weight": 1.0
     },
     {
@@ -82459,7 +82459,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L512",
+      "source_location": "L525",
       "weight": 1.0
     },
     {
@@ -82470,7 +82470,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L541",
+      "source_location": "L554",
       "weight": 1.0
     },
     {
@@ -82481,7 +82481,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/radar/diario-scheduler.server.ts",
-      "source_location": "L602",
+      "source_location": "L613",
       "weight": 1.0
     },
     {
@@ -82492,7 +82492,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/radar/distribuicao.server.ts",
-      "source_location": "L103",
+      "source_location": "L104",
       "weight": 1.0
     },
     {
@@ -82569,7 +82569,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/radar/distribuicao.server.ts",
-      "source_location": "L95",
+      "source_location": "L96",
       "weight": 1.0
     },
     {
@@ -92767,5 +92767,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "64f3c4f26c94f802d16a143071068062586636a3"
+  "built_at_commit": "31a420b0331ee182637a6a049e368cc9f5323da6"
 }
