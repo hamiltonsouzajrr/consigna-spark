@@ -63468,6 +63468,7 @@
       "context": "import",
       "source_file": "src/integrations/supabase/auth-middleware.ts",
       "source_location": "L5",
+      "type_only": true,
       "weight": 1.0
     },
     {
@@ -63480,6 +63481,7 @@
       "context": "import",
       "source_file": "src/integrations/supabase/client.ts",
       "source_location": "L3",
+      "type_only": true,
       "weight": 1.0
     },
     {
@@ -63504,6 +63506,7 @@
       "context": "import",
       "source_file": "src/integrations/supabase/client.server.ts",
       "source_location": "L6",
+      "type_only": true,
       "weight": 1.0
     },
     {
@@ -63660,6 +63663,7 @@
       "context": "import",
       "source_file": "src/lib/prospeccao/competicao.functions.ts",
       "source_location": "L7",
+      "type_only": true,
       "weight": 1.0
     },
     {
@@ -63924,6 +63928,7 @@
       "context": "import",
       "source_file": "src/lib/rh/portal.functions.ts",
       "source_location": "L10",
+      "type_only": true,
       "weight": 1.0
     },
     {
@@ -64680,6 +64685,7 @@
       "context": "import",
       "source_file": "src/routes/_authenticated/pesquisas.tsx",
       "source_location": "L6",
+      "type_only": true,
       "weight": 1.0
     },
     {
@@ -70872,6 +70878,7 @@
       "context": "import",
       "source_file": "src/routeTree.gen.ts",
       "source_location": "L1748",
+      "type_only": true,
       "weight": 1.0
     },
     {
@@ -92454,5 +92461,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "44238ff9e922356b451f715ff745147bfdbd1aa6"
+  "built_at_commit": "45fd877233de12d9fd8faadd5b625b20e5b3e38c"
 }
