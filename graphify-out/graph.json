@@ -7818,7 +7818,7 @@
       "file_type": "code",
       "norm_label": "useauth()",
       "source_file": "src/lib/auth.tsx",
-      "source_location": "L184"
+      "source_location": "L192"
     },
     {
       "id": "src_routes_authenticated_conta_senha_alterarsenhapage",
@@ -27919,6 +27919,18 @@
     },
     {
       "source": "src_lib_auth_authprovider",
+      "target": "src_lib_auth_account_functions_signupwithcpf",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/lib/auth.tsx",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_auth_authprovider",
       "target": "src_lib_auth_withtimeout",
       "relation": "calls",
       "_origin": "ast",
@@ -27927,18 +27939,6 @@
       "context": "call",
       "source_file": "src/lib/auth.tsx",
       "source_location": "L81",
-      "weight": 1.0
-    },
-    {
-      "source": "src_lib_auth_authprovider",
-      "target": "src_lib_auth_account_functions_signupwithcpf",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/lib/auth.tsx",
-      "source_location": "L99",
       "weight": 1.0
     },
     {
@@ -33782,7 +33782,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/routes/login.tsx",
-      "source_location": "L302",
+      "source_location": "L333",
       "weight": 1.0
     },
     {
@@ -79504,7 +79504,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/auth.tsx",
-      "source_location": "L184",
+      "source_location": "L192",
       "weight": 1.0
     },
     {
@@ -92848,5 +92848,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "d826c7fcbd12b21d04e2e7270d960198cb7c535a"
+  "built_at_commit": "f8e122e975f70d3d4c41570df71855ee7c420028"
 }
