@@ -63,6 +63,7 @@ export async function resumoCarteiras(janelaDias = 15): Promise<CarteiraResumo[]
       .from("do_registros")
       .select("consultora_responsavel,data_publicacao,atribuido_em")
       .not("consultora_responsavel", "is", null)
+      .gte("data_publicacao", desde)
       .limit(100000),
   ]);
   if (cErr) throw new Error(cErr.message);

@@ -48,17 +48,30 @@ async function criarAlerta(
 }
 
 // Insere registros extraídos em do_registros, marcando possíveis duplicados.
-async function salvarRegistros(arquivoId: string, registros: any[]): Promise<{ inserted: number; duplicados: number }> {
+async function salvarRegistros(
+  arquivoId: string,
+  registros: any[],
+  dataPublicacao?: string | null,
+): Promise<{ inserted: number; duplicados: number }> {
   if (registros.length === 0) return { inserted: 0, duplicados: 0 };
 
-  const { data: existing } = await supabaseAdmin
-    .from("do_registros")
-    .select("nome_servidor,matricula,orgao,data_publicacao,tipo_movimentacao")
-    .limit(20000);
   const keyOf = (r: any) =>
     [r.nome_servidor, r.matricula, r.orgao, r.data_publicacao, r.tipo_movimentacao]
       .map((x) => String(x ?? "").trim().toLowerCase())
       .join("|");
+
+  // Dedupe leve: quando a data de publicação da edição é conhecida, consultamos
+  // apenas os registros daquela data em vez de varrer a tabela inteira. Isso
+  // evita ler dezenas de milhares de linhas a cada edição processada e alivia
+  // bastante o banco em processamentos em lote (trimestre/retroativo).
+  let query = supabaseAdmin
+    .from("do_registros")
+    .select("nome_servidor,matricula,orgao,data_publicacao,tipo_movimentacao")
+    .limit(30000);
+  if (dataPublicacao) {
+    query = query.eq("data_publicacao", dataPublicacao);
+  }
+  const { data: existing } = await query;
   const existingKeys = new Set((existing ?? []).map(keyOf));
   const toDate = (v: string) => (/^\d{4}-\d{2}-\d{2}$/.test((v ?? "").trim()) ? v.trim() : null);
 
@@ -257,7 +270,7 @@ async function processarEdicao(
       data_publicacao: ed.data_publicacao,
       orgao: ed.tipo_edicao,
     });
-    const { inserted, duplicados } = await salvarRegistros(arquivoId, registros);
+    const { inserted, duplicados } = await salvarRegistros(arquivoId, registros, ed.data_publicacao);
     res.registros_extraidos += inserted;
     res.duplicados += duplicados;
 
@@ -579,8 +592,6 @@ export async function processarProximoDaFila(jobId: string): Promise<JobProgress
     } as any)
     .eq("id", item.id);
 
-
-
   const prog = await atualizarProgressoJob(jobId);
   const { data: j } = await supabaseAdmin
     .from("diario_busca_jobs")
@@ -617,4 +628,3 @@ export async function processarJobsPendentes(maxItens = 3): Promise<{ processado
   }
   return { processados };
 }
-

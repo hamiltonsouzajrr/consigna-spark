@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/public/hooks/radar-diario-worker")({
 
         try {
           const { processarJobsPendentes } = await import("@/lib/radar/diario-scheduler.server");
-          const res = await processarJobsPendentes(3);
+          const res = await processarJobsPendentes(1);
           return Response.json({ ok: true, ...res });
         } catch (e: any) {
           console.error("[radar-diario-worker] erro:", e?.message ?? e);
