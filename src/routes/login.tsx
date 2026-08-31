@@ -110,25 +110,31 @@ function LoginPage() {
       return;
     }
     setBusy(true);
-    const { error } = await resetPassword(email);
-    setBusy(false);
-    if (error) {
-      const { title, description } = translateError(error);
-      toast.error(title, {
-        description: `${description ?? ""} Se o problema continuar, peça o link de redefinição ao administrador.`,
+    try {
+      const { error } = await resetPassword(email);
+      if (error) {
+        const { title, description } = translateError(error);
+        toast.error(title, {
+          description: `${description ?? ""} Se o problema continuar, peça o link de redefinição ao administrador.`,
+          duration: 10000,
+        });
+      } else {
+        toast.success("Email enviado!", {
+          description:
+            "Se houver uma conta com esse email, você receberá um link para redefinir a senha. Não chegou? Peça o link ao administrador.",
+          duration: 12000,
+        });
+        setRecovering(false);
+      }
+    } catch (error: any) {
+      toast.error("Não foi possível enviar", {
+        description: `${error?.message ?? ""} Se o problema continuar, peça o link de redefinição ao administrador.`,
         duration: 10000,
       });
-    } else {
-      toast.success("Email enviado!", {
-        description:
-          "Se houver uma conta com esse email, você receberá um link para redefinir a senha. Não chegou? Peça o link ao administrador.",
-        duration: 12000,
-      });
-      setRecovering(false);
+    } finally {
+      setBusy(false);
     }
   };
-
-
 
   const translateError = (msg: string): { title: string; description?: string } => {
     const m = msg.toLowerCase();
@@ -154,6 +160,28 @@ function LoginPage() {
     if (m.includes("email") && m.includes("invalid")) {
       return { title: "Email inválido", description: "Informe um endereço de email válido." };
     }
+    if (m.includes("missing supabase") || m.includes("environment variable")) {
+      return {
+        title: "Servidor de login indisponível",
+        description:
+          "A configuração de acesso do painel está ausente ou incompleta. Peça ao administrador para reconectar o Supabase na plataforma e tente novamente.",
+      };
+    }
+    if (
+      m.includes("não respondeu") ||
+      m.includes("demorou") ||
+      m.includes("timeout") ||
+      m.includes("failed to fetch") ||
+      m.includes("load failed") ||
+      m.includes("network") ||
+      m.includes("conexão")
+    ) {
+      return {
+        title: "Servidor demorou para responder",
+        description:
+          "Pode ser um pico momentâneo de acesso. Verifique sua conexão com a internet e tente novamente em alguns segundos. Se o problema continuar, avise o administrador.",
+      };
+    }
     return { title: "Não foi possível concluir", description: msg };
   };
 
@@ -169,16 +197,27 @@ function LoginPage() {
       }
     }
     setBusy(true);
-    const { error } =
-      mode === "in"
-        ? await signIn(email, password)
-        : await signUp({ nome: nome.trim(), cpf: normalizeCpf(cpf), email, password });
-    setBusy(false);
-    if (error) {
-      const { title, description } = translateError(error);
-      toast.error(title, { description, duration: 8000 });
-    } else if (mode === "up") {
-      toast.success("Conta criada com sucesso!");
+    try {
+      const { error } =
+        mode === "in"
+          ? await signIn(email, password)
+          : await signUp({ nome: nome.trim(), cpf: normalizeCpf(cpf), email, password });
+
+      if (error) {
+        const { title, description } = translateError(error);
+        toast.error(title, { description, duration: 8000 });
+      } else if (mode === "up") {
+        toast.success("Conta criada com sucesso!");
+      }
+      // No login (mode "in") sem erro, o AuthProvider atualiza a sessão e o
+      // redirecionamento acontece sozinho pelo useEffect acima.
+    } catch (error: any) {
+      const { title, description } = translateError(
+        error?.message ?? "Erro inesperado ao entrar. Tente novamente.",
+      );
+      toast.error(title, { description, duration: 10000 });
+    } finally {
+      setBusy(false);
     }
   };
 
