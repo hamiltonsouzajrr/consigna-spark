@@ -83,6 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         AUTH_TIMEOUT_MS,
         "O servidor de login não respondeu a tempo. Verifique sua conexão e tente novamente.",
       );
+      // Sem erro: grava a sessão no estado local já, para o redirect não ficar
+      // dependendo apenas do evento assíncrono do onAuthStateChange.
+      if (!result.error && result.data.session) {
+        setSession(result.data.session);
+      }
       return { error: result.error?.message ?? null };
     } catch (error: any) {
       return {
@@ -111,6 +116,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         AUTH_TIMEOUT_MS,
         "Conta criada, mas o login não respondeu a tempo. Entre novamente em instantes.",
       );
+      if (!result.error && result.data.session) {
+        setSession(result.data.session);
+      }
       return { error: result.error?.message ?? null };
     } catch (error: any) {
       return {

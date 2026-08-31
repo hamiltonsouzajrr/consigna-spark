@@ -7,11 +7,27 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
-      throw redirect({ to: "/login" });
+    // 1) Sessão local primeiro: rápida e sem depender de rede. O token já foi
+    //    validado no momento do login e o cliente renova automaticamente.
+    const local = await supabase.auth.getSession();
+    const localUser = local.data.session?.user ?? null;
+    if (localUser) {
+      return { user: localUser };
     }
-    return { user: data.user };
+
+    // 2) Fallback: sem sessão local, tenta validar um token com o servidor.
+    //    Qualquer falha (rede, timeout, token inválido) volta ao login em vez
+    //    de derrubar a navegação com uma tela de erro.
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      if (!error && data.user) {
+        return { user: data.user };
+      }
+    } catch {
+      // Não quebra o fluxo: o redirect abaixo resolve.
+    }
+
+    throw redirect({ to: "/login" });
   },
   component: () => <Outlet />,
 });

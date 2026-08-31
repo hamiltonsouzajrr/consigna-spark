@@ -157,6 +157,34 @@ function LoginPage() {
     if (m.includes("user already registered") || m.includes("already registered")) {
       return { title: "Este email já possui cadastro", description: "Tente entrar ou recuperar a senha." };
     }
+    if (m.includes("email not confirmed") || m.includes("confirm your email") || m.includes("não confirmado")) {
+      return {
+        title: "E-mail não confirmado",
+        description:
+          "Confirme seu e-mail antes de entrar. Verifique a caixa de entrada e o spam. Se o link expirou, peça ao administrador um novo link de acesso.",
+      };
+    }
+    if (m.includes("refresh token") || m.includes("jwt") || m.includes("expired") || m.includes("sessão expirou")) {
+      return {
+        title: "Sessão expirada",
+        description: "Sua sessão anterior expirou. Entre novamente com seus dados.",
+      };
+    }
+    if (m.includes("rate limit") || m.includes("too many requests") || m.includes("muitas tentativas")) {
+      return {
+        title: "Muitas tentativas",
+        description: "O servidor recebeu várias tentativas seguidas. Aguarde alguns minutos e tente novamente.",
+      };
+    }
+    if (m.includes("over_email_send_rate_limit") || m.includes("email rate limit")) {
+      return {
+        title: "Limite de envio de e-mails",
+        description: "Recebemos muitos pedidos de e-mail. Aguarde alguns minutos e tente novamente.",
+      };
+    }
+    if (m.includes("user not found") || m.includes("no user found")) {
+      return { title: "Conta não encontrada", description: "Não localizamos uma conta com esses dados." };
+    }
     if (m.includes("email") && m.includes("invalid")) {
       return { title: "Email inválido", description: "Informe um endereço de email válido." };
     }
@@ -206,11 +234,14 @@ function LoginPage() {
       if (error) {
         const { title, description } = translateError(error);
         toast.error(title, { description, duration: 8000 });
-      } else if (mode === "up") {
+      } else if (mode === "in") {
+        // Redireciona assim que a sessão é confirmada; o AuthProvider também
+        // atualiza o estado local imediatamente para não depender de evento
+        // assíncrono de autenticação.
+        nav({ to: "/prospeccao", replace: true });
+      } else {
         toast.success("Conta criada com sucesso!");
       }
-      // No login (mode "in") sem erro, o AuthProvider atualiza a sessão e o
-      // redirecionamento acontece sozinho pelo useEffect acima.
     } catch (error: any) {
       const { title, description } = translateError(
         error?.message ?? "Erro inesperado ao entrar. Tente novamente.",
