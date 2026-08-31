@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { UploadCloud, MessageCircle, AlertTriangle } from "lucide-react";
+import { UploadCloud, MessageCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,7 +62,7 @@ export function ImportTab({ consultants, selectedConsultants }: { consultants: C
   };
 
   const confirmImport = async () => {
-    if (!parsed.length) return;
+    if (!parsed.length || busy) return;
     const auto = importDist !== "manual";
     const cid = auto ? null : uploadConsultant === "none" ? null : uploadConsultant;
     if (auto && selectedConsultants.size === 0) {
@@ -87,14 +87,15 @@ export function ImportTab({ consultants, selectedConsultants }: { consultants: C
         const d = await distributeLeads({ data: { consultantIds: [...selectedConsultants], mode: importDist as never } });
         distMsg = ` · ${d.assigned} distribuído(s) entre ${Object.keys(d.perConsultant).length} consultora(s)`;
       }
-      toast.success(`${inserted} novo(s)${updated ? ` · ${updated} atualizado(s)` : ""}${skipped ? ` · ${skipped} ignorado(s)` : ""}${distMsg}.`);
+      toast.success(`Importação realizada com sucesso! ${inserted} novo(s)${updated ? ` · ${updated} atualizado(s)` : ""}${skipped ? ` · ${skipped} ignorado(s)` : ""}${distMsg}.`);
       setRawRecords([]); setHeaders([]); setPhoneCol("__auto__"); setFileName("");
       invalidateAll();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao importar.");
+      toast.error(e instanceof Error ? `Erro ao importar planilha: ${e.message}` : "Erro ao importar planilha de leads. Tente novamente.");
+    } finally {
+      setProgress(null);
+      setBusy(false);
     }
-    setProgress(null);
-    setBusy(false);
   };
 
   return (
@@ -165,11 +166,11 @@ export function ImportTab({ consultants, selectedConsultants }: { consultants: C
             )}
 
             <div className="flex items-center gap-2">
-              <input id="dedup" type="checkbox" checked={dedup} onChange={(e) => setDedup(e.target.checked)} className="h-4 w-4 accent-primary" />
+              <input id="dedup" type="checkbox" checked={dedup} onChange={(e) => setDedup(e.target.checked)} className="h-4 w-4 accent-primary" disabled={busy} />
               <Label htmlFor="dedup" className="cursor-pointer text-xs">Ignorar duplicados já existentes na base (CPF/telefone)</Label>
             </div>
             <div className="flex items-center gap-2">
-              <input id="updateExisting" type="checkbox" checked={updateExisting} onChange={(e) => setUpdateExisting(e.target.checked)} className="h-4 w-4 accent-primary" />
+              <input id="updateExisting" type="checkbox" checked={updateExisting} onChange={(e) => setUpdateExisting(e.target.checked)} className="h-4 w-4 accent-primary" disabled={busy} />
               <Label htmlFor="updateExisting" className="cursor-pointer text-xs">Atualizar leads existentes (preenche campos vazios)</Label>
             </div>
 
@@ -190,10 +191,19 @@ export function ImportTab({ consultants, selectedConsultants }: { consultants: C
                     : ` Serão divididos entre ${selectedConsultants.size} consultora(s), ~${split.each} cada.`}
                 </>
               }
-              confirmLabel="Importar"
+              confirmLabel={busy ? "Importando leads..." : "Importar planilha de leads"}
               onConfirm={confirmImport}
             >
-              <Button className="w-full" disabled={busy}>{busy ? "Importando…" : `Importar ${parsed.length} lead(s)`}</Button>
+              <Button className="w-full font-medium" disabled={busy}>
+                {busy ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Importando leads...
+                  </span>
+                ) : (
+                  "Importar planilha de leads"
+                )}
+              </Button>
             </ConfirmDialog>
           </div>
         )}
