@@ -87,7 +87,27 @@ export function ImportTab({ consultants, selectedConsultants }: { consultants: C
         const d = await distributeLeads({ data: { consultantIds: [...selectedConsultants], mode: importDist as never } });
         distMsg = ` · ${d.assigned} distribuído(s) entre ${Object.keys(d.perConsultant).length} consultora(s)`;
       }
-      toast.success(`Importação realizada com sucesso! ${inserted} novo(s)${updated ? ` · ${updated} atualizado(s)` : ""}${skipped ? ` · ${skipped} ignorado(s)` : ""}${distMsg}.`);
+
+      const parts: string[] = [];
+      parts.push(`${inserted} adicionado${inserted === 1 ? "" : "s"}`);
+      if (updated > 0) parts.push(`${updated} atualizado${updated === 1 ? "" : "s"}`);
+      if (skipped > 0) parts.push(`${skipped} ignorado${skipped === 1 ? "" : "s"}`);
+
+      let message = "Importação concluída com sucesso.";
+      if (parts.length > 0) {
+        if (parts.length === 1) {
+          message = `Importação concluída: ${parts[0]}.`;
+        } else if (parts.length === 2) {
+          message = `Importação concluída: ${parts[0]} e ${parts[1]}.`;
+        } else {
+          message = `Importação concluída: ${parts.slice(0, -1).join(", ")} e ${parts[parts.length - 1]}.`;
+        }
+      }
+      if (distMsg) {
+        message = message.replace(/\.$/, "") + distMsg + ".";
+      }
+
+      toast.success(message);
       setRawRecords([]); setHeaders([]); setPhoneCol("__auto__"); setFileName("");
       invalidateAll();
     } catch (e) {
