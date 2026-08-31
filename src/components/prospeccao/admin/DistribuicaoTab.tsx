@@ -16,6 +16,7 @@ import {
   adminRandomRedistribute,
   adminResetAllAccess,
 } from "@/lib/prospeccao/prospeccao.functions";
+import { adminRedistributeTrabalhados } from "@/lib/prospeccao/trabalhados.functions";
 import {
   redistribuirPromovidosIgualmente,
   redistribuirPromovidosPorDesempenho,
@@ -68,6 +69,8 @@ export function DistribuicaoTab({
   const [statusSel, setStatusSel] = useState<Set<string>>(new Set(["novo"]));
   const [somenteNaoContatados, setSomenteNaoContatados] = useState(true);
   const revogarInativos = useServerFn(revogarAcessosInativosTomadoresAl);
+  const redistribuirTrabalhados = useServerFn(adminRedistributeTrabalhados);
+  const [diasTrabalhados, setDiasTrabalhados] = useState(4);
 
   const toggleStatus = (key: string) =>
     setStatusSel((prev) => {
@@ -76,6 +79,18 @@ export function DistribuicaoTab({
       else next.add(key);
       return next;
     });
+
+  const runRedistribuirTrabalhados = async () => {
+    if (selected.size === 0) { toast.error("Selecione ao menos uma consultora."); return; }
+    setBusy(true);
+    try {
+      const d = await redistribuirTrabalhados({ data: { consultantIds: [...selected], dias: diasTrabalhados } });
+      if (d.redistribuidos === 0) toast.info(`Nenhum lead qualificado parado há ${diasTrabalhados}+ dia(s) com a mesma consultora.`);
+      else toast.success(`${d.redistribuidos} lead(s) trabalhado(s) voltaram ao rodízio entre ${Object.keys(d.perConsultant).length} consultora(s).`);
+      qc.invalidateQueries({ queryKey: ["prospect"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Falha ao redistribuir trabalhados."); }
+    setBusy(false);
+  };
 
   const runRedistribuirPorDesempenho = async () => {
     if (statusSel.size === 0) {
@@ -128,7 +143,6 @@ export function DistribuicaoTab({
     } catch (e) { toast.error(e instanceof Error ? e.message : "Falha ao redistribuir."); }
     setBusy(false);
   };
-
 
   const runRandom = async () => {
     if (selected.size === 0) { toast.error("Selecione ao menos uma consultora."); return; }
@@ -298,6 +312,35 @@ export function DistribuicaoTab({
             onConfirm={runRandom}
           >
             <Button className="mt-3 w-full" disabled={busy}><Dices className="mr-2 h-4 w-4" /> Sortear agora</Button>
+          </ConfirmDialog>
+        </div>
+
+        <div className="rounded-lg border p-4">
+          <p className="mb-2 text-sm font-medium">Redistribuir leads trabalhados</p>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Mesmo que a consultora já tenha trabalhado e qualificado o lead, ele volta ao rodízio
+            depois de {diasTrabalhados} dia(s) para a base continuar circulando entre quem está
+            selecionado. Follow-ups e anotações seguem com o lead e o novo responsável ganha uma
+            janela limpa de {diasTrabalhados} dia(s).
+          </p>
+          <Label className="text-xs">Dias com a mesma consultora</Label>
+          <Input
+            type="number"
+            min={1}
+            max={30}
+            value={diasTrabalhados}
+            onChange={(e) => setDiasTrabalhados(Math.max(1, Math.min(30, Number(e.target.value) || 4)))}
+            className="mt-1 h-8 w-24"
+          />
+          <ConfirmDialog
+            title="Redistribuir leads trabalhados?"
+            description={`Leads com status qualificado ou proposta que estão com a mesma consultora há ${diasTrabalhados} dia(s) ou mais voltarão para o rodízio e serão divididos entre as ${selected.size} consultora(s) selecionada(s).`}
+            confirmLabel="Redistribuir"
+            onConfirm={runRedistribuirTrabalhados}
+          >
+            <Button className="mt-3 w-full" variant="secondary" disabled={busy}>
+              <RefreshCw className="mr-2 h-4 w-4" /> Redistribuir trabalhados
+            </Button>
           </ConfirmDialog>
         </div>
 
