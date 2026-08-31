@@ -2317,7 +2317,7 @@
       "file_type": "code",
       "norm_label": "consultant",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L31"
+      "source_location": "L55"
     },
     {
       "id": "src_components_prospeccao_promovidospdfimport_draft",
@@ -4672,7 +4672,7 @@
       "file_type": "code",
       "norm_label": "page()",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L33"
+      "source_location": "L57"
     },
     {
       "id": "src_routes_authenticated_prospeccao_qualidade_page",
@@ -11923,7 +11923,7 @@
       "file_type": "code",
       "norm_label": "route",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L26"
+      "source_location": "L45"
     },
     {
       "id": "src_routes_authenticated_prospeccao_followups_route",
@@ -31912,7 +31912,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L34",
+      "source_location": "L58",
       "weight": 1.0
     },
     {
@@ -31924,7 +31924,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L35",
+      "source_location": "L59",
       "weight": 1.0
     },
     {
@@ -46411,7 +46411,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L17",
+      "source_location": "L31",
       "weight": 1.0
     },
     {
@@ -46423,7 +46423,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L17",
+      "source_location": "L31",
       "weight": 1.0
     },
     {
@@ -46435,7 +46435,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L17",
+      "source_location": "L31",
       "weight": 1.0
     },
     {
@@ -46447,7 +46447,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L17",
+      "source_location": "L31",
       "weight": 1.0
     },
     {
@@ -46459,7 +46459,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L18",
+      "source_location": "L37",
       "weight": 1.0
     },
     {
@@ -46471,7 +46471,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L19",
+      "source_location": "L38",
       "weight": 1.0
     },
     {
@@ -46483,7 +46483,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L20",
+      "source_location": "L39",
       "weight": 1.0
     },
     {
@@ -46495,7 +46495,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L21",
+      "source_location": "L40",
       "weight": 1.0
     },
     {
@@ -46507,7 +46507,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L22",
+      "source_location": "L41",
       "weight": 1.0
     },
     {
@@ -46519,7 +46519,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L23",
+      "source_location": "L42",
       "weight": 1.0
     },
     {
@@ -46531,7 +46531,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L24",
+      "source_location": "L43",
       "weight": 1.0
     },
     {
@@ -65329,7 +65329,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L17",
+      "source_location": "L31",
       "weight": 1.0
     },
     {
@@ -65341,7 +65341,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L18",
+      "source_location": "L37",
       "weight": 1.0
     },
     {
@@ -65353,7 +65353,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L19",
+      "source_location": "L38",
       "weight": 1.0
     },
     {
@@ -65365,7 +65365,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L20",
+      "source_location": "L39",
       "weight": 1.0
     },
     {
@@ -65377,7 +65377,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L21",
+      "source_location": "L40",
       "weight": 1.0
     },
     {
@@ -65389,7 +65389,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L22",
+      "source_location": "L41",
       "weight": 1.0
     },
     {
@@ -65401,7 +65401,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L23",
+      "source_location": "L42",
       "weight": 1.0
     },
     {
@@ -65413,7 +65413,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L24",
+      "source_location": "L43",
       "weight": 1.0
     },
     {
@@ -87156,7 +87156,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L26",
+      "source_location": "L45",
       "weight": 1.0
     },
     {
@@ -87167,7 +87167,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L31",
+      "source_location": "L55",
       "weight": 1.0
     },
     {
@@ -92126,7 +92126,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "src/routes/_authenticated/prospeccao.admin.tsx",
-      "source_location": "L28",
+      "source_location": "L52",
       "weight": 1.0
     },
     {
@@ -92767,5 +92767,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "c67a5f0a92905e51377fb590b6d4d2a7e167a042"
+  "built_at_commit": "0d7f55a1ab3a1ed3038c1247171018e2a2996108"
 }
