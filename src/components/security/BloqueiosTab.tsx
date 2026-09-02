@@ -30,7 +30,7 @@ export function BloqueiosTab() {
   const [busca, setBusca] = useState("");
 
   const { data: users = [], isLoading, isFetching, refetch } = useQuery({
-    queryKey: ["rh-users"],
+    queryKey: ["rh", "admin", "users"],
     queryFn: () => fetchUsers(),
   });
 
@@ -38,7 +38,7 @@ export function BloqueiosTab() {
     mutationFn: (v: { targetUserId: string; blocked: boolean }) => blockUser({ data: v }),
     onSuccess: (_d, v) => {
       toast.success(v.blocked ? "Acesso bloqueado." : "Acesso liberado.");
-      void queryClient.invalidateQueries({ queryKey: ["rh-users"] });
+      void queryClient.invalidateQueries({ queryKey: ["rh", "admin", "users"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Não foi possível alterar o bloqueio."),
   });
