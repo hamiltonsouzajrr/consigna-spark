@@ -480,10 +480,18 @@ function AcessosPage() {
       <Tabs defaultValue="usuarios">
         <TabsList className="mb-4">
           <TabsTrigger value="usuarios">Usuários e acessos</TabsTrigger>
+          {isAdmin && <TabsTrigger value="bloqueios">Bloqueios</TabsTrigger>}
           <TabsTrigger value="consultoras">Consultoras</TabsTrigger>
           {isAdmin && <TabsTrigger value="historico">Histórico</TabsTrigger>}
           {isAdmin && <TabsTrigger value="incidentes">Incidentes</TabsTrigger>}
         </TabsList>
+
+        {isAdmin && (
+          <TabsContent value="bloqueios">
+            <BloqueiosTab />
+          </TabsContent>
+        )}
+
 
 
         <TabsContent value="usuarios">
