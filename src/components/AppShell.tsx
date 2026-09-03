@@ -3,6 +3,7 @@ import { LogOut, BadgeDollarSign, Calculator, ShieldCheck, TrendingUp, Search, Q
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { TempoAtivoBadge } from "@/components/TempoAtivoBadge";
 import { useRhAccess } from "@/hooks/use-rh-access";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/grupo-positive-logo-2026.png.asset.json";
