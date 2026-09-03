@@ -157,11 +157,12 @@ export type DownloadResult = {
 };
 
 export async function baixarPdf(url: string): Promise<DownloadResult> {
-  const res = await fetch(url, {
-    headers: { "User-Agent": UA, Accept: "application/pdf,*/*" },
-    signal: AbortSignal.timeout(60000),
-  });
-  if (!res.ok) throw new Error(`Falha ao baixar PDF (HTTP ${res.status}).`);
+  const res = await fetchComRetry(
+    url,
+    { headers: { "User-Agent": UA, Accept: "application/pdf,*/*" } },
+    60000,
+    "baixar PDF",
+  );
   const ab = await res.arrayBuffer();
   const buffer = new Uint8Array(ab);
   const hash = createHash("sha256").update(buffer).digest("hex");
