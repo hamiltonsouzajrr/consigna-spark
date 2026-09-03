@@ -62,11 +62,12 @@ type AdminSection = {
   collapsed?: boolean;
 };
 
-// Blocos ordenados por frequência de uso real.
+// Só gestão do sistema e métricas: telas de trabalho da consultora
+// (fila de leads, abordagem) não são oferecidas aqui.
 const sections: AdminSection[] = [
   {
-    title: "Operação diária",
-    description: "O que se usa todos os dias: acessos, prospecção, radar e estoque de tomadores.",
+    title: "Sistema e acessos",
+    description: "Contas, permissões e as engrenagens que alimentam o sistema.",
     links: [
       {
         to: "/rh/acessos",
@@ -84,26 +85,20 @@ const sections: AdminSection[] = [
       {
         to: "/radar",
         label: "Radar Diário Oficial",
-        description: "Promoções e progressões publicadas, com distribuição automática às consultoras.",
+        description: "Buscas automáticas, edições processadas e distribuição às consultoras.",
         icon: Radar,
       },
       {
         to: "/tomadores-al",
-        label: "Tomadores com margem — AL",
-        description: "Estoque e distribuição automática por faixa de margem.",
+        label: "Estoque de tomadores — AL",
+        description: "Volume disponível por faixa de margem, reposição e distribuição automática.",
         icon: Wallet,
-      },
-      {
-        to: "/servidores-sem-acesso",
-        label: "Servidores sem acesso",
-        description: "Leads de servidores que ainda não possuem conta no sistema.",
-        icon: Users,
       },
     ],
   },
   {
-    title: "Gestão",
-    description: "Metas, ranking e a competição semanal de prospecção.",
+    title: "Métricas e desempenho",
+    description: "Indicadores da equipe: metas, ranking, competição e qualidade das ligações.",
     links: [
       { to: "/producao/metas", label: "Metas", description: "Metas de produção da equipe.", icon: Target },
       {
@@ -117,6 +112,12 @@ const sections: AdminSection[] = [
         label: "Competição da semana",
         description: "Prêmio misterioso e regras da competição de prospecção.",
         icon: Trophy,
+      },
+      {
+        to: "/prospeccao/qualidade",
+        label: "Qualidade das ligações",
+        description: "Volume, taxa de atendimento e resultados de chamada por consultora.",
+        icon: Activity,
       },
     ],
   },
