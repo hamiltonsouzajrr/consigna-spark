@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -63,7 +63,7 @@ export function ConfirmDialog({
           <AlertDialogAction
             disabled={blocked}
             className={isDestructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}
-            onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+            onClick={(e: MouseEvent<HTMLButtonElement>) => {
               if (blocked) { e.preventDefault(); return; }
               void onConfirm();
             }}
