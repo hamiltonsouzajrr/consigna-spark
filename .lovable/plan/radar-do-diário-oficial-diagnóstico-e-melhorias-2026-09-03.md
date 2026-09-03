@@ -17,16 +17,19 @@
 ## O que fazer
 
 ### Fase 1 — Destravar e evitar que trave de novo
+
 - Liberar os 2 itens presos e concluir o job de 27/08.
 - Reserva com expiração: item em "processando" há mais de 15 minutos volta para a fila automaticamente, com contador de tentativas (após 3 falhas vira "erro" e gera alerta) — assim nenhum job fica eterno.
 - Fechamento automático de jobs sem itens pendentes e de jobs parados há mais de 24h.
 
 ### Fase 2 — Coleta mais confiável
+
 - Repescagem da busca diária: além das 06:30, tentativas às 09:00 e 13:00 (horário de Maceió) que só rodam se ainda não houver edição do dia registrada.
 - Retentativa com espera progressiva quando o site do Diário responde erro/timeout, em vez de desistir na primeira falha.
 - Varredura de lacunas: uma vez por dia, conferir os últimos 15 dias úteis e reprocessar datas sem edição registrada.
 
 ### Fase 3 — Visibilidade e alerta
+
 - Alerta automático quando passar 48h úteis sem nenhuma edição nova ou sem nenhum registro extraído.
 - Cartão "Saúde do Radar" no painel administrativo: última edição capturada, última execução, itens presos, leads distribuídos nas últimas 24h e dias em branco recentes.
 - Botão "Destravar fila" no painel, para o administrador liberar itens presos sem depender de suporte.
@@ -37,4 +40,7 @@
 - Fechamento de jobs órfãos em `atualizarProgressoJob` / `processarJobsPendentes` (`src/lib/radar/diario-scheduler.server.ts`).
 - Repescagem via novos agendamentos pg_cron apontando para o hook já protegido por segredo, com verificação prévia de edição do dia.
 - Retentativas com espera progressiva em `listarEdicoes`/`baixarPdf` (`src/lib/radar/diario-crawler.server.ts`).
-- Alertas gravados em `diario_alertas`; cartão de saúde alimentado por uma server function administrativa nova e exibido na rota do Radar.
+- Alertas gravados em `diario_alertas`; cartão de saúde alimentado por uma server function administrativa nova e exibido na rota do Radar.  
+  
+Crie uma parte que eu como admin consiga liberar para que apareça para a consultora os leads recem promovidos de uma forma organizada e nunca misturar os leads do CRM com os Tomadores e os promovidos , arquitete.
+- &nbsp;
