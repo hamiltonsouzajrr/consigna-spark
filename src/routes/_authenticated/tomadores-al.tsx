@@ -1079,7 +1079,10 @@ function Page() {
             <Button variant="outline" size="sm" disabled={page + 1 >= pages} onClick={() => setPage((p) => p + 1)}>Próxima</Button>
           </div>
         )}
+        </>
+        )}
       </div>
+
     </AppShell>
   );
 }
