@@ -13,7 +13,7 @@ export function useRhNotifications() {
     queryKey: ["rh", "notifications", user?.id ?? "anon"],
     queryFn: () => fetchNotifications(),
     enabled: !!user,
-    refetchInterval: 60_000,
+    refetchInterval: 120_000,
     staleTime: 30_000,
   });
 
