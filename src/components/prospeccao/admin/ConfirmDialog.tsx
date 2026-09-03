@@ -63,7 +63,7 @@ export function ConfirmDialog({
           <AlertDialogAction
             disabled={blocked}
             className={isDestructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
               if (blocked) { e.preventDefault(); return; }
               void onConfirm();
             }}
