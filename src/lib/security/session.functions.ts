@@ -172,6 +172,58 @@ export const listIncidents = createServerFn({ method: "POST" })
     return (rows ?? []) as Incidente[];
   });
 
+export type ContaTravada = {
+  userId: string;
+  email: string | null;
+  bloqueadoEm: string;
+  ip: string | null;
+  navegador: string | null;
+};
+
+/** Contas com sessão travada por acesso simultâneo (bloqueio automático). */
+export const listBlockedSessions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ContaTravada[]> => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("app_sessions")
+      .select("user_id,blocked_at,ip,user_agent")
+      .not("blocked_at", "is", null)
+      .order("blocked_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+
+    const byUser = new Map<string, ContaTravada>();
+    for (const r of (rows ?? []) as {
+      user_id: string;
+      blocked_at: string;
+      ip: string | null;
+      user_agent: string | null;
+    }[]) {
+      if (byUser.has(r.user_id)) continue;
+      byUser.set(r.user_id, {
+        userId: r.user_id,
+        email: null,
+        bloqueadoEm: r.blocked_at,
+        ip: r.ip,
+        navegador: r.user_agent,
+      });
+    }
+    if (byUser.size === 0) return [];
+
+    // Completa o e-mail a partir dos incidentes registrados (mesma origem do bloqueio).
+    const { data: incs } = await supabaseAdmin
+      .from("security_incidents")
+      .select("user_id,user_email")
+      .in("user_id", [...byUser.keys()]);
+    for (const i of (incs ?? []) as { user_id: string; user_email: string | null }[]) {
+      const c = byUser.get(i.user_id);
+      if (c && !c.email) c.email = i.user_email;
+    }
+    return [...byUser.values()];
+  });
+
 /** Libera a conta: remove as sessões travadas e resolve os incidentes abertos. */
 export const releaseAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
