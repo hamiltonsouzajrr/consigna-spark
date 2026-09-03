@@ -45,6 +45,10 @@ export type PromovidosRecentesResult = {
   semCpf: number;
   naoAbordados: number;
   ultimaEntrega: string | null;
+  /** true quando não há nada na janela de 15 dias e listamos os mais recentes. */
+  foraDaJanela: boolean;
+  /** Data da publicação mais recente já capturada pelo Radar. */
+  ultimaPublicacao: string | null;
 };
 
 function diasAtras(dias: number): string {
