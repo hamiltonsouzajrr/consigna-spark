@@ -595,3 +595,57 @@ export const devolverLeadsSemConta = createServerFn({ method: "POST" })
       return { liberados, atribuidos: r.atribuidos, consultoras: r.consultoras };
     },
   );
+
+// Admin, 1 clique: devolve todos os promovidos ao estoque e reparte de novo entre
+// todas as consultoras com conta, sem entregar o mesmo lead para quem já o atendeu
+// nos últimos N dias (padrão 7).
+export const reiniciarPromovidosTodos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        diasBloqueio: z.number().int().min(0).max(365).optional(),
+        janelaDias: z.number().int().min(1).max(365).nullable().optional(),
+      })
+      .parse(data ?? {}),
+  )
+  .handler(
+    async ({
+      context,
+      data,
+    }): Promise<{ reiniciados: number; atribuidos: number; consultoras: number; semDono: number }> => {
+      await assertAdminCtx(context);
+      const { callRpcRow } = await import("@/lib/radar/rpc.server");
+      const row = await callRpcRow<{
+        reiniciados: number;
+        atribuidos: number;
+        consultoras: number;
+        sem_dono: number;
+      }>("reiniciar_promovidos_e_redistribuir", {
+        _dias_bloqueio: data.diasBloqueio ?? 7,
+        _janela_dias: data.janelaDias ?? null,
+        _limite: 20000,
+      });
+
+      const r = {
+        reiniciados: Number(row?.reiniciados ?? 0),
+        atribuidos: Number(row?.atribuidos ?? 0),
+        consultoras: Number(row?.consultoras ?? 0),
+        semDono: Number(row?.sem_dono ?? 0),
+      };
+
+      try {
+        const { logAdminAction } = await import("@/lib/admin/audit.server");
+        await logAdminAction({
+          actorId: context.userId,
+          actorEmail: (context.claims as { email?: string } | undefined)?.email ?? null,
+          action: "radar_reiniciar_promovidos_todos",
+          detail: { ...r, ...data },
+        });
+      } catch {
+        /* auditoria best-effort */
+      }
+
+      return r;
+    },
+  );
