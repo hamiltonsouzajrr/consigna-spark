@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { autorizarCron } from "@/lib/security/cron-auth.server";
 
 /**
  * Closes the weekly prospecting competition. Called by pg_cron every Friday
@@ -8,14 +9,8 @@ export const Route = createFileRoute("/api/public/hooks/competicao-fechar")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const key = request.headers.get("apikey") ?? request.headers.get("authorization")?.replace("Bearer ", "");
-        const expected = process.env["SUPABASE_ANON_KEY"] ?? process.env["SUPABASE_PUBLISHABLE_KEY"];
-        if (!key || !expected || key !== expected) {
-          return new Response(JSON.stringify({ error: "unauthorized" }), {
-            status: 401,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
+        const auth = await autorizarCron(request);
+        if (!auth.ok) return auth.response;
         try {
           const { fecharSemana } = await import("@/lib/prospeccao/competicao-fechar.server");
           const result = await fecharSemana();

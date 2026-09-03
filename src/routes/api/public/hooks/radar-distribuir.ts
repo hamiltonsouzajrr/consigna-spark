@@ -2,19 +2,14 @@
 // responsável entre as consultoras com conta no sistema. Protegida por apikey.
 
 import { createFileRoute } from "@tanstack/react-router";
+import { autorizarCron } from "@/lib/security/cron-auth.server";
 
 export const Route = createFileRoute("/api/public/hooks/radar-distribuir")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apikey = request.headers.get("apikey") ?? request.headers.get("x-api-key") ?? "";
-        const expected = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY ?? "";
-        if (!expected || apikey !== expected) {
-          return new Response(JSON.stringify({ error: "Não autorizado" }), {
-            status: 401,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
+        const auth = await autorizarCron(request);
+        if (!auth.ok) return auth.response;
         try {
           const { distribuirPendentes } = await import("@/lib/radar/distribuicao.server");
           const res = await distribuirPendentes(1000);
