@@ -861,10 +861,10 @@ export const revogarAcessosInativosTomadoresAl = createServerFn({ method: "POST"
     const adminIds = new Set(
       (roles ?? []).filter((r: any) => r.role === "admin").map((r: any) => String(r.user_id)),
     );
-    const porEmail = new Map(
-      (consultoras ?? [])
-        .filter((c: any) => c.email)
-        .map((c: any) => [String(c.email).trim().toLowerCase(), c] as const),
+    const porEmail = new Map<string, { id: string; nome: string; email: string | null }>(
+      ((consultoras ?? []) as any[])
+        .filter((c) => c.email)
+        .map((c) => [String(c.email).trim().toLowerCase(), c] as const),
     );
 
     // Usuárias sem login recente (ou que nunca entraram e já têm conta antiga).
