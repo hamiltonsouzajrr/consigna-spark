@@ -112,24 +112,42 @@ export const getPromovidosRecentes = createServerFn({ method: "POST" })
       return {
         rows: [], total: 0, isAdmin: false, consultoraNome: null, vinculada: false,
         novosHoje: 0, novos7d: 0, semCpf: 0, naoAbordados: 0, ultimaEntrega: null,
+        foraDaJanela: false, ultimaPublicacao: null,
       };
     }
 
 
-    const base = () => {
-      let q = context.supabase.from("do_registros").select(COLS, { count: "exact" }).gte("data_publicacao", desde);
+    const base = (comJanela = true) => {
+      let q = context.supabase.from("do_registros").select(COLS, { count: "exact" });
+      if (comJanela) q = q.gte("data_publicacao", desde);
       if (nome) q = q.eq("consultora_responsavel", nome);
       return q;
     };
 
-    let query = base();
-    if (data.apenasNovos) query = query.eq("status_abordagem", "novo");
+    const listar = async (comJanela: boolean) => {
+      let query = base(comJanela);
+      if (data.apenasNovos) query = query.eq("status_abordagem", "novo");
+      const res = await query
+        .order("data_publicacao", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+      if (res.error) throw new Error(res.error.message);
+      return { rows: (res.data ?? []) as unknown as PromovidoRecente[], count: res.count ?? 0 };
+    };
 
-    const { data: rows, count, error } = await query
-      .order("data_publicacao", { ascending: false, nullsFirst: false })
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
-    if (error) throw new Error(error.message);
+    let { rows, count } = await listar(true);
+    let foraDaJanela = false;
+
+    // Sem nada publicado nos últimos 15 dias: em vez de tela vazia, mostramos
+    // os promovidos mais recentes da carteira (a UI marca a idade de cada um).
+    if (!rows.length && offset === 0) {
+      const fallback = await listar(false);
+      if (fallback.rows.length) {
+        rows = fallback.rows;
+        count = fallback.count;
+        foraDaJanela = true;
+      }
+    }
 
     const hoje = new Date().toISOString().slice(0, 10);
     const contar = async (build: (q: any) => any): Promise<number> => {
@@ -152,17 +170,28 @@ export const getPromovidosRecentes = createServerFn({ method: "POST" })
       return ((d?.[0] as any)?.atribuido_em as string | undefined) ?? null;
     })();
 
-    const [novosHoje, novos7d, semCpf, naoAbordados, ultimaEntrega] = await Promise.all([
+    const ultimaPublicacaoQuery = (async () => {
+      const { data: d } = await context.supabase
+        .from("do_registros")
+        .select("data_publicacao")
+        .not("data_publicacao", "is", null)
+        .order("data_publicacao", { ascending: false })
+        .limit(1);
+      return ((d?.[0] as any)?.data_publicacao as string | undefined) ?? null;
+    })();
+
+    const [novosHoje, novos7d, semCpf, naoAbordados, ultimaEntrega, ultimaPublicacao] = await Promise.all([
       contar((q) => q.eq("data_publicacao", hoje)),
       contar((q) => q.gte("data_publicacao", diasAtras(7))),
       contar((q) => q.is("cpf_confirmado", null)),
       contar((q) => q.eq("status_abordagem", "novo")),
       ultimaEntregaQuery,
+      ultimaPublicacaoQuery,
     ]);
 
     return {
-      rows: (rows ?? []) as unknown as PromovidoRecente[],
-      total: count ?? 0,
+      rows,
+      total: count,
       isAdmin,
       consultoraNome: nome,
       vinculada: !isAdmin,
@@ -171,6 +200,8 @@ export const getPromovidosRecentes = createServerFn({ method: "POST" })
       semCpf,
       naoAbordados,
       ultimaEntrega,
+      foraDaJanela,
+      ultimaPublicacao,
     };
   });
 
