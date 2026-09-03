@@ -64,6 +64,7 @@ function DashboardPage() {
     <div className="space-y-5">
       <RadarSaudeCard />
       <LiberacaoPromovidosCard />
+      <ConsultorasSemContaCard />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {kpis.map((k) => {
