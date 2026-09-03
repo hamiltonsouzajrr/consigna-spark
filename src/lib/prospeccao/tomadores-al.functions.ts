@@ -628,7 +628,7 @@ export const marcarAbordagemTomador = createServerFn({ method: "POST" })
         .limit(1);
       const r = (lead ?? [])[0];
       if (r) {
-        faixaLead = faixaDaMargem("emprestimo", r.margem_disp_emprestimo ?? 0);
+        faixaLead = faixaDaMargem(r.margem_disp_emprestimo ?? 0, "emprestimo");
         if (!admin && String(r.consultora_responsavel ?? "") !== minha) {
           throw new Error("Este lead não está na sua carteira.");
         }
