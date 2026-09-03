@@ -1,11 +1,11 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   LayoutDashboard, Users, Building2, BriefcaseBusiness, Plane, Clock,
   FileText, GraduationCap, Laptop, Star, AlertTriangle, UserSearch,
   ClipboardCheck, UserMinus, Network, ReceiptText, HeartHandshake,
   Target, Gauge, TrendingDown, IdCard,
-  Goal, Award, ShieldCheck, Lock, LineChart,
+  Goal, Award, ShieldCheck, Lock, LineChart, ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
