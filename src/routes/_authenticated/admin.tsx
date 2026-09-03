@@ -12,7 +12,7 @@ import { ConfirmDialog } from "@/components/prospeccao/admin/ConfirmDialog";
 import { toast } from "sonner";
 import {
   ShieldCheck,
-  Users,
+  
   Wallet,
   Radar,
   Phone,
