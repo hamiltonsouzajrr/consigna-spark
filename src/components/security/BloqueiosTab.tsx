@@ -30,9 +30,18 @@ export function BloqueiosTab() {
   const revokeSessions = useServerFn(revokeRhUserSessions);
   const [busca, setBusca] = useState("");
 
+  const fetchTravadas = useServerFn(listBlockedSessions);
+  const liberarConta = useServerFn(releaseAccount);
+
   const { data: users = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ["rh", "admin", "users"],
     queryFn: () => fetchUsers(),
+  });
+
+  const travadas = useQuery({
+    queryKey: ["security", "sessoes-travadas"],
+    queryFn: () => fetchTravadas(),
+    refetchInterval: 60_000,
   });
 
   const blockMut = useMutation({
@@ -44,11 +53,22 @@ export function BloqueiosTab() {
     onError: (e: any) => toast.error(e?.message ?? "Não foi possível alterar o bloqueio."),
   });
 
+  const releaseMut = useMutation({
+    mutationFn: (userId: string) => liberarConta({ data: { userId } }),
+    onSuccess: () => {
+      toast.success("Conta liberada. A consultora já pode entrar novamente.");
+      void queryClient.invalidateQueries({ queryKey: ["security", "sessoes-travadas"] });
+      void queryClient.invalidateQueries({ queryKey: ["security", "incidentes"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Não foi possível liberar a conta."),
+  });
+
   const revokeMut = useMutation({
     mutationFn: (targetUserId: string) => revokeSessions({ data: { targetUserId } }),
     onSuccess: () => toast.success("Sessões encerradas."),
     onError: (e: any) => toast.error(e?.message ?? "Falha ao encerrar sessões."),
   });
+
 
   const termo = busca.trim().toLowerCase();
   const match = (u: RhUserAccess) =>
