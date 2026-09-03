@@ -50,6 +50,36 @@ export type Database = {
         }
         Relationships: []
       }
+      app_uso_ativo: {
+        Row: {
+          created_at: string
+          id: string
+          ref_date: string
+          segundos: number
+          ultimo_em: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ref_date: string
+          segundos?: number
+          ultimo_em?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ref_date?: string
+          segundos?: number
+          ultimo_em?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       consigup_sessions: {
         Row: {
           cookies: Json
@@ -2703,6 +2733,10 @@ export type Database = {
           _teto_diario?: number
           _user_id: string
         }
+        Returns: number
+      }
+      registrar_uso_ativo: {
+        Args: { _segundos: number; _user_id: string }
         Returns: number
       }
       reiniciar_tomadores_trabalhados: {
