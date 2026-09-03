@@ -160,6 +160,47 @@ export function BloqueiosTab() {
         </Button>
       </div>
 
+      <Card className="border-amber-500/40">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ShieldAlert className="h-4 w-4 text-amber-500" />
+            Travadas por acesso simultâneo
+            <Badge variant="outline">{travadas.data?.length ?? 0}</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {travadas.isLoading ? (
+            <Skeleton className="h-14 w-full" />
+          ) : (travadas.data?.length ?? 0) === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nenhuma conta travada por sessão simultânea.
+            </p>
+          ) : (
+            travadas.data!.map((c) => (
+              <div
+                key={c.userId}
+                className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{c.email ?? c.userId}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    bloqueada em {fmt(c.bloqueadoEm)}
+                    {c.ip ? ` · IP ${c.ip}` : ""}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  disabled={releaseMut.isPending}
+                  onClick={() => releaseMut.mutate(c.userId)}
+                >
+                  <LockOpen className="mr-1.5 h-3.5 w-3.5" /> Desbloquear
+                </Button>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
       <Card className="border-destructive/30">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
