@@ -134,13 +134,12 @@ export async function listarEdicoesPorMes(opts: {
   mes: number; // 1-12
 }): Promise<EdicaoNormalizada[]> {
   const mes2 = String(opts.mes).padStart(2, "0");
-  const res = await fetch(`${DIARIO_API}/editions/published/${opts.ano}/${mes2}`, {
-    headers: { Accept: "application/json", "User-Agent": UA },
-    signal: AbortSignal.timeout(25000),
-  });
-  if (!res.ok) {
-    throw new Error(`Falha ao consultar edições de ${mes2}/${opts.ano} (HTTP ${res.status}).`);
-  }
+  const res = await fetchComRetry(
+    `${DIARIO_API}/editions/published/${opts.ano}/${mes2}`,
+    { headers: { Accept: "application/json", "User-Agent": UA } },
+    25000,
+    `consultar edições de ${mes2}/${opts.ano}`,
+  );
   const json = (await res.json()) as { status?: string; editions?: EdicaoApi[] };
   const editions = json.editions ?? [];
   const out = editions
