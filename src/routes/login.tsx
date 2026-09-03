@@ -36,6 +36,8 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const { user, signIn, signUp, resetPassword } = useAuth();
   const nav = useNavigate();
+  const { isAdmin, isLoading: accessLoading } = useRhAccess();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
