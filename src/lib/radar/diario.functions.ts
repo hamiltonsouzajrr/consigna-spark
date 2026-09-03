@@ -400,3 +400,39 @@ export const getPromovidosPeriodo = createServerFn({ method: "POST" })
   });
 
 
+
+// ---------------------------------------------------------------------------
+// Saúde do Radar (admin)
+// ---------------------------------------------------------------------------
+
+export type RadarSaude = {
+  ultimaEdicao: string | null;
+  ultimaExecucao: string | null;
+  ultimaEntrega: string | null;
+  itensPresos: number;
+  jobsAtivos: number;
+  edicoes7d: number;
+  registros7d: number;
+  leadsDistribuidos24h: number;
+  aguardandoLiberacao: number;
+  diasEmBranco: string[];
+  status: "ok" | "atencao" | "critico";
+};
+
+export const getRadarSaude = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<RadarSaude> => {
+    await assertAdmin(context.supabase, context.userId);
+    const { saudeRadar } = await import("@/lib/radar/diario-scheduler.server");
+    return saudeRadar();
+  });
+
+export const destravarFilaRadar = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(
+    async ({ context }): Promise<{ liberados: number; falhados: number; jobsFechados: number }> => {
+      await assertAdmin(context.supabase, context.userId);
+      const { recuperarFila } = await import("@/lib/radar/diario-scheduler.server");
+      return recuperarFila();
+    },
+  );
