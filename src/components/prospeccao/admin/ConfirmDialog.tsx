@@ -29,9 +29,11 @@ export function ConfirmDialog({
   const open = controlled ? openProp : openState;
   const setOpen = (v: boolean) => {
     if (!controlled) setOpenState(v);
+    if (v) setTyped("");
     onOpenChange?.(v);
   };
   const isDestructive = destructive || variant === "destructive";
+  const blocked = !!requireText && typed.trim().toUpperCase() !== requireText.toUpperCase();
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       {children ? <span onClick={() => setOpen(true)} className="contents">{children}</span> : null}
@@ -41,11 +43,29 @@ export function ConfirmDialog({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription asChild><div className="text-sm text-muted-foreground">{description}</div></AlertDialogDescription>
         </AlertDialogHeader>
+        {requireText && (
+          <div className="space-y-1.5">
+            <label htmlFor="confirm-text" className="text-xs text-muted-foreground">
+              Para confirmar, digite <span className="font-semibold text-foreground">{requireText}</span>
+            </label>
+            <Input
+              id="confirm-text"
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              placeholder={requireText}
+              autoComplete="off"
+            />
+          </div>
+        )}
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
           <AlertDialogAction
+            disabled={blocked}
             className={isDestructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}
-            onClick={() => { void onConfirm(); }}
+            onClick={(e) => {
+              if (blocked) { e.preventDefault(); return; }
+              void onConfirm();
+            }}
           >
             {confirmLabel}
           </AlertDialogAction>
