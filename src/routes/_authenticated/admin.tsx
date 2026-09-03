@@ -357,6 +357,16 @@ function AdminHubContent() {
 
       <HealthPanel />
 
+      {/* Métricas visuais, atualizadas automaticamente */}
+      <section className="mb-8">
+        <h2 className="text-base font-semibold text-foreground">Indicadores</h2>
+        <p className="mb-3 text-sm text-muted-foreground">
+          Distribuição e evolução da operação — atualiza sozinho a cada minuto.
+        </p>
+        <AdminCharts />
+      </section>
+
+
       {/* Ações rápidas */}
       <section className="mb-8">
         <h2 className="text-base font-semibold text-foreground">Ações rápidas</h2>
