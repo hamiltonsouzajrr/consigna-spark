@@ -281,9 +281,11 @@ function LoginPage() {
           className="h-full w-full select-none object-cover object-right sm:object-center"
         />
       </div>
-      <div className="pointer-events-none absolute inset-0 bg-background/35 sm:bg-background/25" />
+      <div className="pointer-events-none absolute inset-0 bg-background/55 sm:bg-background/45" />
+      <div aria-hidden="true" className="focus-grid pointer-events-none absolute inset-0 bg-transparent opacity-70" />
 
-      <Card className="relative z-10 w-full max-w-md border-white/60 bg-card/85 p-6 shadow-[var(--shadow-glow)] backdrop-blur-xl sm:p-8">
+      <Card className="relative z-10 w-full max-w-md border-border bg-card/90 p-6 shadow-[var(--shadow-glow)] backdrop-blur-xl sm:p-8">
+
 
         <div className="mb-6 flex items-center gap-3">
           <img
