@@ -11,6 +11,7 @@ import {
 import { getDashboard, type DashboardData } from "@/lib/radar/radar.functions";
 import { RadarSaudeCard } from "@/components/radar/RadarSaudeCard";
 import { LiberacaoPromovidosCard } from "@/components/radar/LiberacaoPromovidosCard";
+import { ConsultorasSemContaCard } from "@/components/radar/ConsultorasSemContaCard";
 
 export const Route = createFileRoute("/_authenticated/radar/")({
   component: DashboardPage,
