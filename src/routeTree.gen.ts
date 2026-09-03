@@ -79,6 +79,7 @@ import { Route as AuthenticatedRhPortalIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedRhPortalKpiRouteImport } from './routes/_authenticated/rh.portal.$kpi'
 import { Route as ApiPublicHooksCompeticaoFecharRouteImport } from './routes/api/public/hooks/competicao-fechar'
 import { Route as ApiPublicHooksFollowupLembretesRouteImport } from './routes/api/public/hooks/followup-lembretes'
+import { Route as ApiPublicHooksLeadsRedistribuirTrabalhadosRouteImport } from './routes/api/public/hooks/leads-redistribuir-trabalhados'
 import { Route as ApiPublicHooksRadarDiarioRouteImport } from './routes/api/public/hooks/radar-diario'
 import { Route as ApiPublicHooksRadarDiarioWorkerRouteImport } from './routes/api/public/hooks/radar-diario-worker'
 import { Route as ApiPublicHooksRadarDistribuirRouteImport } from './routes/api/public/hooks/radar-distribuir'
@@ -478,6 +479,12 @@ const ApiPublicHooksFollowupLembretesRoute =
     path: '/api/public/hooks/followup-lembretes',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksLeadsRedistribuirTrabalhadosRoute =
+  ApiPublicHooksLeadsRedistribuirTrabalhadosRouteImport.update({
+    id: '/api/public/hooks/leads-redistribuir-trabalhados',
+    path: '/api/public/hooks/leads-redistribuir-trabalhados',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksRadarDiarioRoute =
   ApiPublicHooksRadarDiarioRouteImport.update({
     id: '/api/public/hooks/radar-diario',
@@ -584,6 +591,7 @@ export interface FileRoutesByFullPath {
   '/rh/portal/$kpi': typeof AuthenticatedRhPortalKpiRoute
   '/api/public/hooks/competicao-fechar': typeof ApiPublicHooksCompeticaoFecharRoute
   '/api/public/hooks/followup-lembretes': typeof ApiPublicHooksFollowupLembretesRoute
+  '/api/public/hooks/leads-redistribuir-trabalhados': typeof ApiPublicHooksLeadsRedistribuirTrabalhadosRoute
   '/api/public/hooks/radar-diario': typeof ApiPublicHooksRadarDiarioRoute
   '/api/public/hooks/radar-diario-worker': typeof ApiPublicHooksRadarDiarioWorkerRoute
   '/api/public/hooks/radar-distribuir': typeof ApiPublicHooksRadarDistribuirRoute
@@ -658,6 +666,7 @@ export interface FileRoutesByTo {
   '/rh/portal/$kpi': typeof AuthenticatedRhPortalKpiRoute
   '/api/public/hooks/competicao-fechar': typeof ApiPublicHooksCompeticaoFecharRoute
   '/api/public/hooks/followup-lembretes': typeof ApiPublicHooksFollowupLembretesRoute
+  '/api/public/hooks/leads-redistribuir-trabalhados': typeof ApiPublicHooksLeadsRedistribuirTrabalhadosRoute
   '/api/public/hooks/radar-diario': typeof ApiPublicHooksRadarDiarioRoute
   '/api/public/hooks/radar-diario-worker': typeof ApiPublicHooksRadarDiarioWorkerRoute
   '/api/public/hooks/radar-distribuir': typeof ApiPublicHooksRadarDistribuirRoute
@@ -737,6 +746,7 @@ export interface FileRoutesById {
   '/_authenticated/rh/portal/$kpi': typeof AuthenticatedRhPortalKpiRoute
   '/api/public/hooks/competicao-fechar': typeof ApiPublicHooksCompeticaoFecharRoute
   '/api/public/hooks/followup-lembretes': typeof ApiPublicHooksFollowupLembretesRoute
+  '/api/public/hooks/leads-redistribuir-trabalhados': typeof ApiPublicHooksLeadsRedistribuirTrabalhadosRoute
   '/api/public/hooks/radar-diario': typeof ApiPublicHooksRadarDiarioRoute
   '/api/public/hooks/radar-diario-worker': typeof ApiPublicHooksRadarDiarioWorkerRoute
   '/api/public/hooks/radar-distribuir': typeof ApiPublicHooksRadarDistribuirRoute
@@ -816,6 +826,7 @@ export interface FileRouteTypes {
     | '/rh/portal/$kpi'
     | '/api/public/hooks/competicao-fechar'
     | '/api/public/hooks/followup-lembretes'
+    | '/api/public/hooks/leads-redistribuir-trabalhados'
     | '/api/public/hooks/radar-diario'
     | '/api/public/hooks/radar-diario-worker'
     | '/api/public/hooks/radar-distribuir'
@@ -890,6 +901,7 @@ export interface FileRouteTypes {
     | '/rh/portal/$kpi'
     | '/api/public/hooks/competicao-fechar'
     | '/api/public/hooks/followup-lembretes'
+    | '/api/public/hooks/leads-redistribuir-trabalhados'
     | '/api/public/hooks/radar-diario'
     | '/api/public/hooks/radar-diario-worker'
     | '/api/public/hooks/radar-distribuir'
@@ -968,6 +980,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rh/portal/$kpi'
     | '/api/public/hooks/competicao-fechar'
     | '/api/public/hooks/followup-lembretes'
+    | '/api/public/hooks/leads-redistribuir-trabalhados'
     | '/api/public/hooks/radar-diario'
     | '/api/public/hooks/radar-diario-worker'
     | '/api/public/hooks/radar-distribuir'
@@ -987,6 +1000,7 @@ export interface RootRouteChildren {
   ConsultoraTokenRoute: typeof ConsultoraTokenRoute
   ApiPublicHooksCompeticaoFecharRoute: typeof ApiPublicHooksCompeticaoFecharRoute
   ApiPublicHooksFollowupLembretesRoute: typeof ApiPublicHooksFollowupLembretesRoute
+  ApiPublicHooksLeadsRedistribuirTrabalhadosRoute: typeof ApiPublicHooksLeadsRedistribuirTrabalhadosRoute
   ApiPublicHooksRadarDiarioRoute: typeof ApiPublicHooksRadarDiarioRoute
   ApiPublicHooksRadarDiarioWorkerRoute: typeof ApiPublicHooksRadarDiarioWorkerRoute
   ApiPublicHooksRadarDistribuirRoute: typeof ApiPublicHooksRadarDistribuirRoute
@@ -1487,6 +1501,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksFollowupLembretesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/leads-redistribuir-trabalhados': {
+      id: '/api/public/hooks/leads-redistribuir-trabalhados'
+      path: '/api/public/hooks/leads-redistribuir-trabalhados'
+      fullPath: '/api/public/hooks/leads-redistribuir-trabalhados'
+      preLoaderRoute: typeof ApiPublicHooksLeadsRedistribuirTrabalhadosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/radar-diario': {
       id: '/api/public/hooks/radar-diario'
       path: '/api/public/hooks/radar-diario'
@@ -1733,6 +1754,8 @@ const rootRouteChildren: RootRouteChildren = {
   ConsultoraTokenRoute: ConsultoraTokenRoute,
   ApiPublicHooksCompeticaoFecharRoute: ApiPublicHooksCompeticaoFecharRoute,
   ApiPublicHooksFollowupLembretesRoute: ApiPublicHooksFollowupLembretesRoute,
+  ApiPublicHooksLeadsRedistribuirTrabalhadosRoute:
+    ApiPublicHooksLeadsRedistribuirTrabalhadosRoute,
   ApiPublicHooksRadarDiarioRoute: ApiPublicHooksRadarDiarioRoute,
   ApiPublicHooksRadarDiarioWorkerRoute: ApiPublicHooksRadarDiarioWorkerRoute,
   ApiPublicHooksRadarDistribuirRoute: ApiPublicHooksRadarDistribuirRoute,
