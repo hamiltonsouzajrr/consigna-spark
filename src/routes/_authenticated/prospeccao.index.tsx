@@ -6,6 +6,7 @@ import { useRhAccess } from "@/hooks/use-rh-access";
 import { supabase } from "@/integrations/supabase/client";
 import { refillMyQueue } from "@/lib/prospeccao/prospeccao.functions";
 import { CrmCockpit } from "@/components/prospeccao/CrmCockpit";
+import { CrmCockpitAdmin } from "@/components/prospeccao/CrmCockpitAdmin";
 import { registrarContato, registrarQualificacao, agendarFollowup } from "@/lib/prospeccao/competicao.functions";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
