@@ -2584,6 +2584,16 @@ export type Database = {
         }
         Returns: number
       }
+      garantir_pool_tomadores_faixa: {
+        Args: {
+          _alvo?: number
+          _dias_reciclagem?: number
+          _dias_sem_interesse?: number
+          _faixa: string
+          _nome: string
+        }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

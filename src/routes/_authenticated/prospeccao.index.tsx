@@ -320,7 +320,7 @@ function Page() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline">
-            <Link to="/prospeccao/promovidos"><Award className="mr-2 h-4 w-4" /> Recém promovidos</Link>
+            <Link to="/prospeccao/promovidos-recentes"><Award className="mr-2 h-4 w-4" /> Recém promovidos</Link>
           </Button>
           {isAdmin && (
             <>
