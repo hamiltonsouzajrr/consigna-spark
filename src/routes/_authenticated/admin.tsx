@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
 import { AdminGate } from "@/components/security/AdminGate";
+import { AdminCharts } from "@/components/admin/AdminCharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -356,6 +357,16 @@ function AdminHubContent() {
       </div>
 
       <HealthPanel />
+
+      {/* Métricas visuais, atualizadas automaticamente */}
+      <section className="mb-8">
+        <h2 className="text-base font-semibold text-foreground">Indicadores</h2>
+        <p className="mb-3 text-sm text-muted-foreground">
+          Distribuição e evolução da operação — atualiza sozinho a cada minuto.
+        </p>
+        <AdminCharts />
+      </section>
+
 
       {/* Ações rápidas */}
       <section className="mb-8">

@@ -14,6 +14,7 @@ import {
   revokeRhUserSessions,
   type RhUserAccess,
 } from "@/lib/rh/access.functions";
+import { listBlockedSessions, releaseAccount } from "@/lib/security/session.functions";
 
 const fmt = (v: string | null) =>
   v ? new Date(v).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
@@ -29,9 +30,18 @@ export function BloqueiosTab() {
   const revokeSessions = useServerFn(revokeRhUserSessions);
   const [busca, setBusca] = useState("");
 
+  const fetchTravadas = useServerFn(listBlockedSessions);
+  const liberarConta = useServerFn(releaseAccount);
+
   const { data: users = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ["rh", "admin", "users"],
     queryFn: () => fetchUsers(),
+  });
+
+  const travadas = useQuery({
+    queryKey: ["security", "sessoes-travadas"],
+    queryFn: () => fetchTravadas(),
+    refetchInterval: 60_000,
   });
 
   const blockMut = useMutation({
@@ -43,11 +53,22 @@ export function BloqueiosTab() {
     onError: (e: any) => toast.error(e?.message ?? "Não foi possível alterar o bloqueio."),
   });
 
+  const releaseMut = useMutation({
+    mutationFn: (userId: string) => liberarConta({ data: { userId } }),
+    onSuccess: () => {
+      toast.success("Conta liberada. A consultora já pode entrar novamente.");
+      void queryClient.invalidateQueries({ queryKey: ["security", "sessoes-travadas"] });
+      void queryClient.invalidateQueries({ queryKey: ["security", "incidentes"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Não foi possível liberar a conta."),
+  });
+
   const revokeMut = useMutation({
     mutationFn: (targetUserId: string) => revokeSessions({ data: { targetUserId } }),
     onSuccess: () => toast.success("Sessões encerradas."),
     onError: (e: any) => toast.error(e?.message ?? "Falha ao encerrar sessões."),
   });
+
 
   const termo = busca.trim().toLowerCase();
   const match = (u: RhUserAccess) =>
@@ -138,6 +159,47 @@ export function BloqueiosTab() {
           Atualizar
         </Button>
       </div>
+
+      <Card className="border-amber-500/40">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ShieldAlert className="h-4 w-4 text-amber-500" />
+            Travadas por acesso simultâneo
+            <Badge variant="outline">{travadas.data?.length ?? 0}</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {travadas.isLoading ? (
+            <Skeleton className="h-14 w-full" />
+          ) : (travadas.data?.length ?? 0) === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nenhuma conta travada por sessão simultânea.
+            </p>
+          ) : (
+            travadas.data!.map((c) => (
+              <div
+                key={c.userId}
+                className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{c.email ?? c.userId}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    bloqueada em {fmt(c.bloqueadoEm)}
+                    {c.ip ? ` · IP ${c.ip}` : ""}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  disabled={releaseMut.isPending}
+                  onClick={() => releaseMut.mutate(c.userId)}
+                >
+                  <LockOpen className="mr-1.5 h-3.5 w-3.5" /> Desbloquear
+                </Button>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="border-destructive/30">
         <CardHeader className="pb-3">
