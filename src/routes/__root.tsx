@@ -90,8 +90,17 @@ function AuthSync() {
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+
+      // O callback de autenticação roda enquanto o cliente ainda mantém o
+      // bloqueio interno da sessão. Invalidar a rota aqui fazia o beforeLoad
+      // chamar getSession() dentro desse mesmo bloqueio e deixava a navegação
+      // protegida pendente (tela branca). Execute somente após o callback sair.
+      window.setTimeout(() => {
+        void router.invalidate();
+        if (event !== "SIGNED_OUT") {
+          void queryClient.invalidateQueries();
+        }
+      }, 0);
     });
     return () => sub.subscription.unsubscribe();
   }, [router, queryClient]);
