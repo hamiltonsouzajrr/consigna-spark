@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { salvarJornada } from "@/lib/prospeccao/jornada.functions";
-import { formatarDuracao, planoPorHora, type Jornada } from "@/lib/prospeccao/jornada";
+import { planoPorHora, type Jornada } from "@/lib/prospeccao/jornada";
 
 export function JornadaDialog({
   open,
