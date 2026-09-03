@@ -118,29 +118,33 @@
 html, body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
 
 .dark {
-  --background: oklch(0.16 0.02 260);
-  --foreground: oklch(0.97 0 0);
-  --card: oklch(0.21 0.025 260);
-  --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.21 0.025 260);
-  --popover-foreground: oklch(0.97 0 0);
-  --primary: oklch(0.68 0.2 264);
-  --primary-foreground: oklch(0.16 0.02 260);
-  --secondary: oklch(0.27 0.03 260);
-  --secondary-foreground: oklch(0.97 0 0);
-  --muted: oklch(0.27 0.03 260);
-  --muted-foreground: oklch(0.68 0.02 260);
-  --accent: oklch(0.3 0.05 265);
-  --accent-foreground: oklch(0.97 0 0);
+  --background: oklch(0.19 0.035 256);
+  --foreground: oklch(0.96 0.01 250);
+  --card: oklch(0.24 0.04 256);
+  --card-foreground: oklch(0.96 0.01 250);
+  --popover: oklch(0.24 0.04 256);
+  --popover-foreground: oklch(0.96 0.01 250);
+  --primary: oklch(0.72 0.14 250);
+  --primary-foreground: oklch(0.19 0.035 256);
+  --secondary: oklch(0.29 0.045 256);
+  --secondary-foreground: oklch(0.96 0.01 250);
+  --muted: oklch(0.29 0.045 256);
+  --muted-foreground: oklch(0.74 0.03 250);
+  --accent: oklch(0.33 0.06 254);
+  --accent-foreground: oklch(0.96 0.01 250);
   --destructive: oklch(0.65 0.2 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --success: oklch(0.7 0.17 155);
-  --success-foreground: oklch(0.16 0.02 260);
+  --success: oklch(0.7 0.15 160);
+  --success-foreground: oklch(0.19 0.035 256);
   --warning: oklch(0.82 0.16 75);
   --warning-foreground: oklch(0.2 0.04 75);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.68 0.2 264);
+  --border: oklch(1 0 0 / 14%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.72 0.14 250);
+  --grid-line: color-mix(in oklab, oklch(1 0 0) 6%, transparent);
+  --gradient-app: linear-gradient(180deg, oklch(0.21 0.038 256) 0%, oklch(0.19 0.035 256) 100%);
+  --gradient-subtle: linear-gradient(160deg, oklch(0.25 0.04 256) 0%, oklch(0.22 0.038 256) 100%);
+  --gradient-topbar: linear-gradient(90deg, oklch(0.23 0.04 256) 0%, oklch(0.2 0.036 256) 100%);
 }
 
 @layer base {
@@ -149,13 +153,21 @@ html, body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
     background-color: var(--color-background);
     color: var(--color-foreground);
     background-image:
-      radial-gradient(ellipse 80% 50% at 15% -10%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 55%),
-      radial-gradient(ellipse 60% 45% at 100% 5%, color-mix(in oklab, oklch(0.58 0.21 295) 9%, transparent), transparent 55%),
-      radial-gradient(ellipse 70% 50% at 50% 115%, color-mix(in oklab, var(--primary) 7%, transparent), transparent 55%);
+      linear-gradient(180deg, color-mix(in oklab, oklch(1 0 0) 65%, transparent) 0%, transparent 40%),
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 100% 420px, var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
     background-attachment: fixed;
     font-feature-settings: "ss01", "cv11";
   }
+  .dark body {
+    background-image:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
+  }
 }
+
 
 @utility card-premium {
   background: var(--gradient-premium);
