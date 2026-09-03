@@ -10,3 +10,4 @@
 - [x] Relógio de tempo ativo na plataforma (conta só uso real, exibido no topo ao lado das notificações)
 - [x] Radar: cartão admin com consultoras cadastradas sem conta + devolução dos leads invisíveis ao rateio
 - [x] Radar: fila verificada (385 itens concluídos, nenhum job travado, última edição 02/09)
+- [x] Radar: botão 1 clique para reiniciar todos os promovidos e redistribuir sem repetir a consultora dos últimos 7 dias

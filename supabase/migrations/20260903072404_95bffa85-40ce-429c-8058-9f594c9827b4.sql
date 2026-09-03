@@ -1,0 +1,2 @@
+REVOKE ALL ON FUNCTION public.reiniciar_promovidos_e_redistribuir(integer, integer, integer) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.reiniciar_promovidos_e_redistribuir(integer, integer, integer) TO service_role;

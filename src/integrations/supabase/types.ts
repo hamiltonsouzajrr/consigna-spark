@@ -605,6 +605,41 @@ export type Database = {
           },
         ]
       }
+      do_registros_atendimentos: {
+        Row: {
+          atendido_em: string
+          consultora_nome: string
+          created_at: string
+          id: string
+          registro_id: string
+          status_final: string | null
+        }
+        Insert: {
+          atendido_em?: string
+          consultora_nome: string
+          created_at?: string
+          id?: string
+          registro_id: string
+          status_final?: string | null
+        }
+        Update: {
+          atendido_em?: string
+          consultora_nome?: string
+          created_at?: string
+          id?: string
+          registro_id?: string
+          status_final?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "do_registros_atendimentos_registro_id_fkey"
+            columns: ["registro_id"]
+            isOneToOne: false
+            referencedRelation: "do_registros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fontes_diario_oficial: {
         Row: {
           arquivo_id: string | null
@@ -2738,6 +2773,19 @@ export type Database = {
       registrar_uso_ativo: {
         Args: { _segundos: number; _user_id: string }
         Returns: number
+      }
+      reiniciar_promovidos_e_redistribuir: {
+        Args: {
+          _dias_bloqueio?: number
+          _janela_dias?: number
+          _limite?: number
+        }
+        Returns: {
+          atribuidos: number
+          consultoras: number
+          reiniciados: number
+          sem_dono: number
+        }[]
       }
       reiniciar_tomadores_trabalhados: {
         Args: { _dias_min?: number; _limite?: number; _status?: string[] }
