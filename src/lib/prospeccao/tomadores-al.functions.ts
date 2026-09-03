@@ -778,3 +778,91 @@ export const revogarAcessosInativosTomadoresAl = createServerFn({ method: "POST"
 
     return { acessosRevogados, leadsReciclados, distribuidos, consultorasAtivas };
   });
+
+
+// ── Reiniciar leads já trabalhados ────────────────────────────────────────────
+// O admin devolve ao estoque tomadores já trabalhados (convertidos, sem
+// interesse ou apenas contatados sem evolução). Antes de liberar, o atendimento
+// é gravado em tomadores_al_atendimentos, então a entrega automática nunca
+// devolve o mesmo lead para quem já o atendeu.
+export type StatusReinicio = "convertido" | "sem_interesse" | "contatado" | "proposta_enviada";
+
+export type PreviaReinicio = { elegiveis: number; porStatus: Record<string, number> };
+
+const statusReinicioSchema = z.object({
+  status: z.array(z.enum(["convertido", "sem_interesse", "contatado", "proposta_enviada"])).min(1),
+  diasMin: z.number().int().min(0).max(365).default(0),
+  limite: z.number().int().min(1).max(20000).default(5000),
+});
+
+export const previewReiniciarTrabalhados = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => statusReinicioSchema.parse(data))
+  .handler(async ({ context, data }): Promise<PreviaReinicio> => {
+    const admin = await isAdmin(context.supabase, context.userId);
+    if (!admin) throw new Error("Apenas administradores podem executar esta ação.");
+    const client = await getAdminClient();
+    const limite = new Date(Date.now() - data.diasMin * 86_400_000).toISOString();
+
+    const porStatus: Record<string, number> = {};
+    let elegiveis = 0;
+    for (const st of data.status) {
+      const { count } = await client
+        .from("tomadores_al")
+        .select("id", { count: "exact", head: true })
+        .eq("status_abordagem", st)
+        .or(
+          `finalizado_em.lt.${limite},and(finalizado_em.is.null,contatado_em.lt.${limite}),and(finalizado_em.is.null,contatado_em.is.null,atribuido_em.lt.${limite})`,
+        );
+      porStatus[st] = Number(count ?? 0);
+      elegiveis += Number(count ?? 0);
+    }
+    return { elegiveis, porStatus };
+  });
+
+export const reiniciarTrabalhadosTomadoresAl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => statusReinicioSchema.parse(data))
+  .handler(
+    async ({ context, data }): Promise<{
+      reiniciados: number;
+      historicos: number;
+      distribuidos: number;
+      consultoras: number;
+    }> => {
+      const admin = await isAdmin(context.supabase, context.userId);
+      if (!admin) throw new Error("Apenas administradores podem executar esta ação.");
+
+      const { callRpcRow } = await import("@/lib/radar/rpc.server");
+      const row = await callRpcRow<{ reiniciados: number; historicos: number }>(
+        "reiniciar_tomadores_trabalhados",
+        { _status: data.status, _dias_min: data.diasMin, _limite: data.limite },
+      );
+      const reiniciados = Number(row.reiniciados ?? 0);
+      const historicos = Number(row.historicos ?? 0);
+
+      // Entrega o estoque liberado — a RPC de pool já ignora quem atendeu antes.
+      const rep = reiniciados > 0
+        ? await reporTodasCarteirasInterno()
+        : { atribuidos: 0, consultoras: 0 };
+
+      try {
+        const { logAdminAction } = await import("@/lib/admin/audit.server");
+        await logAdminAction({
+          actorId: context.userId,
+          actorEmail: (context.claims as { email?: string } | undefined)?.email ?? null,
+          action: "tomadores_reiniciar_trabalhados",
+          detail: { ...data, reiniciados, historicos, distribuidos: rep.atribuidos },
+        });
+      } catch {
+        /* auditoria best-effort */
+      }
+
+      return {
+        reiniciados,
+        historicos,
+        distribuidos: rep.atribuidos,
+        consultoras: rep.consultoras,
+      };
+    },
+  );
