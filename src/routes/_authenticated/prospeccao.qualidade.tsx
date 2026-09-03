@@ -18,6 +18,8 @@ import {
 import { AdminGate } from "@/components/security/AdminGate";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EvolucaoProspeccaoPanel } from "@/components/prospeccao/EvolucaoProspeccaoPanel";
+import { QualidadeOperacionalPanel } from "@/components/prospeccao/QualidadeOperacionalPanel";
+
 
 
 export const Route = createFileRoute("/_authenticated/prospeccao/qualidade")({
