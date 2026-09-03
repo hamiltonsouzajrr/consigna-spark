@@ -14,13 +14,16 @@ type Props = {
   children?: ReactNode; // trigger element (uncontrolled usage)
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Quando definido, exige digitar exatamente este texto para liberar a ação. */
+  requireText?: string;
 };
 
 /** Accessible replacement for window.confirm on destructive admin actions. */
 export function ConfirmDialog({
   title, description, confirmLabel = "Confirmar", destructive, variant,
-  onConfirm, children, open: openProp, onOpenChange,
+  onConfirm, children, open: openProp, onOpenChange, requireText,
 }: Props) {
+  const [typed, setTyped] = useState("");
   const [openState, setOpenState] = useState(false);
   const controlled = openProp !== undefined;
   const open = controlled ? openProp : openState;
