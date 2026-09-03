@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 // server cannot read — gating server-side would loop on hard refresh.
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
+  pendingComponent: ProtectedRouteLoading,
+  pendingMs: 150,
   beforeLoad: async () => {
     // 1) Sessão local primeiro: rápida e sem depender de rede. O token já foi
     //    validado no momento do login e o cliente renova automaticamente.
@@ -31,3 +33,14 @@ export const Route = createFileRoute("/_authenticated")({
   },
   component: () => <Outlet />,
 });
+
+function ProtectedRouteLoading() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="flex items-center gap-3 text-sm text-muted-foreground" role="status" aria-live="polite">
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-muted border-t-primary" aria-hidden="true" />
+        Carregando seu acesso…
+      </div>
+    </main>
+  );
+}
