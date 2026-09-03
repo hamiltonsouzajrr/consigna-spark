@@ -282,7 +282,7 @@ function LoginPage() {
         />
       </div>
       <div className="pointer-events-none absolute inset-0 bg-background/55 sm:bg-background/45" />
-      <div aria-hidden="true" className="focus-grid pointer-events-none absolute inset-0 bg-transparent opacity-70" />
+      <div aria-hidden="true" className="focus-grid pointer-events-none absolute inset-0 opacity-70" />
 
       <Card className="relative z-10 w-full max-w-md border-border bg-card/90 p-6 shadow-[var(--shadow-glow)] backdrop-blur-xl sm:p-8">
 
