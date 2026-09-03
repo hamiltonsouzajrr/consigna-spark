@@ -163,6 +163,9 @@ function Page() {
 
   useEffect(() => {
     if (!user) return;
+    // Admins não trabalham fila: a visão deles é gerencial, então nada de
+    // carregar a base de leads nem assinar realtime da fila.
+    if (isAdmin) { setLeads([]); setLoadingLeads(false); return; }
     let cancelled = false;
     const load = async () => {
       // Only show the active queue: untouched, not-yet-prospected leads.
