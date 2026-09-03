@@ -259,6 +259,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="text-sm text-white/80">Chamadas hoje</span>
               <span className="text-xl font-bold leading-none tabular-nums">{chamadas}</span>
             </div>
+            <TempoAtivoBadge />
             <MetaTopIndicator />
           </div>
           <div className="ml-auto flex items-center gap-4">
