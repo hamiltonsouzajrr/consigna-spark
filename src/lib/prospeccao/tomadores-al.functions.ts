@@ -263,6 +263,13 @@ export const reporTodasCarteiras = createServerFn({ method: "POST" })
     const nomes = (data ?? []).map((c: any) => String(c.nome ?? "").trim()).filter(Boolean);
     let atribuidos = 0;
     for (const nome of nomes) atribuidos += await garantirPoolTomadores(nome);
+    const { logAdminAction } = await import("@/lib/admin/audit.server");
+    await logAdminAction({
+      actorId: context.userId,
+      actorEmail: (context.claims as { email?: string } | undefined)?.email ?? null,
+      action: "tomadores_repor_carteiras",
+      detail: { atribuidos, consultoras: nomes.length },
+    });
     return { atribuidos, consultoras: nomes.length };
   });
 
