@@ -163,6 +163,9 @@ function Page() {
 
   useEffect(() => {
     if (!user) return;
+    // Admins não trabalham fila: a visão deles é gerencial, então nada de
+    // carregar a base de leads nem assinar realtime da fila.
+    if (isAdmin) { setLeads([]); setLoadingLeads(false); return; }
     let cancelled = false;
     const load = async () => {
       // Only show the active queue: untouched, not-yet-prospected leads.
@@ -314,9 +317,13 @@ function Page() {
     <AppShell>
       <div className="mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-bold">CRM — Central de Prospecção</h1>
+          <h1 className="truncate text-2xl font-bold">
+            {isAdmin ? "Gestão da prospecção — métricas e distribuição" : "CRM — Central de Prospecção"}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Meta do dia, qualidade das ligações, follow-ups, fila de leads e a competição da semana em uma só tela.
+            {isAdmin
+              ? "Saúde da operação, cobertura da carteira e desempenho das consultoras."
+              : "Meta do dia, qualidade das ligações, follow-ups, fila de leads e a competição da semana em uma só tela."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -351,6 +358,8 @@ function Page() {
         />
       )}
 
+      {!isAdmin && (
+      <>
       <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-5">
         <RhStatCard label="Leads de hoje" value={stats.hoje} icon={CalendarClock} tone="sky" />
         <RhStatCard label="Follow-ups atrasados" value={stats.atrasados} icon={Clock} tone="rose" />
@@ -532,6 +541,8 @@ function Page() {
           </Link>
         ))}
       </div>
+      </>
+      )}
     </AppShell>
   );
 }
