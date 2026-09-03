@@ -359,7 +359,7 @@ function Page() {
 
         {/* 5. Controle de Acessos */}
         <TabsContent value="acessos">
-          <AcessosTab currentUserId={user.id} />
+          <AcessosTab currentUserId={user!.id} />
         </TabsContent>
       </Tabs>
     </AppShell>
