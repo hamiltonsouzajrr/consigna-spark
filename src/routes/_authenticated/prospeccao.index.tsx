@@ -335,16 +335,20 @@ function Page() {
         </div>
       </div>
 
-      <CrmCockpit
-        chamadas={chamadas}
-        metaDiaria={META_DIARIA}
-        streak={streak}
-        prod={prod}
-        filaHoje={stats.hoje}
-        filaQuentes={stats.quentes}
-        filaAtrasados={stats.atrasados}
-        filaTotal={leads.length}
-      />
+      {isAdmin ? (
+        <CrmCockpitAdmin />
+      ) : (
+        <CrmCockpit
+          chamadas={chamadas}
+          metaDiaria={META_DIARIA}
+          streak={streak}
+          prod={prod}
+          filaHoje={stats.hoje}
+          filaQuentes={stats.quentes}
+          filaAtrasados={stats.atrasados}
+          filaTotal={leads.length}
+        />
+      )}
 
       <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-5">
         <RhStatCard label="Leads de hoje" value={stats.hoje} icon={CalendarClock} tone="sky" />
