@@ -458,3 +458,140 @@ export const recolherPromovidos = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { recolhidos: (rows ?? []).length };
   });
+
+// ── Consultoras cadastradas sem conta de acesso ───────────────────────────────
+// Um lead atribuído a um nome que não tem conta no sistema fica invisível: a RLS
+// casa pelo e-mail do usuário logado. Aqui o admin enxerga esses casos e devolve
+// os leads ao rateio igualitário.
+
+export type ConsultoraSemConta = {
+  nome: string;
+  email: string | null;
+  ativo: boolean;
+  leads: number;
+};
+
+async function emailsComConta(): Promise<Set<string>> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const emails = new Set<string>();
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw new Error(error.message);
+    const users = data?.users ?? [];
+    for (const u of users) if (u.email) emails.add(u.email.trim().toLowerCase());
+    if (users.length < 1000) break;
+  }
+  return emails;
+}
+
+export const getConsultorasSemConta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(
+    async ({ context }): Promise<{ itens: ConsultoraSemConta[]; leadsInvisiveis: number }> => {
+      await assertAdminCtx(context);
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+      const [contas, consultoras, registros] = await Promise.all([
+        emailsComConta(),
+        supabaseAdmin.from("radar_consultoras").select("nome, email, ativo"),
+        supabaseAdmin.from("do_registros").select("consultora_responsavel").not("consultora_responsavel", "is", null),
+      ]);
+      if (consultoras.error) throw new Error(consultoras.error.message);
+      if (registros.error) throw new Error(registros.error.message);
+
+      const porNome = new Map<string, number>();
+      for (const r of (registros.data ?? []) as Array<{ consultora_responsavel: string | null }>) {
+        const n = r.consultora_responsavel;
+        if (!n) continue;
+        porNome.set(n, (porNome.get(n) ?? 0) + 1);
+      }
+
+      const itens: ConsultoraSemConta[] = [];
+      const nomesComConta = new Set<string>();
+      for (const c of (consultoras.data ?? []) as Array<{ nome: string; email: string | null; ativo: boolean }>) {
+        const em = (c.email ?? "").trim().toLowerCase();
+        if (em && contas.has(em)) {
+          nomesComConta.add(c.nome);
+          continue;
+        }
+        itens.push({ nome: c.nome, email: c.email, ativo: c.ativo, leads: porNome.get(c.nome) ?? 0 });
+      }
+
+      // Nomes usados em do_registros que nem existem mais no cadastro.
+      for (const [nome, leads] of porNome) {
+        if (nomesComConta.has(nome)) continue;
+        if (itens.some((i) => i.nome === nome)) continue;
+        itens.push({ nome, email: null, ativo: false, leads });
+      }
+
+      itens.sort((a, b) => b.leads - a.leads || a.nome.localeCompare(b.nome));
+      const leadsInvisiveis = itens.reduce((acc, i) => acc + i.leads, 0);
+      return { itens, leadsInvisiveis };
+    },
+  );
+
+/** Solta os leads presos com nomes sem conta e refaz o rateio igualitário. */
+export const devolverLeadsSemConta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(
+    async ({ context }): Promise<{ liberados: number; atribuidos: number; consultoras: number }> => {
+      await assertAdminCtx(context);
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+      const contas = await emailsComConta();
+      const { data: cs, error: eCs } = await supabaseAdmin
+        .from("radar_consultoras")
+        .select("nome, email");
+      if (eCs) throw new Error(eCs.message);
+
+      const nomesValidos = new Set(
+        ((cs ?? []) as Array<{ nome: string; email: string | null }>)
+          .filter((c) => {
+            const em = (c.email ?? "").trim().toLowerCase();
+            return em.length > 0 && contas.has(em);
+          })
+          .map((c) => c.nome),
+      );
+
+      const { data: regs, error: eRegs } = await supabaseAdmin
+        .from("do_registros")
+        .select("id, consultora_responsavel")
+        .not("consultora_responsavel", "is", null);
+      if (eRegs) throw new Error(eRegs.message);
+
+      const ids = ((regs ?? []) as Array<{ id: string; consultora_responsavel: string }>)
+        .filter((r) => !nomesValidos.has(r.consultora_responsavel))
+        .map((r) => r.id);
+
+      let liberados = 0;
+      for (let i = 0; i < ids.length; i += 500) {
+        const lote = ids.slice(i, i + 500);
+        const { data: upd, error } = await (supabaseAdmin as any)
+          .from("do_registros")
+          .update({ consultora_responsavel: null, atribuido_em: null })
+          .in("id", lote)
+          .select("id");
+        if (error) throw new Error(error.message);
+        liberados += (upd ?? []).length;
+      }
+
+      const { redistribuirIgualmente } = await import("@/lib/radar/distribuicao.server");
+      const r = liberados > 0
+        ? await redistribuirIgualmente(null, true)
+        : { atribuidos: 0, consultoras: 0 };
+
+      try {
+        const { logAdminAction } = await import("@/lib/admin/audit.server");
+        await logAdminAction({
+          actorId: context.userId,
+          actorEmail: (context.claims as { email?: string } | undefined)?.email ?? null,
+          action: "radar_devolver_leads_sem_conta",
+          detail: { liberados, ...r },
+        });
+      } catch {
+        /* auditoria best-effort */
+      }
+
+      return { liberados, atribuidos: r.atribuidos, consultoras: r.consultoras };
+    },
+  );

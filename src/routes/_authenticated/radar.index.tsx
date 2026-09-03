@@ -11,6 +11,7 @@ import {
 import { getDashboard, type DashboardData } from "@/lib/radar/radar.functions";
 import { RadarSaudeCard } from "@/components/radar/RadarSaudeCard";
 import { LiberacaoPromovidosCard } from "@/components/radar/LiberacaoPromovidosCard";
+import { ConsultorasSemContaCard } from "@/components/radar/ConsultorasSemContaCard";
 
 export const Route = createFileRoute("/_authenticated/radar/")({
   component: DashboardPage,
@@ -63,6 +64,7 @@ function DashboardPage() {
     <div className="space-y-5">
       <RadarSaudeCard />
       <LiberacaoPromovidosCard />
+      <ConsultorasSemContaCard />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {kpis.map((k) => {
