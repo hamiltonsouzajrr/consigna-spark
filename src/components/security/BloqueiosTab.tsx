@@ -14,6 +14,7 @@ import {
   revokeRhUserSessions,
   type RhUserAccess,
 } from "@/lib/rh/access.functions";
+import { listBlockedSessions, releaseAccount } from "@/lib/security/session.functions";
 
 const fmt = (v: string | null) =>
   v ? new Date(v).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
