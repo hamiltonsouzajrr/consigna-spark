@@ -73,13 +73,12 @@ export async function listarEdicoes(opts: {
   const out: EdicaoNormalizada[] = [];
 
   for (let page = 1; page <= maxPages; page++) {
-    const res = await fetch(`${DIARIO_API}/editions/published?page=${page}`, {
-      headers: { Accept: "application/json", "User-Agent": UA },
-      signal: AbortSignal.timeout(25000),
-    });
-    if (!res.ok) {
-      throw new Error(`Falha ao consultar edições (HTTP ${res.status}).`);
-    }
+    const res = await fetchComRetry(
+      `${DIARIO_API}/editions/published?page=${page}`,
+      { headers: { Accept: "application/json", "User-Agent": UA } },
+      25000,
+      "consultar edições",
+    );
     const json = (await res.json()) as { status?: string; editions?: EdicaoApi[] };
     const editions = json.editions ?? [];
     if (editions.length === 0) break;
