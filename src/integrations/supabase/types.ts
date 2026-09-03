@@ -146,6 +146,24 @@ export type Database = {
         }
         Relationships: []
       }
+      cron_secret: {
+        Row: {
+          id: boolean
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          id?: boolean
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          id?: boolean
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       diario_alertas: {
         Row: {
           criado_em: string
