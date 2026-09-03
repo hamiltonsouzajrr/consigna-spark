@@ -481,6 +481,7 @@ export function DistribuicaoTab({
             description="Consultoras sem login há 10 dias ou mais perdem o acesso (bloqueio reversível), ficam inativas na distribuição e os leads em aberto que estavam com elas voltam para o estoque e são redistribuídos agora entre quem está ativo."
             confirmLabel="Revogar e reciclar"
             destructive
+            requireText="REVOGAR"
             onConfirm={runRevogarInativos}
           >
             <Button className="mt-3 w-full" variant="destructive" disabled={busy}>
@@ -504,6 +505,7 @@ export function DistribuicaoTab({
             description="Todos os leads voltam ao pool sem responsável. Follow-ups e anotações são preservados. Esta ação não pode ser desfeita."
             confirmLabel="Limpar tudo"
             destructive
+            requireText="LIMPAR"
             onConfirm={runReset}
           >
             <Button className="mt-3 w-full" variant="destructive" disabled={busy}><Eraser className="mr-2 h-4 w-4" /> Limpar agora</Button>
