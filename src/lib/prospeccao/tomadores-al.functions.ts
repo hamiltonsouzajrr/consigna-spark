@@ -628,7 +628,7 @@ export const marcarAbordagemTomador = createServerFn({ method: "POST" })
         .limit(1);
       const r = (lead ?? [])[0];
       if (r) {
-        faixaLead = faixaDaMargem("emprestimo", r.margem_disp_emprestimo ?? 0);
+        faixaLead = faixaDaMargem(r.margem_disp_emprestimo ?? 0, "emprestimo");
         if (!admin && String(r.consultora_responsavel ?? "") !== minha) {
           throw new Error("Este lead não está na sua carteira.");
         }
@@ -832,4 +832,85 @@ export const importarConsultorasDosAcessos = createServerFn({ method: "POST" })
     }
 
     return { criadas };
+  });
+
+// Revoga (bloqueio reversível) o acesso de consultoras que não entram no
+// sistema há DIAS_ACESSO_INATIVO dias. Os leads em aberto da carteira delas
+// voltam ao estoque e são redistribuídos entre as consultoras ativas.
+export const revogarAcessosInativosTomadoresAl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{
+    acessosRevogados: number;
+    leadsReciclados: number;
+    distribuidos: number;
+    consultorasAtivas: number;
+  }> => {
+    const admin = await isAdmin(context.supabase, context.userId);
+    if (!admin) throw new Error("Apenas administradores podem executar esta ação.");
+
+    const client = await getAdminClient();
+    const limite = new Date(Date.now() - DIAS_ACESSO_INATIVO * 86400000).toISOString();
+
+    const [{ data: usersData, error: uErr }, { data: roles }, { data: consultoras }] = await Promise.all([
+      client.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+      client.from("user_roles").select("user_id, role"),
+      client.from("radar_consultoras").select("id,nome,email").eq("ativo", true),
+    ]);
+    if (uErr) throw new Error(uErr.message);
+
+    const adminIds = new Set(
+      (roles ?? []).filter((r: any) => r.role === "admin").map((r: any) => String(r.user_id)),
+    );
+    const porEmail = new Map<string, { id: string; nome: string; email: string | null }>(
+      ((consultoras ?? []) as any[])
+        .filter((c) => c.email)
+        .map((c) => [String(c.email).trim().toLowerCase(), c] as const),
+    );
+
+    // Usuárias sem login recente (ou que nunca entraram e já têm conta antiga).
+    const inativas = (usersData?.users ?? []).filter((u: any) => {
+      if (!u.email || u.deleted_at || adminIds.has(u.id)) return false;
+      const consultora = porEmail.get(String(u.email).trim().toLowerCase());
+      if (!consultora) return false;
+      const referencia = u.last_sign_in_at ?? u.created_at;
+      return !referencia || String(referencia) < limite;
+    });
+
+    let acessosRevogados = 0;
+    let leadsReciclados = 0;
+    for (const u of inativas) {
+      const consultora = porEmail.get(String(u.email).trim().toLowerCase())!;
+
+      // Bloqueio reversível do login.
+      await client.auth.admin.updateUserById(u.id, { ban_duration: "876000h" } as any);
+      await client.from("radar_consultoras").update({ ativo: false }).eq("id", consultora.id);
+      acessosRevogados++;
+
+      // Leads em aberto voltam ao estoque (tomadores + promovidos do radar).
+      const { data: liberadosTomadores } = await client
+        .from("tomadores_al")
+        .update({ consultora_responsavel: null, atribuido_em: null })
+        .eq("consultora_responsavel", consultora.nome)
+        .in("status_abordagem", STATUS_ABERTOS)
+        .select("id");
+      leadsReciclados += (liberadosTomadores ?? []).length;
+
+      const { data: liberadosRadar } = await client
+        .from("do_registros")
+        .update({ consultora_responsavel: null, atribuido_em: null })
+        .eq("consultora_responsavel", consultora.nome)
+        .select("id");
+      leadsReciclados += (liberadosRadar ?? []).length;
+    }
+
+    // Redistribui o estoque livre entre quem continua ativa.
+    let distribuidos = 0;
+    let consultorasAtivas = 0;
+    if (acessosRevogados > 0) {
+      const r = await reporTodasCarteirasInterno();
+      distribuidos = r.atribuidos;
+      consultorasAtivas = r.consultoras;
+    }
+
+    return { acessosRevogados, leadsReciclados, distribuidos, consultorasAtivas };
   });
