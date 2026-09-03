@@ -351,6 +351,8 @@ function Page() {
         />
       )}
 
+      {!isAdmin && (
+      <>
       <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-5">
         <RhStatCard label="Leads de hoje" value={stats.hoje} icon={CalendarClock} tone="sky" />
         <RhStatCard label="Follow-ups atrasados" value={stats.atrasados} icon={Clock} tone="rose" />
