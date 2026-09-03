@@ -1,33 +1,40 @@
-# Diagnóstico: promovidos recentes chegam às consultoras?
+# 1) Diagnóstico: promovidos recentes chegam às consultoras?
 
-## Resultado da verificação (somente leitura)
+Verificado no banco agora (somente leitura):
 
-O encanamento está correto, mas na prática **quase nenhuma consultora vê leads hoje**.
+- 1.240 registros do Radar, **todos liberados** e **todos com consultora responsável** (52 nomes).
+- Permissão de leitura das consultoras está correta (lead liberado + nome igual ao da conta); nenhum responsável fora do cadastro.
+- A aba mostra apenas publicações dos **últimos 15 dias**, e nessa janela existem só **24 registros**:
+  - Willyanealves 19; Emellyelisa, Fernanda, Hemelynathalia, Itamara 1 cada
+  - `rnannoella3012` 1 — **sem conta no sistema**, esse lead está invisível
+- Última publicação capturada: **01/09/2026**. 56 consultoras cadastradas, **34 com conta**.
 
-Verificado no banco agora:
+Conclusão: não é bug de permissão nem de distribuição — falta volume novo na janela e o pouco que entrou ficou concentrado em uma consultora. Por isso a maioria abre a aba e vê vazio.
 
-- 1.240 registros do Radar, **todos liberados** e **todos com consultora responsável** (52 nomes distintos).
-- Permissões: a política de leitura das consultoras exige lead liberado + nome igual ao da conta; nenhum responsável está fora do cadastro, então o vínculo por e-mail está funcionando.
-- A aba mostra apenas publicações dos **últimos 15 dias**. Nessa janela existem só **24 registros**:
-  - Willyanealves: 19
-  - Emellyelisa, Fernanda, Hemelynathalia, Itamara: 1 cada
-  - rnannoella3012: 1 — este nome **não tem conta no sistema**, então esse lead está invisível para todos
-- Última publicação capturada: **01/09/2026** (nada novo nos últimos 2 dias).
-- 56 consultoras cadastradas, **34 com conta**. Ou seja: ~29 consultoras com conta abrem a aba e veem vazio.
+Correções previstas:
+1. Rebalancear igualmente os registros dos últimos 15 dias entre consultoras com conta ativa, e reatribuir o lead órfão.
+2. Fallback: se a consultora não tem nada na janela, mostrar os promovidos mais recentes dela com selo de idade, em vez de tela vazia.
+3. Mostrar na aba a data da última publicação e da última entrega.
+4. Rodar repescagem/varredura de lacunas de 02–03/09 e conferir o cartão de saúde do Radar; destravar fila se houver pendências.
+5. Listar no admin as consultoras cadastradas sem conta (22 hoje).
 
-Conclusão: não é bug de RLS nem de distribuição — é **falta de volume novo na janela de 15 dias** e **concentração desigual** do pouco que entrou.
+# 2) Tomadores: reiniciar e redistribuir leads já trabalhados
 
-## O que corrigir
+Novo botão no painel admin de Tomadores AL: **"Reiniciar trabalhados e redistribuir"**, que devolve ao estoque leads já finalizados (convertidos/sem interesse, e opcionalmente contatados sem retorno) e os entrega novamente — **nunca para quem já atendeu aquele lead**.
 
-1. **Rebalancear a janela atual**: redistribuir igualmente os registros dos últimos 15 dias entre as consultoras com conta ativa (hoje 19 de 24 estão em uma só), e reatribuir o lead órfão de `rnannoella3012` para alguém com conta.
-2. **Fallback quando a janela está vazia**: se a consultora não tem nenhum promovido nos últimos 15 dias, exibir os promovidos mais recentes atribuídos a ela (com selo de idade) em vez de tela vazia, mantendo o destaque de "janela de ouro 48h" para os recentes.
-3. **Aviso honesto na aba**: quando não houver captura nova, mostrar a data da última publicação disponível e a data da última entrega, para a consultora não achar que o sistema quebrou.
-4. **Checagem da captura**: rodar repescagem/varredura de lacunas de 02–03/09 e conferir no cartão de saúde do Radar se as buscas diárias estão realmente concluindo; se houver edições pendentes, destravar a fila.
-5. **Cobertura de contas**: listar no painel admin as consultoras cadastradas **sem conta** (22 hoje) para não receberem leads em vão.
+Como garantir isso: hoje `tomadores_al` guarda só o responsável atual, então o histórico se perde ao reatribuir. Será criada uma tabela de histórico de atendimento por lead; a distribuição passa a excluir qualquer consultora que já apareça no histórico daquele lead.
+
+Fluxo do botão:
+- Admin escolhe o que reiniciar (finalizados, sem interesse antigos, contatados sem evolução) e a idade mínima em dias.
+- Prévia mostra quantos leads serão reiniciados antes de confirmar (confirmação por texto).
+- Ao confirmar: registra o atendimento atual no histórico, zera status/datas e libera o lead; a próxima entrega por faixa de margem já respeita o bloqueio de repetição.
+- Se um lead só tiver histórico com todas as consultoras, ele fica no estoque sem dono em vez de repetir.
 
 ## Detalhes técnicos
 
-- Rebalanceamento via RPC existente de redistribuição igualitária, restrita a `data_publicacao >= current_date - 15` e a consultoras com e-mail que existe em `auth.users`.
-- Fallback e avisos em `src/lib/radar/promovidos-recentes.functions.ts` (nova consulta secundária sem o `gte` de 15 dias, com flag `foraDaJanela`) e na UI de `src/routes/_authenticated/prospeccao.promovidos-recentes.tsx`.
-- Repescagem/lacunas pelos fluxos já implementados em `diario-scheduler.server.ts` e pelos cartões `RadarSaudeCard` / `LiberacaoPromovidosCard` em `/radar`.
-- Lista de consultoras sem conta como consulta adicional no painel de acessos, sem alterar cadastros existentes.
+- Migração: tabela `public.tomadores_al_atendimentos` (`tomador_id`, `consultora_nome`, `status_final`, `finalizado_em`), com GRANTs e RLS (admin total; consultora lê o próprio histórico); backfill dos responsáveis atuais já finalizados.
+- Nova RPC `reiniciar_tomadores_trabalhados(_status text[], _dias_min int, _limite int)`: grava histórico, limpa `consultora_responsavel`, `atribuido_em`, `contatado_em`, `finalizado_em`, `motivo_sem_interesse` e volta `status_abordagem = 'novo'`; retorna total reiniciado.
+- `garantir_pool_tomadores_faixa` passa a excluir candidatos com histórico da consultora solicitante (`NOT EXISTS` no histórico), inclusive nos ramos de reciclagem.
+- Server fns em `src/lib/prospeccao/tomadores-al.functions.ts`: `previewReiniciarTrabalhados` e `reiniciarTrabalhadosTomadoresAl`, ambas com checagem de admin e auditoria.
+- UI: card de gestão na visão admin de `/tomadores-al` usando `ConfirmDialog` com `requireText`.
+- Registro das duas frentes em `roadmap.md`.
