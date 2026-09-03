@@ -38,6 +38,31 @@ export type EdicaoNormalizada = {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// O site do Diário Oficial oscila (500/502/timeout). Em vez de desistir na
+// primeira falha, tentamos algumas vezes com espera progressiva.
+async function fetchComRetry(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+  descricao: string,
+  tentativas = 3,
+): Promise<Response> {
+  let ultimoErro = "";
+  for (let i = 1; i <= tentativas; i++) {
+    try {
+      const res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+      if (res.ok) return res;
+      ultimoErro = `HTTP ${res.status}`;
+      // 4xx (exceto 429) não melhora com nova tentativa.
+      if (res.status < 500 && res.status !== 429) break;
+    } catch (e: any) {
+      ultimoErro = String(e?.message ?? e);
+    }
+    if (i < tentativas) await sleep(i * 2500);
+  }
+  throw new Error(`Falha ao ${descricao} (${ultimoErro}).`);
+}
+
 function toYmd(iso: string): string {
   // publication_date vem como 2026-06-22T03:00:00Z; usamos só a data.
   return (iso || "").slice(0, 10);
@@ -73,13 +98,12 @@ export async function listarEdicoes(opts: {
   const out: EdicaoNormalizada[] = [];
 
   for (let page = 1; page <= maxPages; page++) {
-    const res = await fetch(`${DIARIO_API}/editions/published?page=${page}`, {
-      headers: { Accept: "application/json", "User-Agent": UA },
-      signal: AbortSignal.timeout(25000),
-    });
-    if (!res.ok) {
-      throw new Error(`Falha ao consultar edições (HTTP ${res.status}).`);
-    }
+    const res = await fetchComRetry(
+      `${DIARIO_API}/editions/published?page=${page}`,
+      { headers: { Accept: "application/json", "User-Agent": UA } },
+      25000,
+      "consultar edições",
+    );
     const json = (await res.json()) as { status?: string; editions?: EdicaoApi[] };
     const editions = json.editions ?? [];
     if (editions.length === 0) break;
@@ -110,13 +134,12 @@ export async function listarEdicoesPorMes(opts: {
   mes: number; // 1-12
 }): Promise<EdicaoNormalizada[]> {
   const mes2 = String(opts.mes).padStart(2, "0");
-  const res = await fetch(`${DIARIO_API}/editions/published/${opts.ano}/${mes2}`, {
-    headers: { Accept: "application/json", "User-Agent": UA },
-    signal: AbortSignal.timeout(25000),
-  });
-  if (!res.ok) {
-    throw new Error(`Falha ao consultar edições de ${mes2}/${opts.ano} (HTTP ${res.status}).`);
-  }
+  const res = await fetchComRetry(
+    `${DIARIO_API}/editions/published/${opts.ano}/${mes2}`,
+    { headers: { Accept: "application/json", "User-Agent": UA } },
+    25000,
+    `consultar edições de ${mes2}/${opts.ano}`,
+  );
   const json = (await res.json()) as { status?: string; editions?: EdicaoApi[] };
   const editions = json.editions ?? [];
   const out = editions
@@ -134,11 +157,12 @@ export type DownloadResult = {
 };
 
 export async function baixarPdf(url: string): Promise<DownloadResult> {
-  const res = await fetch(url, {
-    headers: { "User-Agent": UA, Accept: "application/pdf,*/*" },
-    signal: AbortSignal.timeout(60000),
-  });
-  if (!res.ok) throw new Error(`Falha ao baixar PDF (HTTP ${res.status}).`);
+  const res = await fetchComRetry(
+    url,
+    { headers: { "User-Agent": UA, Accept: "application/pdf,*/*" } },
+    60000,
+    "baixar PDF",
+  );
   const ab = await res.arrayBuffer();
   const buffer = new Uint8Array(ab);
   const hash = createHash("sha256").update(buffer).digest("hex");

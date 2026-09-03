@@ -641,6 +641,11 @@ export async function processarProximoDaFila(jobId: string): Promise<JobProgress
 
 // Usado pelo cron: processa alguns itens pendentes de qualquer job em andamento.
 export async function processarJobsPendentes(maxItens = 3): Promise<{ processados: number }> {
+  try {
+    await recuperarFila();
+  } catch (e: any) {
+    console.error("[radar] recuperarFila falhou:", e?.message ?? e);
+  }
   const { data: jobs } = await supabaseAdmin
     .from("diario_busca_jobs")
     .select("id")
@@ -657,4 +662,190 @@ export async function processarJobsPendentes(maxItens = 3): Promise<{ processado
     }
   }
   return { processados };
+}
+
+// ---------------------------------------------------------------------------
+// Recuperação da fila e saúde da automação
+// ---------------------------------------------------------------------------
+
+export type RecuperacaoFila = { liberados: number; falhados: number; jobsFechados: number };
+
+// Libera itens presos ("processando" há mais de 15 min), marca como erro os que
+// já falharam 3 vezes e encerra jobs sem pendências ou parados há mais de 24h.
+export async function recuperarFila(): Promise<RecuperacaoFila> {
+  const { data, error } = await supabaseAdmin.rpc("recuperar_diario_fila" as any);
+  if (error) throw new Error(error.message);
+  const row = (Array.isArray(data) ? data[0] : data) as any;
+  const res = {
+    liberados: Number(row?.liberados ?? 0),
+    falhados: Number(row?.falhados ?? 0),
+    jobsFechados: Number(row?.jobs_fechados ?? 0),
+  };
+  if (res.falhados > 0) {
+    await criarAlerta(
+      "fila_travada",
+      `${res.falhados} edição(ões) falharam 3 vezes`,
+      "Itens da fila foram marcados como erro após tentativas repetidas. Reprocesse pela aba Arquivos.",
+      "alerta",
+    );
+  }
+  return res;
+}
+
+// Já capturamos alguma edição publicada nesta data?
+export async function existeEdicaoDaData(data: string): Promise<boolean> {
+  const { count } = await supabaseAdmin
+    .from("fontes_diario_oficial")
+    .select("id", { count: "exact", head: true })
+    .eq("data_publicacao", data);
+  return (count ?? 0) > 0;
+}
+
+// Repescagem: só roda a busca do dia se ainda não houver edição registrada.
+export async function repescarHoje(dataAlvo: string): Promise<ResultadoBusca | { pulado: true }> {
+  if (await existeEdicaoDaData(dataAlvo)) return { pulado: true };
+  return executarBusca({ dateFrom: dataAlvo, dateTo: dataAlvo, gatilho: "cron" });
+}
+
+// Varredura de lacunas: confere os últimos N dias e reprocessa as datas sem
+// nenhuma edição registrada (o dedup evita trabalho duplicado).
+export async function varrerLacunas(dias = 15): Promise<{ datas: string[]; registros: number }> {
+  const hoje = new Date();
+  const alvos: string[] = [];
+  for (let i = 1; i <= dias; i++) {
+    const d = new Date(hoje.getTime() - i * 86_400_000);
+    const dow = d.getUTCDay();
+    if (dow === 0 || dow === 6) continue; // fim de semana não publica
+    alvos.push(d.toISOString().slice(0, 10));
+  }
+  const faltando: string[] = [];
+  for (const data of alvos) {
+    if (!(await existeEdicaoDaData(data))) faltando.push(data);
+  }
+  let registros = 0;
+  for (const data of faltando.slice(0, 5)) {
+    const r = await executarBusca({ dateFrom: data, dateTo: data, gatilho: "cron" });
+    registros += r.registros_extraidos;
+  }
+  return { datas: faltando, registros };
+}
+
+export type SaudeRadar = {
+  ultimaEdicao: string | null;
+  ultimaExecucao: string | null;
+  ultimaEntrega: string | null;
+  itensPresos: number;
+  jobsAtivos: number;
+  edicoes7d: number;
+  registros7d: number;
+  leadsDistribuidos24h: number;
+  aguardandoLiberacao: number;
+  diasEmBranco: string[];
+  status: "ok" | "atencao" | "critico";
+};
+
+export async function saudeRadar(): Promise<SaudeRadar> {
+  const seteDias = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
+  const ontem24h = new Date(Date.now() - 86_400_000).toISOString();
+
+  const [ultimaEd, ultimoLog, presos, jobs, ed7, reg7, dist24, aguardando, ultEntrega] =
+    await Promise.all([
+      supabaseAdmin
+        .from("fontes_diario_oficial")
+        .select("data_publicacao")
+        .order("data_publicacao", { ascending: false, nullsFirst: false })
+        .limit(1),
+      supabaseAdmin
+        .from("diario_automacao_logs")
+        .select("executado_em")
+        .order("executado_em", { ascending: false })
+        .limit(1),
+      supabaseAdmin
+        .from("diario_busca_fila")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "processando"),
+      supabaseAdmin
+        .from("diario_busca_jobs")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "running"),
+      supabaseAdmin
+        .from("fontes_diario_oficial")
+        .select("id", { count: "exact", head: true })
+        .gte("data_publicacao", seteDias),
+      supabaseAdmin
+        .from("do_registros")
+        .select("id", { count: "exact", head: true })
+        .gte("data_publicacao", seteDias),
+      supabaseAdmin
+        .from("do_registros")
+        .select("id", { count: "exact", head: true })
+        .gte("atribuido_em", ontem24h),
+      supabaseAdmin
+        .from("do_registros")
+        .select("id", { count: "exact", head: true })
+        .is("liberado_em", null),
+      supabaseAdmin
+        .from("do_registros")
+        .select("atribuido_em")
+        .not("atribuido_em", "is", null)
+        .order("atribuido_em", { ascending: false })
+        .limit(1),
+    ]);
+
+  // Dias úteis dos últimos 10 dias sem edição registrada.
+  const { data: fontes7 } = await supabaseAdmin
+    .from("fontes_diario_oficial")
+    .select("data_publicacao")
+    .gte("data_publicacao", new Date(Date.now() - 10 * 86_400_000).toISOString().slice(0, 10));
+  const capturadas = new Set((fontes7 ?? []).map((f: any) => f.data_publicacao));
+  const diasEmBranco: string[] = [];
+  for (let i = 1; i <= 10; i++) {
+    const d = new Date(Date.now() - i * 86_400_000);
+    if (d.getUTCDay() === 0 || d.getUTCDay() === 6) continue;
+    const ymd = d.toISOString().slice(0, 10);
+    if (!capturadas.has(ymd)) diasEmBranco.push(ymd);
+  }
+
+  const ultimaEdicao = ((ultimaEd.data?.[0] as any)?.data_publicacao as string) ?? null;
+  const itensPresos = presos.count ?? 0;
+  const diffDias = ultimaEdicao
+    ? Math.floor((Date.now() - new Date(`${ultimaEdicao}T12:00:00Z`).getTime()) / 86_400_000)
+    : 99;
+
+  const status: SaudeRadar["status"] =
+    diffDias >= 4 || itensPresos > 0 ? "critico" : diffDias >= 2 || diasEmBranco.length >= 2 ? "atencao" : "ok";
+
+  return {
+    ultimaEdicao,
+    ultimaExecucao: ((ultimoLog.data?.[0] as any)?.executado_em as string) ?? null,
+    ultimaEntrega: ((ultEntrega.data?.[0] as any)?.atribuido_em as string) ?? null,
+    itensPresos,
+    jobsAtivos: jobs.count ?? 0,
+    edicoes7d: ed7.count ?? 0,
+    registros7d: reg7.count ?? 0,
+    leadsDistribuidos24h: dist24.count ?? 0,
+    aguardandoLiberacao: aguardando.count ?? 0,
+    diasEmBranco,
+    status,
+  };
+}
+
+// Alerta de silêncio: nenhuma edição há 2 dias úteis ou nenhum registro em 7 dias.
+export async function alertarSilencio(): Promise<{ alertou: boolean }> {
+  const s = await saudeRadar();
+  if (s.status === "ok") return { alertou: false };
+  const { data: recentes } = await supabaseAdmin
+    .from("diario_alertas")
+    .select("id")
+    .eq("tipo", "radar_silencioso")
+    .gte("criado_em", new Date(Date.now() - 20 * 3_600_000).toISOString())
+    .limit(1);
+  if ((recentes ?? []).length > 0) return { alertou: false };
+  await criarAlerta(
+    "radar_silencioso",
+    "Radar sem novidades",
+    `Última edição: ${s.ultimaEdicao ?? "nenhuma"}. Dias em branco: ${s.diasEmBranco.join(", ") || "nenhum"}. Itens presos: ${s.itensPresos}.`,
+    s.status === "critico" ? "erro" : "alerta",
+  );
+  return { alertou: true };
 }

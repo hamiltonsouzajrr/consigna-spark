@@ -321,3 +321,105 @@ export const redistribuirPromovidosPorDesempenho = createServerFn({ method: "POS
       return r;
     },
   );
+
+// ---------------------------------------------------------------------------
+// Liberação administrativa dos promovidos
+// Somente leads liberados pelo administrador aparecem para as consultoras.
+// ---------------------------------------------------------------------------
+
+export type LotePendente = {
+  data_publicacao: string | null;
+  total: number;
+  comCpf: number;
+  semConsultora: number;
+};
+
+export const getPromovidosPendentesLiberacao = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ lotes: LotePendente[]; total: number }> => {
+    await assertAdminCtx(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await (supabaseAdmin as any)
+      .from("do_registros")
+      .select("data_publicacao,cpf_confirmado,consultora_responsavel")
+      .is("liberado_em", null)
+      .order("data_publicacao", { ascending: false })
+      .limit(5000);
+    if (error) throw new Error(error.message);
+    const mapa = new Map<string, LotePendente>();
+    for (const r of (data ?? []) as any[]) {
+      const key = (r.data_publicacao as string | null) ?? "sem-data";
+      const cur = mapa.get(key) ?? {
+        data_publicacao: r.data_publicacao ?? null,
+        total: 0,
+        comCpf: 0,
+        semConsultora: 0,
+      };
+      cur.total += 1;
+      if (r.cpf_confirmado) cur.comCpf += 1;
+      if (!r.consultora_responsavel) cur.semConsultora += 1;
+      mapa.set(key, cur);
+    }
+    const lotes = [...mapa.values()].sort((a, b) =>
+      String(b.data_publicacao ?? "").localeCompare(String(a.data_publicacao ?? "")),
+    );
+    return { lotes, total: lotes.reduce((s, l) => s + l.total, 0) };
+  });
+
+export const liberarPromovidos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { datas?: string[]; todos?: boolean; distribuir?: boolean }) =>
+    z
+      .object({
+        datas: z.array(z.string()).optional(),
+        todos: z.boolean().optional(),
+        distribuir: z.boolean().optional(),
+      })
+      .parse(d),
+  )
+  .handler(
+    async ({ data, context }): Promise<{ liberados: number; distribuidos: number }> => {
+      await assertAdminCtx(context);
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+      let distribuidos = 0;
+      if (data.distribuir !== false) {
+        try {
+          const { distribuirPendentes } = await import("@/lib/radar/distribuicao.server");
+          const r: any = await distribuirPendentes(2000);
+          distribuidos = Number(r?.atribuidos ?? 0);
+        } catch {
+          /* distribuição é best-effort; a liberação continua */
+        }
+      }
+
+      let q = (supabaseAdmin as any)
+        .from("do_registros")
+        .update({ liberado_em: new Date().toISOString(), liberado_por: context.userId })
+        .is("liberado_em", null);
+      if (!data.todos) {
+        const datas = data.datas ?? [];
+        if (datas.length === 0) return { liberados: 0, distribuidos };
+        q = q.in("data_publicacao", datas);
+      }
+      const { data: rows, error } = await q.select("id");
+      if (error) throw new Error(error.message);
+      return { liberados: (rows ?? []).length, distribuidos };
+    },
+  );
+
+export const recolherPromovidos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { datas: string[] }) => z.object({ datas: z.array(z.string()).min(1) }).parse(d))
+  .handler(async ({ data, context }): Promise<{ recolhidos: number }> => {
+    await assertAdminCtx(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await (supabaseAdmin as any)
+      .from("do_registros")
+      .update({ liberado_em: null, liberado_por: null })
+      .in("data_publicacao", data.datas)
+      .not("liberado_em", "is", null)
+      .select("id");
+    if (error) throw new Error(error.message);
+    return { recolhidos: (rows ?? []).length };
+  });

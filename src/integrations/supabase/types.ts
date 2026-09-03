@@ -249,6 +249,7 @@ export type Database = {
       }
       diario_busca_fila: {
         Row: {
+          claimed_at: string | null
           created_at: string
           edicao: Json
           erro_msg: string | null
@@ -257,9 +258,11 @@ export type Database = {
           ordem: number
           registros: number
           status: string
+          tentativas: number
           updated_at: string
         }
         Insert: {
+          claimed_at?: string | null
           created_at?: string
           edicao: Json
           erro_msg?: string | null
@@ -268,9 +271,11 @@ export type Database = {
           ordem?: number
           registros?: number
           status?: string
+          tentativas?: number
           updated_at?: string
         }
         Update: {
+          claimed_at?: string | null
           created_at?: string
           edicao?: Json
           erro_msg?: string | null
@@ -279,6 +284,7 @@ export type Database = {
           ordem?: number
           registros?: number
           status?: string
+          tentativas?: number
           updated_at?: string
         }
         Relationships: [
@@ -435,6 +441,8 @@ export type Database = {
           duplicado_possivel: boolean
           id: string
           idade: number | null
+          liberado_em: string | null
+          liberado_por: string | null
           matricula: string | null
           motivo_classificacao: string | null
           nivel_anterior: string | null
@@ -483,6 +491,8 @@ export type Database = {
           duplicado_possivel?: boolean
           id?: string
           idade?: number | null
+          liberado_em?: string | null
+          liberado_por?: string | null
           matricula?: string | null
           motivo_classificacao?: string | null
           nivel_anterior?: string | null
@@ -531,6 +541,8 @@ export type Database = {
           duplicado_possivel?: boolean
           id?: string
           idade?: number | null
+          liberado_em?: string | null
+          liberado_por?: string | null
           matricula?: string | null
           motivo_classificacao?: string | null
           nivel_anterior?: string | null
@@ -2528,6 +2540,7 @@ export type Database = {
       claim_diario_fila_item: {
         Args: { _job_id: string }
         Returns: {
+          claimed_at: string | null
           created_at: string
           edicao: Json
           erro_msg: string | null
@@ -2536,6 +2549,7 @@ export type Database = {
           ordem: number
           registros: number
           status: string
+          tentativas: number
           updated_at: string
         }
         SetofOptions: {
@@ -2612,6 +2626,14 @@ export type Database = {
           qualificacoes: number
           total: number
           user_id: string
+        }[]
+      }
+      recuperar_diario_fila: {
+        Args: never
+        Returns: {
+          falhados: number
+          jobs_fechados: number
+          liberados: number
         }[]
       }
       redistribuir_do_registros_igualmente: {

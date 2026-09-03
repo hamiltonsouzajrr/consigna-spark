@@ -9,6 +9,8 @@ import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { getDashboard, type DashboardData } from "@/lib/radar/radar.functions";
+import { RadarSaudeCard } from "@/components/radar/RadarSaudeCard";
+import { LiberacaoPromovidosCard } from "@/components/radar/LiberacaoPromovidosCard";
 
 export const Route = createFileRoute("/_authenticated/radar/")({
   component: DashboardPage,
@@ -59,6 +61,9 @@ function DashboardPage() {
 
   return (
     <div className="space-y-5">
+      <RadarSaudeCard />
+      <LiberacaoPromovidosCard />
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {kpis.map((k) => {
           const Icon = k.icon;
