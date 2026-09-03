@@ -1,36 +1,46 @@
-# Sistema fora do ar: banco de dados sobrecarregado
+# Revisão das funções de administrador
 
-## O que está acontecendo (verificado agora)
+Auditoria do que existe hoje no painel admin (`/admin`, `/prospeccao/admin`, `/rh/acessos`, `/radar`, `/tomadores-al`), separando o que faz sentido, o que virou peso morto e o que melhorar.
 
-O aplicativo em si está no ar — a página de login carrega normalmente, tanto no preview quanto no endereço publicado. O problema está no **backend**:
+## O que faz sentido e está em uso real
 
-- Os registros de autenticação das últimas horas mostram erros contínuos:
-  `context deadline exceeded` (504) e
-  `failed to connect ... database=postgres` (500).
-- Um login de teste levou mais de 14 segundos e outro nem completou em 30 segundos.
-- Consultas diretas ao banco retornam "connection pooler unavailable" e as métricas do servidor não respondem.
+- **Acessos e segurança** (`/rh/acessos`): criação de contas, permissões por aba, bloqueio/desbloqueio, histórico e incidentes. Há dados reais (45 sessões, 9 incidentes, 6 registros de auditoria). Núcleo do painel.
+- **Prospecção** (`/prospeccao/admin`): abas Visão, Importar, Distribuir, Lotes e Acessos. Base viva: 42.440 leads em prospecção, 8.376 tomadores, 4.500 lançamentos de pontos.
+- **Radar Diário Oficial** (`/radar`): 1.240 registros extraídos e 9 jobs executados; distribuição automática para 56 consultoras cadastradas.
+- **Tomadores com margem — AL** (`/tomadores-al`): pool por faixa com reposição automática.
+- **Ações rápidas do `/admin`**: revogar acessos inativos e repor todas as carteiras — atalhos legítimos das rotinas mais usadas.
 
-Ou seja: o banco de dados não está aceitando novas conexões, então o serviço de login trava. Para a consultora isso aparece como **tela branca ou login que fica girando** — que é exatamente o relato.
+## O que hoje não faz sentido
 
-Observação à parte: na tentativa de login capturada, a senha foi digitada como `Prosperidadesempre10.` (com ponto final). A senha correta termina em `10`, sem ponto. Isso é um problema separado, não a causa da queda.
+1. **Módulo de RH quase todo vazio.** O `/admin` aponta para um "Painel de RH" com ~30 telas (vagas, candidatos, produção, clima, ocorrências, onboarding, férias, holerites, equipamentos, PDI, OKRs, organograma…) e as tabelas correspondentes estão com 0 registros; só existe 1 colaborador cadastrado. Isso infla o menu e distrai de Acessos, que é o que realmente se usa.
+2. **Três rotas para a mesma tela de promovidos.** `/prospeccao/promovidos` e `/prospeccao/promovidos-recentemente` são apenas redirects para `/prospeccao/promovidos-recentes`, mas ainda aparecem espalhados em links e no menu.
+3. **Resíduo do SafeConsig.** A tabela `safeconsig_leads` tem 386 registros de uma função já removida do sistema — dado órfão sem tela.
+4. **`promovidos`, `lead_batches`, `leads_raw`, `legal_approvals` vazias.** Correspondem a fluxos antigos (importação PDF manual, lotes de leads, aprovação jurídica) que foram substituídos; os controles ainda existem na UI de importação.
+5. **Comunicação/ferramentas com pouco lastro.** WhatsApp tem 1 conta configurada e as avaliações de pós-venda não têm uso; ocupam o mesmo peso visual de módulos críticos no hub admin.
+6. **Só existe 1 usuário com papel de admin.** Nenhum administrador reserva — se essa conta for bloqueada ou perder a senha, ninguém administra o sistema.
+7. **Verificação de admin repetida à mão em 21 rotas.** Cada tela reimplementa `isAdmin` + `Navigate`, com variações de comportamento e telas em branco durante o carregamento.
 
-## Plano de recuperação
+## Melhorias propostas
 
-1. **Reiniciar o backend** (banco + autenticação) para liberar as conexões travadas e voltar ao estado saudável. Leva alguns minutos, durante os quais o sistema fica indisponível.
-2. **Confirmar a recuperação**: checar o status do backend, rodar uma consulta simples e fazer um login real de ponta a ponta pelo endereço publicado.
-3. **Verificar a causa da saturação** — ler as conexões ativas e as consultas lentas para identificar o que consumiu o pool (rotinas automáticas do Radar/reposição de tomadores, o heartbeat de sessão a cada 30s por usuário, ou consultas pesadas sem índice).
+### Fase 1 — Limpeza (baixo risco)
+- Reorganizar o hub `/admin` em três blocos por frequência de uso: **Operação diária** (Acessos, Prospecção, Radar, Tomadores), **Gestão** (Metas, Ranking, Competição) e **Arquivo/Opcional** (RH completo, WhatsApp, QR Codes, Avaliações) — este último recolhido por padrão.
+- Ocultar do menu as telas de RH sem nenhum dado, mantendo as rotas acessíveis por link direto.
+- Remover as duas rotas-atalho de promovidos e apontar todos os links diretamente para `/prospeccao/promovidos-recentes`.
+- Remover da UI de importação os controles ligados a fluxos mortos (lotes/PDF), mantendo o importador de planilha atual.
 
-## Prevenção (depois que voltar)
+### Fase 2 — Robustez de acesso
+- Criar um gate único de admin (layout ou hook) usado por todas as rotas administrativas, com estado de carregamento e mensagem de "sem permissão" em vez de tela branca.
+- Adicionar na aba de Acessos um controle explícito para conceder/revogar o papel de administrador, com registro na auditoria, e promover pelo menos um admin reserva.
+- Exigir confirmação por texto nas ações destrutivas (revogar acessos inativos, redistribuições em massa, exclusão de conta).
 
-Conforme o que a etapa 3 apontar, aplicar as medidas cabíveis:
-
-- Reduzir a frequência do heartbeat de sessão (`AccessGuard`) e das consultas em tempo real, que hoje batem no banco a cada 30 segundos por usuário conectado.
-- Garantir que as rotinas automáticas (Radar Diário Oficial, reposição de carteiras) não rodem em paralelo nem em laço.
-- Adicionar índices nas colunas usadas pelas consultas mais lentas.
-- Se a saturação for de capacidade real e não de código, recomendar o aumento do tamanho do servidor de banco.
+### Fase 3 — Visibilidade operacional
+- Painel de saúde no topo de `/admin`: última execução do Radar, leads sem consultora, carteiras incompletas, consultoras inativas há 7+ dias, incidentes de acesso simultâneo em aberto — cada item com link para a ação correspondente.
+- Registrar na auditoria também as ações de distribuição/reposição (hoje só acessos são auditados), com quem executou e o resultado.
+- Arquivar os dados órfãos do SafeConsig e das tabelas de fluxos descontinuados.
 
 ## Detalhes técnicos
 
-- Evidência: `auth_logs` com `status 504 / context deadline exceeded` em `/token` e `/user`; erros `dial tcp [::1]:5432: operation was canceled`.
-- `read_query` e o endpoint de métricas retornam indisponibilidade do pooler.
-- Nenhuma alteração de código é necessária para restabelecer o serviço — a ação é operacional (restart), seguida de diagnóstico com `pg_stat_activity` e consultas lentas.
+- Gate de admin: rota pathless `_authenticated/_admin/` reaproveitando `useRhAccess`, eliminando as checagens duplicadas em 21 arquivos.
+- Painel de saúde: uma única server function agregadora (contagens por RPC) em vez de várias consultas na tela, seguindo o padrão de `src/lib/radar/rpc.server.ts`.
+- Auditoria de distribuição: reutilizar `public.rh_access_audit` com novos valores de `action`, sem nova tabela.
+- Limpeza de dados órfãos por migração, com `DROP TABLE` apenas após confirmação sua — nada é apagado nesta fase sem seu aval.
