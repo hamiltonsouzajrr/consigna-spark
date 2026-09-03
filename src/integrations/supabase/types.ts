@@ -1441,6 +1441,39 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_jornada: {
+        Row: {
+          almoco_inicio: string
+          almoco_minutos: number
+          created_at: string
+          fim: string
+          inicio: string
+          meta_diaria: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          almoco_inicio?: string
+          almoco_minutos?: number
+          created_at?: string
+          fim?: string
+          inicio?: string
+          meta_diaria?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          almoco_inicio?: string
+          almoco_minutos?: number
+          created_at?: string
+          fim?: string
+          inicio?: string
+          meta_diaria?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       prospect_leads: {
         Row: {
           batch_id: string | null
