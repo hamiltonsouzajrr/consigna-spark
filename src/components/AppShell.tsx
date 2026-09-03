@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LogOut, BadgeDollarSign, Calculator, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, PhoneCall, Flame, CalendarClock, Home, Trophy, Star, MessageSquare, Clock, Sparkles, Radar, Wallet, PartyPopper, LayoutDashboard } from "lucide-react";
+import { LogOut, BadgeDollarSign, Calculator, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, PhoneCall, Flame, CalendarClock, Home, Trophy, Star, MessageSquare, Clock, Sparkles, Radar, Wallet, PartyPopper, LayoutDashboard, AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -48,6 +48,8 @@ const navSections: NavSection[] = [
       { to: "/prospeccao/followups", label: "Follow-ups", icon: CalendarClock, badge: "followups", consultoraOnly: true },
       { to: "/prospeccao/admin", label: "Painel de leads", full: "PAINEL ADMINISTRATIVO DE LEADS", icon: LayoutDashboard, adminOnly: true },
       { to: "/prospeccao/qualidade", label: "Qualidade de leads", full: "QUALIDADE E EVOLUÇÃO DA PROSPECÇÃO", icon: Target, adminOnly: true },
+      { to: "/prospeccao/dashboard", label: "Dashboard por consultora", full: "DASHBOARD POR CONSULTORA", icon: LayoutDashboard },
+      { to: "/prospeccao/admin/orfaos", label: "Leads sem consultora", full: "LEADS QUE NUNCA FORAM DISTRIBUÍDOS", icon: AlertTriangle, adminOnly: true },
       { to: "/radar", label: "Radar Diário Oficial", full: "RADAR DIÁRIO OFICIAL - PROMOÇÕES E PROGRESSÕES", icon: Radar, adminOnly: true },
     ],
   },
