@@ -55,12 +55,18 @@ function Page() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold">Qualidade e evolução da prospecção</h1>
-          <p className="text-sm text-muted-foreground">Comparativo semana a semana, mês a mês e produtividade das ligações.</p>
+          <p className="text-sm text-muted-foreground">Abordagem, conversão e follow-up da equipe, atualizados automaticamente.</p>
         </div>
         <Button asChild variant="ghost" size="sm"><Link to="/prospeccao/admin"><ArrowLeft className="mr-2 h-4 w-4" /> Painel admin</Link></Button>
       </div>
 
       <section className="mb-6">
+        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Desempenho real da operação</h2>
+        <QualidadeOperacionalPanel />
+      </section>
+
+      <section className="mb-6">
+
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Evolução da prospecção</h2>
         <EvolucaoProspeccaoPanel />
       </section>
