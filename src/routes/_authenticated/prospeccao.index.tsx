@@ -6,6 +6,7 @@ import { useRhAccess } from "@/hooks/use-rh-access";
 import { supabase } from "@/integrations/supabase/client";
 import { refillMyQueue } from "@/lib/prospeccao/prospeccao.functions";
 import { CrmCockpit } from "@/components/prospeccao/CrmCockpit";
+import { CrmCockpitAdmin } from "@/components/prospeccao/CrmCockpitAdmin";
 import { registrarContato, registrarQualificacao, agendarFollowup } from "@/lib/prospeccao/competicao.functions";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
@@ -335,16 +336,20 @@ function Page() {
         </div>
       </div>
 
-      <CrmCockpit
-        chamadas={chamadas}
-        metaDiaria={META_DIARIA}
-        streak={streak}
-        prod={prod}
-        filaHoje={stats.hoje}
-        filaQuentes={stats.quentes}
-        filaAtrasados={stats.atrasados}
-        filaTotal={leads.length}
-      />
+      {isAdmin ? (
+        <CrmCockpitAdmin />
+      ) : (
+        <CrmCockpit
+          chamadas={chamadas}
+          metaDiaria={META_DIARIA}
+          streak={streak}
+          prod={prod}
+          filaHoje={stats.hoje}
+          filaQuentes={stats.quentes}
+          filaAtrasados={stats.atrasados}
+          filaTotal={leads.length}
+        />
+      )}
 
       <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-5">
         <RhStatCard label="Leads de hoje" value={stats.hoje} icon={CalendarClock} tone="sky" />
