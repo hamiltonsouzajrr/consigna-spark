@@ -17,6 +17,8 @@ import {
 } from "recharts";
 import { AdminGate } from "@/components/security/AdminGate";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EvolucaoProspeccaoPanel } from "@/components/prospeccao/EvolucaoProspeccaoPanel";
+
 
 export const Route = createFileRoute("/_authenticated/prospeccao/qualidade")({
   head: () => ({ meta: [{ title: "Qualidade de ligações — Prospecção" }, { name: "robots", content: "noindex,nofollow" }] }),
@@ -50,11 +52,18 @@ function Page() {
     <AppShell>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold">Qualidade de ligações</h1>
-          <p className="text-sm text-muted-foreground">Acompanhe a produtividade e a conversão das ligações nos últimos 7 dias.</p>
+          <h1 className="text-2xl font-bold">Qualidade e evolução da prospecção</h1>
+          <p className="text-sm text-muted-foreground">Comparativo semana a semana, mês a mês e produtividade das ligações.</p>
         </div>
         <Button asChild variant="ghost" size="sm"><Link to="/prospeccao/admin"><ArrowLeft className="mr-2 h-4 w-4" /> Painel admin</Link></Button>
       </div>
+
+      <section className="mb-6">
+        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Evolução da prospecção</h2>
+        <EvolucaoProspeccaoPanel />
+      </section>
+
+
 
       {loadingStats && (
         <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
