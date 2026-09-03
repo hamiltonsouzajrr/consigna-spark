@@ -48,7 +48,12 @@ function LoginPage() {
   const [tab, setTab] = useState<"in" | "up">("in");
   const [avisoOpen, setAvisoOpen] = useState(false);
 
-  useEffect(() => { if (user) nav({ to: "/prospeccao" }); }, [user, nav]);
+  // Admin entra direto no hub de administração; consultora vai para o CRM.
+  useEffect(() => {
+    if (!user || accessLoading) return;
+    nav({ to: isAdmin ? "/admin" : "/prospeccao" });
+  }, [user, isAdmin, accessLoading, nav]);
+
 
   useEffect(() => {
     try {
