@@ -38,6 +38,31 @@ export type EdicaoNormalizada = {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// O site do Diário Oficial oscila (500/502/timeout). Em vez de desistir na
+// primeira falha, tentamos algumas vezes com espera progressiva.
+async function fetchComRetry(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+  descricao: string,
+  tentativas = 3,
+): Promise<Response> {
+  let ultimoErro = "";
+  for (let i = 1; i <= tentativas; i++) {
+    try {
+      const res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+      if (res.ok) return res;
+      ultimoErro = `HTTP ${res.status}`;
+      // 4xx (exceto 429) não melhora com nova tentativa.
+      if (res.status < 500 && res.status !== 429) break;
+    } catch (e: any) {
+      ultimoErro = String(e?.message ?? e);
+    }
+    if (i < tentativas) await sleep(i * 2500);
+  }
+  throw new Error(`Falha ao ${descricao} (${ultimoErro}).`);
+}
+
 function toYmd(iso: string): string {
   // publication_date vem como 2026-06-22T03:00:00Z; usamos só a data.
   return (iso || "").slice(0, 10);
