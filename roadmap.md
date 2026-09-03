@@ -8,3 +8,5 @@
 - [x] Promovidos recentes: rebalanceamento da janela de 15 dias + fallback quando não há publicação nova
 - [x] Tomadores AL: botão admin para reiniciar leads trabalhados e redistribuir sem repetir a mesma consultora
 - [x] Relógio de tempo ativo na plataforma (conta só uso real, exibido no topo ao lado das notificações)
+- [x] Radar: cartão admin com consultoras cadastradas sem conta + devolução dos leads invisíveis ao rateio
+- [x] Radar: fila verificada (385 itens concluídos, nenhum job travado, última edição 02/09)
