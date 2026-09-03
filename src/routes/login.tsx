@@ -247,7 +247,9 @@ function LoginPage() {
         // Redireciona assim que a sessão é confirmada; o AuthProvider também
         // atualiza o estado local imediatamente para não depender de evento
         // assíncrono de autenticação.
-        nav({ to: "/prospeccao", replace: true });
+        // O destino depende do papel (admin → /admin, consultora → /prospeccao)
+        // e é resolvido pelo efeito acima assim que o acesso é carregado.
+
       } else {
         toast.success("Conta criada com sucesso!");
       }
