@@ -2,27 +2,27 @@
 // A regra de rodízio vive no banco (distribuir_do_registros_pendentes), que
 // também sincroniza o cadastro de consultoras a partir das contas do sistema
 // e notifica cada consultora sobre os leads novos que caíram na carteira dela.
+import { callRpc, callRpcRow } from "./rpc.server";
 
 export type ResultadoDistribuicao = { atribuidos: number; consultoras: number };
 
-export async function distribuirPendentes(limite = 2000): Promise<ResultadoDistribuicao> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.rpc("distribuir_do_registros_pendentes" as any, {
-    _limit: limite,
-  } as any);
-  if (error) throw new Error(error.message);
-  const row = (Array.isArray(data) ? data[0] : data) as any;
+type LinhaDistribuicao = { atribuidos: number; consultoras: number };
+
+function normalizar(row: Partial<LinhaDistribuicao>): ResultadoDistribuicao {
   return {
-    atribuidos: Number(row?.atribuidos ?? 0),
-    consultoras: Number(row?.consultoras ?? 0),
+    atribuidos: Number(row.atribuidos ?? 0),
+    consultoras: Number(row.consultoras ?? 0),
   };
 }
 
+export async function distribuirPendentes(limite = 2000): Promise<ResultadoDistribuicao> {
+  return normalizar(
+    await callRpcRow<LinhaDistribuicao>("distribuir_do_registros_pendentes", { _limit: limite }),
+  );
+}
+
 export async function sincronizarConsultoras(): Promise<number> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.rpc("sync_radar_consultoras" as any);
-  if (error) throw new Error(error.message);
-  return Number(data ?? 0);
+  return Number((await callRpc<number>("sync_radar_consultoras")) ?? 0);
 }
 
 // Redistribui igualmente os leads do Diário Oficial entre todas as consultoras
@@ -31,18 +31,14 @@ export async function redistribuirIgualmente(
   janelaDias: number | null = null,
   incluirAbordados = false,
 ): Promise<ResultadoDistribuicao> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.rpc("redistribuir_do_registros_igualmente" as any, {
-    _janela_dias: janelaDias,
-    _incluir_abordados: incluirAbordados,
-  } as any);
-  if (error) throw new Error(error.message);
-  const row = (Array.isArray(data) ? data[0] : data) as any;
-  return {
-    atribuidos: Number(row?.atribuidos ?? 0),
-    consultoras: Number(row?.consultoras ?? 0),
-  };
+  return normalizar(
+    await callRpcRow<LinhaDistribuicao>("redistribuir_do_registros_igualmente", {
+      _janela_dias: janelaDias,
+      _incluir_abordados: incluirAbordados,
+    }),
+  );
 }
+
 
 export type CarteiraResumo = {
   nome: string;
@@ -108,20 +104,19 @@ export async function redistribuirPorDesempenho(
   status: string[] = ["novo"],
   somenteNaoContatados = true,
 ): Promise<ResultadoDesempenho> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.rpc("redistribuir_do_registros_por_desempenho" as any, {
+  const row = await callRpcRow<
+    LinhaDistribuicao & { top_consultora: string | null; top_peso: number }
+  >("redistribuir_do_registros_por_desempenho", {
     _dias_desempenho: diasDesempenho,
     _janela_dias: janelaDias,
     _peso_max: pesoMax,
     _status: status.length ? status : ["novo"],
     _somente_nao_contatados: somenteNaoContatados,
-  } as any);
-  if (error) throw new Error(error.message);
-  const row = (Array.isArray(data) ? data[0] : data) as any;
+  });
   return {
-    atribuidos: Number(row?.atribuidos ?? 0),
-    consultoras: Number(row?.consultoras ?? 0),
-    topConsultora: (row?.top_consultora as string | null) ?? null,
-    topPeso: Number(row?.top_peso ?? 0),
+    ...normalizar(row),
+    topConsultora: row.top_consultora ?? null,
+    topPeso: Number(row.top_peso ?? 0),
   };
 }
+
