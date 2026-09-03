@@ -99,14 +99,16 @@ function WhatsAppPage() {
     queryKey: ["wa-conversations", accountId],
     queryFn: () => fetchConversations({ data: { accountId: accountId! } }),
     enabled: !!accountId,
-    refetchInterval: 10000,
+    refetchInterval: 20000,
+    refetchIntervalInBackground: false,
   });
 
   const messagesQ = useQuery({
     queryKey: ["wa-messages", contactId],
     queryFn: () => fetchMessages({ data: { contactId: contactId! } }),
     enabled: !!contactId,
-    refetchInterval: 8000,
+    refetchInterval: 15000,
+    refetchIntervalInBackground: false,
   });
 
   useEffect(() => {
