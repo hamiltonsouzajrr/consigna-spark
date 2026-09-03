@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { telLink, whatsappLink } from "@/lib/prospeccao/constants";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { toast } from "sonner";
+import { ReiniciarTrabalhadosCard } from "@/components/prospeccao/ReiniciarTrabalhadosCard";
 import tomadoresAsset from "@/assets/tomadores_al.json.asset.json";
 import {
   getTomadoresAl, marcarAbordagemTomador, distribuirTomadoresAl, getDistribuicaoTomadoresAl,
@@ -530,6 +531,9 @@ function Page() {
             </div>
           </section>
         )}
+
+        {isAdmin && <ReiniciarTrabalhadosCard onDone={recarregarDistribuicao} />}
+
 
         {isAdmin && (
           <section className="space-y-3 rounded-xl border border-border/60 bg-card p-4">

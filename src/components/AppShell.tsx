@@ -3,6 +3,7 @@ import { LogOut, BadgeDollarSign, Calculator, ShieldCheck, TrendingUp, Search, Q
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { TempoAtivoBadge } from "@/components/TempoAtivoBadge";
 import { useRhAccess } from "@/hooks/use-rh-access";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/grupo-positive-logo-2026.png.asset.json";
@@ -259,6 +260,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="text-sm text-white/80">Chamadas hoje</span>
               <span className="text-xl font-bold leading-none tabular-nums">{chamadas}</span>
             </div>
+            <TempoAtivoBadge />
             <MetaTopIndicator />
           </div>
           <div className="ml-auto flex items-center gap-4">

@@ -78,6 +78,8 @@ function Page() {
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState({ novosHoje: 0, novos7d: 0, semCpf: 0, naoAbordados: 0 });
   const [ultimaEntrega, setUltimaEntrega] = useState<string | null>(null);
+  const [foraDaJanela, setForaDaJanela] = useState(false);
+  const [ultimaPublicacao, setUltimaPublicacao] = useState<string | null>(null);
   const [consultoraNome, setConsultoraNome] = useState<string | null>(null);
   const [vinculada, setVinculada] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -97,6 +99,8 @@ function Page() {
       setConsultoraNome(res.consultoraNome);
       setVinculada(res.vinculada);
       setUltimaEntrega(res.ultimaEntrega);
+      setForaDaJanela(res.foraDaJanela);
+      setUltimaPublicacao(res.ultimaPublicacao);
       setStats({
         novosHoje: res.novosHoje, novos7d: res.novos7d,
         semCpf: res.semCpf, naoAbordados: res.naoAbordados,
@@ -241,13 +245,27 @@ function Page() {
           <Button variant={apenasNovos ? "default" : "outline"} size="sm" onClick={() => setApenasNovos((v) => !v)}>
             {apenasNovos ? "Mostrando só não abordados" : "Ver só não abordados"}
           </Button>
-          <span className="text-xs text-muted-foreground">{total} lead(s) na janela</span>
+          <span className="text-xs text-muted-foreground">
+            {total} lead(s) {foraDaJanela ? "na sua carteira" : "na janela"}
+          </span>
           {ultimaEntrega && (
             <span className="text-xs text-muted-foreground">
               · última entrega em {new Date(ultimaEntrega).toLocaleString("pt-BR")}
             </span>
           )}
+          {ultimaPublicacao && (
+            <span className="text-xs text-muted-foreground">
+              · última publicação capturada em {fmtData(ultimaPublicacao)}
+            </span>
+          )}
         </div>
+
+        {foraDaJanela && (
+          <Card className="border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+            Nenhuma publicação nova nos últimos 15 dias. Mostrando os promovidos mais recentes já
+            entregues a você — o selo de cada card indica quantos dias faz da promoção.
+          </Card>
+        )}
 
         {loading ? (
           <Card className="p-8 text-center text-sm text-muted-foreground">
@@ -261,7 +279,8 @@ function Page() {
           </Card>
         ) : rows.length === 0 ? (
           <Card className="p-6 text-sm text-muted-foreground">
-            Nenhum promovido nos últimos 15 dias na sua carteira.
+            Nenhum promovido na sua carteira ainda. Assim que o Radar publicar novas promoções, elas
+            aparecem aqui automaticamente.
           </Card>
         ) : (
           <div className="grid gap-3 lg:grid-cols-2">

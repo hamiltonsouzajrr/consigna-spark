@@ -50,6 +50,36 @@ export type Database = {
         }
         Relationships: []
       }
+      app_uso_ativo: {
+        Row: {
+          created_at: string
+          id: string
+          ref_date: string
+          segundos: number
+          ultimo_em: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ref_date: string
+          segundos?: number
+          ultimo_em?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ref_date?: string
+          segundos?: number
+          ultimo_em?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       consigup_sessions: {
         Row: {
           cookies: Json
@@ -2379,6 +2409,41 @@ export type Database = {
         }
         Relationships: []
       }
+      tomadores_al_atendimentos: {
+        Row: {
+          consultora_nome: string
+          created_at: string
+          finalizado_em: string | null
+          id: string
+          status_final: string | null
+          tomador_id: string
+        }
+        Insert: {
+          consultora_nome: string
+          created_at?: string
+          finalizado_em?: string | null
+          id?: string
+          status_final?: string | null
+          tomador_id: string
+        }
+        Update: {
+          consultora_nome?: string
+          created_at?: string
+          finalizado_em?: string | null
+          id?: string
+          status_final?: string | null
+          tomador_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tomadores_al_atendimentos_tomador_id_fkey"
+            columns: ["tomador_id"]
+            isOneToOne: false
+            referencedRelation: "tomadores_al"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2669,6 +2734,17 @@ export type Database = {
           _user_id: string
         }
         Returns: number
+      }
+      registrar_uso_ativo: {
+        Args: { _segundos: number; _user_id: string }
+        Returns: number
+      }
+      reiniciar_tomadores_trabalhados: {
+        Args: { _dias_min?: number; _limite?: number; _status?: string[] }
+        Returns: {
+          historicos: number
+          reiniciados: number
+        }[]
       }
       sync_radar_consultoras: { Args: never; Returns: number }
     }
