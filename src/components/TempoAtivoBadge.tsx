@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Timer } from "lucide-react";
 import { getUsoAtivo, registrarUsoAtivo } from "@/lib/uso/uso-ativo.functions";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/lib/auth";
 
 /** Tempo sem interação que encerra a contagem (segundos). */
 const IDLE_LIMIT = 30;
