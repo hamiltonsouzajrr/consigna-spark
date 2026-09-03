@@ -532,6 +532,8 @@ function Page() {
           </Link>
         ))}
       </div>
+      </>
+      )}
     </AppShell>
   );
 }
