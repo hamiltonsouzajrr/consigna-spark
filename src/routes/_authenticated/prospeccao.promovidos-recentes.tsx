@@ -99,6 +99,8 @@ function Page() {
       setConsultoraNome(res.consultoraNome);
       setVinculada(res.vinculada);
       setUltimaEntrega(res.ultimaEntrega);
+      setForaDaJanela(res.foraDaJanela);
+      setUltimaPublicacao(res.ultimaPublicacao);
       setStats({
         novosHoje: res.novosHoje, novos7d: res.novos7d,
         semCpf: res.semCpf, naoAbordados: res.naoAbordados,
