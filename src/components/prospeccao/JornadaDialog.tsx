@@ -102,11 +102,7 @@ export function JornadaDialog({
         </div>
 
         <div className="rounded-lg border bg-muted/30 p-3 text-xs">
-          <p className="font-medium">
-            Seu plano de hoje ({formatarDuracao(blocos.length ? 0 : 0)}
-            {""}
-            <span className="sr-only">plano</span>)
-          </p>
+          <p className="font-medium">Seu plano de hoje por faixa de horário</p>
           <div className="mt-2 grid grid-cols-2 gap-1 sm:grid-cols-3">
             {blocos.map((b) => (
               <span key={b.faixa} className="rounded border bg-background px-2 py-1 tabular-nums">
