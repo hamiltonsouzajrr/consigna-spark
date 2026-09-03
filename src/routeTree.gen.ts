@@ -37,6 +37,7 @@ import { Route as AuthenticatedProducaoRankingRouteImport } from './routes/_auth
 import { Route as AuthenticatedProspeccaoIndexRouteImport } from './routes/_authenticated/prospeccao.index'
 import { Route as AuthenticatedProspeccaoLeadIdRouteImport } from './routes/_authenticated/prospeccao.$leadId'
 import { Route as AuthenticatedProspeccaoAdminRouteImport } from './routes/_authenticated/prospeccao.admin'
+import { Route as AuthenticatedProspeccaoDashboardRouteImport } from './routes/_authenticated/prospeccao.dashboard'
 import { Route as AuthenticatedProspeccaoFollowupsRouteImport } from './routes/_authenticated/prospeccao.followups'
 import { Route as AuthenticatedProspeccaoPromovidosRouteImport } from './routes/_authenticated/prospeccao.promovidos'
 import { Route as AuthenticatedProspeccaoPromovidosRecentementeRouteImport } from './routes/_authenticated/prospeccao.promovidos-recentemente'
@@ -236,6 +237,12 @@ const AuthenticatedProspeccaoAdminRoute =
   AuthenticatedProspeccaoAdminRouteImport.update({
     id: '/prospeccao/admin',
     path: '/prospeccao/admin',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProspeccaoDashboardRoute =
+  AuthenticatedProspeccaoDashboardRouteImport.update({
+    id: '/prospeccao/dashboard',
+    path: '/prospeccao/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProspeccaoFollowupsRoute =
@@ -549,6 +556,7 @@ export interface FileRoutesByFullPath {
   '/producao/ranking': typeof AuthenticatedProducaoRankingRoute
   '/prospeccao/$leadId': typeof AuthenticatedProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRouteWithChildren
+  '/prospeccao/dashboard': typeof AuthenticatedProspeccaoDashboardRoute
   '/prospeccao/followups': typeof AuthenticatedProspeccaoFollowupsRoute
   '/prospeccao/promovidos': typeof AuthenticatedProspeccaoPromovidosRoute
   '/prospeccao/promovidos-recentemente': typeof AuthenticatedProspeccaoPromovidosRecentementeRoute
@@ -625,6 +633,7 @@ export interface FileRoutesByTo {
   '/producao/ranking': typeof AuthenticatedProducaoRankingRoute
   '/prospeccao/$leadId': typeof AuthenticatedProspeccaoLeadIdRoute
   '/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRouteWithChildren
+  '/prospeccao/dashboard': typeof AuthenticatedProspeccaoDashboardRoute
   '/prospeccao/followups': typeof AuthenticatedProspeccaoFollowupsRoute
   '/prospeccao/promovidos': typeof AuthenticatedProspeccaoPromovidosRoute
   '/prospeccao/promovidos-recentemente': typeof AuthenticatedProspeccaoPromovidosRecentementeRoute
@@ -704,6 +713,7 @@ export interface FileRoutesById {
   '/_authenticated/producao/ranking': typeof AuthenticatedProducaoRankingRoute
   '/_authenticated/prospeccao/$leadId': typeof AuthenticatedProspeccaoLeadIdRoute
   '/_authenticated/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRouteWithChildren
+  '/_authenticated/prospeccao/dashboard': typeof AuthenticatedProspeccaoDashboardRoute
   '/_authenticated/prospeccao/followups': typeof AuthenticatedProspeccaoFollowupsRoute
   '/_authenticated/prospeccao/promovidos': typeof AuthenticatedProspeccaoPromovidosRoute
   '/_authenticated/prospeccao/promovidos-recentemente': typeof AuthenticatedProspeccaoPromovidosRecentementeRoute
@@ -784,6 +794,7 @@ export interface FileRouteTypes {
     | '/producao/ranking'
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
+    | '/prospeccao/dashboard'
     | '/prospeccao/followups'
     | '/prospeccao/promovidos'
     | '/prospeccao/promovidos-recentemente'
@@ -860,6 +871,7 @@ export interface FileRouteTypes {
     | '/producao/ranking'
     | '/prospeccao/$leadId'
     | '/prospeccao/admin'
+    | '/prospeccao/dashboard'
     | '/prospeccao/followups'
     | '/prospeccao/promovidos'
     | '/prospeccao/promovidos-recentemente'
@@ -938,6 +950,7 @@ export interface FileRouteTypes {
     | '/_authenticated/producao/ranking'
     | '/_authenticated/prospeccao/$leadId'
     | '/_authenticated/prospeccao/admin'
+    | '/_authenticated/prospeccao/dashboard'
     | '/_authenticated/prospeccao/followups'
     | '/_authenticated/prospeccao/promovidos'
     | '/_authenticated/prospeccao/promovidos-recentemente'
@@ -1205,6 +1218,13 @@ declare module '@tanstack/react-router' {
       path: '/prospeccao/admin'
       fullPath: '/prospeccao/admin'
       preLoaderRoute: typeof AuthenticatedProspeccaoAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/prospeccao/dashboard': {
+      id: '/_authenticated/prospeccao/dashboard'
+      path: '/prospeccao/dashboard'
+      fullPath: '/prospeccao/dashboard'
+      preLoaderRoute: typeof AuthenticatedProspeccaoDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/prospeccao/followups': {
@@ -1698,6 +1718,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProducaoRankingRoute: typeof AuthenticatedProducaoRankingRoute
   AuthenticatedProspeccaoLeadIdRoute: typeof AuthenticatedProspeccaoLeadIdRoute
   AuthenticatedProspeccaoAdminRoute: typeof AuthenticatedProspeccaoAdminRouteWithChildren
+  AuthenticatedProspeccaoDashboardRoute: typeof AuthenticatedProspeccaoDashboardRoute
   AuthenticatedProspeccaoFollowupsRoute: typeof AuthenticatedProspeccaoFollowupsRoute
   AuthenticatedProspeccaoPromovidosRoute: typeof AuthenticatedProspeccaoPromovidosRoute
   AuthenticatedProspeccaoPromovidosRecentementeRoute: typeof AuthenticatedProspeccaoPromovidosRecentementeRoute
@@ -1729,6 +1750,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProspeccaoLeadIdRoute: AuthenticatedProspeccaoLeadIdRoute,
   AuthenticatedProspeccaoAdminRoute:
     AuthenticatedProspeccaoAdminRouteWithChildren,
+  AuthenticatedProspeccaoDashboardRoute: AuthenticatedProspeccaoDashboardRoute,
   AuthenticatedProspeccaoFollowupsRoute: AuthenticatedProspeccaoFollowupsRoute,
   AuthenticatedProspeccaoPromovidosRoute:
     AuthenticatedProspeccaoPromovidosRoute,
