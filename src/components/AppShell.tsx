@@ -252,35 +252,35 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
       <main className="flex-1 overflow-x-hidden print:overflow-visible">
         {/* Top header bar (Bitrix-style) */}
-        <header className="topbar-bg relative hidden items-center gap-4 px-6 py-2.5 text-white md:flex print:!hidden">
+        <header className="topbar-bg relative hidden items-center gap-4 border-b border-border px-6 py-2.5 text-foreground md:flex print:!hidden">
           {/* Contador de chamadas do dia + indicador da meta do mês */}
           <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-3">
-            <div className="pointer-events-none flex items-center gap-2 rounded-full bg-white/10 px-4 py-1">
-              <PhoneCall className="h-4 w-4 text-white/80" />
-              <span className="text-sm text-white/80">Chamadas hoje</span>
-              <span className="text-xl font-bold leading-none tabular-nums">{chamadas}</span>
+            <div className="pointer-events-none flex items-center gap-2 rounded-full bg-accent px-4 py-1">
+              <PhoneCall className="h-4 w-4 text-primary" />
+              <span className="text-sm text-muted-foreground">Chamadas hoje</span>
+              <span className="text-xl font-bold leading-none tabular-nums text-foreground">{chamadas}</span>
             </div>
             <TempoAtivoBadge />
             <MetaTopIndicator />
           </div>
           <div className="ml-auto flex items-center gap-4">
             <div className="flex items-center gap-2 tabular-nums">
-              <Clock className="h-4 w-4 text-white/70" />
+              <Clock className="h-4 w-4 text-muted-foreground" />
               <span className="text-xl font-semibold leading-none">
                 {now ? now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "--:--"}
               </span>
             </div>
             <div className="hidden items-center gap-2 lg:flex">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-sm font-semibold text-white">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                 {(user?.email ?? "?").charAt(0).toUpperCase()}
               </div>
-              <span className="max-w-[160px] truncate text-sm text-white/90">{user?.email}</span>
+              <span className="max-w-[160px] truncate text-sm text-muted-foreground">{user?.email}</span>
             </div>
             <Button
               size="sm"
               variant="ghost"
               onClick={handleSair}
-              className="gap-2 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+              className="gap-2 bg-accent text-accent-foreground hover:bg-accent/80"
             >
               <LogOut className="h-4 w-4" /> Sair
             </Button>
@@ -288,9 +288,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>
 
 
-        <div className="md:hidden flex items-center justify-between topbar-bg px-4 py-3 text-white print:!hidden">
+        <div className="md:hidden flex items-center justify-between topbar-bg border-b border-border px-4 py-3 text-foreground print:!hidden">
           <div className="flex items-center gap-2">
-            <img src={logo.url} alt="Grupo Positive" className="h-10 w-10 rounded-lg bg-white object-contain p-1" />
+            <img src={logo.url} alt="Grupo Positive" className="h-10 w-10 rounded-lg bg-card object-contain p-1" />
             <span className="font-semibold">Grupo Positive</span>
           </div>
           <div className="flex items-center gap-1">
@@ -298,19 +298,20 @@ export function AppShell({ children }: { children: ReactNode }) {
             size="sm"
             variant="ghost"
             onClick={handleSair}
-            className="gap-1 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+            className="gap-1 bg-accent text-accent-foreground hover:bg-accent/80"
           >
             <LogOut className="h-4 w-4" /> Sair
           </Button>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/10">
+              <Button variant="ghost" size="icon" className="relative text-foreground hover:bg-accent">
                 <Menu className="h-5 w-5" />
                 {(followupsCount ?? 0) > 0 && (
-                  <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-orange-500" />
+                  <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-warning" />
                 )}
               </Button>
             </SheetTrigger>
+
             <SheetContent side="left" className="w-72 sidebar-bg border-0 p-0 text-sidebar-foreground">
               <SheetHeader className="px-4 py-4 text-left">
                 <SheetTitle className="flex items-center gap-2">

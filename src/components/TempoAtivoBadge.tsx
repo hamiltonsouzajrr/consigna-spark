@@ -114,20 +114,21 @@ export function TempoAtivoBadge() {
   return (
     <div
       title={`Tempo ativo hoje. Nesta semana: ${fmt(semana)}. A contagem pausa após ${IDLE_LIMIT}s sem interação.`}
-      className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1"
+      className="flex items-center gap-2 rounded-full bg-accent px-3 py-1"
     >
       <span className="relative flex h-2 w-2">
         <span
           className={
             ativo
-              ? "h-2 w-2 animate-pulse rounded-full bg-emerald-400"
-              : "h-2 w-2 rounded-full bg-white/40"
+              ? "h-2 w-2 animate-pulse rounded-full bg-success"
+              : "h-2 w-2 rounded-full bg-muted-foreground/40"
           }
         />
       </span>
-      <Timer className="h-4 w-4 text-white/80" />
-      <span className="hidden text-xs text-white/70 lg:inline">Tempo ativo</span>
-      <span className="text-lg font-bold leading-none tabular-nums">{fmt(hoje)}</span>
+      <Timer className="h-4 w-4 text-primary" />
+      <span className="hidden text-xs text-muted-foreground lg:inline">Tempo ativo</span>
+      <span className="text-lg font-bold leading-none tabular-nums text-foreground">{fmt(hoje)}</span>
+
     </div>
   );
 }

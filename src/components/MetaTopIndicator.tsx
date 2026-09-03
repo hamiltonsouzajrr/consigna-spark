@@ -28,20 +28,21 @@ export function MetaTopIndicator() {
     <Link
       to="/producao/metas"
       title="Meta de produção do mês"
-      className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 transition hover:bg-white/20"
+      className="flex items-center gap-2 rounded-full bg-accent px-4 py-1 transition hover:bg-accent/80"
     >
-      <Target className="h-4 w-4 text-white/80" />
-      <span className="text-sm text-white/80">Meta do mês</span>
+      <Target className="h-4 w-4 text-primary" />
+      <span className="text-sm text-muted-foreground">Meta do mês</span>
       {meta > 0 ? (
         <>
-          <span className="text-xl font-bold leading-none tabular-nums">{pct}%</span>
-          <span className="h-1.5 w-16 overflow-hidden rounded-full bg-white/25">
-            <span className="block h-full rounded-full bg-emerald-400" style={{ width: `${pct}%` }} />
+          <span className="text-xl font-bold leading-none tabular-nums text-foreground">{pct}%</span>
+          <span className="h-1.5 w-16 overflow-hidden rounded-full bg-border">
+            <span className="block h-full rounded-full bg-success" style={{ width: `${pct}%` }} />
           </span>
         </>
       ) : (
-        <span className="text-sm font-semibold text-white/90">definir</span>
+        <span className="text-sm font-semibold text-foreground">definir</span>
       )}
+
     </Link>
   );
 }
