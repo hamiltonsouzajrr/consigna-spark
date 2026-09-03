@@ -11,3 +11,4 @@
 - [x] Radar: cartão admin com consultoras cadastradas sem conta + devolução dos leads invisíveis ao rateio
 - [x] Radar: fila verificada (385 itens concluídos, nenhum job travado, última edição 02/09)
 - [x] Radar: botão 1 clique para reiniciar todos os promovidos e redistribuir sem repetir a consultora dos últimos 7 dias
+- [x] Meta de 250 prospecções/dia: jornada + horário de almoço por consultora, ritmo por hora no topo e pop-up de cobrança a cada 30 min

@@ -16,6 +16,7 @@ import { FollowupPopup } from "@/components/prospeccao/FollowupPopup";
 import { PromovidosPopup } from "@/components/prospeccao/PromovidosPopup";
 import { CompeticaoPopup } from "@/components/prospeccao/CompeticaoPopup";
 import { MetaTopIndicator } from "@/components/MetaTopIndicator";
+import { RitmoDiario } from "@/components/prospeccao/RitmoDiario";
 import { CompleteProfileDialog } from "@/components/CompleteProfileDialog";
 import { AccessGuard } from "@/components/security/AccessGuard";
 import { SimultaneousAccessAlert } from "@/components/security/SimultaneousAccessAlert";
@@ -263,6 +264,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="text-xl font-bold leading-none tabular-nums text-foreground">{chamadas}</span>
             </div>
             <TempoAtivoBadge />
+            {!isAdmin && <RitmoDiario />}
             <MetaTopIndicator />
           </div>
           <div className="ml-auto flex items-center gap-4">
