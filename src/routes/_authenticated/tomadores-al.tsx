@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { telLink, whatsappLink } from "@/lib/prospeccao/constants";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { toast } from "sonner";
+import { ReiniciarTrabalhadosCard } from "@/components/prospeccao/ReiniciarTrabalhadosCard";
 import tomadoresAsset from "@/assets/tomadores_al.json.asset.json";
 import {
   getTomadoresAl, marcarAbordagemTomador, distribuirTomadoresAl, getDistribuicaoTomadoresAl,
