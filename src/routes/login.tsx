@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { useRhAccess } from "@/hooks/use-rh-access";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +38,8 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const { user, signIn, signUp, resetPassword } = useAuth();
   const nav = useNavigate();
+  const { isAdmin, isLoading: accessLoading } = useRhAccess();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -48,7 +52,12 @@ function LoginPage() {
   const [tab, setTab] = useState<"in" | "up">("in");
   const [avisoOpen, setAvisoOpen] = useState(false);
 
-  useEffect(() => { if (user) nav({ to: "/prospeccao" }); }, [user, nav]);
+  // Admin entra direto no hub de administração; consultora vai para o CRM.
+  useEffect(() => {
+    if (!user || accessLoading) return;
+    nav({ to: isAdmin ? "/admin" : "/prospeccao" });
+  }, [user, isAdmin, accessLoading, nav]);
+
 
   useEffect(() => {
     try {
@@ -238,7 +247,9 @@ function LoginPage() {
         // Redireciona assim que a sessão é confirmada; o AuthProvider também
         // atualiza o estado local imediatamente para não depender de evento
         // assíncrono de autenticação.
-        nav({ to: "/prospeccao", replace: true });
+        // O destino depende do papel (admin → /admin, consultora → /prospeccao)
+        // e é resolvido pelo efeito acima assim que o acesso é carregado.
+
       } else {
         toast.success("Conta criada com sucesso!");
       }

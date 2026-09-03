@@ -116,10 +116,12 @@ const sections: AdminSection[] = [
       },
       {
         to: "/prospeccao/qualidade",
-        label: "Qualidade das ligações",
-        description: "Volume, taxa de atendimento e resultados de chamada por consultora.",
+        label: "Qualidade e evolução da prospecção",
+        description:
+          "Semana vs. semana, mês a mês, follow-ups criados e qualidade das ligações por consultora.",
         icon: Activity,
       },
+
     ],
   },
   {

@@ -1,12 +1,14 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
+import { useRhAccess } from "@/hooks/use-rh-access";
 
 export const Route = createFileRoute("/")({ component: Index });
 
 function Index() {
   const { user, loading } = useAuth();
+  const { isAdmin, isLoading } = useRhAccess();
 
-  if (loading) {
+  if (loading || (user && isLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
         Carregando…
@@ -14,5 +16,7 @@ function Index() {
     );
   }
 
-  return <Navigate to={user ? "/rh/portal" : "/login"} />;
+  if (!user) return <Navigate to="/login" />;
+  // Administrador entra no hub de gestão; demais usuários no portal.
+  return <Navigate to={isAdmin ? "/admin" : "/rh/portal"} />;
 }

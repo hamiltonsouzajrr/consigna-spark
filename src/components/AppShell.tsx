@@ -31,20 +31,22 @@ const navSections: NavSection[] = [
   {
     section: "Simulação",
     items: [
-      { to: "/alagoas", label: "Prévia AL – Todos Bancos", full: "SIMULAÇÃO PRÉVIA ALAGOAS - TODOS BANCOS", icon: Calculator },
-      { to: "/calculadora-al", label: "Contracheque – GOV AL", full: "CALCULADORA POR CONTRA CHEQUE - GOV AL", icon: Calculator },
-      { to: "/simulacao-alagoas", label: "Banese", full: "SIMULAÇÃO BANESE", icon: Calculator },
+      { to: "/alagoas", label: "Prévia AL – Todos Bancos", full: "SIMULAÇÃO PRÉVIA ALAGOAS - TODOS BANCOS", icon: Calculator, consultoraOnly: true },
+      { to: "/calculadora-al", label: "Contracheque – GOV AL", full: "CALCULADORA POR CONTRA CHEQUE - GOV AL", icon: Calculator, consultoraOnly: true },
+      { to: "/simulacao-alagoas", label: "Banese", full: "SIMULAÇÃO BANESE", icon: Calculator, consultoraOnly: true },
     ],
   },
   {
     section: "Prospecção",
     items: [
-      { to: "/prospeccao", label: "CRM", full: "CRM DE PROSPECÇÃO - FILA, SCORE E FOLLOW-UP", icon: Phone, exact: true },
+      { to: "/prospeccao", label: "CRM", full: "CRM DE PROSPECÇÃO - FILA, SCORE E FOLLOW-UP", icon: Phone, exact: true, consultoraOnly: true },
       { to: "/tomadores-al", label: "Tomadores com Margem – AL", full: "CLIENTES TOMADORES COM MARGEM - AL", icon: Wallet },
-      { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: Users, badge: "leads" },
+      { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: Users, badge: "leads", consultoraOnly: true },
       { to: "/prospeccao/recentes", label: "Recentes Prospectados", icon: Flame, consultoraOnly: true },
-      { to: "/prospeccao/promovidos-recentes", label: "Promovidos Recentemente", full: "PROMOVIDOS RECENTEMENTE - ALTA CHANCE DE CONVERSÃO", icon: PartyPopper },
-      { to: "/prospeccao/followups", label: "Follow-ups", icon: CalendarClock, badge: "followups" },
+      { to: "/prospeccao/promovidos-recentes", label: "Promovidos Recentemente", full: "PROMOVIDOS RECENTEMENTE - ALTA CHANCE DE CONVERSÃO", icon: PartyPopper, consultoraOnly: true },
+      { to: "/prospeccao/followups", label: "Follow-ups", icon: CalendarClock, badge: "followups", consultoraOnly: true },
+      { to: "/prospeccao/admin", label: "Painel de leads", full: "PAINEL ADMINISTRATIVO DE LEADS", icon: LayoutDashboard, adminOnly: true },
+      { to: "/prospeccao/qualidade", label: "Qualidade de leads", full: "QUALIDADE E EVOLUÇÃO DA PROSPECÇÃO", icon: Target, adminOnly: true },
       { to: "/radar", label: "Radar Diário Oficial", full: "RADAR DIÁRIO OFICIAL - PROMOÇÕES E PROGRESSÕES", icon: Radar, adminOnly: true },
     ],
   },
@@ -60,10 +62,11 @@ const navSections: NavSection[] = [
   {
     section: "Pós-venda",
     items: [
-      { to: "/pos-venda/avaliacoes", label: "Avaliações", icon: Star },
-      { to: "/qrcodes", label: "QR Codes", icon: QrCode },
+      { to: "/pos-venda/avaliacoes", label: "Avaliações", icon: Star, consultoraOnly: true },
+      { to: "/qrcodes", label: "QR Codes", icon: QrCode, consultoraOnly: true },
     ],
   },
+
   {
     section: "Painel",
     items: [

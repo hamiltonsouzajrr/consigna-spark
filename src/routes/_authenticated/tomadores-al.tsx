@@ -662,8 +662,11 @@ function Page() {
         )}
 
 
-
+        {/* Área operacional (filtros, carteira e cards de lead): só consultoras. */}
+        {!isAdmin && (
+        <>
         <div className="grid gap-4 rounded-xl border border-border/60 bg-card p-4 md:grid-cols-2 lg:grid-cols-5">
+
           <div>
             <Label className="text-xs">Buscar por nome ou CPF</Label>
             <div className="relative">
@@ -1076,7 +1079,10 @@ function Page() {
             <Button variant="outline" size="sm" disabled={page + 1 >= pages} onClick={() => setPage((p) => p + 1)}>Próxima</Button>
           </div>
         )}
+        </>
+        )}
       </div>
+
     </AppShell>
   );
 }
