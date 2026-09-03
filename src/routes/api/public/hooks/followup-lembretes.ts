@@ -1,9 +1,12 @@
-// Gatilho automático dos lembretes de follow-up (pode ser chamado por rotina
-// externa/pg_cron). Somente dispara notificações internas — não retorna dados
-// pessoais além das contagens agregadas.
+// Gatilho automático dos lembretes de follow-up (chamado por rotina interna).
+// Exige o segredo dedicado das rotinas automáticas.
 import { createFileRoute } from "@tanstack/react-router";
+import { autorizarCron } from "@/lib/security/cron-auth.server";
 
-async function run() {
+async function run(request: Request) {
+  const auth = await autorizarCron(request);
+  if (!auth.ok) return auth.response;
+
   const { dispararLembretesFollowup } = await import("@/lib/prospeccao/followups.server");
   try {
     const res = await dispararLembretesFollowup();
@@ -19,5 +22,5 @@ async function run() {
 }
 
 export const Route = createFileRoute("/api/public/hooks/followup-lembretes")({
-  server: { handlers: { GET: () => run(), POST: () => run() } },
+  server: { handlers: { GET: ({ request }) => run(request), POST: ({ request }) => run(request) } },
 });
