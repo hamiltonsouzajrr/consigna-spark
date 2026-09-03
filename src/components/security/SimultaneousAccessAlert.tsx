@@ -17,7 +17,8 @@ export function SimultaneousAccessAlert() {
   const { data } = useQuery({
     queryKey: ["security-incidents", "pendentes"],
     queryFn: () => fetchIncidents({ data: { pendentes: true, dias: 7 } }),
-    refetchInterval: 30_000,
+    refetchInterval: 120_000,
+    refetchOnWindowFocus: false,
   });
 
   const liberar = useMutation({

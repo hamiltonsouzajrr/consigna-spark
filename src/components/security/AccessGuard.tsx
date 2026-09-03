@@ -40,7 +40,7 @@ export function AccessGuard({ children }: { children: React.ReactNode }) {
     queryKey: ["access-state", sessionKey],
     enabled: !!sessionKey && !!user,
     queryFn: () => pulse({ data: { sessionKey: sessionKey! } }),
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
     refetchOnWindowFocus: true,
     staleTime: 0,
   });

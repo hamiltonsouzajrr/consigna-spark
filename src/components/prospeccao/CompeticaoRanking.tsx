@@ -33,7 +33,7 @@ export function CompeticaoRanking({ compact = false }: { compact?: boolean }) {
   const { data, isLoading } = useQuery({
     queryKey: ["competicao"],
     queryFn: () => fetchCompeticao(),
-    refetchInterval: 60_000,
+    refetchInterval: 180_000,
   });
   const countdown = useCountdown(data?.closes_at);
 
