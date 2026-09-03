@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { refillMyQueue } from "@/lib/prospeccao/prospeccao.functions";
 import { CrmCockpit } from "@/components/prospeccao/CrmCockpit";
 import { CrmCockpitAdmin } from "@/components/prospeccao/CrmCockpitAdmin";
+import { ProspeccaoCharts } from "@/components/prospeccao/ProspeccaoCharts";
+
 import { registrarContato, registrarQualificacao, agendarFollowup } from "@/lib/prospeccao/competicao.functions";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
@@ -367,6 +369,13 @@ function Page() {
         <RhStatCard label="Taxa de conversão" value={`${stats.conversao}%`} icon={Target} tone="emerald" />
         <RhStatCard label="1ª resposta (méd.)" value={stats.avgMin ? `${stats.avgMin} min` : "—"} icon={Timer} tone="violet" />
       </div>
+
+      <div className="mt-6">
+        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Indicadores</h2>
+        <ProspeccaoCharts />
+      </div>
+
+
 
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
