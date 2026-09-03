@@ -14,7 +14,7 @@ export async function logAdminAction(entry: {
       actor_id: entry.actorId,
       actor_email: entry.actorEmail ?? null,
       action: entry.action,
-      detail: entry.detail ?? {},
+      detail: (entry.detail ?? {}) as never,
     });
   } catch {
     // auditoria é best-effort
