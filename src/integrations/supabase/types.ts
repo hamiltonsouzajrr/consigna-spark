@@ -2379,6 +2379,41 @@ export type Database = {
         }
         Relationships: []
       }
+      tomadores_al_atendimentos: {
+        Row: {
+          consultora_nome: string
+          created_at: string
+          finalizado_em: string | null
+          id: string
+          status_final: string | null
+          tomador_id: string
+        }
+        Insert: {
+          consultora_nome: string
+          created_at?: string
+          finalizado_em?: string | null
+          id?: string
+          status_final?: string | null
+          tomador_id: string
+        }
+        Update: {
+          consultora_nome?: string
+          created_at?: string
+          finalizado_em?: string | null
+          id?: string
+          status_final?: string | null
+          tomador_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tomadores_al_atendimentos_tomador_id_fkey"
+            columns: ["tomador_id"]
+            isOneToOne: false
+            referencedRelation: "tomadores_al"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2669,6 +2704,13 @@ export type Database = {
           _user_id: string
         }
         Returns: number
+      }
+      reiniciar_tomadores_trabalhados: {
+        Args: { _dias_min?: number; _limite?: number; _status?: string[] }
+        Returns: {
+          historicos: number
+          reiniciados: number
+        }[]
       }
       sync_radar_consultoras: { Args: never; Returns: number }
     }
