@@ -1,11 +1,11 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   LayoutDashboard, Users, Building2, BriefcaseBusiness, Plane, Clock,
   FileText, GraduationCap, Laptop, Star, AlertTriangle, UserSearch,
   ClipboardCheck, UserMinus, Network, ReceiptText, HeartHandshake,
   Target, Gauge, TrendingDown, IdCard,
-  Goal, Award, ShieldCheck, Lock, LineChart,
+  Goal, Award, ShieldCheck, Lock, LineChart, ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -76,31 +76,64 @@ export function RhLayout({ children }: { children: ReactNode }) {
     (ADMIN_ONLY.has(current.to) ? !canOpenAdminOnly : !canAccess(current.to));
 
 
+  // Abas realmente usadas no dia a dia ficam sempre visíveis; o restante
+  // continua acessível, mas recolhido para não poluir o menu.
+  const essenciais = new Set<string>([
+    "/rh/dashboard",
+    "/rh/colaboradores",
+    "/rh/portal",
+    "/rh/producao",
+    "/rh/ocorrencias",
+    "/rh/reconhecimentos",
+    "/rh/acessos",
+  ]);
+  const principais = items.filter((n) => essenciais.has(n.to));
+  const avancados = items.filter((n) => !essenciais.has(n.to));
+  const avancadoAtivo = avancados.some((n) => loc.pathname.startsWith(n.to));
+  const [showAvancados, setShowAvancados] = useState(avancadoAtivo);
+
+  const renderLink = (n: { to: string; label: string; icon: typeof Lock }) => {
+    const active = loc.pathname.startsWith(n.to);
+    const Icon = n.icon;
+    return (
+      <Link
+        key={n.to}
+        to={n.to}
+        className={cn(
+          "flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+          active
+            ? "bg-gradient-to-r from-primary to-blue-500 text-primary-foreground shadow-sm shadow-primary/25"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground active:scale-[0.98]",
+        )}
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        <span>{n.label}</span>
+      </Link>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-6 lg:flex-row">
       <aside className="lg:w-60 lg:shrink-0">
         <nav className="flex gap-1 overflow-x-auto rounded-xl border bg-card p-2 lg:flex-col lg:overflow-visible">
-          {items.map((n) => {
-            const active = loc.pathname.startsWith(n.to);
-            const Icon = n.icon;
-            return (
-              <Link
-                key={n.to}
-                to={n.to}
-                className={cn(
-                  "flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
-                  active
-                    ? "bg-gradient-to-r from-primary to-blue-500 text-primary-foreground shadow-sm shadow-primary/25"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground active:scale-[0.98]",
-                )}
+          {principais.map((n) => renderLink(n))}
+          {avancados.length > 0 && (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowAvancados((v) => !v)}
+                className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:bg-muted hover:text-foreground"
               >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span>{n.label}</span>
-              </Link>
-            );
-          })}
+                <ChevronDown className={cn("h-3.5 w-3.5 transition", showAvancados && "rotate-180")} />
+                Módulos avançados
+                <Badge variant="secondary" className="text-[10px]">{avancados.length}</Badge>
+              </button>
+              {showAvancados && avancados.map((n) => renderLink(n))}
+            </>
+          )}
         </nav>
       </aside>
+
       <div className="min-w-0 flex-1">
         <div className="mb-4 flex justify-end">
           <NotificationBell />

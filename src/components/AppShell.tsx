@@ -76,34 +76,6 @@ const navSections: NavSection[] = [
 
 
 
-function useLeadsCount(enabled: boolean) {
-  const [count, setCount] = useState<number | null>(null);
-  useEffect(() => {
-    if (!enabled) return;
-    let cancelled = false;
-    const load = async () => {
-      const { count, error } = await supabase
-        .from("safeconsig_leads")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "sem_email");
-      if (!cancelled && !error) setCount(count ?? 0);
-    };
-    load();
-    const ch = supabase
-      .channel("safeconsig_leads_count")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "safeconsig_leads" },
-        () => load(),
-      )
-      .subscribe();
-    return () => {
-      cancelled = true;
-      supabase.removeChannel(ch);
-    };
-  }, [enabled]);
-  return count;
-}
 
 function useFollowupsCount(enabled: boolean) {
   const [count, setCount] = useState<number | null>(null);
@@ -201,7 +173,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     .filter((s) => s.items.length > 0);
   const nav2 = useNavigate();
   const loc = useLocation();
-  const leadsCount = useLeadsCount(!!user);
   const followupsCount = useFollowupsCount(!!user);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -210,7 +181,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       ? loc.pathname === n.to
       : loc.pathname === n.to || loc.pathname.startsWith(n.to + "/");
     const Icon = n.icon;
-    const count = n.badge === "leads" ? leadsCount : n.badge === "followups" ? followupsCount : null;
+    const count = n.badge === "followups" ? followupsCount : null;
     const baseTone =
       n.badge === "followups" ? "bg-orange-500 text-white hover:bg-orange-600" : "bg-emerald-600 text-white hover:bg-emerald-700";
     return (
@@ -330,7 +301,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/10">
                 <Menu className="h-5 w-5" />
-                {((leadsCount ?? 0) > 0 || (followupsCount ?? 0) > 0) && (
+                {(followupsCount ?? 0) > 0 && (
                   <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-orange-500" />
                 )}
               </Button>

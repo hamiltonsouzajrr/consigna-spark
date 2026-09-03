@@ -15,11 +15,16 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   LineChart, Line, ReferenceLine,
 } from "recharts";
+import { AdminGate } from "@/components/security/AdminGate";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/prospeccao/qualidade")({
   head: () => ({ meta: [{ title: "Qualidade de ligações — Prospecção" }, { name: "robots", content: "noindex,nofollow" }] }),
-  component: Page,
+  component: () => (
+    <AdminGate>
+      <Page />
+    </AdminGate>
+  ),
 });
 
 function Page() {
@@ -40,9 +45,6 @@ function Page() {
     return () => { cancelled = true; };
   }, [user, isAdmin, fetchStats]);
 
-  if (loading) return null;
-  if (!user) return <Navigate to="/login" />;
-  if (!isAdmin) return <Navigate to="/prospeccao" />;
 
   return (
     <AppShell>

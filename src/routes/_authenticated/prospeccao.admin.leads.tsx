@@ -19,9 +19,14 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter 
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { AdminGate } from "@/components/security/AdminGate";
 
 export const Route = createFileRoute("/_authenticated/prospeccao/admin/leads")({
-  component: LeadsAdminPage,
+  component: () => (
+    <AdminGate>
+      <LeadsAdminPage />
+    </AdminGate>
+  ),
 });
 
 function LeadsAdminPage() {

@@ -221,7 +221,15 @@ export const distribuirPromovidosAgora = createServerFn({ method: "POST" })
     });
     if (!isAdminRaw) throw new Error("Acesso restrito a administradores.");
     const { distribuirPendentes } = await import("@/lib/radar/distribuicao.server");
-    return distribuirPendentes(2000);
+    const r = await distribuirPendentes(2000);
+    const { logAdminAction } = await import("@/lib/admin/audit.server");
+    await logAdminAction({
+      actorId: context.userId,
+      actorEmail: (context.claims as { email?: string } | undefined)?.email ?? null,
+      action: "radar_distribuir_pendentes",
+      detail: r,
+    });
+    return r;
   });
 
 async function assertAdminCtx(context: any) {
@@ -246,7 +254,15 @@ export const redistribuirPromovidosIgualmente = createServerFn({ method: "POST" 
   .handler(async ({ context, data }): Promise<{ atribuidos: number; consultoras: number }> => {
     await assertAdminCtx(context);
     const { redistribuirIgualmente } = await import("@/lib/radar/distribuicao.server");
-    return redistribuirIgualmente(data.janelaDias ?? null, data.incluirAbordados ?? false);
+    const r = await redistribuirIgualmente(data.janelaDias ?? null, data.incluirAbordados ?? false);
+    const { logAdminAction } = await import("@/lib/admin/audit.server");
+    await logAdminAction({
+      actorId: context.userId,
+      actorEmail: (context.claims as { email?: string } | undefined)?.email ?? null,
+      action: "radar_redistribuir_igualmente",
+      detail: { ...r, ...data },
+    });
+    return r;
   });
 
 export type CarteiraResumoItem = {
@@ -288,12 +304,20 @@ export const redistribuirPromovidosPorDesempenho = createServerFn({ method: "POS
     }): Promise<{ atribuidos: number; consultoras: number; topConsultora: string | null; topPeso: number }> => {
       await assertAdminCtx(context);
       const { redistribuirPorDesempenho } = await import("@/lib/radar/distribuicao.server");
-      return redistribuirPorDesempenho(
+      const r = await redistribuirPorDesempenho(
         data.diasDesempenho ?? 14,
         data.janelaDias ?? null,
         data.pesoMax ?? 4,
         data.status?.length ? data.status : ["novo"],
         data.somenteNaoContatados ?? true,
       );
+      const { logAdminAction } = await import("@/lib/admin/audit.server");
+      await logAdminAction({
+        actorId: context.userId,
+        actorEmail: (context.claims as { email?: string } | undefined)?.email ?? null,
+        action: "radar_redistribuir_desempenho",
+        detail: { ...r, ...data },
+      });
+      return r;
     },
   );

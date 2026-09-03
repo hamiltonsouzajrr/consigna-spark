@@ -9,6 +9,7 @@ import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AdminGate } from "@/components/security/AdminGate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RhStatCard } from "@/components/rh/RhStatCard";
@@ -49,7 +50,11 @@ export const Route = createFileRoute("/_authenticated/prospeccao/admin")({
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
-  component: Page,
+  component: () => (
+    <AdminGate>
+      <Page />
+    </AdminGate>
+  ),
 });
 
 type Consultant = { id: string; email: string };
@@ -107,8 +112,6 @@ function Page() {
       </AppShell>
     );
   }
-  if (!user) return <Navigate to="/login" />;
-  if (!isAdmin) return <Navigate to="/prospeccao" />;
 
   const toggleConsultant = (id: string) =>
     setSelectedConsultants((prev) => {
@@ -356,7 +359,7 @@ function Page() {
 
         {/* 5. Controle de Acessos */}
         <TabsContent value="acessos">
-          <AcessosTab currentUserId={user.id} />
+          <AcessosTab currentUserId={user!.id} />
         </TabsContent>
       </Tabs>
     </AppShell>
