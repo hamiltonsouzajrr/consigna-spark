@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Shuffle, RefreshCw, Dices, Eraser, Scale, TrendingUp, UserX } from "lucide-react";
+import { Shuffle, RefreshCw, Dices, Eraser, Scale, TrendingUp, UserX, RotateCcw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   redistribuirPromovidosIgualmente,
   redistribuirPromovidosPorDesempenho,
   getResumoCarteiras,
+  reiniciarPromovidosTodos,
 } from "@/lib/radar/promovidos-recentes.functions";
 import { revogarAcessosInativosTomadoresAl } from "@/lib/prospeccao/tomadores-al.functions";
 import { previewSplit } from "@/lib/prospeccao/admin-import";
@@ -62,7 +63,9 @@ export function DistribuicaoTab({
   const [revokeAccess, setRevokeAccess] = useState(true);
   const redistribuirRadar = useServerFn(redistribuirPromovidosIgualmente);
   const fetchResumo = useServerFn(getResumoCarteiras);
+  const reiniciarTodosPromovidos = useServerFn(reiniciarPromovidosTodos);
   const [incluirAbordados, setIncluirAbordados] = useState(false);
+  const [diasBloqueioReinicio, setDiasBloqueioReinicio] = useState(7);
   const redistribuirDesempenho = useServerFn(redistribuirPromovidosPorDesempenho);
   const [diasDesempenho, setDiasDesempenho] = useState(14);
   const [pesoMax, setPesoMax] = useState(4);
@@ -141,6 +144,26 @@ export function DistribuicaoTab({
       resumo.refetch();
       qc.invalidateQueries({ queryKey: ["promovidos-recentes"] });
     } catch (e) { toast.error(e instanceof Error ? e.message : "Falha ao redistribuir."); }
+    setBusy(false);
+  };
+
+  const runReiniciarPromovidos = async () => {
+    setBusy(true);
+    try {
+      const d = await reiniciarTodosPromovidos({
+        data: { diasBloqueio: diasBloqueioReinicio, janelaDias: null },
+      });
+      if (d.consultoras === 0) toast.error("Nenhuma consultora ativa com conta no sistema.");
+      else
+        toast.success(
+          `${d.reiniciados} promovido(s) reiniciado(s) e ${d.atribuidos} entregue(s) a ${d.consultoras} consultora(s).` +
+            (d.semDono > 0 ? ` ${d.semDono} ficaram no estoque para evitar repetição.` : ""),
+        );
+      resumo.refetch();
+      qc.invalidateQueries({ queryKey: ["promovidos-recentes"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao reiniciar os promovidos.");
+    }
     setBusy(false);
   };
 
@@ -366,6 +389,43 @@ export function DistribuicaoTab({
               <Scale className="mr-2 h-4 w-4" /> Redistribuir igualmente agora
             </Button>
           </ConfirmDialog>
+
+          <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-3 dark:border-amber-900/40 dark:bg-amber-950/20">
+            <p className="mb-1 flex items-center gap-2 text-sm font-medium">
+              <RotateCcw className="h-4 w-4" /> Reiniciar todos os recém-promovidos (1 clique)
+            </p>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Zera o status de todos os promovidos e reparte de novo entre todas as consultoras com
+              conta no sistema. O mesmo lead não volta para quem já o atendeu nos últimos{" "}
+              {diasBloqueioReinicio} dia(s); se não houver ninguém livre, ele fica no estoque.
+            </p>
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <Label className="text-xs">Bloqueio de repetição (dias)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={90}
+                  value={diasBloqueioReinicio}
+                  onChange={(e) =>
+                    setDiasBloqueioReinicio(Math.max(0, Math.min(90, Number(e.target.value) || 7)))
+                  }
+                  className="mt-1 h-8 w-24"
+                />
+              </div>
+              <ConfirmDialog
+                title="Reiniciar e redistribuir todos os promovidos?"
+                description={`Todos os promovidos voltam para o status novo, o histórico de atendimento é guardado e a entrega é refeita entre as consultoras ativas — sem repetir quem atendeu o lead nos últimos ${diasBloqueioReinicio} dia(s).`}
+                confirmLabel="Reiniciar e redistribuir"
+                requireText="REINICIAR"
+                onConfirm={runReiniciarPromovidos}
+              >
+                <Button disabled={busy}>
+                  <RotateCcw className="mr-2 h-4 w-4" /> Reiniciar todos agora
+                </Button>
+              </ConfirmDialog>
+            </div>
+          </div>
 
           <div className="mt-4 rounded-md border border-primary/30 bg-primary/5 p-3">
             <p className="mb-1 flex items-center gap-2 text-sm font-medium">
