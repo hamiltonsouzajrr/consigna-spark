@@ -78,6 +78,8 @@ function Page() {
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState({ novosHoje: 0, novos7d: 0, semCpf: 0, naoAbordados: 0 });
   const [ultimaEntrega, setUltimaEntrega] = useState<string | null>(null);
+  const [foraDaJanela, setForaDaJanela] = useState(false);
+  const [ultimaPublicacao, setUltimaPublicacao] = useState<string | null>(null);
   const [consultoraNome, setConsultoraNome] = useState<string | null>(null);
   const [vinculada, setVinculada] = useState(false);
   const [loading, setLoading] = useState(true);
