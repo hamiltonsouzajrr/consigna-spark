@@ -579,14 +579,15 @@ export const marcarAbordagemTomador = createServerFn({ method: "POST" })
     const { error } = await client.from("tomadores_al").update(patch as any).eq("id", data.id);
     if (error) throw new Error(error.message);
 
-    // Campanha da semana: venda fechada vale o bônus (igual ao "ganho" do CRM).
-    // Voltar para "novo" ou encerrar sem interesse estorna o bônus.
+    // Campanha da semana: a venda fechada fica em stand-by e só pontua depois
+    // que o gerente confere e confirma no painel. Voltar para "novo" ou
+    // encerrar sem interesse cancela a pendência e estorna o bônus.
     try {
-      const { creditar, estornar } = await import("./competicao.server");
+      const { registrarVendaPendente, cancelarVenda } = await import("./competicao.server");
       if (data.status === "convertido") {
-        await creditar(context.userId, "ganho", "tomadores_al", data.id, "Tomador convertido");
+        await registrarVendaPendente(context.userId, "tomadores_al", "tomadores_al", data.id, null, "Tomador convertido");
       } else if (data.status === "novo" || data.status === "sem_interesse") {
-        await estornar("tomadores_al", data.id, ["ganho"], `status ${data.status}`);
+        await cancelarVenda("tomadores_al", data.id, `status ${data.status}`);
       }
     } catch { /* pontuação nunca bloqueia a atualização do lead */ }
 

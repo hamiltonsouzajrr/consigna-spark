@@ -167,3 +167,175 @@ export async function assertNaoAdmin(userId: string) {
 }
 
 export { admin as adminClient, isAdminUser };
+
+// ---------------------------------------------------------------------------
+// Vendas fechadas em stand-by: nenhuma venda pontua antes da conferência do
+// gerente/administrador. A consultora registra, o admin confirma ou recusa.
+// ---------------------------------------------------------------------------
+
+export type VendaOrigem = "crm" | "tomadores_al";
+
+export type VendaPendente = {
+  id: string;
+  user_id: string;
+  nome: string;
+  origem: VendaOrigem;
+  ref_tabela: string;
+  ref_id: string;
+  cliente_nome: string | null;
+  week_start: string;
+  status: "pendente" | "confirmada" | "recusada";
+  pontos_creditados: number;
+  motivo: string | null;
+  motivo_recusa: string | null;
+  revisado_em: string | null;
+  created_at: string;
+};
+
+/** Registra (ou reaproveita) a venda pendente. Nunca credita pontos. */
+export async function registrarVendaPendente(
+  userId: string,
+  origem: VendaOrigem,
+  refTabela: string,
+  refId: string,
+  clienteNome?: string | null,
+  motivo?: string | null,
+): Promise<{ pendente: boolean; jaConfirmada: boolean }> {
+  const db = await admin();
+  await garantirSemana();
+
+  const { data: existentes } = await db
+    .from("prospect_vendas")
+    .select("id,status")
+    .eq("ref_tabela", refTabela)
+    .eq("ref_id", refId)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  const rows = (existentes ?? []) as { id: string; status: string }[];
+  if (rows.some((r) => r.status === "confirmada")) return { pendente: false, jaConfirmada: true };
+  if (rows.some((r) => r.status === "pendente")) return { pendente: true, jaConfirmada: false };
+
+  await db.from("prospect_vendas").insert({
+    user_id: userId,
+    origem,
+    ref_tabela: refTabela,
+    ref_id: refId,
+    cliente_nome: clienteNome ?? null,
+    week_start: weekStart(),
+    status: "pendente",
+    motivo: motivo ?? "Venda fechada",
+  } as any);
+
+  return { pendente: true, jaConfirmada: false };
+}
+
+/** Cancela a pendência (lead voltou atrás) e estorna qualquer ponto já dado. */
+export async function cancelarVenda(refTabela: string, refId: string, motivo: string) {
+  const db = await admin();
+  await db
+    .from("prospect_vendas")
+    .delete()
+    .eq("ref_tabela", refTabela)
+    .eq("ref_id", refId)
+    .eq("status", "pendente");
+  await db
+    .from("prospect_vendas")
+    .update({ status: "recusada", motivo_recusa: motivo, revisado_em: new Date().toISOString() } as any)
+    .eq("ref_tabela", refTabela)
+    .eq("ref_id", refId)
+    .eq("status", "confirmada");
+  await estornar(refTabela, refId, ["ganho"], motivo);
+}
+
+export async function listarVendas(status?: "pendente" | "confirmada" | "recusada", limit = 100): Promise<VendaPendente[]> {
+  const db = await admin();
+  let q = db
+    .from("prospect_vendas")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (status) q = q.eq("status", status);
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as any[];
+
+  const ids = [...new Set(rows.map((r) => r.user_id))];
+  const nomes = new Map<string, string>();
+  if (ids.length) {
+    const { data: profs } = await db.from("profiles").select("user_id,nome_completo").in("user_id", ids);
+    for (const p of profs ?? []) nomes.set(p.user_id, p.nome_completo);
+  }
+
+  // Nome do cliente quando não foi salvo no registro.
+  const semNome = rows.filter((r) => !r.cliente_nome);
+  const leadIds = semNome.filter((r) => r.ref_tabela === "prospect_leads").map((r) => r.ref_id);
+  const tomadorIds = semNome.filter((r) => r.ref_tabela === "tomadores_al").map((r) => r.ref_id);
+  const clientes = new Map<string, string>();
+  if (leadIds.length) {
+    const { data: leads } = await db.from("prospect_leads").select("id,nome").in("id", leadIds);
+    for (const l of leads ?? []) clientes.set(l.id, l.nome);
+  }
+  if (tomadorIds.length) {
+    const { data: toms } = await db.from("tomadores_al").select("id,nome").in("id", tomadorIds);
+    for (const t of toms ?? []) clientes.set(t.id, t.nome);
+  }
+
+  return rows.map((r) => ({
+    ...r,
+    nome: nomes.get(r.user_id) ?? "Consultora",
+    cliente_nome: r.cliente_nome ?? clientes.get(r.ref_id) ?? null,
+  })) as VendaPendente[];
+}
+
+/** Confirma a venda e só então credita os pontos de "ganho". */
+export async function confirmarVenda(vendaId: string, adminUserId: string): Promise<{ pontos: number }> {
+  const db = await admin();
+  const { data: venda } = await db.from("prospect_vendas").select("*").eq("id", vendaId).maybeSingle();
+  if (!venda) throw new Error("Venda não encontrada.");
+  if (venda.status === "confirmada") return { pontos: venda.pontos_creditados ?? 0 };
+
+  const semana = await garantirSemana();
+  if (semana?.pausada) throw new Error("Competição pausada — retome antes de confirmar vendas.");
+
+  const pontos = await creditar(
+    venda.user_id,
+    "ganho",
+    venda.ref_tabela,
+    venda.ref_id,
+    venda.motivo ?? "Venda confirmada pelo gerente",
+  );
+
+  await db
+    .from("prospect_vendas")
+    .update({
+      status: "confirmada",
+      pontos_creditados: pontos,
+      motivo_recusa: null,
+      revisado_por: adminUserId,
+      revisado_em: new Date().toISOString(),
+    } as any)
+    .eq("id", vendaId);
+
+  return { pontos };
+}
+
+/** Recusa a venda; se já havia sido confirmada, estorna os pontos. */
+export async function recusarVenda(vendaId: string, adminUserId: string, motivo: string) {
+  const db = await admin();
+  const { data: venda } = await db.from("prospect_vendas").select("*").eq("id", vendaId).maybeSingle();
+  if (!venda) throw new Error("Venda não encontrada.");
+  if (venda.status === "confirmada") {
+    await estornar(venda.ref_tabela, venda.ref_id, ["ganho"], `venda recusada: ${motivo}`);
+  }
+  await db
+    .from("prospect_vendas")
+    .update({
+      status: "recusada",
+      pontos_creditados: 0,
+      motivo_recusa: motivo,
+      revisado_por: adminUserId,
+      revisado_em: new Date().toISOString(),
+    } as any)
+    .eq("id", vendaId);
+}

@@ -22,6 +22,7 @@ import {
 } from "@/lib/prospeccao/competicao.functions";
 
 import { ConfirmDialog } from "./ConfirmDialog";
+import { VendasConferenciaCard } from "./VendasConferenciaCard";
 
 export function CompeticaoTab() {
   const qc = useQueryClient();
@@ -146,6 +147,11 @@ export function CompeticaoTab() {
           </Button>
         </div>
       </Card>
+
+      {/* Vendas fechadas em stand-by */}
+      <VendasConferenciaCard />
+
+
 
       {/* Alertas automáticos de comportamento suspeito */}
       <Card className="p-4">
