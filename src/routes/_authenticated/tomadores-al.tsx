@@ -323,6 +323,12 @@ function Page() {
       } else {
         toast.success("Situação atualizada.");
       }
+      if (status === "convertido") {
+        toast.info(
+          "Venda registrada. Aguardando conferência do gerente (peça a verificação: os pontos só entram depois que ele confirmar sua venda).",
+          { duration: 8000 },
+        );
+      }
       // Ao finalizar, a lista é recarregada para já mostrar os substitutos do estoque.
       if (finalizado || repostos > 0) {
         if (page !== 0) setPage(0);
