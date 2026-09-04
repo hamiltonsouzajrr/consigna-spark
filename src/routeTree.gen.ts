@@ -39,6 +39,7 @@ import { Route as AuthenticatedProspeccaoLeadIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedProspeccaoAdminRouteImport } from './routes/_authenticated/prospeccao.admin'
 import { Route as AuthenticatedProspeccaoDashboardRouteImport } from './routes/_authenticated/prospeccao.dashboard'
 import { Route as AuthenticatedProspeccaoFollowupsRouteImport } from './routes/_authenticated/prospeccao.followups'
+import { Route as AuthenticatedProspeccaoMinhaSemanaRouteImport } from './routes/_authenticated/prospeccao.minha-semana'
 import { Route as AuthenticatedProspeccaoPromovidosRouteImport } from './routes/_authenticated/prospeccao.promovidos'
 import { Route as AuthenticatedProspeccaoPromovidosRecentementeRouteImport } from './routes/_authenticated/prospeccao.promovidos-recentemente'
 import { Route as AuthenticatedProspeccaoPromovidosRecentesRouteImport } from './routes/_authenticated/prospeccao.promovidos-recentes'
@@ -251,6 +252,12 @@ const AuthenticatedProspeccaoFollowupsRoute =
   AuthenticatedProspeccaoFollowupsRouteImport.update({
     id: '/prospeccao/followups',
     path: '/prospeccao/followups',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProspeccaoMinhaSemanaRoute =
+  AuthenticatedProspeccaoMinhaSemanaRouteImport.update({
+    id: '/prospeccao/minha-semana',
+    path: '/prospeccao/minha-semana',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProspeccaoPromovidosRoute =
@@ -572,6 +579,7 @@ export interface FileRoutesByFullPath {
   '/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRouteWithChildren
   '/prospeccao/dashboard': typeof AuthenticatedProspeccaoDashboardRoute
   '/prospeccao/followups': typeof AuthenticatedProspeccaoFollowupsRoute
+  '/prospeccao/minha-semana': typeof AuthenticatedProspeccaoMinhaSemanaRoute
   '/prospeccao/promovidos': typeof AuthenticatedProspeccaoPromovidosRoute
   '/prospeccao/promovidos-recentemente': typeof AuthenticatedProspeccaoPromovidosRecentementeRoute
   '/prospeccao/promovidos-recentes': typeof AuthenticatedProspeccaoPromovidosRecentesRoute
@@ -651,6 +659,7 @@ export interface FileRoutesByTo {
   '/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRouteWithChildren
   '/prospeccao/dashboard': typeof AuthenticatedProspeccaoDashboardRoute
   '/prospeccao/followups': typeof AuthenticatedProspeccaoFollowupsRoute
+  '/prospeccao/minha-semana': typeof AuthenticatedProspeccaoMinhaSemanaRoute
   '/prospeccao/promovidos': typeof AuthenticatedProspeccaoPromovidosRoute
   '/prospeccao/promovidos-recentemente': typeof AuthenticatedProspeccaoPromovidosRecentementeRoute
   '/prospeccao/promovidos-recentes': typeof AuthenticatedProspeccaoPromovidosRecentesRoute
@@ -733,6 +742,7 @@ export interface FileRoutesById {
   '/_authenticated/prospeccao/admin': typeof AuthenticatedProspeccaoAdminRouteWithChildren
   '/_authenticated/prospeccao/dashboard': typeof AuthenticatedProspeccaoDashboardRoute
   '/_authenticated/prospeccao/followups': typeof AuthenticatedProspeccaoFollowupsRoute
+  '/_authenticated/prospeccao/minha-semana': typeof AuthenticatedProspeccaoMinhaSemanaRoute
   '/_authenticated/prospeccao/promovidos': typeof AuthenticatedProspeccaoPromovidosRoute
   '/_authenticated/prospeccao/promovidos-recentemente': typeof AuthenticatedProspeccaoPromovidosRecentementeRoute
   '/_authenticated/prospeccao/promovidos-recentes': typeof AuthenticatedProspeccaoPromovidosRecentesRoute
@@ -816,6 +826,7 @@ export interface FileRouteTypes {
     | '/prospeccao/admin'
     | '/prospeccao/dashboard'
     | '/prospeccao/followups'
+    | '/prospeccao/minha-semana'
     | '/prospeccao/promovidos'
     | '/prospeccao/promovidos-recentemente'
     | '/prospeccao/promovidos-recentes'
@@ -895,6 +906,7 @@ export interface FileRouteTypes {
     | '/prospeccao/admin'
     | '/prospeccao/dashboard'
     | '/prospeccao/followups'
+    | '/prospeccao/minha-semana'
     | '/prospeccao/promovidos'
     | '/prospeccao/promovidos-recentemente'
     | '/prospeccao/promovidos-recentes'
@@ -976,6 +988,7 @@ export interface FileRouteTypes {
     | '/_authenticated/prospeccao/admin'
     | '/_authenticated/prospeccao/dashboard'
     | '/_authenticated/prospeccao/followups'
+    | '/_authenticated/prospeccao/minha-semana'
     | '/_authenticated/prospeccao/promovidos'
     | '/_authenticated/prospeccao/promovidos-recentemente'
     | '/_authenticated/prospeccao/promovidos-recentes'
@@ -1258,6 +1271,13 @@ declare module '@tanstack/react-router' {
       path: '/prospeccao/followups'
       fullPath: '/prospeccao/followups'
       preLoaderRoute: typeof AuthenticatedProspeccaoFollowupsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/prospeccao/minha-semana': {
+      id: '/_authenticated/prospeccao/minha-semana'
+      path: '/prospeccao/minha-semana'
+      fullPath: '/prospeccao/minha-semana'
+      preLoaderRoute: typeof AuthenticatedProspeccaoMinhaSemanaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/prospeccao/promovidos': {
@@ -1766,6 +1786,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProspeccaoAdminRoute: typeof AuthenticatedProspeccaoAdminRouteWithChildren
   AuthenticatedProspeccaoDashboardRoute: typeof AuthenticatedProspeccaoDashboardRoute
   AuthenticatedProspeccaoFollowupsRoute: typeof AuthenticatedProspeccaoFollowupsRoute
+  AuthenticatedProspeccaoMinhaSemanaRoute: typeof AuthenticatedProspeccaoMinhaSemanaRoute
   AuthenticatedProspeccaoPromovidosRoute: typeof AuthenticatedProspeccaoPromovidosRoute
   AuthenticatedProspeccaoPromovidosRecentementeRoute: typeof AuthenticatedProspeccaoPromovidosRecentementeRoute
   AuthenticatedProspeccaoPromovidosRecentesRoute: typeof AuthenticatedProspeccaoPromovidosRecentesRoute
@@ -1798,6 +1819,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedProspeccaoAdminRouteWithChildren,
   AuthenticatedProspeccaoDashboardRoute: AuthenticatedProspeccaoDashboardRoute,
   AuthenticatedProspeccaoFollowupsRoute: AuthenticatedProspeccaoFollowupsRoute,
+  AuthenticatedProspeccaoMinhaSemanaRoute:
+    AuthenticatedProspeccaoMinhaSemanaRoute,
   AuthenticatedProspeccaoPromovidosRoute:
     AuthenticatedProspeccaoPromovidosRoute,
   AuthenticatedProspeccaoPromovidosRecentementeRoute:
