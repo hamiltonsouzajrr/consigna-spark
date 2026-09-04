@@ -147,6 +147,43 @@ export function CompeticaoTab() {
         </div>
       </Card>
 
+      {/* Alertas automáticos de comportamento suspeito */}
+      <Card className="p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <ShieldAlert className="h-4 w-4 text-rose-600" /> Alertas de comportamento suspeito
+          {(alertas ?? []).length > 0 && (
+            <Badge variant="destructive" className="text-xs">{(alertas ?? []).length}</Badge>
+          )}
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Verificação automática (atualiza a cada minuto): rajadas de pontos na mesma hora, pontos sem tempo de uso
+          ativo na plataforma e volume de contatos sem nenhuma qualificação.
+        </p>
+        <div className="mt-3 space-y-2">
+          {(alertas ?? []).length === 0 && (
+            <p className="text-sm text-muted-foreground">Nenhum sinal suspeito nesta semana.</p>
+          )}
+          {(alertas ?? []).map((a, i) => (
+            <div
+              key={`${a.user_id}-${i}`}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  {a.nome}
+                  <Badge variant={a.severidade === "alta" ? "destructive" : "outline"} className="text-xs">
+                    {a.tipo}
+                  </Badge>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">{a.detalhe}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+
+
       {/* Prêmio */}
       <Card className="p-4">
         <div className="flex items-center gap-2 text-sm font-semibold">
