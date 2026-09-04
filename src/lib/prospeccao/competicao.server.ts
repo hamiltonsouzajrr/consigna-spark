@@ -190,6 +190,7 @@ export type VendaPendente = {
   motivo_recusa: string | null;
   revisado_em: string | null;
   created_at: string;
+  valor: number | null;
 };
 
 /** Registra (ou reaproveita) a venda pendente. Nunca credita pontos. */
