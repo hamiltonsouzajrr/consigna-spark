@@ -1636,6 +1636,60 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_vendas: {
+        Row: {
+          cliente_nome: string | null
+          created_at: string
+          id: string
+          motivo: string | null
+          motivo_recusa: string | null
+          origem: string
+          pontos_creditados: number
+          ref_id: string
+          ref_tabela: string
+          revisado_em: string | null
+          revisado_por: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          cliente_nome?: string | null
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          motivo_recusa?: string | null
+          origem?: string
+          pontos_creditados?: number
+          ref_id: string
+          ref_tabela: string
+          revisado_em?: string | null
+          revisado_por?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          week_start?: string
+        }
+        Update: {
+          cliente_nome?: string | null
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          motivo_recusa?: string | null
+          origem?: string
+          pontos_creditados?: number
+          ref_id?: string
+          ref_tabela?: string
+          revisado_em?: string | null
+          revisado_por?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       radar_consultoras: {
         Row: {
           ativo: boolean
