@@ -190,6 +190,7 @@ export type VendaPendente = {
   motivo_recusa: string | null;
   revisado_em: string | null;
   created_at: string;
+  valor: number | null;
 };
 
 /** Registra (ou reaproveita) a venda pendente. Nunca credita pontos. */
@@ -267,24 +268,34 @@ export async function listarVendas(status?: "pendente" | "confirmada" | "recusad
     for (const p of profs ?? []) nomes.set(p.user_id, p.nome_completo);
   }
 
-  // Nome do cliente quando não foi salvo no registro.
-  const semNome = rows.filter((r) => !r.cliente_nome);
-  const leadIds = semNome.filter((r) => r.ref_tabela === "prospect_leads").map((r) => r.ref_id);
-  const tomadorIds = semNome.filter((r) => r.ref_tabela === "tomadores_al").map((r) => r.ref_id);
+  // Nome do cliente e valor de referência da operação.
+  const leadIds = rows.filter((r) => r.ref_tabela === "prospect_leads").map((r) => r.ref_id);
+  const tomadorIds = rows.filter((r) => r.ref_tabela === "tomadores_al").map((r) => r.ref_id);
   const clientes = new Map<string, string>();
+  const valores = new Map<string, number | null>();
   if (leadIds.length) {
-    const { data: leads } = await db.from("prospect_leads").select("id,nome").in("id", leadIds);
-    for (const l of leads ?? []) clientes.set(l.id, l.nome);
+    const { data: leads } = await db.from("prospect_leads").select("id,nome,orcamento").in("id", leadIds);
+    for (const l of leads ?? []) {
+      clientes.set(l.id, l.nome);
+      valores.set(l.id, (l as any).orcamento ?? null);
+    }
   }
   if (tomadorIds.length) {
-    const { data: toms } = await db.from("tomadores_al").select("id,nome").in("id", tomadorIds);
-    for (const t of toms ?? []) clientes.set(t.id, t.nome);
+    const { data: toms } = await db
+      .from("tomadores_al")
+      .select("id,nome,margem_disp_emprestimo")
+      .in("id", tomadorIds);
+    for (const t of toms ?? []) {
+      clientes.set(t.id, t.nome);
+      valores.set(t.id, (t as any).margem_disp_emprestimo ?? null);
+    }
   }
 
   return rows.map((r) => ({
     ...r,
     nome: nomes.get(r.user_id) ?? "Consultora",
     cliente_nome: r.cliente_nome ?? clientes.get(r.ref_id) ?? null,
+    valor: valores.get(r.ref_id) ?? null,
   })) as VendaPendente[];
 }
 

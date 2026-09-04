@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -64,9 +65,14 @@ export function VendasConferenciaCard() {
 
   return (
     <Card className="p-4">
-      <div className="flex items-center gap-2 text-sm font-semibold">
-        <BadgeCheck className="h-4 w-4 text-emerald-600" /> Vendas aguardando conferência
-        {lista.length > 0 && <Badge className="text-xs">{lista.length}</Badge>}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <BadgeCheck className="h-4 w-4 text-emerald-600" /> Vendas aguardando conferência
+          {lista.length > 0 && <Badge className="text-xs">{lista.length}</Badge>}
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/prospeccao/admin/vendas">Abrir tela completa</Link>
+        </Button>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
         Toda venda fechada entra em stand-by. Os pontos só são creditados depois que você confere e confirma aqui.
