@@ -140,7 +140,6 @@ export function CompeticaoRanking({ compact = false }: { compact?: boolean }) {
               <TableHead className="w-12">#</TableHead>
               <TableHead>Consultora</TableHead>
               <TableHead className="text-right">Contatos</TableHead>
-              
               <TableHead className="text-right">Follow-ups</TableHead>
               <TableHead className="text-right">Vendas</TableHead>
               <TableHead className="text-right">Total</TableHead>
@@ -149,7 +148,7 @@ export function CompeticaoRanking({ compact = false }: { compact?: boolean }) {
           <TableBody>
             {data.ranking.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
                   Nenhum ponto registrado nesta semana ainda. Comece prospectando!
                 </TableCell>
               </TableRow>
@@ -159,7 +158,6 @@ export function CompeticaoRanking({ compact = false }: { compact?: boolean }) {
                 <TableCell>{i + 1}</TableCell>
                 <TableCell>{r.nome}{r.user_id === user?.id ? " (você)" : ""}</TableCell>
                 <TableCell className="text-right">{r.contatos}</TableCell>
-                <TableCell className="text-right">{r.qualificacoes}</TableCell>
                 <TableCell className="text-right">{r.followups}</TableCell>
                 <TableCell className="text-right">{r.ganhos}</TableCell>
                 <TableCell className="text-right font-bold">{r.total}</TableCell>
@@ -175,9 +173,10 @@ export function CompeticaoRanking({ compact = false }: { compact?: boolean }) {
         </div>
         <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
           <li>• <strong>Contato válido (10 pts)</strong>: lead com telefone, 1 ponto por lead na semana, intervalo mínimo de 90s entre contatos contados.</li>
-          <li>• <strong>Qualificação (10 pts)</strong>: status qualificado/proposta com situação preenchida e contato registrado há pelo menos 5 minutos.</li>
+          <li>• <strong>Qualificar não pontua</strong>: registrar situação e status é obrigatório no atendimento, mas não gera pontos.</li>
           <li>• <strong>Follow-up cumprido (10 pts)</strong>: só ao concluir no prazo, com contato registrado no dia. Agendar não pontua.</li>
-          <li>• <strong>Venda fechada (25 pts)</strong>: bônus de desempate.</li>
+          <li>• <strong>Venda confirmada (40 pts)</strong>: entra depois que o gerente confere a venda.</li>
+
           <li>• Pontos são gravados no servidor, com teto diário; voltar o lead para “novo” estorna os pontos e o admin pode anular pontos suspeitos.</li>
         </ul>
       </Card>
