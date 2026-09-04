@@ -125,7 +125,7 @@ export function CompeticaoRanking({ compact = false }: { compact?: boolean }) {
               <div className="mt-2 text-2xl font-bold">{r.total} pts</div>
               <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{r.contatos}</span>
-                <span className="flex items-center gap-1"><Tag className="h-3 w-3" />{r.qualificacoes}</span>
+                <span className="flex items-center gap-1"><Tag className="h-3 w-3" />{r.ganhos}</span>
                 <span className="flex items-center gap-1"><CalendarClock className="h-3 w-3" />{r.followups}</span>
               </div>
             </Card>
