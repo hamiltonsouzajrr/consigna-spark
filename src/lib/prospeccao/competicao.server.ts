@@ -4,19 +4,17 @@
 
 export const PONTOS = {
   contato: 10,
-  qualificacao: 10,
   followup: 10,
-  ganho: 25,
+  ganho: 40,
 } as const;
 
 /** Anti-burst: contacts closer than this (same consultant) do not score. */
 export const CONTATO_COOLDOWN_MS = 90_000;
-/** Qualification requires a contact at least this old on the same lead. */
-export const QUALIFICACAO_MIN_APOS_CONTATO_MS = 5 * 60_000;
 /** Daily ceilings per category (counted points, not clicks). */
-export const TETO_DIARIO = { contato: 170, qualificacao: 170, followup: 120, ganho: 40 } as const;
+export const TETO_DIARIO = { contato: 170, followup: 120, ganho: 120 } as const;
 
 export type Categoria = keyof typeof PONTOS;
+
 
 /** Monday of the current competition week, in America/Maceio. */
 export function weekStart(at: Date = new Date()): string {
