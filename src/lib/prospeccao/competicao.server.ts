@@ -89,7 +89,7 @@ export async function creditar(
   return Number(data ?? 0);
 }
 
-export async function estornar(refTabela: string, refId: string, categorias: Categoria[] | null, motivo: string) {
+export async function estornar(refTabela: string, refId: string, categorias: string[] | null, motivo: string) {
   const db = await admin();
   await db.rpc("estornar_pontos", {
     _ref_tabela: refTabela,
