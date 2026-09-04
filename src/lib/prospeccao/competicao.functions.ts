@@ -153,6 +153,8 @@ export const registrarQualificacao = createServerFn({ method: "POST" })
     // Voltar para "novo" desfaz a qualificação: estorna.
     if (data.status === "novo") {
       await estornar("prospect_leads", data.leadId, ["qualificacao", "ganho"], "lead voltou para novo");
+      const { cancelarVenda } = await import("./competicao.server");
+      await cancelarVenda("prospect_leads", data.leadId, "lead voltou para novo");
       return { pontos: 0, motivo: "Pontos de qualificação estornados." };
     }
 
@@ -161,8 +163,14 @@ export const registrarQualificacao = createServerFn({ method: "POST" })
     if (semana.pausada) return { pontos: 0, motivo: "Competição pausada pelo administrador." };
 
     if (data.status === "ganho") {
-      const pontos = await creditar(userId, "ganho", "prospect_leads", data.leadId, "Venda fechada");
-      return { pontos };
+      const { registrarVendaPendente } = await import("./competicao.server");
+      const r = await registrarVendaPendente(userId, "crm", "prospect_leads", data.leadId, null, "Venda fechada (CRM)");
+      return {
+        pontos: 0,
+        motivo: r.jaConfirmada
+          ? "Venda já conferida pelo gerente."
+          : "Venda registrada. Aguardando conferência do gerente (peça a verificação: os pontos só entram depois que ele confirmar sua venda).",
+      };
     }
 
     const situacao = data.situacao ?? lead.situacao;
