@@ -173,9 +173,10 @@ export function CompeticaoRanking({ compact = false }: { compact?: boolean }) {
         </div>
         <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
           <li>• <strong>Contato válido (10 pts)</strong>: lead com telefone, 1 ponto por lead na semana, intervalo mínimo de 90s entre contatos contados.</li>
-          <li>• <strong>Qualificação (10 pts)</strong>: status qualificado/proposta com situação preenchida e contato registrado há pelo menos 5 minutos.</li>
+          <li>• <strong>Qualificar não pontua</strong>: registrar situação e status é obrigatório no atendimento, mas não gera pontos.</li>
           <li>• <strong>Follow-up cumprido (10 pts)</strong>: só ao concluir no prazo, com contato registrado no dia. Agendar não pontua.</li>
-          <li>• <strong>Venda fechada (25 pts)</strong>: bônus de desempate.</li>
+          <li>• <strong>Venda confirmada (40 pts)</strong>: entra depois que o gerente confere a venda.</li>
+
           <li>• Pontos são gravados no servidor, com teto diário; voltar o lead para “novo” estorna os pontos e o admin pode anular pontos suspeitos.</li>
         </ul>
       </Card>
