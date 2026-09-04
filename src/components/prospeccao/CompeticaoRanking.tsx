@@ -140,7 +140,7 @@ export function CompeticaoRanking({ compact = false }: { compact?: boolean }) {
               <TableHead className="w-12">#</TableHead>
               <TableHead>Consultora</TableHead>
               <TableHead className="text-right">Contatos</TableHead>
-              <TableHead className="text-right">Qualificados</TableHead>
+              
               <TableHead className="text-right">Follow-ups</TableHead>
               <TableHead className="text-right">Vendas</TableHead>
               <TableHead className="text-right">Total</TableHead>
