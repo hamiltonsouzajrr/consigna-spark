@@ -636,3 +636,64 @@ export const adminAlertasSuspeitos = createServerFn({ method: "GET" })
     const peso = { alta: 0, media: 1 } as const;
     return alertas.sort((a, b) => peso[a.severidade] - peso[b.severidade] || a.nome.localeCompare(b.nome));
   });
+
+// ---------------------------------------------------------------------------
+// Conferência de vendas fechadas (stand-by → confirmada / recusada)
+// ---------------------------------------------------------------------------
+
+export const adminVendas = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        status: z.enum(["pendente", "confirmada", "recusada"]).optional(),
+        limit: z.number().min(1).max(300).optional(),
+      })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
+    await assertAdmin(supabase, userId);
+    const { listarVendas } = await import("./competicao.server");
+    return listarVendas(data.status, data.limit ?? 100);
+  });
+
+export const adminConfirmarVenda = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ vendaId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }): Promise<{ pontos: number }> => {
+    const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
+    await assertAdmin(supabase, userId);
+    const { confirmarVenda } = await import("./competicao.server");
+    return confirmarVenda(data.vendaId, userId);
+  });
+
+export const adminRecusarVenda = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ vendaId: z.string().uuid(), motivo: z.string().trim().min(1).max(300) }).parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
+    await assertAdmin(supabase, userId);
+    const { recusarVenda } = await import("./competicao.server");
+    await recusarVenda(data.vendaId, userId, data.motivo);
+    return { ok: true };
+  });
+
+/** Vendas da própria consultora (para mostrar o stand-by no painel dela). */
+export const minhasVendas = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const { data, error } = await supabase
+      .from("prospect_vendas")
+      .select("id,status,cliente_nome,origem,pontos_creditados,motivo_recusa,created_at,revisado_em")
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
