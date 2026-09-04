@@ -122,9 +122,9 @@ export const registrarQualificacao = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ pontos: number; motivo?: string }> => {
     const { userId } = context;
-    const { adminClient, creditar, estornar, primeiroContatoEm, QUALIFICACAO_MIN_APOS_CONTATO_MS, garantirSemana } =
-      await import("./competicao.server");
+    const { adminClient, estornar, garantirSemana } = await import("./competicao.server");
     const db = await adminClient();
+
 
     const { data: lead } = await db
       .from("prospect_leads")
