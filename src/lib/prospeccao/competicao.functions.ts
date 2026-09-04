@@ -158,6 +158,14 @@ export const registrarQualificacao = createServerFn({ method: "POST" })
       return { pontos: 0, motivo: "Pontos de qualificação estornados." };
     }
 
+    // Lead perdido cancela a venda em stand-by (sem mexer na qualificação).
+    if (data.status === "perdido") {
+      const { cancelarVenda } = await import("./competicao.server");
+      await cancelarVenda("prospect_leads", data.leadId, "lead marcado como perdido");
+    }
+
+
+
     // Verifica se a competição está pausada
     const semana = await garantirSemana();
     if (semana.pausada) return { pontos: 0, motivo: "Competição pausada pelo administrador." };
