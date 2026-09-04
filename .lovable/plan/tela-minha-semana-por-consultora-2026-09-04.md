@@ -5,24 +5,22 @@ Uma página só dela: quantos pontos fez na semana, quanto tempo ficou realmente
 ## O que a tela mostra
 
 1. **Resumo da semana** (cartões no topo)
-   - Pontos totais da semana e posição no ranking.
-   - Pontos por tipo de ação: contatos, follow-ups cumpridos e vendas confirmadas.
-   - Tempo ativo na semana e tempo ativo de hoje (o tempo já medido por cliques/digitação, não só janela aberta).
-   - Contatos de hoje x meta diária da jornada dela, com barra de progresso.
-
+  - Pontos totais da semana e posição no ranking.
+  - Pontos por tipo de ação: contatos, follow-ups cumpridos e vendas confirmadas.
+  - Tempo ativo na semana e tempo ativo de hoje (o tempo já medido por cliques/digitação, não só janela aberta).
+  - Contatos de hoje x meta diária da jornada dela, com barra de progresso.
+  - Compare em um gráfico em linhas limpo e de fácil visualização,   todas as semanas da consultora e adicione a média de crescimento ou baixo rendimento ( use as palavras corretas)
 2. **Ritmo da semana**
-   - Uma linha por dia (segunda a hoje): pontos do dia, contatos do dia, tempo ativo do dia e pontos por hora ativa.
-   - Destaque simples do melhor dia e aviso quando um dia tem tempo ativo alto e poucos pontos.
-
+  - Uma linha por dia (segunda a hoje): pontos do dia, contatos do dia, tempo ativo do dia e pontos por hora ativa.
+  - Destaque simples do melhor dia e aviso quando um dia tem tempo ativo alto e poucos pontos.
 3. **Histórico de pontuação por ação**
-   - Tabela com data/hora, ação (contato, follow-up, venda), lead/cliente, motivo e pontos.
-   - Marca em cinza os lançamentos anulados pelo gerente e mostra "0 pt" com o motivo.
-   - Junto, uma aba com as vendas em stand-by aguardando conferência do gerente, para ela ver o que ainda não virou ponto.
-
+  - Tabela com data/hora, ação (contato, follow-up, venda), lead/cliente, motivo e pontos.
+  - Marca em cinza os lançamentos anulados pelo gerente e mostra "0 pt" com o motivo.
+  - Junto, uma aba com as vendas em stand-by aguardando conferência do gerente, para ela ver o que ainda não virou ponto.
 4. **Acesso**
-   - Consultora abre `/prospeccao/minha-semana` e vê só os próprios dados.
-   - Gerente pode escolher a consultora num seletor no topo (só admin vê o seletor).
-   - Link para a tela no painel de prospecção e, para o gerente, na aba da competição.
+  - Consultora abre `/prospeccao/minha-semana` e vê só os próprios dados.
+  - Gerente pode escolher a consultora num seletor no topo (só admin vê o seletor).
+  - Link para a tela no painel de prospecção e, para o gerente, na aba da competição.
 
 ## Detalhes técnicos
 
