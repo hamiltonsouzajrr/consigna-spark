@@ -147,6 +147,11 @@ export function CompeticaoTab() {
         </div>
       </Card>
 
+      {/* Vendas fechadas em stand-by */}
+      <VendasConferenciaCard />
+
+
+
       {/* Alertas automáticos de comportamento suspeito */}
       <Card className="p-4">
         <div className="flex items-center gap-2 text-sm font-semibold">
