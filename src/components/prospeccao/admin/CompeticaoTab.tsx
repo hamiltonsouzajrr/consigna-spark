@@ -22,6 +22,7 @@ import {
 } from "@/lib/prospeccao/competicao.functions";
 
 import { ConfirmDialog } from "./ConfirmDialog";
+import { VendasConferenciaCard } from "./VendasConferenciaCard";
 
 export function CompeticaoTab() {
   const qc = useQueryClient();
