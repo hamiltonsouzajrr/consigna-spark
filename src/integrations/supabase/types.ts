@@ -772,8 +772,10 @@ export type Database = {
           created_at: string
           id: string
           kind: Database["public"]["Enums"]["prospect_event_kind"]
-          lead_id: string
+          lead_id: string | null
           meta: Json | null
+          origem: string
+          tomador_id: string | null
         }
         Insert: {
           body?: string | null
@@ -781,8 +783,10 @@ export type Database = {
           created_at?: string
           id?: string
           kind?: Database["public"]["Enums"]["prospect_event_kind"]
-          lead_id: string
+          lead_id?: string | null
           meta?: Json | null
+          origem?: string
+          tomador_id?: string | null
         }
         Update: {
           body?: string | null
@@ -790,8 +794,10 @@ export type Database = {
           created_at?: string
           id?: string
           kind?: Database["public"]["Enums"]["prospect_event_kind"]
-          lead_id?: string
+          lead_id?: string | null
           meta?: Json | null
+          origem?: string
+          tomador_id?: string | null
         }
         Relationships: [
           {
@@ -799,6 +805,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "prospect_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_events_tomador_id_fkey"
+            columns: ["tomador_id"]
+            isOneToOne: false
+            referencedRelation: "tomadores_al"
             referencedColumns: ["id"]
           },
         ]

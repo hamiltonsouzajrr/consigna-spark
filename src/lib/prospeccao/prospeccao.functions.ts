@@ -1073,9 +1073,10 @@ export type CallDetailRow = {
   answered: boolean;
   createdAt: string;
   body: string | null;
+  origem: "crm" | "tomadores_al";
 };
 
-/** Detalhe das ligações (leads) que geraram as métricas de qualidade. */
+/** Detalhe das ligações (leads do CRM + tomadores AL) das métricas de qualidade. */
 export const getMyCallDetails = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
@@ -1101,7 +1102,9 @@ export const getMyCallDetails = createServerFn({ method: "GET" })
 
     let q = supabase
       .from("lead_events")
-      .select("id, body, created_at, lead_id, prospect_leads(nome, telefone, status)")
+      .select(
+        "id, body, created_at, lead_id, tomador_id, origem, prospect_leads(nome, telefone, status), tomadores_al(nome, status_abordagem)",
+      )
       .eq("consultant_id", userId)
       .eq("kind", "ligacao")
       .gte("created_at", from)
@@ -1114,18 +1117,21 @@ export const getMyCallDetails = createServerFn({ method: "GET" })
 
     let out: CallDetailRow[] = ((rows ?? []) as any[]).map((r) => {
       const outcome = parseCallOutcome(r.body);
+      const tomador = r.origem === "tomadores_al";
       return {
         eventId: r.id as string,
-        leadId: r.lead_id as string,
-        nome: r.prospect_leads?.nome ?? "Lead",
-        telefone: r.prospect_leads?.telefone ?? null,
-        status: r.prospect_leads?.status ?? "novo",
+        leadId: (r.lead_id ?? r.tomador_id) as string,
+        nome: (tomador ? r.tomadores_al?.nome : r.prospect_leads?.nome) ?? "Lead",
+        telefone: tomador ? null : r.prospect_leads?.telefone ?? null,
+        status: (tomador ? r.tomadores_al?.status_abordagem : r.prospect_leads?.status) ?? "novo",
         outcome,
         answered: ANSWERED_OUTCOMES.includes(outcome),
         createdAt: r.created_at as string,
         body: r.body ?? null,
+        origem: (tomador ? "tomadores_al" : "crm") as "crm" | "tomadores_al",
       };
     });
+
 
     if (data.outcome) out = out.filter((r) => r.outcome === data.outcome);
     if (data.leadStatus) out = out.filter((r) => r.status === data.leadStatus);

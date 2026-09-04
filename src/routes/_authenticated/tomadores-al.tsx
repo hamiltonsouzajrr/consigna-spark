@@ -30,6 +30,7 @@ import tomadoresAsset from "@/assets/tomadores_al.json.asset.json";
 import {
   getTomadoresAl, marcarAbordagemTomador, distribuirTomadoresAl, getDistribuicaoTomadoresAl,
   getResumoCarteiraTomadores, importarConsultorasDosAcessos, getContagemFaixasTomadores,
+  registrarContatoTomador,
   type TomadorAl, type DistribuicaoConsultora, type ResumoCarteira,
 } from "@/lib/prospeccao/tomadores-al.functions";
 import {
@@ -149,6 +150,28 @@ function Page() {
   const { isAdmin } = useRhAccess();
   const fetchTomadores = useServerFn(getTomadoresAl);
   const abordagemFn = useServerFn(marcarAbordagemTomador);
+  const contatoFn = useServerFn(registrarContatoTomador);
+
+  // Contato aqui entra no MESMO histórico e no MESMO volume do CRM
+  // (meta do dia + campanha da semana).
+  const registrarContato = useCallback(
+    async (t: TomadorAl, kind: "ligacao" | "whatsapp") => {
+      try {
+        if (kind === "ligacao") {
+          const key = `prospeccao_chamadas_${new Date().toISOString().slice(0, 10)}`;
+          const atual = Number(window.localStorage.getItem(key) ?? 0) || 0;
+          window.localStorage.setItem(key, String(atual + 1));
+          window.dispatchEvent(new Event("chamadas-updated"));
+        }
+        const res = await contatoFn({ data: { id: t.id, kind } });
+        if (res.pontos > 0) toast.success(`+${res.pontos} pontos na campanha da semana`);
+        else if (res.motivo) toast.message(res.motivo);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Não foi possível registrar o contato");
+      }
+    },
+    [contatoFn],
+  );
   const distribuirFn = useServerFn(distribuirTomadoresAl);
   const fetchConsultoras = useServerFn(getConsultoras);
   const fetchDistribuicao = useServerFn(getDistribuicaoTomadoresAl);
@@ -910,7 +933,13 @@ function Page() {
                         <span className="rounded-full border border-border/60 px-2.5 py-0.5 text-xs font-medium text-foreground">
                           {fmtTel(t)}
                         </span>
-                        <Button asChild size="sm" variant="outline" className="h-7 px-2 text-[11px]">
+                        <Button
+                          asChild
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2 text-[11px]"
+                          onClick={() => { void registrarContato(r, "ligacao"); }}
+                        >
                           <a href={telLink(t) ?? "#"}>
                             <Phone className="mr-1 h-3 w-3" /> Ligar
                           </a>
@@ -919,6 +948,7 @@ function Page() {
                           asChild
                           size="sm"
                           className="h-7 bg-emerald-600 px-2 text-[11px] text-white hover:bg-emerald-700"
+                          onClick={() => { void registrarContato(r, "whatsapp"); }}
                         >
                           <a
                             href={whatsappLink(t, msgWhatsapp(r.nome)) ?? "#"}

@@ -161,6 +161,9 @@ export function CallQualityDialog({
                       {r.answered ? <PhoneIncoming className="h-3.5 w-3.5" /> : <PhoneOff className="h-3.5 w-3.5" />}
                     </span>
                     <p className="min-w-0 flex-1 truncate text-sm font-semibold">{r.nome}</p>
+                    <Badge variant="outline" className="text-xs">
+                      {r.origem === "tomadores_al" ? "Tomadores AL" : "CRM"}
+                    </Badge>
                     <Badge variant="secondary" className="text-xs">{r.outcome}</Badge>
                     <Badge variant="outline" className="text-xs capitalize">{r.status}</Badge>
                     <span className="text-xs text-muted-foreground">{dataHora(r.createdAt)}</span>
