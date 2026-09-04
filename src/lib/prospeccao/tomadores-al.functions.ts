@@ -457,6 +457,73 @@ export const getContagemFaixasTomadores = createServerFn({ method: "POST" })
     return { baixa, media, alta };
   });
 
+// Contato em Tomadores AL: grava no MESMO histórico de prospecção do CRM
+// (lead_events com origem = 'tomadores_al') e pontua na campanha da semana
+// exatamente como um lead do CRM — mesmas travas anti-burla.
+export const registrarContatoTomador = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        kind: z.enum(["ligacao", "whatsapp"]),
+        body: z.string().trim().max(2000).optional().default(""),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ pontos: number; motivo?: string }> => {
+    const { userId } = context;
+    const admin = await isAdmin(context.supabase, context.userId);
+    const minha = await nomeConsultora(context.supabase, context.claims, !admin);
+    if (!admin && !minha) throw new Error("Consultora não vinculada ao seu login.");
+
+    const client = await getAdminClient();
+    const { data: rows } = await client
+      .from("tomadores_al")
+      .select("id,nome,documento,consultora_responsavel,status_abordagem")
+      .eq("id", data.id)
+      .limit(1);
+    const tomador = (rows ?? [])[0];
+    if (!tomador) throw new Error("Tomador não encontrado.");
+    if (!admin && String(tomador.consultora_responsavel ?? "") !== minha) {
+      throw new Error("Este lead não está na sua carteira.");
+    }
+
+    const agora = new Date().toISOString();
+    const { error } = await client.from("lead_events").insert({
+      lead_id: null,
+      tomador_id: data.id,
+      origem: "tomadores_al",
+      consultant_id: userId,
+      kind: data.kind,
+      body: data.body || `${data.kind === "ligacao" ? "Ligação" : "WhatsApp"} — ${tomador.nome}`,
+    } as any);
+    if (error) throw new Error(error.message);
+
+    // Primeiro contato move o status da carteira para "contatado".
+    if (tomador.status_abordagem === "novo") {
+      await client
+        .from("tomadores_al")
+        .update({ status_abordagem: "contatado", contatado_em: agora } as any)
+        .eq("id", data.id);
+    }
+
+    const { creditar, cooldownLiberado, garantirSemana } = await import("./competicao.server");
+    const semana = await garantirSemana();
+    if (semana?.pausada) return { pontos: 0, motivo: "Competição pausada pelo administrador." };
+    if (!(await cooldownLiberado(userId))) {
+      return { pontos: 0, motivo: "Contatos em sequência rápida não pontuam (intervalo mínimo de 90s)." };
+    }
+    const pontos = await creditar(
+      userId,
+      "contato",
+      "tomadores_al",
+      data.id,
+      `Contato ${data.kind} (Tomadores AL)`,
+    );
+    return { pontos };
+  });
+
 
 // Atualiza a situação de abordagem. Consultora só altera os leads dela.
 // Ao finalizar (convertido / sem interesse), a carteira é reposta na hora com
@@ -511,6 +578,19 @@ export const marcarAbordagemTomador = createServerFn({ method: "POST" })
 
     const { error } = await client.from("tomadores_al").update(patch as any).eq("id", data.id);
     if (error) throw new Error(error.message);
+
+    // Campanha da semana: venda fechada vale o bônus (igual ao "ganho" do CRM).
+    // Voltar para "novo" ou encerrar sem interesse estorna o bônus.
+    try {
+      const { creditar, estornar } = await import("./competicao.server");
+      if (data.status === "convertido") {
+        await creditar(context.userId, "ganho", "tomadores_al", data.id, "Tomador convertido");
+      } else if (data.status === "novo" || data.status === "sem_interesse") {
+        await estornar("tomadores_al", data.id, ["ganho"], `status ${data.status}`);
+      }
+    } catch { /* pontuação nunca bloqueia a atualização do lead */ }
+
+
 
     // Reposição automática imediata: ao finalizar, novos leads da base entram
     // na carteira no mesmo instante, sem depender de recarregar a página. O
