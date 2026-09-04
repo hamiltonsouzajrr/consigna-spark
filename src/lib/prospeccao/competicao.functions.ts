@@ -122,9 +122,9 @@ export const registrarQualificacao = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }): Promise<{ pontos: number; motivo?: string }> => {
     const { userId } = context;
-    const { adminClient, creditar, estornar, primeiroContatoEm, QUALIFICACAO_MIN_APOS_CONTATO_MS, garantirSemana } =
-      await import("./competicao.server");
+    const { adminClient, estornar, garantirSemana } = await import("./competicao.server");
     const db = await adminClient();
+
 
     const { data: lead } = await db
       .from("prospect_leads")
@@ -181,19 +181,11 @@ export const registrarQualificacao = createServerFn({ method: "POST" })
       };
     }
 
-    const situacao = data.situacao ?? lead.situacao;
-    const status = data.status ?? lead.status;
-    const temTelefone = Boolean(lead.telefone) || (lead.telefones?.length ?? 0) > 0;
-    const qualificado = ["qualificado", "proposta"].includes(String(status));
-    if (!qualificado || !situacao || !temTelefone) {
-      return { pontos: 0, motivo: "Qualificação pontua com telefone, situação e status qualificado." };
-    }
-    const contato = await primeiroContatoEm(data.leadId);
-    if (!contato || Date.now() - contato.getTime() < QUALIFICACAO_MIN_APOS_CONTATO_MS) {
-      return { pontos: 0, motivo: "Qualificação exige um contato registrado há pelo menos 5 minutos." };
-    }
-    const pontos = await creditar(userId, "qualificacao", "prospect_leads", data.leadId, `Qualificado: ${situacao}`);
-    return { pontos };
+    return {
+      pontos: 0,
+      motivo: "Qualificação registrada. Pontos vêm de contatos, follow-ups cumpridos e vendas confirmadas.",
+    };
+
   });
 
 /** Schedules a follow-up. Scheduling never scores — only completion does. */

@@ -1,28 +1,39 @@
-# Qualificação deixa de valer pontos
+# Tela "Minha semana" por consultora
 
-Hoje qualquer lead marcado como "qualificado" com uma situação escrita rende 10 pontos, o que é fácil de inflar. A qualificação passa a ser apenas registro de trabalho, sem pontos, e a venda conferida pelo gerente passa a valer mais.
+Uma página só dela: quantos pontos fez na semana, quanto tempo ficou realmente ativa no sistema, o ritmo dia a dia e a lista de tudo que pontuou (ou deixou de pontuar). O gerente abre a mesma tela para qualquer consultora.
 
-## O que muda
+## O que a tela mostra
 
-1. **Qualificar não pontua mais**
-   - Marcar um lead como qualificado/proposta continua salvando situação, status e histórico, mas não gera pontos.
-   - No lugar do aviso "+10 pontos", a consultora vê uma mensagem simples de que a qualificação foi registrada e que os pontos vêm de contatos, follow-ups cumpridos e vendas confirmadas.
+1. **Resumo da semana** (cartões no topo)
+   - Pontos totais da semana e posição no ranking.
+   - Pontos por tipo de ação: contatos, follow-ups cumpridos e vendas confirmadas.
+   - Tempo ativo na semana e tempo ativo de hoje (o tempo já medido por cliques/digitação, não só janela aberta).
+   - Contatos de hoje x meta diária da jornada dela, com barra de progresso.
 
-2. **Venda confirmada vale mais**
-   - Venda conferida pelo gerente sobe de 25 para 40 pontos.
-   - O limite diário dessa categoria sobe de 40 para 120 pontos, para caber até três vendas confirmadas no mesmo dia.
+2. **Ritmo da semana**
+   - Uma linha por dia (segunda a hoje): pontos do dia, contatos do dia, tempo ativo do dia e pontos por hora ativa.
+   - Destaque simples do melhor dia e aviso quando um dia tem tempo ativo alto e poucos pontos.
 
-3. **Pontos de qualificação desta semana são zerados**
-   - Removo os lançamentos de qualificação da semana atual; o ranking recalcula na hora com contatos, follow-ups e vendas.
+3. **Histórico de pontuação por ação**
+   - Tabela com data/hora, ação (contato, follow-up, venda), lead/cliente, motivo e pontos.
+   - Marca em cinza os lançamentos anulados pelo gerente e mostra "0 pt" com o motivo.
+   - Junto, uma aba com as vendas em stand-by aguardando conferência do gerente, para ela ver o que ainda não virou ponto.
 
-4. **Coluna "qualificações" sai do ranking**
-   - O ranking (cartão e tabela) mostra contatos, follow-ups e vendas. Nada mais fica visível sobre qualificações.
+4. **Acesso**
+   - Consultora abre `/prospeccao/minha-semana` e vê só os próprios dados.
+   - Gerente pode escolher a consultora num seletor no topo (só admin vê o seletor).
+   - Link para a tela no painel de prospecção e, para o gerente, na aba da competição.
 
 ## Detalhes técnicos
 
-- `src/lib/prospeccao/competicao.server.ts`: remover `qualificacao` de `PONTOS` e de `TETO_DIARIO`, `ganho: 25 → 40`, teto de `ganho: 40 → 120`; ajustar o tipo `Categoria`. Manter `estornar(...)` aceitando `"qualificacao"` para não quebrar históricos antigos.
-- `src/lib/prospeccao/competicao.functions.ts` (`registrarQualificacao`): retirar a chamada `creditar(..., "qualificacao", ...)` e as checagens só existentes para ela (telefone/situação, janela de 5 minutos após o contato); retornar `{ pontos: 0, motivo: "Qualificação registrada. Pontos vêm de contatos, follow-ups e vendas confirmadas." }`. Ramo `ganho` e `cancelarVenda` seguem iguais; o estorno em `status === "novo"` mantém `["qualificacao","ganho"]` para limpar registros legados.
-- Remover a constante `QUALIFICACAO_MIN_APOS_CONTATO_MS` e o helper `primeiroContatoEm` se ficarem sem uso.
-- `src/components/prospeccao/CompeticaoRanking.tsx`: remover a coluna e o chip de `qualificacoes`. A função de ranking do banco continua devolvendo o campo, apenas não é exibido.
-- Zerar a semana atual com operação de dados: apagar de `prospect_pontos` as linhas com `categoria = 'qualificacao'` e `week_start = competicao_week_start(now())`.
-- Rodar checagem de tipos e abrir `/prospeccao` e um lead para confirmar as mensagens.
+- Nova função de servidor `getMinhaSemana` em `src/lib/prospeccao/minha-semana.functions.ts`, com `requireSupabaseAuth` e entrada opcional `{ userId, weekStart }`. Se `userId` vier diferente do próprio, valida admin com `assertAdmin` (de `prospeccao.server`) antes de continuar.
+- Retorno único e serializável: `{ nome, weekStart, isAdmin, totais: { pontos, contatos, followups, ganhos }, posicao, usoSemanaSegundos, usoHojeSegundos, metaDiaria, contatosHoje, dias: [{ data, pontos, contatos, usoSegundos }], extrato: [{ id, categoria, pontos, motivo, ref_tabela, ref_id, created_at, anulado_em, cliente }], vendasPendentes: [...] }`.
+- Fontes: `prospect_pontos` (semana, por categoria/dia), `app_uso_ativo` (semana, por `ref_date`), `prospect_jornada` (meta diária), `lead_events` (contatos do dia/dia a dia), `prospect_vendas` (status pendente), `ranking_competicao` (posição) e `profiles` para o nome. Leitura com `supabaseAdmin` carregado dentro do handler, após a checagem de permissão.
+- Nomes de cliente: `prospect_leads.nome` e `tomadores_al.nome`, resolvidos em lote pelos `ref_id` do extrato.
+- Semana e fuso reutilizam `weekStart()` de `competicao.server.ts` e a virada 03:00 UTC (Maceió) já usada em `jornada.functions.ts`.
+- Nova rota `src/routes/_authenticated/prospeccao.minha-semana.tsx` com `head()` próprio, `useServerFn` + `useQuery` (refetch a cada 60s) e seletor de consultora só quando `isAdmin`. Componentes de UI em `src/components/prospeccao/minha-semana/` (cartões de resumo, tabela de ritmo, tabela de extrato), usando os cartões/tabelas já existentes do projeto.
+- Nenhuma mudança de banco é necessária.
+
+## Ainda em andamento (etapa anterior, já aprovada)
+
+Fechar a remoção dos pontos de qualificação: coluna "Qualificados" saindo da tabela do ranking, checagem de tipos e limpeza dos pontos de qualificação da semana atual.
