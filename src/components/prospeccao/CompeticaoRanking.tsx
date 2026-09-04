@@ -163,9 +163,6 @@ export function CompeticaoRanking({ compact = false }: { compact?: boolean }) {
                 <TableCell className="text-right font-bold">{r.total}</TableCell>
               </TableRow>
             ))}
-
-              </TableRow>
-            ))}
           </TableBody>
         </Table>
       </Card>
