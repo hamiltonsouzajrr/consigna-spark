@@ -140,7 +140,6 @@ export function CompeticaoRanking({ compact = false }: { compact?: boolean }) {
               <TableHead className="w-12">#</TableHead>
               <TableHead>Consultora</TableHead>
               <TableHead className="text-right">Contatos</TableHead>
-              
               <TableHead className="text-right">Follow-ups</TableHead>
               <TableHead className="text-right">Vendas</TableHead>
               <TableHead className="text-right">Total</TableHead>
@@ -149,7 +148,7 @@ export function CompeticaoRanking({ compact = false }: { compact?: boolean }) {
           <TableBody>
             {data.ranking.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
                   Nenhum ponto registrado nesta semana ainda. Comece prospectando!
                 </TableCell>
               </TableRow>
@@ -159,10 +158,12 @@ export function CompeticaoRanking({ compact = false }: { compact?: boolean }) {
                 <TableCell>{i + 1}</TableCell>
                 <TableCell>{r.nome}{r.user_id === user?.id ? " (você)" : ""}</TableCell>
                 <TableCell className="text-right">{r.contatos}</TableCell>
-                <TableCell className="text-right">{r.qualificacoes}</TableCell>
                 <TableCell className="text-right">{r.followups}</TableCell>
                 <TableCell className="text-right">{r.ganhos}</TableCell>
                 <TableCell className="text-right font-bold">{r.total}</TableCell>
+              </TableRow>
+            ))}
+
               </TableRow>
             ))}
           </TableBody>
