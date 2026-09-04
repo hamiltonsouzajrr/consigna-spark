@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Gift, Ban, Flag, Pause, Play, Trash2 } from "lucide-react";
+import { Gift, Ban, Flag, Pause, Play, Trash2, ShieldAlert } from "lucide-react";
 import {
   adminDefinirPremio,
   adminExtratoPontos,
@@ -17,8 +17,10 @@ import {
   adminPausarCompeticao,
   adminRetomarCompeticao,
   adminExcluirCompeticao,
+  adminAlertasSuspeitos,
   getCompeticao,
 } from "@/lib/prospeccao/competicao.functions";
+
 import { ConfirmDialog } from "./ConfirmDialog";
 
 export function CompeticaoTab() {
@@ -31,6 +33,7 @@ export function CompeticaoTab() {
   const retomar = useServerFn(adminRetomarCompeticao);
   const excluir = useServerFn(adminExcluirCompeticao);
   const competicao = useServerFn(getCompeticao);
+  const alertasFn = useServerFn(adminAlertasSuspeitos);
 
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
@@ -39,6 +42,12 @@ export function CompeticaoTab() {
 
   const { data: semana } = useQuery({ queryKey: ["competicao"], queryFn: () => competicao() });
   const { data: pontos } = useQuery({ queryKey: ["competicao-extrato"], queryFn: () => extrato({ data: {} }) });
+  const { data: alertas } = useQuery({
+    queryKey: ["competicao-alertas"],
+    queryFn: () => alertasFn({ data: {} }),
+    refetchInterval: 60_000,
+  });
+
 
   const salvar = async () => {
     if (!titulo.trim()) { toast.error("Informe o prêmio da semana."); return; }
@@ -137,6 +146,43 @@ export function CompeticaoTab() {
           </Button>
         </div>
       </Card>
+
+      {/* Alertas automáticos de comportamento suspeito */}
+      <Card className="p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <ShieldAlert className="h-4 w-4 text-rose-600" /> Alertas de comportamento suspeito
+          {(alertas ?? []).length > 0 && (
+            <Badge variant="destructive" className="text-xs">{(alertas ?? []).length}</Badge>
+          )}
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Verificação automática (atualiza a cada minuto): rajadas de pontos na mesma hora, pontos sem tempo de uso
+          ativo na plataforma e volume de contatos sem nenhuma qualificação.
+        </p>
+        <div className="mt-3 space-y-2">
+          {(alertas ?? []).length === 0 && (
+            <p className="text-sm text-muted-foreground">Nenhum sinal suspeito nesta semana.</p>
+          )}
+          {(alertas ?? []).map((a, i) => (
+            <div
+              key={`${a.user_id}-${i}`}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  {a.nome}
+                  <Badge variant={a.severidade === "alta" ? "destructive" : "outline"} className="text-xs">
+                    {a.tipo}
+                  </Badge>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">{a.detalhe}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+
 
       {/* Prêmio */}
       <Card className="p-4">

@@ -516,3 +516,107 @@ export const getFechamentoPendente = createServerFn({ method: "GET" })
       sou_vencedor: data.vencedor_user_id === context.userId,
     };
   });
+
+export type AlertaSuspeito = {
+  user_id: string;
+  nome: string;
+  severidade: "alta" | "media";
+  tipo: string;
+  detalhe: string;
+};
+
+/**
+ * Automatic gaming detection for the current week. Pure read-only heuristics
+ * over the raw ledger (prospect_pontos) crossed with active platform time
+ * (app_uso_ativo) and the lead_events history.
+ */
+export const adminAlertasSuspeitos = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ weekStart: z.string().optional() }).parse(data ?? {}))
+  .handler(async ({ context, data }): Promise<AlertaSuspeito[]> => {
+    const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
+    await assertAdmin(supabase, userId);
+    const { adminClient, weekStart } = await import("./competicao.server");
+    const db = await adminClient();
+    const ws = data.weekStart ?? weekStart();
+
+    const { data: pontos } = await db
+      .from("prospect_pontos")
+      .select("user_id,categoria,pontos,created_at")
+      .eq("week_start", ws)
+      .is("anulado_em", null);
+
+    const rows = (pontos ?? []) as Array<{ user_id: string; categoria: string; pontos: number; created_at: string }>;
+    if (rows.length === 0) return [];
+
+    const ids = [...new Set(rows.map((r) => r.user_id))];
+    const nomes = new Map<string, string>();
+    const { data: profs } = await db.from("profiles").select("user_id,nome_completo").in("user_id", ids);
+    for (const p of profs ?? []) nomes.set(p.user_id, p.nome_completo);
+
+    // Active platform time in the week (seconds), per consultant.
+    const { data: uso } = await db
+      .from("app_uso_ativo")
+      .select("user_id,segundos,ref_date")
+      .gte("ref_date", ws)
+      .in("user_id", ids);
+    const segundos = new Map<string, number>();
+    for (const u of (uso ?? []) as Array<{ user_id: string; segundos: number }>) {
+      segundos.set(u.user_id, (segundos.get(u.user_id) ?? 0) + Number(u.segundos ?? 0));
+    }
+
+    const alertas: AlertaSuspeito[] = [];
+
+    for (const id of ids) {
+      const meus = rows.filter((r) => r.user_id === id);
+      const nome = nomes.get(id) ?? "Consultora";
+      const total = meus.reduce((s, r) => s + Number(r.pontos ?? 0), 0);
+      const contatos = meus.filter((r) => r.categoria === "contato").length;
+      const quals = meus.filter((r) => r.categoria === "qualificacao").length;
+
+      // 1. Bursts: more than 35 counted points inside any rolling hour.
+      const times = meus.map((r) => new Date(r.created_at).getTime()).sort((a, b) => a - b);
+      let pico = 0;
+      let ini = 0;
+      for (let i = 0; i < times.length; i++) {
+        while (times[i]! - times[ini]! > 3_600_000) ini++;
+        pico = Math.max(pico, i - ini + 1);
+      }
+      if (pico >= 35) {
+        alertas.push({
+          user_id: id,
+          nome,
+          severidade: pico >= 60 ? "alta" : "media",
+          tipo: "Rajada de pontos",
+          detalhe: `${pico} pontos contados dentro de uma única hora — ritmo acima do humanamente sustentável.`,
+        });
+      }
+
+      // 2. Points without matching active time on the platform.
+      const min = Math.round((segundos.get(id) ?? 0) / 60);
+      if (total >= 100 && min < total / 4) {
+        alertas.push({
+          user_id: id,
+          nome,
+          severidade: min < total / 8 ? "alta" : "media",
+          tipo: "Pontos sem tempo de uso",
+          detalhe: `${total} pontos com apenas ${min} min de uso ativo na semana.`,
+        });
+      }
+
+      // 3. Volume of contacts with nothing qualified — cliques sem conversa real.
+      if (contatos >= 40 && quals === 0) {
+        alertas.push({
+          user_id: id,
+          nome,
+          severidade: "media",
+          tipo: "Contatos sem qualificação",
+          detalhe: `${contatos} contatos contados e nenhuma qualificação registrada.`,
+        });
+      }
+    }
+
+    const peso = { alta: 0, media: 1 } as const;
+    return alertas.sort((a, b) => peso[a.severidade] - peso[b.severidade] || a.nome.localeCompare(b.nome));
+  });
