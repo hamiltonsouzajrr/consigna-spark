@@ -33,6 +33,7 @@ export function CompeticaoTab() {
   const retomar = useServerFn(adminRetomarCompeticao);
   const excluir = useServerFn(adminExcluirCompeticao);
   const competicao = useServerFn(getCompeticao);
+  const alertasFn = useServerFn(adminAlertasSuspeitos);
 
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
@@ -41,6 +42,12 @@ export function CompeticaoTab() {
 
   const { data: semana } = useQuery({ queryKey: ["competicao"], queryFn: () => competicao() });
   const { data: pontos } = useQuery({ queryKey: ["competicao-extrato"], queryFn: () => extrato({ data: {} }) });
+  const { data: alertas } = useQuery({
+    queryKey: ["competicao-alertas"],
+    queryFn: () => alertasFn({ data: {} }),
+    refetchInterval: 60_000,
+  });
+
 
   const salvar = async () => {
     if (!titulo.trim()) { toast.error("Informe o prêmio da semana."); return; }
