@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Gift, Ban, Flag, Pause, Play, Trash2 } from "lucide-react";
+import { Gift, Ban, Flag, Pause, Play, Trash2, ShieldAlert } from "lucide-react";
 import {
   adminDefinirPremio,
   adminExtratoPontos,
@@ -17,8 +17,10 @@ import {
   adminPausarCompeticao,
   adminRetomarCompeticao,
   adminExcluirCompeticao,
+  adminAlertasSuspeitos,
   getCompeticao,
 } from "@/lib/prospeccao/competicao.functions";
+
 import { ConfirmDialog } from "./ConfirmDialog";
 
 export function CompeticaoTab() {
