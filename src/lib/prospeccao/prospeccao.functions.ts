@@ -80,12 +80,23 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
       const existingByCpf = new Map<string, any>();
       const existingTel = new Set<string>();
       if (cpfs.length) {
+        // Old rows may store the CPF formatted (000.000.000-00), new ones store digits only.
+        const variants = new Set<string>();
+        for (const c of cpfs) {
+          const d = norm(c);
+          variants.add(c);
+          if (d.length === 11) {
+            variants.add(d);
+            variants.add(`${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`);
+          }
+        }
         const { data: ex } = await supabaseAdmin
           .from("prospect_leads")
-          .select("id,cpf,telefone,telefones,cidade,orcamento")
-          .in("cpf", cpfs);
+          .select("id,cpf,telefone,telefones,cidade,orcamento,idade,sexo,raw_data")
+          .in("cpf", [...variants]);
         (ex ?? []).forEach((e: any) => { if (e.cpf) existingByCpf.set(norm(e.cpf), e); });
       }
+
       if (tels.length) {
         const { data: ex } = await supabaseAdmin.from("prospect_leads").select("telefone").in("telefone", tels);
         (ex ?? []).forEach((e: any) => e.telefone && existingTel.add(norm(e.telefone)));
