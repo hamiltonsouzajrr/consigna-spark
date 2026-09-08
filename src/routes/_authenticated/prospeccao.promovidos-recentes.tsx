@@ -120,7 +120,8 @@ function Page() {
     try {
       const res = await fetchLeads({ data: { offset: rows.length, limit: PAGE, apenasNovos } });
       setRows((r) => [...r, ...res.rows]);
-      setTotal(res.total);
+      // Nas páginas seguintes o servidor não recontar a base (economia); mantém o total da 1ª página.
+      if (res.total > 0) setTotal(res.total);
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao carregar mais.");
     } finally {
