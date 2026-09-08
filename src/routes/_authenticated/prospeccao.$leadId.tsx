@@ -456,12 +456,27 @@ function Page() {
               })}
               {!phones.length && <p className="rounded-lg border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">Sem telefone cadastrado</p>}
 
-              <div className="flex gap-2">
-                <div className="flex-1 rounded-lg border bg-muted/30 px-3 py-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg border bg-muted/30 px-3 py-2">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Município</p>
                   <p className="truncate text-sm font-semibold">{lead.cidade ?? "—"}</p>
                 </div>
+                <div className="rounded-lg border bg-muted/30 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Margem informada</p>
+                  <p className="truncate text-sm font-semibold">{lead.orcamento != null ? BRL.format(lead.orcamento) : "—"}</p>
+                </div>
+                {(lead.idade != null || lead.sexo) && (
+                  <div className="rounded-lg border bg-muted/30 px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Perfil</p>
+                    <p className="truncate text-sm font-semibold">
+                      {[lead.idade != null ? `${lead.idade} anos` : null, lead.sexo === "M" ? "Masculino" : lead.sexo === "F" ? "Feminino" : lead.sexo]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                )}
               </div>
+
             </div>
 
             <button
