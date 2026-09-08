@@ -1,6 +1,6 @@
 // Indicador de ritmo de prospecção do dia (topbar) + pop-up que instiga a
 // consultora a manter o ritmo necessário para bater a meta diária.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Gauge, Zap } from "lucide-react";
@@ -30,6 +30,9 @@ export function RitmoDiario() {
   const [agora, setAgora] = useState<number | null>(null);
   const [configOpen, setConfigOpen] = useState(false);
   const [nudgeOpen, setNudgeOpen] = useState(false);
+  // Só perguntamos a jornada uma vez por sessão: se a consultora fechar sem
+  // salvar, a janela não volta sozinha a cada atualização dos contadores.
+  const jaPerguntou = useRef(false);
 
   useEffect(() => {
     setAgora(agoraMinutosMaceio());
@@ -39,8 +42,11 @@ export function RitmoDiario() {
 
   // Primeiro acesso: pergunta a jornada e o horário do almoço.
   useEffect(() => {
-    if (q.data && !q.data.configurada) setConfigOpen(true);
+    if (!q.data || q.data.configurada || jaPerguntou.current) return;
+    jaPerguntou.current = true;
+    setConfigOpen(true);
   }, [q.data]);
+
 
   const ritmo = useMemo(() => {
     if (!q.data || agora === null) return null;

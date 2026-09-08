@@ -177,17 +177,24 @@ export function CallQualityDialog({
                       {aberto === r.leadId ? "Ocultar" : "Histórico"}
                     </Button>
                     <Button asChild size="sm" variant="ghost" className="h-7 gap-1 px-2 text-xs">
-                      <Link to="/prospeccao/$leadId" params={{ leadId: r.leadId }}>
-                        Abrir <ExternalLink className="h-3 w-3" />
-                      </Link>
+                      {r.origem === "tomadores_al" ? (
+                        <Link to="/tomadores-al">
+                          Abrir <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      ) : (
+                        <Link to="/prospeccao/$leadId" params={{ leadId: r.leadId }}>
+                          Abrir <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      )}
                     </Button>
                   </div>
                   {r.body && (
                     <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">{r.body}</p>
                   )}
                   {aberto === r.leadId && (
-                    <LeadTimeline leadId={r.leadId} className="mt-3" limit={15} />
+                    <LeadTimeline leadId={r.leadId} origem={r.origem} className="mt-3" limit={15} />
                   )}
+
                 </li>
               ))}
             </ul>
