@@ -31,6 +31,8 @@ import {
 } from "@/lib/prospeccao/competicao.functions";
 
 import { useRhAccess } from "@/hooks/use-rh-access";
+import { formatCpf } from "@/lib/cpf";
+
 
 export const Route = createFileRoute("/_authenticated/prospeccao/$leadId")({
   head: () => ({ meta: [{ title: "Lead — Prospecção" }, { name: "robots", content: "noindex,nofollow" }] }),
