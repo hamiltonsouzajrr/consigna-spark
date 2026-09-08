@@ -52,7 +52,25 @@ type Lead = {
   score: number; quality_score: number | null; sla_status: SlaStatus; loss_reason: string | null; notes: string | null;
   next_follow_up_at: string | null; last_contact_at: string | null; first_response_at: string | null;
   respondeu_whatsapp: boolean; consultant_id: string | null; import_batch: string | null; created_at: string | null;
+  idade: number | null; sexo: string | null; raw_data: Record<string, unknown> | null;
 };
+
+const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+/** Extra columns kept from the imported spreadsheet, shown as-is. */
+function extrasPlanilha(raw: Record<string, unknown> | null): { k: string; v: string }[] {
+  if (!raw) return [];
+  const wanted = ["orgao", "órgão", "matricula", "matrícula", "cargo", "lotacao", "lotação", "situacao_funcional", "vinculo", "vínculo"];
+  const out: { k: string; v: string }[] = [];
+  for (const [key, value] of Object.entries(raw)) {
+    const low = key.toLowerCase().trim();
+    if (!wanted.some((w) => low === w || low.includes(w))) continue;
+    const v = String(value ?? "").trim();
+    if (v) out.push({ k: key, v });
+  }
+  return out.slice(0, 6);
+}
+
 type Ev = { id: string; kind: EventKind; body: string | null; created_at: string };
 type Task = { id: string; title: string; due_at: string; status: string };
 
