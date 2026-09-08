@@ -14,7 +14,9 @@ import { STATUS_LABEL, STATUS_TONE, type LeadStatus } from "@/lib/prospeccao/con
 
 
 export const Route = createFileRoute("/_authenticated/prospeccao/pesquisar-cliente")({
-  validateSearch: zodValidator(searchSchema),
+  validateSearch: (search: Record<string, unknown>): { q: string } => ({
+    q: typeof search.q === "string" ? search.q : "",
+  }),
   head: () => ({
     meta: [
       { title: "Pesquisar cliente — CRM Prospecção" },
@@ -51,7 +53,7 @@ function PesquisarClientePage() {
   const totais = r ? r.leads.length + r.tomadores.length + r.promovidos.length : 0;
 
   return (
-    <AppShell title="Pesquisar cliente">
+    <AppShell>
       <div className="mx-auto w-full max-w-5xl">
         <div className="mb-4 flex items-center gap-2">
           <Button asChild variant="ghost" size="sm">
