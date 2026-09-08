@@ -52,10 +52,14 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
       origem: l.origem || "planilha",
       orcamento: l.orcamento ?? null,
       urgencia: l.urgencia || "media",
+      idade: l.idade ?? null,
+      sexo: l.sexo || null,
+      raw_data: l.raw_data ?? null,
       consultant_id: l.consultant_id || null,
       created_by: userId,
       import_batch: batchLabel,
     }));
+
 
     let skipped = 0;
     let updated = 0;
