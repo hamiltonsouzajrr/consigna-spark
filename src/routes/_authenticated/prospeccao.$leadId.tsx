@@ -293,7 +293,9 @@ function Page() {
       const cur = Number(window.localStorage.getItem(key) || "0") || 0;
       window.localStorage.setItem(key, String(cur + 1));
       window.dispatchEvent(new Event("chamadas-updated"));
-    } catch {}
+    } catch (e) {
+      console.error("[prospeccao] falha ao contar chamada do dia", e);
+    }
     const { data } = await supabase
       .from("prospect_leads")
       .select("id")
