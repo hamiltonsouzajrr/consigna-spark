@@ -2,8 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { zodValidator, fallback } from "@tanstack/zod-adapter";
-import { z } from "zod";
 import { ArrowLeft, Search, UserSearch, IdCard, Award, Users } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
@@ -14,7 +12,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { buscarCliente } from "@/lib/prospeccao/busca-cliente.functions";
 import { STATUS_LABEL, STATUS_TONE, type LeadStatus } from "@/lib/prospeccao/constants";
 
-const searchSchema = z.object({ q: fallback(z.string(), "").default("") });
 
 export const Route = createFileRoute("/_authenticated/prospeccao/pesquisar-cliente")({
   validateSearch: zodValidator(searchSchema),
