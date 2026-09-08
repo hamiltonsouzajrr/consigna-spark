@@ -330,6 +330,9 @@ function Page() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline">
+            <Link to="/prospeccao/pesquisar-cliente" search={{ q: "" }}><Search className="mr-2 h-4 w-4" /> Pesquisar cliente</Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link to="/prospeccao/minha-semana"><Trophy className="mr-2 h-4 w-4" /> Minha semana</Link>
           </Button>
           <Button asChild variant="outline">
