@@ -9,8 +9,10 @@ export const createLeadBatch = createServerFn({ method: "POST" })
     totalLeads: z.number(),
     columnMapping: z.array(z.string()).optional(),
   }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ context, data }) => {
     const { filename, totalLeads, columnMapping } = data;
+    const { assertAdmin } = await import("./prospeccao.server");
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
     const { data: batch, error } = await supabaseAdmin
@@ -37,8 +39,10 @@ export const processLeadChunk = createServerFn({ method: "POST" })
     leads: z.array(z.record(z.any())),
     isLastChunk: z.boolean().optional(),
   }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ context, data }) => {
     const { batchId, leads, isLastChunk } = data;
+    const { assertAdmin } = await import("./prospeccao.server");
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
     // Insert chunk
@@ -79,7 +83,9 @@ export const processLeadChunk = createServerFn({ method: "POST" })
 
 export const getLeadBatches = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    const { assertAdmin } = await import("./prospeccao.server");
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("lead_batches")
@@ -93,7 +99,9 @@ export const getLeadBatches = createServerFn({ method: "GET" })
 export const getLeadsByBatch = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ batchId: z.string() }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ context, data }) => {
+    const { assertAdmin } = await import("./prospeccao.server");
+    await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: leads, error } = await supabaseAdmin
       .from("leads_raw")
