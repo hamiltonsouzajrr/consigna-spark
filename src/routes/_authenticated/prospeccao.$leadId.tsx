@@ -490,7 +490,7 @@ function Page() {
 
             {showMore && (
               <dl className="mt-3 space-y-1.5 border-t pt-3 text-sm">
-                <Row k="CPF" v={lead.cpf} />
+                <Row k="CPF" v={lead.cpf ? formatCpf(lead.cpf) : null} />
                 <Row k="Origem" v={lead.origem} />
                 <Row k="Respondeu WhatsApp" v={lead.respondeu_whatsapp ? "Sim" : null} />
                 <Row k="Lote de importação" v={lead.import_batch} />
