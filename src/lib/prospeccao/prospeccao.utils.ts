@@ -9,5 +9,8 @@ export const leadInput = z.object({
   origem: z.string().trim().max(60).optional().nullable(),
   orcamento: z.number().nonnegative().max(1_000_000_000_000).optional().nullable(),
   urgencia: z.enum(["alta", "media", "baixa"]).optional().nullable(),
+  idade: z.number().int().min(16).max(110).optional().nullable(),
+  sexo: z.string().trim().max(20).optional().nullable(),
+  raw_data: z.record(z.any()).optional().nullable(),
   consultant_id: z.string().uuid().optional().nullable(),
 });
