@@ -196,8 +196,10 @@ async function reciclarSemInteresseBase(
     return opts.faixaRange ? opts.faixaRange(out) : out;
   };
 
+  // Contagem estimada: rotina interna de reciclagem, não precisa de número
+  // exato e a contagem exata varria a tabela inteira.
   const { count: elegiveis } = await base(
-    client.from("tomadores_al").select("id", { count: "exact", head: true }),
+    client.from("tomadores_al").select("id", { count: "estimated", head: true }),
   );
 
   if (opts.previa || opts.quantos <= 0) return { elegiveis: Number(elegiveis ?? 0), reciclados: 0 };

@@ -118,7 +118,11 @@ export const getPromovidosRecentes = createServerFn({ method: "POST" })
 
 
     const base = (comJanela = true) => {
-      let q = context.supabase.from("do_registros").select(COLS, { count: "exact" });
+      // Contagem só na primeira página (a UI guarda o total); contar a tabela
+      // inteira em cada página deixava a tela lenta e podia estourar o tempo.
+      let q = context.supabase
+        .from("do_registros")
+        .select(COLS, offset === 0 ? { count: "estimated" } : undefined);
       if (comJanela) q = q.gte("data_publicacao", desde);
       if (nome) q = q.eq("consultora_responsavel", nome);
       return q;
