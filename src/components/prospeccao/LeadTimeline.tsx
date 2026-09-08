@@ -37,20 +37,22 @@ function quando(iso: string) {
 }
 
 export function LeadTimeline({
-  leadId, enabled = true, limit = 20, className,
+  leadId, enabled = true, limit = 20, className, origem = "crm",
 }: {
   leadId: string;
   enabled?: boolean;
   limit?: number;
   className?: string;
+  origem?: "crm" | "tomadores_al";
 }) {
   const fetchTimeline = useServerFn(getLeadTimeline);
   const { data, isLoading } = useQuery({
-    queryKey: ["lead-timeline", leadId, limit],
-    queryFn: () => fetchTimeline({ data: { leadId, limit } }),
+    queryKey: ["lead-timeline", leadId, limit, origem],
+    queryFn: () => fetchTimeline({ data: { leadId, limit, origem } }),
     enabled,
     staleTime: 30_000,
   });
+
 
   if (isLoading) return <Skeleton className={cn("h-24 w-full", className)} />;
 

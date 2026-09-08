@@ -2894,6 +2894,8 @@ export type Database = {
           reiniciados: number
         }[]
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       sync_radar_consultoras: { Args: never; Returns: number }
     }
     Enums: {

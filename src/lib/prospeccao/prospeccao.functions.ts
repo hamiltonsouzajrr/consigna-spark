@@ -1157,29 +1157,34 @@ export const getLeadTimeline = createServerFn({ method: "GET" })
     z
       .object({
         leadId: z.string().uuid(),
+        origem: z.enum(["crm", "tomadores_al"]).default("crm"),
         limit: z.coerce.number().int().min(1).max(100).default(30),
       })
       .parse(data ?? {}),
   )
   .handler(async ({ context, data }): Promise<LeadTimelineItem[]> => {
     const { supabase } = context;
+    const tomador = data.origem === "tomadores_al";
 
     const [{ data: evs, error: e1 }, { data: tasks, error: e2 }] = await Promise.all([
       supabase
         .from("lead_events")
         .select("id, kind, body, created_at")
-        .eq("lead_id", data.leadId)
+        .eq(tomador ? "tomador_id" : "lead_id", data.leadId)
         .order("created_at", { ascending: false })
         .limit(data.limit),
-      supabase
-        .from("lead_tasks")
-        .select("id, title, due_at, status, created_at")
-        .eq("lead_id", data.leadId)
-        .order("due_at", { ascending: false })
-        .limit(data.limit),
+      tomador
+        ? Promise.resolve({ data: [], error: null })
+        : supabase
+            .from("lead_tasks")
+            .select("id, title, due_at, status, created_at")
+            .eq("lead_id", data.leadId)
+            .order("due_at", { ascending: false })
+            .limit(data.limit),
     ]);
     if (e1) throw new Error(e1.message);
     if (e2) throw new Error(e2.message);
+
 
     const labels: Record<string, string> = {
       ligacao: "Ligação",
