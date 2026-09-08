@@ -113,6 +113,11 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
             if (r.telefone && !existing.telefone) patch.telefone = r.telefone;
             if (r.cidade && !existing.cidade) patch.cidade = r.cidade;
             if (r.orcamento != null && existing.orcamento == null) patch.orcamento = r.orcamento;
+            if (r.idade != null && existing.idade == null) patch.idade = r.idade;
+            if (r.sexo && !existing.sexo) patch.sexo = r.sexo;
+            if (r.raw_data && !existing.raw_data) patch.raw_data = r.raw_data;
+            if (r.cpf && existing.cpf !== r.cpf) patch.cpf = r.cpf;
+
             // Merge phone numbers: combine existing + new, dedup by digits.
             const incoming = (r.telefones && r.telefones.length ? r.telefones : (r.telefone ? [r.telefone] : []));
             const current: string[] = Array.isArray(existing.telefones) ? existing.telefones : (existing.telefone ? [existing.telefone] : []);
