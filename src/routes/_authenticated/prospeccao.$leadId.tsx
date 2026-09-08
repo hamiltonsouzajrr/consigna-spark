@@ -31,6 +31,8 @@ import {
 } from "@/lib/prospeccao/competicao.functions";
 
 import { useRhAccess } from "@/hooks/use-rh-access";
+import { formatCpf } from "@/lib/cpf";
+
 
 export const Route = createFileRoute("/_authenticated/prospeccao/$leadId")({
   head: () => ({ meta: [{ title: "Lead — Prospecção" }, { name: "robots", content: "noindex,nofollow" }] }),
@@ -52,7 +54,25 @@ type Lead = {
   score: number; quality_score: number | null; sla_status: SlaStatus; loss_reason: string | null; notes: string | null;
   next_follow_up_at: string | null; last_contact_at: string | null; first_response_at: string | null;
   respondeu_whatsapp: boolean; consultant_id: string | null; import_batch: string | null; created_at: string | null;
+  idade: number | null; sexo: string | null; raw_data: Record<string, unknown> | null;
 };
+
+const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+/** Extra columns kept from the imported spreadsheet, shown as-is. */
+function extrasPlanilha(raw: Record<string, unknown> | null): { k: string; v: string }[] {
+  if (!raw) return [];
+  const wanted = ["orgao", "órgão", "matricula", "matrícula", "cargo", "lotacao", "lotação", "situacao_funcional", "vinculo", "vínculo"];
+  const out: { k: string; v: string }[] = [];
+  for (const [key, value] of Object.entries(raw)) {
+    const low = key.toLowerCase().trim();
+    if (!wanted.some((w) => low === w || low.includes(w))) continue;
+    const v = String(value ?? "").trim();
+    if (v) out.push({ k: key, v });
+  }
+  return out.slice(0, 6);
+}
+
 type Ev = { id: string; kind: EventKind; body: string | null; created_at: string };
 type Task = { id: string; title: string; due_at: string; status: string };
 
@@ -438,12 +458,27 @@ function Page() {
               })}
               {!phones.length && <p className="rounded-lg border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">Sem telefone cadastrado</p>}
 
-              <div className="flex gap-2">
-                <div className="flex-1 rounded-lg border bg-muted/30 px-3 py-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg border bg-muted/30 px-3 py-2">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Município</p>
                   <p className="truncate text-sm font-semibold">{lead.cidade ?? "—"}</p>
                 </div>
+                <div className="rounded-lg border bg-muted/30 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Margem informada</p>
+                  <p className="truncate text-sm font-semibold">{lead.orcamento != null ? BRL.format(lead.orcamento) : "—"}</p>
+                </div>
+                {(lead.idade != null || lead.sexo) && (
+                  <div className="rounded-lg border bg-muted/30 px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Perfil</p>
+                    <p className="truncate text-sm font-semibold">
+                      {[lead.idade != null ? `${lead.idade} anos` : null, lead.sexo === "M" ? "Masculino" : lead.sexo === "F" ? "Feminino" : lead.sexo]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                )}
               </div>
+
             </div>
 
             <button
@@ -457,7 +492,7 @@ function Page() {
 
             {showMore && (
               <dl className="mt-3 space-y-1.5 border-t pt-3 text-sm">
-                <Row k="CPF" v={lead.cpf} />
+                <Row k="CPF" v={lead.cpf ? formatCpf(lead.cpf) : null} />
                 <Row k="Origem" v={lead.origem} />
                 <Row k="Respondeu WhatsApp" v={lead.respondeu_whatsapp ? "Sim" : null} />
                 <Row k="Lote de importação" v={lead.import_batch} />
@@ -470,7 +505,11 @@ function Page() {
                   tone={overdueFollowup ? "text-rose-600 dark:text-rose-400" : undefined}
                 />
                 <Row k="Motivo perda" v={lead.loss_reason} />
+                {extrasPlanilha(lead.raw_data).map((e) => (
+                  <Row key={e.k} k={e.k} v={e.v} />
+                ))}
               </dl>
+
             )}
           </Card>
 

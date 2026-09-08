@@ -52,10 +52,14 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
       origem: l.origem || "planilha",
       orcamento: l.orcamento ?? null,
       urgencia: l.urgencia || "media",
+      idade: l.idade ?? null,
+      sexo: l.sexo || null,
+      raw_data: l.raw_data ?? null,
       consultant_id: l.consultant_id || null,
       created_by: userId,
       import_batch: batchLabel,
     }));
+
 
     let skipped = 0;
     let updated = 0;
@@ -76,12 +80,23 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
       const existingByCpf = new Map<string, any>();
       const existingTel = new Set<string>();
       if (cpfs.length) {
+        // Old rows may store the CPF formatted (000.000.000-00), new ones store digits only.
+        const variants = new Set<string>();
+        for (const c of cpfs) {
+          const d = norm(c);
+          variants.add(c);
+          if (d.length === 11) {
+            variants.add(d);
+            variants.add(`${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`);
+          }
+        }
         const { data: ex } = await supabaseAdmin
           .from("prospect_leads")
-          .select("id,cpf,telefone,telefones,cidade,orcamento")
-          .in("cpf", cpfs);
+          .select("id,cpf,telefone,telefones,cidade,orcamento,idade,sexo,raw_data")
+          .in("cpf", [...variants]);
         (ex ?? []).forEach((e: any) => { if (e.cpf) existingByCpf.set(norm(e.cpf), e); });
       }
+
       if (tels.length) {
         const { data: ex } = await supabaseAdmin.from("prospect_leads").select("telefone").in("telefone", tels);
         (ex ?? []).forEach((e: any) => e.telefone && existingTel.add(norm(e.telefone)));
@@ -98,6 +113,11 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
             if (r.telefone && !existing.telefone) patch.telefone = r.telefone;
             if (r.cidade && !existing.cidade) patch.cidade = r.cidade;
             if (r.orcamento != null && existing.orcamento == null) patch.orcamento = r.orcamento;
+            if (r.idade != null && existing.idade == null) patch.idade = r.idade;
+            if (r.sexo && !existing.sexo) patch.sexo = r.sexo;
+            if (r.raw_data && !existing.raw_data) patch.raw_data = r.raw_data;
+            if (r.cpf && existing.cpf !== r.cpf) patch.cpf = r.cpf;
+
             // Merge phone numbers: combine existing + new, dedup by digits.
             const incoming = (r.telefones && r.telefones.length ? r.telefones : (r.telefone ? [r.telefone] : []));
             const current: string[] = Array.isArray(existing.telefones) ? existing.telefones : (existing.telefone ? [existing.telefone] : []);

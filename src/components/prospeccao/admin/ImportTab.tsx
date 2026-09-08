@@ -162,6 +162,13 @@ export function ImportTab({ consultants, selectedConsultants }: { consultants: C
                 {meta.semTelefone > 0 && <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-muted-foreground">{meta.semTelefone} sem telefone</span>}
                 {meta.duplicados > 0 && <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-muted-foreground">{meta.duplicados} duplicado(s) na planilha</span>}
               </div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-muted-foreground">{meta.comCidade} com município</span>
+                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-muted-foreground">{meta.comIdade} com idade</span>
+                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-muted-foreground">{meta.comMargem} com margem</span>
+                {meta.cpfInvalidos > 0 && <span className="rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-amber-700 dark:text-amber-300">{meta.cpfInvalidos} CPF inválido(s)</span>}
+              </div>
+
               {meta.comWhats === 0 && meta.total > 0 && (
                 <p className="text-xs text-amber-600 dark:text-amber-400">Nenhum número válido detectado nesta coluna — selecione a coluna correta acima.</p>
               )}
