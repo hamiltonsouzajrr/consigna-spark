@@ -81,8 +81,8 @@ async function identificar(context: any): Promise<{ isAdmin: boolean; nome: stri
       const { sincronizarConsultoras } = await import("@/lib/radar/distribuicao.server");
       await sincronizarConsultoras();
       nome = await buscarNome(context, email);
-    } catch {
-      /* silencioso: segue sem vínculo */
+    } catch (e) {
+      console.error("[promovidos] falha ao vincular consultora automaticamente", e);
     }
   }
   return { isAdmin: false, nome };
