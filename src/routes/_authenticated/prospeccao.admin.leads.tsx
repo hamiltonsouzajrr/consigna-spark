@@ -22,6 +22,13 @@ import { Progress } from "@/components/ui/progress";
 import { AdminGate } from "@/components/security/AdminGate";
 
 export const Route = createFileRoute("/_authenticated/prospeccao/admin/leads")({
+  head: () => ({
+    meta: [
+      { title: "Importar leads — Administração" },
+      { name: "description", content: "Importação de planilhas de leads, conferência dos lotes e atribuição às consultoras." },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+  }),
   component: () => (
     <AdminGate>
       <LeadsAdminPage />

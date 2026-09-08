@@ -81,8 +81,8 @@ async function identificar(context: any): Promise<{ isAdmin: boolean; nome: stri
       const { sincronizarConsultoras } = await import("@/lib/radar/distribuicao.server");
       await sincronizarConsultoras();
       nome = await buscarNome(context, email);
-    } catch {
-      /* silencioso: segue sem vínculo */
+    } catch (e) {
+      console.error("[promovidos] falha ao vincular consultora automaticamente", e);
     }
   }
   return { isAdmin: false, nome };
@@ -118,7 +118,11 @@ export const getPromovidosRecentes = createServerFn({ method: "POST" })
 
 
     const base = (comJanela = true) => {
-      let q = context.supabase.from("do_registros").select(COLS, { count: "exact" });
+      // Contagem só na primeira página (a UI guarda o total); contar a tabela
+      // inteira em cada página deixava a tela lenta e podia estourar o tempo.
+      let q = context.supabase
+        .from("do_registros")
+        .select(COLS, offset === 0 ? { count: "estimated" } : undefined);
       if (comJanela) q = q.gte("data_publicacao", desde);
       if (nome) q = q.eq("consultora_responsavel", nome);
       return q;

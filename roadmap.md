@@ -14,3 +14,4 @@
 - [x] Meta de 250 prospecções/dia: jornada + horário de almoço por consultora, ritmo por hora no topo e pop-up de cobrança a cada 30 min
 - [x] Qualificação deixa de pontuar (venda confirmada passa a 40 pts) e pontos de qualificação da semana zerados
 - [x] Tela "Minha semana" por consultora: pontos, tempo ativo, ritmo diário, evolução das semanas e histórico por ação
+- [x] Revisão geral: importação de leads restrita a admin, índices de busca por nome/CPF, contagens caras reduzidas, título na tela de importação, erros silenciosos passam a ser registrados, cache do vínculo consultora/e-mail

@@ -112,14 +112,25 @@ function nomeDoEmail(email: string): string {
 // Vínculo automático: se o e-mail logado ainda não tem consultora cadastrada,
 // criamos (ou adotamos, quando o nome já existe) o registro na hora, para que
 // a consultora nunca fique sem carteira esperando ação do administrador.
+// Cache curto (por processo) do vínculo e-mail -> nome da consultora: essa
+// consulta era feita em toda requisição de tela; o nome quase nunca muda.
+const nomeCache = new Map<string, { nome: string; em: number }>();
+const NOME_CACHE_MS = 5 * 60 * 1000;
+
 async function nomeConsultora(_supabase: any, claims: any, autoVincular = false): Promise<string | null> {
   const email = String(claims?.email ?? "").trim().toLowerCase();
   if (!email) return null;
+  const cache = nomeCache.get(email);
+  if (cache && Date.now() - cache.em < NOME_CACHE_MS) return cache.nome;
   const client = await getAdminClient();
 
   const { data } = await client.from("radar_consultoras").select("nome").ilike("email", email).limit(1);
   const nome = (data ?? [])[0]?.nome;
-  if (nome) return String(nome).trim();
+  if (nome) {
+    const limpo = String(nome).trim();
+    nomeCache.set(email, { nome: limpo, em: Date.now() });
+    return limpo;
+  }
   if (!autoVincular) return null;
 
   const candidato = nomeDoEmail(email);
@@ -185,8 +196,10 @@ async function reciclarSemInteresseBase(
     return opts.faixaRange ? opts.faixaRange(out) : out;
   };
 
+  // Contagem estimada: rotina interna de reciclagem, não precisa de número
+  // exato e a contagem exata varria a tabela inteira.
   const { count: elegiveis } = await base(
-    client.from("tomadores_al").select("id", { count: "exact", head: true }),
+    client.from("tomadores_al").select("id", { count: "estimated", head: true }),
   );
 
   if (opts.previa || opts.quantos <= 0) return { elegiveis: Number(elegiveis ?? 0), reciclados: 0 };
