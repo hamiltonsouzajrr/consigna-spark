@@ -503,7 +503,11 @@ function Page() {
                   tone={overdueFollowup ? "text-rose-600 dark:text-rose-400" : undefined}
                 />
                 <Row k="Motivo perda" v={lead.loss_reason} />
+                {extrasPlanilha(lead.raw_data).map((e) => (
+                  <Row key={e.k} k={e.k} v={e.v} />
+                ))}
               </dl>
+
             )}
           </Card>
 
