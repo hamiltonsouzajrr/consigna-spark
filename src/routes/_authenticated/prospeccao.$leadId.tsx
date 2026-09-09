@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { parseNumeroBr } from "@/lib/prospeccao/admin-import";
+
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -82,8 +84,17 @@ function rawField(raw: Record<string, unknown> | null, names: string[]): string 
   return null;
 }
 
+/** Lê um valor de margem da planilha, aceitando formato pt-BR ("1.234,56"). */
+function margemPlanilha(raw: Record<string, unknown> | null, names: string[]): number | null {
+  const v = rawField(raw, names);
+  if (!v) return null;
+  const n = parseNumeroBr(v);
+  return n != null && Number.isFinite(n) && n > 0 ? n : null;
+}
+
 /** Campos promovidos ao topo — não repetem em "Ver mais detalhes". */
-const CAMPOS_DESTAQUE = ["orgao", "lotacao", "cargo", "matricula"];
+const CAMPOS_DESTAQUE = ["orgao", "lotacao", "cargo", "matricula", "margem"];
+
 
 /** Extra columns kept from the imported spreadsheet, shown as-is. */
 function extrasPlanilha(raw: Record<string, unknown> | null): { k: string; v: string }[] {
@@ -497,15 +508,31 @@ function Page() {
               })}
               {!phones.length && <p className="rounded-lg border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">Sem telefone cadastrado</p>}
 
+              <div className="rounded-lg border bg-muted/30 px-3 py-2">
+                <p className="mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">Margens</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: "Margem informada", valor: lead.orcamento },
+                    { label: "Empréstimo", valor: margemPlanilha(lead.raw_data, ["margem_disp_emprestimo", "margem disponivel emprestimo", "margem emprestimo"]) },
+                    { label: "Cartão de crédito", valor: margemPlanilha(lead.raw_data, ["margem_disp_cartao_credito", "margem disponivel cartao credito", "margem cartao credito"]) },
+                    { label: "Cartão benefício", valor: margemPlanilha(lead.raw_data, ["margem_util_cartao_beneficio", "margem cartao beneficio", "cartao beneficio"]) },
+                  ].map((m) => (
+                    <div key={m.label}>
+                      <p className="text-[11px] text-muted-foreground">{m.label}</p>
+                      <p className="truncate text-sm font-semibold">
+                        {m.valor != null ? BRL.format(m.valor) : <span className="text-xs font-normal text-muted-foreground">Consultar no app do servidor</span>}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-lg border bg-muted/30 px-3 py-2">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Município</p>
                   <p className="truncate text-sm font-semibold">{lead.cidade ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
                 </div>
-                <div className="rounded-lg border bg-muted/30 px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Margem informada</p>
-                  <p className="truncate text-sm font-semibold">{lead.orcamento != null ? BRL.format(lead.orcamento) : <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
-                </div>
+
                 <div className="rounded-lg border bg-muted/30 px-3 py-2">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><Landmark className="h-3 w-3" /> Órgão / lotação</p>
                   <p className="truncate text-sm font-semibold">{rawField(lead.raw_data, ["orgao", "lotacao"]) ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
