@@ -62,7 +62,10 @@ const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" 
 /** Extra columns kept from the imported spreadsheet, shown as-is. */
 function extrasPlanilha(raw: Record<string, unknown> | null): { k: string; v: string }[] {
   if (!raw) return [];
-  const wanted = ["orgao", "órgão", "matricula", "matrícula", "cargo", "lotacao", "lotação", "situacao_funcional", "vinculo", "vínculo"];
+  const wanted = [
+    "orgao", "órgão", "matricula", "matrícula", "cargo", "lotacao", "lotação",
+    "situacao", "situação", "vinculo", "vínculo", "nascimento", "categoria", "banco", "especie", "espécie",
+  ];
   const out: { k: string; v: string }[] = [];
   for (const [key, value] of Object.entries(raw)) {
     const low = key.toLowerCase().trim();
@@ -70,7 +73,7 @@ function extrasPlanilha(raw: Record<string, unknown> | null): { k: string; v: st
     const v = String(value ?? "").trim();
     if (v) out.push({ k: key, v });
   }
-  return out.slice(0, 6);
+  return out.slice(0, 10);
 }
 
 type Ev = { id: string; kind: EventKind; body: string | null; created_at: string };
