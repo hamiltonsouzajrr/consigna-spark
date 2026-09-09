@@ -17,6 +17,6 @@ function Index() {
   }
 
   if (!user) return <Navigate to="/login" />;
-  // Administrador entra no hub de gestão; demais usuários no portal.
-  return <Navigate to={isAdmin ? "/admin" : "/rh/portal"} />;
+  // Administrador entra no hub de gestão; consultoras já caem no CRM.
+  return <Navigate to={isAdmin ? "/admin" : "/prospeccao"} />;
 }
