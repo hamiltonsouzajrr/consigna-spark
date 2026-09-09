@@ -497,15 +497,31 @@ function Page() {
               })}
               {!phones.length && <p className="rounded-lg border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">Sem telefone cadastrado</p>}
 
+              <div className="rounded-lg border bg-muted/30 px-3 py-2">
+                <p className="mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">Margens</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: "Margem informada", valor: lead.orcamento },
+                    { label: "Empréstimo", valor: margemPlanilha(lead.raw_data, ["margem_disp_emprestimo", "margem disponivel emprestimo", "margem emprestimo"]) },
+                    { label: "Cartão de crédito", valor: margemPlanilha(lead.raw_data, ["margem_disp_cartao_credito", "margem disponivel cartao credito", "margem cartao credito"]) },
+                    { label: "Cartão benefício", valor: margemPlanilha(lead.raw_data, ["margem_util_cartao_beneficio", "margem cartao beneficio", "cartao beneficio"]) },
+                  ].map((m) => (
+                    <div key={m.label}>
+                      <p className="text-[11px] text-muted-foreground">{m.label}</p>
+                      <p className="truncate text-sm font-semibold">
+                        {m.valor != null ? BRL.format(m.valor) : <span className="text-xs font-normal text-muted-foreground">Consultar no app do servidor</span>}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-lg border bg-muted/30 px-3 py-2">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Município</p>
                   <p className="truncate text-sm font-semibold">{lead.cidade ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
                 </div>
-                <div className="rounded-lg border bg-muted/30 px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Margem informada</p>
-                  <p className="truncate text-sm font-semibold">{lead.orcamento != null ? BRL.format(lead.orcamento) : <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
-                </div>
+
                 <div className="rounded-lg border bg-muted/30 px-3 py-2">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><Landmark className="h-3 w-3" /> Órgão / lotação</p>
                   <p className="truncate text-sm font-semibold">{rawField(lead.raw_data, ["orgao", "lotacao"]) ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
