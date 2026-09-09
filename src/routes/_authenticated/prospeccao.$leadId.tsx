@@ -4,6 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { parseNumeroBr } from "@/lib/prospeccao/admin-import";
+import {
+  PRAZOS_FICHA, PRAZO_CARTAO, PRAZO_EMPRESTIMO_PADRAO, valorLiberado,
+} from "@/lib/prospeccao/coeficientes";
 
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
@@ -181,6 +184,8 @@ function Page() {
   const [lossReason, setLossReason] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [showPhones, setShowPhones] = useState(false);
+  const [prazo, setPrazo] = useState(PRAZO_EMPRESTIMO_PADRAO);
   const noteRef = useRef<HTMLTextAreaElement>(null);
 
   // Reset view whenever the lead changes so the previous lead never flashes.
