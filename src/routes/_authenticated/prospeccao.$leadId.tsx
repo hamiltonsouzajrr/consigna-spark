@@ -100,8 +100,16 @@ function EventIcon({ kind }: { kind: EventKind }) {
 }
 
 function leadPhones(lead: Lead): string[] {
-  const nums = lead.telefones && lead.telefones.length ? lead.telefones : (lead.telefone ? [lead.telefone] : []);
-  return Array.from(new Set(nums.map((n) => n.trim()).filter(Boolean)));
+  const nums = [...(lead.telefones ?? []), lead.telefone ?? ""];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const n of nums) {
+    const norm = normalizeWhatsappNumber(n);
+    if (!norm || seen.has(norm)) continue;
+    seen.add(norm);
+    out.push(n.trim());
+  }
+  return out;
 }
 
 function Page() {
