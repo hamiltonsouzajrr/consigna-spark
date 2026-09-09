@@ -84,6 +84,7 @@ function Page() {
   const [vinculada, setVinculada] = useState(false);
   const [loading, setLoading] = useState(true);
   const [more, setMore] = useState(false);
+  const [temMais, setTemMais] = useState(false);
   const [apenasNovos, setApenasNovos] = useState(false);
   const [cpfDraft, setCpfDraft] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
