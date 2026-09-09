@@ -77,6 +77,7 @@ import { Route as AuthenticatedRhRecrutamentoRouteImport } from './routes/_authe
 import { Route as AuthenticatedRhTreinamentosRouteImport } from './routes/_authenticated/rh.treinamentos'
 import { Route as AuthenticatedRhTurnoverRouteImport } from './routes/_authenticated/rh.turnover'
 import { Route as AuthenticatedProspeccaoAdminLeadsRouteImport } from './routes/_authenticated/prospeccao.admin.leads'
+import { Route as AuthenticatedProspeccaoAdminMetasRouteImport } from './routes/_authenticated/prospeccao.admin.metas'
 import { Route as AuthenticatedProspeccaoAdminOrfaosRouteImport } from './routes/_authenticated/prospeccao.admin.orfaos'
 import { Route as AuthenticatedProspeccaoAdminVendasRouteImport } from './routes/_authenticated/prospeccao.admin.vendas'
 import { Route as AuthenticatedRhColaboradoresIdRouteImport } from './routes/_authenticated/rh.colaboradores.$id'
@@ -472,6 +473,12 @@ const AuthenticatedProspeccaoAdminLeadsRoute =
     path: '/leads',
     getParentRoute: () => AuthenticatedProspeccaoAdminRoute,
   } as any)
+const AuthenticatedProspeccaoAdminMetasRoute =
+  AuthenticatedProspeccaoAdminMetasRouteImport.update({
+    id: '/metas',
+    path: '/metas',
+    getParentRoute: () => AuthenticatedProspeccaoAdminRoute,
+  } as any)
 const AuthenticatedProspeccaoAdminOrfaosRoute =
   AuthenticatedProspeccaoAdminOrfaosRouteImport.update({
     id: '/orfaos',
@@ -625,6 +632,7 @@ export interface FileRoutesByFullPath {
   '/radar/': typeof AuthenticatedRadarIndexRoute
   '/rh/': typeof AuthenticatedRhIndexRoute
   '/prospeccao/admin/leads': typeof AuthenticatedProspeccaoAdminLeadsRoute
+  '/prospeccao/admin/metas': typeof AuthenticatedProspeccaoAdminMetasRoute
   '/prospeccao/admin/orfaos': typeof AuthenticatedProspeccaoAdminOrfaosRoute
   '/prospeccao/admin/vendas': typeof AuthenticatedProspeccaoAdminVendasRoute
   '/rh/colaboradores/$id': typeof AuthenticatedRhColaboradoresIdRoute
@@ -705,6 +713,7 @@ export interface FileRoutesByTo {
   '/radar': typeof AuthenticatedRadarIndexRoute
   '/rh': typeof AuthenticatedRhIndexRoute
   '/prospeccao/admin/leads': typeof AuthenticatedProspeccaoAdminLeadsRoute
+  '/prospeccao/admin/metas': typeof AuthenticatedProspeccaoAdminMetasRoute
   '/prospeccao/admin/orfaos': typeof AuthenticatedProspeccaoAdminOrfaosRoute
   '/prospeccao/admin/vendas': typeof AuthenticatedProspeccaoAdminVendasRoute
   '/rh/colaboradores/$id': typeof AuthenticatedRhColaboradoresIdRoute
@@ -790,6 +799,7 @@ export interface FileRoutesById {
   '/_authenticated/radar/': typeof AuthenticatedRadarIndexRoute
   '/_authenticated/rh/': typeof AuthenticatedRhIndexRoute
   '/_authenticated/prospeccao/admin/leads': typeof AuthenticatedProspeccaoAdminLeadsRoute
+  '/_authenticated/prospeccao/admin/metas': typeof AuthenticatedProspeccaoAdminMetasRoute
   '/_authenticated/prospeccao/admin/orfaos': typeof AuthenticatedProspeccaoAdminOrfaosRoute
   '/_authenticated/prospeccao/admin/vendas': typeof AuthenticatedProspeccaoAdminVendasRoute
   '/_authenticated/rh/colaboradores/$id': typeof AuthenticatedRhColaboradoresIdRoute
@@ -875,6 +885,7 @@ export interface FileRouteTypes {
     | '/radar/'
     | '/rh/'
     | '/prospeccao/admin/leads'
+    | '/prospeccao/admin/metas'
     | '/prospeccao/admin/orfaos'
     | '/prospeccao/admin/vendas'
     | '/rh/colaboradores/$id'
@@ -955,6 +966,7 @@ export interface FileRouteTypes {
     | '/radar'
     | '/rh'
     | '/prospeccao/admin/leads'
+    | '/prospeccao/admin/metas'
     | '/prospeccao/admin/orfaos'
     | '/prospeccao/admin/vendas'
     | '/rh/colaboradores/$id'
@@ -1039,6 +1051,7 @@ export interface FileRouteTypes {
     | '/_authenticated/radar/'
     | '/_authenticated/rh/'
     | '/_authenticated/prospeccao/admin/leads'
+    | '/_authenticated/prospeccao/admin/metas'
     | '/_authenticated/prospeccao/admin/orfaos'
     | '/_authenticated/prospeccao/admin/vendas'
     | '/_authenticated/rh/colaboradores/$id'
@@ -1552,6 +1565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProspeccaoAdminLeadsRouteImport
       parentRoute: typeof AuthenticatedProspeccaoAdminRoute
     }
+    '/_authenticated/prospeccao/admin/metas': {
+      id: '/_authenticated/prospeccao/admin/metas'
+      path: '/metas'
+      fullPath: '/prospeccao/admin/metas'
+      preLoaderRoute: typeof AuthenticatedProspeccaoAdminMetasRouteImport
+      parentRoute: typeof AuthenticatedProspeccaoAdminRoute
+    }
     '/_authenticated/prospeccao/admin/orfaos': {
       id: '/_authenticated/prospeccao/admin/orfaos'
       path: '/orfaos'
@@ -1764,6 +1784,7 @@ const AuthenticatedRhRouteWithChildren = AuthenticatedRhRoute._addFileChildren(
 
 interface AuthenticatedProspeccaoAdminRouteChildren {
   AuthenticatedProspeccaoAdminLeadsRoute: typeof AuthenticatedProspeccaoAdminLeadsRoute
+  AuthenticatedProspeccaoAdminMetasRoute: typeof AuthenticatedProspeccaoAdminMetasRoute
   AuthenticatedProspeccaoAdminOrfaosRoute: typeof AuthenticatedProspeccaoAdminOrfaosRoute
   AuthenticatedProspeccaoAdminVendasRoute: typeof AuthenticatedProspeccaoAdminVendasRoute
 }
@@ -1772,6 +1793,8 @@ const AuthenticatedProspeccaoAdminRouteChildren: AuthenticatedProspeccaoAdminRou
   {
     AuthenticatedProspeccaoAdminLeadsRoute:
       AuthenticatedProspeccaoAdminLeadsRoute,
+    AuthenticatedProspeccaoAdminMetasRoute:
+      AuthenticatedProspeccaoAdminMetasRoute,
     AuthenticatedProspeccaoAdminOrfaosRoute:
       AuthenticatedProspeccaoAdminOrfaosRoute,
     AuthenticatedProspeccaoAdminVendasRoute:
