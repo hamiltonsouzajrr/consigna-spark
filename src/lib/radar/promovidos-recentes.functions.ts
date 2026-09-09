@@ -113,7 +113,7 @@ export const getPromovidosRecentes = createServerFn({ method: "POST" })
 
     if (!isAdmin && !nome) {
       return {
-        rows: [], total: 0, isAdmin: false, consultoraNome: null, vinculada: false,
+        rows: [], total: 0, temMais: false, isAdmin: false, consultoraNome: null, vinculada: false,
         novosHoje: 0, novos7d: 0, semCpf: 0, naoAbordados: 0, ultimaEntrega: null,
         foraDaJanela: false, ultimaPublicacao: null,
       };
