@@ -5,13 +5,13 @@ Hoje a ficha mostra apenas uma "Margem informada". Quando a planilha traz mais d
 ## O que muda
 
 1. **Bloco "Margens" na ficha do lead**, logo abaixo dos telefones, com um cartão por tipo:
-   - Margem disponível para empréstimo
-   - Margem disponível cartão de crédito
-   - Margem cartão benefício
-   - Margem bruta e margem utilizada (quando vierem)
-   - Margem informada (o valor que já é usado hoje)
+  - Margem disponível para empréstimo
+  - Margem disponível cartão de crédito
+  - Margem cartão benefício
+  - &nbsp;
+  - &nbsp;
 2. **Texto quando falta a informação:** onde não houver valor, aparece **"Consultar no app do servidor"** em vez de "Não veio na planilha".
-3. Cada valor é exibido em reais (R$ 1.234,56), lido da planilha aceitando variações de nome de coluna, acento e maiúsculas.
+3. Cada valor é exibido em reais (R$ 1.234,56) utilizando o coeficiente de cada produto e banco, lido da planilha aceitando variações de nome de coluna, acento e maiúsculas.
 
 ## Importante sobre os leads já cadastrados
 
