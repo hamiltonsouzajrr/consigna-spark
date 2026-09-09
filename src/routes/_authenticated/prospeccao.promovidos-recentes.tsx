@@ -97,6 +97,7 @@ function Page() {
       const res = await fetchLeads({ data: { offset: 0, limit: PAGE, apenasNovos } });
       setRows(res.rows);
       setTotal(res.total);
+      setTemMais(res.temMais);
       setConsultoraNome(res.consultoraNome);
       setVinculada(res.vinculada);
       setUltimaEntrega(res.ultimaEntrega);
@@ -116,19 +117,20 @@ function Page() {
   useEffect(() => { void carregar(); }, [carregar]);
 
   const carregarMais = useCallback(async () => {
-    if (more || loading || rows.length >= total) return;
+    if (more || loading || !temMais) return;
     setMore(true);
     try {
       const res = await fetchLeads({ data: { offset: rows.length, limit: PAGE, apenasNovos } });
       setRows((r) => [...r, ...res.rows]);
-      // Nas páginas seguintes o servidor não recontar a base (economia); mantém o total da 1ª página.
+      setTemMais(res.temMais);
+      // Nas páginas seguintes o servidor não reconta a base (economia); mantém o total da 1ª página.
       if (res.total > 0) setTotal(res.total);
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao carregar mais.");
     } finally {
       setMore(false);
     }
-  }, [fetchLeads, apenasNovos, rows.length, total, more, loading]);
+  }, [fetchLeads, apenasNovos, rows.length, temMais, more, loading]);
 
   // Carregamento automático 30 em 30: ao chegar perto do fim da lista,
   // a próxima página entra sozinha, sem a consultora precisar clicar.
