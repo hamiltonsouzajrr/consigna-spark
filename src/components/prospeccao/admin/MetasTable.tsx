@@ -91,9 +91,8 @@ export function MetasTable({
                     ) : null}
                     <Link
                       to="/prospeccao/minha-semana"
-                      search={{ userId: l.user_id } as never}
                       className="text-muted-foreground hover:text-foreground"
-                      title="Abrir a semana dela"
+                      title="Abrir a tela Minha semana"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                     </Link>
