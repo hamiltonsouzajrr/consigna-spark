@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Gift, Ban, Flag, Pause, Play, Trash2, ShieldAlert } from "lucide-react";
+import { Gift, Ban, Flag, Pause, Play, Trash2, ShieldAlert, Target } from "lucide-react";
 import {
   adminDefinirPremio,
   adminExtratoPontos,
@@ -111,6 +112,14 @@ export function CompeticaoTab() {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/prospeccao/admin/metas">
+            <Target className="mr-1 h-4 w-4" /> Metas por consultora
+          </Link>
+        </Button>
+      </div>
+
       {/* Status e controles da competição */}
       <Card className="p-4">
         <div className="flex items-center justify-between gap-2">
