@@ -1,8 +1,42 @@
 import { createRouter, useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { routeTree } from "./routeTree.gen";
+
+// Falhas de carregamento dos arquivos do app: acontecem quando o navegador
+// ainda tem a versão anterior aberta depois de uma publicação e tenta baixar
+// um pedaço que já não existe. Nesse caso recarregamos a página uma única vez.
+const CHUNK_ERROR_PATTERNS = [
+  "importing a module script failed",
+  "failed to fetch dynamically imported module",
+  "error loading dynamically imported module",
+  "chunkloaderror",
+  "loading chunk",
+  "unable to preload css",
+];
+
+function isChunkError(error: Error) {
+  const text = `${error?.name ?? ""} ${error?.message ?? ""}`.toLowerCase();
+  return CHUNK_ERROR_PATTERNS.some((p) => text.includes(p));
+}
+
+const RELOAD_FLAG = "app-chunk-reload";
 
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
+  const [detalhes, setDetalhes] = useState(false);
+
+  useEffect(() => {
+    // Registra o motivo real para aparecer nos logs do navegador.
+    console.error("[app] erro na tela:", error);
+    if (typeof window === "undefined" || !isChunkError(error)) return;
+    try {
+      if (window.sessionStorage.getItem(RELOAD_FLAG)) return;
+      window.sessionStorage.setItem(RELOAD_FLAG, "1");
+    } catch {
+      return;
+    }
+    window.location.reload();
+  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
