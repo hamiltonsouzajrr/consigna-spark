@@ -486,83 +486,141 @@ function Page() {
           <Card className="p-5">
             <p className="mb-3 text-sm font-semibold">Dados do lead</p>
 
-            {/* Highlights: phones + city + score */}
-            <div className="space-y-2">
-              {phones.map((num, i) => {
-                const link = whatsappLink(num, `Olá ${lead.nome.split(" ")[0]}, tudo bem?`);
-                return (
-                  <div key={`${num}-${i}`} className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2">
-                    <div className="min-w-0">
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{i === 0 ? "Telefone" : `Telefone ${i + 1}`}</p>
-                      <p className="truncate text-base font-semibold">{num}</p>
+            <div className="space-y-4">
+              {/* 1. Contato */}
+              <div className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Contato</p>
+                {(showPhones ? phones : phones.slice(0, 3)).map((num, i) => {
+                  const link = whatsappLink(num, `Olá ${lead.nome.split(" ")[0]}, tudo bem?`);
+                  return (
+                    <div key={`${num}-${i}`} className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{i === 0 ? "Telefone" : `Telefone ${i + 1}`}</p>
+                        <p className="truncate text-base font-semibold">{num}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {telLink(num) && (
+                          <a href={telLink(num)!} title="Ligar" className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-sky-500/15 text-sky-600 transition hover:bg-sky-500/25 dark:text-sky-400">
+                            <PhoneCall className="h-4 w-4" />
+                          </a>
+                        )}
+                        {link && (
+                          <a href={link} target="_blank" rel="noopener noreferrer" title="Abrir no WhatsApp" className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600 transition hover:bg-emerald-500/25 dark:text-emerald-400">
+                            <WhatsAppIcon className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {telLink(num) && (
-                        <a href={telLink(num)!} title="Ligar" className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-sky-500/15 text-sky-600 transition hover:bg-sky-500/25 dark:text-sky-400">
-                          <PhoneCall className="h-4 w-4" />
-                        </a>
-                      )}
-                      {link && (
-                        <a href={link} target="_blank" rel="noopener noreferrer" title="Abrir no WhatsApp" className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600 transition hover:bg-emerald-500/25 dark:text-emerald-400">
-                          <WhatsAppIcon className="h-4 w-4" />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-              {!phones.length && <p className="rounded-lg border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">Sem telefone cadastrado</p>}
-
-              <div className="rounded-lg border bg-muted/30 px-3 py-2">
-                <p className="mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">Margens</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { label: "Margem informada", valor: lead.orcamento },
-                    { label: "Empréstimo", valor: margemPlanilha(lead.raw_data, ["margem_disp_emprestimo", "margem disponivel emprestimo", "margem emprestimo"]) },
-                    { label: "Cartão de crédito", valor: margemPlanilha(lead.raw_data, ["margem_disp_cartao_credito", "margem disponivel cartao credito", "margem cartao credito"]) },
-                    { label: "Cartão benefício", valor: margemPlanilha(lead.raw_data, ["margem_util_cartao_beneficio", "margem cartao beneficio", "cartao beneficio"]) },
-                  ].map((m) => (
-                    <div key={m.label}>
-                      <p className="text-[11px] text-muted-foreground">{m.label}</p>
-                      <p className="truncate text-sm font-semibold">
-                        {m.valor != null ? BRL.format(m.valor) : <span className="text-xs font-normal text-muted-foreground">Consultar no app do servidor</span>}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-lg border bg-muted/30 px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Município</p>
-                  <p className="truncate text-sm font-semibold">{lead.cidade ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
-                </div>
-
-                <div className="rounded-lg border bg-muted/30 px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><Landmark className="h-3 w-3" /> Órgão / lotação</p>
-                  <p className="truncate text-sm font-semibold">{rawField(lead.raw_data, ["orgao", "lotacao"]) ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
-                </div>
-                <div className="rounded-lg border bg-muted/30 px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><Briefcase className="h-3 w-3" /> Cargo</p>
-                  <p className="truncate text-sm font-semibold">{rawField(lead.raw_data, ["cargo"]) ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
-                </div>
-                <div className="rounded-lg border bg-muted/30 px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><IdCard className="h-3 w-3" /> Matrícula</p>
-                  <p className="truncate text-sm font-semibold">{rawField(lead.raw_data, ["matricula"]) ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
-                </div>
-                {(lead.idade != null || lead.sexo) && (
-                  <div className="rounded-lg border bg-muted/30 px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Perfil</p>
-                    <p className="truncate text-sm font-semibold">
-                      {[lead.idade != null ? `${lead.idade} anos` : null, lead.sexo === "M" ? "Masculino" : lead.sexo === "F" ? "Feminino" : lead.sexo]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  </div>
+                  );
+                })}
+                {!phones.length && <p className="rounded-lg border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">Sem telefone cadastrado</p>}
+                {phones.length > 3 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPhones((v) => !v)}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  >
+                    {showPhones ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    {showPhones ? "Ver menos telefones" : `Ver mais ${phones.length - 3} telefone(s)`}
+                  </button>
                 )}
               </div>
 
+              {/* 2. Margens e crédito estimado */}
+              {(() => {
+                const margens = [
+                  {
+                    label: "Empréstimo",
+                    prazo,
+                    valor:
+                      margemPlanilha(lead.raw_data, ["margem_disp_emprestimo", "margem disponivel emprestimo", "margem emprestimo"]) ??
+                      lead.orcamento,
+                  },
+                  {
+                    label: "Cartão de crédito",
+                    prazo: PRAZO_CARTAO,
+                    valor: margemPlanilha(lead.raw_data, ["margem_disp_cartao_credito", "margem disponivel cartao credito", "margem cartao credito"]),
+                  },
+                  {
+                    label: "Cartão benefício",
+                    prazo: PRAZO_CARTAO,
+                    valor: margemPlanilha(lead.raw_data, ["margem_util_cartao_beneficio", "margem cartao beneficio", "cartao beneficio"]),
+                  },
+                ].map((m) => ({ ...m, liberado: valorLiberado(m.valor, m.prazo) }));
+                const total = margens.reduce((s, m) => s + (m.liberado ?? 0), 0);
+                return (
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Margens disponíveis</p>
+                      <Select value={String(prazo)} onValueChange={(v) => setPrazo(Number(v))}>
+                        <SelectTrigger className="h-7 w-[104px] text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {PRAZOS_FICHA.map((p) => (
+                            <SelectItem key={p} value={String(p)}>{p}x empréstimo</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      {margens.map((m) => (
+                        <div key={m.label} className="rounded-md border bg-background/60 px-3 py-2">
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{m.label}</p>
+                          {m.valor != null ? (
+                            <>
+                              <p className="text-base font-semibold">{BRL.format(m.valor)}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Liberado aprox. <span className="font-semibold text-emerald-600 dark:text-emerald-400">{BRL.format(m.liberado ?? 0)}</span> em {m.prazo}x
+                              </p>
+                            </>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">Consultar no app do servidor</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {total > 0 && (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Total estimado: <span className="font-semibold text-foreground">{BRL.format(total)}</span> · valores aproximados, sujeitos a análise do banco.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* 3. Dados do servidor */}
+              <div className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Dados do servidor</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-lg border bg-muted/30 px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Município</p>
+                    <p className="truncate text-sm font-semibold">{lead.cidade ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><Landmark className="h-3 w-3" /> Órgão / lotação</p>
+                    <p className="truncate text-sm font-semibold">{rawField(lead.raw_data, ["orgao", "lotacao"]) ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><Briefcase className="h-3 w-3" /> Cargo</p>
+                    <p className="truncate text-sm font-semibold">{rawField(lead.raw_data, ["cargo"]) ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><IdCard className="h-3 w-3" /> Matrícula</p>
+                    <p className="truncate text-sm font-semibold">{rawField(lead.raw_data, ["matricula"]) ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
+                  </div>
+                  {(lead.idade != null || lead.sexo) && (
+                    <div className="rounded-lg border bg-muted/30 px-3 py-2">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Perfil</p>
+                      <p className="truncate text-sm font-semibold">
+                        {[lead.idade != null ? `${lead.idade} anos` : null, lead.sexo === "M" ? "Masculino" : lead.sexo === "F" ? "Feminino" : lead.sexo]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
+
 
             <button
               type="button"
