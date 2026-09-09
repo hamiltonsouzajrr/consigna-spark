@@ -474,11 +474,11 @@ function Page() {
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-lg border bg-muted/30 px-3 py-2">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Município</p>
-                  <p className="truncate text-sm font-semibold">{lead.cidade ?? "—"}</p>
+                  <p className="truncate text-sm font-semibold">{lead.cidade ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
                 </div>
                 <div className="rounded-lg border bg-muted/30 px-3 py-2">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Margem informada</p>
-                  <p className="truncate text-sm font-semibold">{lead.orcamento != null ? BRL.format(lead.orcamento) : "—"}</p>
+                  <p className="truncate text-sm font-semibold">{lead.orcamento != null ? BRL.format(lead.orcamento) : <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
                 </div>
                 {(lead.idade != null || lead.sexo) && (
                   <div className="rounded-lg border bg-muted/30 px-3 py-2">
