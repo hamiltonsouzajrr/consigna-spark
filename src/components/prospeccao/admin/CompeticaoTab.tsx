@@ -111,6 +111,14 @@ export function CompeticaoTab() {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/prospeccao/admin/metas">
+            <Target className="mr-1 h-4 w-4" /> Metas por consultora
+          </Link>
+        </Button>
+      </div>
+
       {/* Status e controles da competição */}
       <Card className="p-4">
         <div className="flex items-center justify-between gap-2">
