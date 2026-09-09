@@ -36,7 +36,10 @@ const COLS =
 
 export type PromovidosRecentesResult = {
   rows: PromovidoRecente[];
+  /** Total aproximado (estimativa rápida) — só para exibição. */
   total: number;
+  /** true quando ainda existem leads além da página devolvida. */
+  temMais: boolean;
   isAdmin: boolean;
   consultoraNome: string | null;
   vinculada: boolean;
@@ -207,6 +210,7 @@ export const getPromovidosRecentes = createServerFn({ method: "POST" })
     return {
       rows,
       total: count,
+      temMais,
       isAdmin,
       consultoraNome: nome,
       vinculada: !isAdmin,
