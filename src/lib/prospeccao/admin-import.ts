@@ -196,12 +196,15 @@ export function buildParsed(
       // A cell may contain several numbers separated by / , ; or "e".
       for (const part of t.split(/[/,;]|\se\s/)) {
         const p = part.trim();
-        if (p && !phoneVals.includes(p)) phoneVals.push(p);
+        // Only keep real Brazilian numbers (10/11 digits with DDD); drops junk
+        // such as "146", "S" or "0" coming from look-alike columns.
+        if (!p || !normalizeWhatsappNumber(p)) continue;
+        if (!phoneVals.includes(p)) phoneVals.push(p);
       }
     };
     if (phoneCol && phoneCol !== "__auto__") pushPhone(r[phoneCol] != null ? String(r[phoneCol]) : "");
     for (const a of PHONE_ALIASES) pushPhone(get(a));
-    for (const k of Object.keys(keys)) if (/cel|tel|whats|fone|contato/.test(k)) pushPhone(get(k));
+    for (const k of Object.keys(keys)) if (/cel|tel|whats|fone/.test(k)) pushPhone(get(k));
 
     const telRaw = phoneVals[0] ?? "";
     const cpfRes = normalizeCpfPlanilha(getAny(["cpf", "documento"]));

@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import {
   STATUS_FLOW, STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, EVENT_LABEL, LOSS_REASONS,
-  PLAYBOOK, whatsappLink, telLink, CALL_OUTCOMES, SITUACAO_TAGS,
+  PLAYBOOK, whatsappLink, telLink, normalizeWhatsappNumber, CALL_OUTCOMES, SITUACAO_TAGS,
   type LeadStatus, type SlaStatus, type EventKind,
 } from "@/lib/prospeccao/constants";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
@@ -62,7 +62,10 @@ const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" 
 /** Extra columns kept from the imported spreadsheet, shown as-is. */
 function extrasPlanilha(raw: Record<string, unknown> | null): { k: string; v: string }[] {
   if (!raw) return [];
-  const wanted = ["orgao", "órgão", "matricula", "matrícula", "cargo", "lotacao", "lotação", "situacao_funcional", "vinculo", "vínculo"];
+  const wanted = [
+    "orgao", "órgão", "matricula", "matrícula", "cargo", "lotacao", "lotação",
+    "situacao", "situação", "vinculo", "vínculo", "nascimento", "categoria", "banco", "especie", "espécie",
+  ];
   const out: { k: string; v: string }[] = [];
   for (const [key, value] of Object.entries(raw)) {
     const low = key.toLowerCase().trim();
@@ -70,7 +73,7 @@ function extrasPlanilha(raw: Record<string, unknown> | null): { k: string; v: st
     const v = String(value ?? "").trim();
     if (v) out.push({ k: key, v });
   }
-  return out.slice(0, 6);
+  return out.slice(0, 10);
 }
 
 type Ev = { id: string; kind: EventKind; body: string | null; created_at: string };
@@ -100,8 +103,16 @@ function EventIcon({ kind }: { kind: EventKind }) {
 }
 
 function leadPhones(lead: Lead): string[] {
-  const nums = lead.telefones && lead.telefones.length ? lead.telefones : (lead.telefone ? [lead.telefone] : []);
-  return Array.from(new Set(nums.map((n) => n.trim()).filter(Boolean)));
+  const nums = [...(lead.telefones ?? []), lead.telefone ?? ""];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const n of nums) {
+    const norm = normalizeWhatsappNumber(n);
+    if (!norm || seen.has(norm)) continue;
+    seen.add(norm);
+    out.push(n.trim());
+  }
+  return out;
 }
 
 function Page() {
@@ -463,11 +474,11 @@ function Page() {
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-lg border bg-muted/30 px-3 py-2">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Município</p>
-                  <p className="truncate text-sm font-semibold">{lead.cidade ?? "—"}</p>
+                  <p className="truncate text-sm font-semibold">{lead.cidade ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
                 </div>
                 <div className="rounded-lg border bg-muted/30 px-3 py-2">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Margem informada</p>
-                  <p className="truncate text-sm font-semibold">{lead.orcamento != null ? BRL.format(lead.orcamento) : "—"}</p>
+                  <p className="truncate text-sm font-semibold">{lead.orcamento != null ? BRL.format(lead.orcamento) : <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
                 </div>
                 {(lead.idade != null || lead.sexo) && (
                   <div className="rounded-lg border bg-muted/30 px-3 py-2">
