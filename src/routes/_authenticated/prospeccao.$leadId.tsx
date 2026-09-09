@@ -82,8 +82,17 @@ function rawField(raw: Record<string, unknown> | null, names: string[]): string 
   return null;
 }
 
+/** Lê um valor de margem da planilha, aceitando formato pt-BR ("1.234,56"). */
+function margemPlanilha(raw: Record<string, unknown> | null, names: string[]): number | null {
+  const v = rawField(raw, names);
+  if (!v) return null;
+  const n = parseNumeroBr(v);
+  return n != null && Number.isFinite(n) && n > 0 ? n : null;
+}
+
 /** Campos promovidos ao topo — não repetem em "Ver mais detalhes". */
-const CAMPOS_DESTAQUE = ["orgao", "lotacao", "cargo", "matricula"];
+const CAMPOS_DESTAQUE = ["orgao", "lotacao", "cargo", "matricula", "margem"];
+
 
 /** Extra columns kept from the imported spreadsheet, shown as-is. */
 function extrasPlanilha(raw: Record<string, unknown> | null): { k: string; v: string }[] {
