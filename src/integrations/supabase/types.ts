@@ -1594,6 +1594,63 @@ export type Database = {
           },
         ]
       }
+      prospect_metas: {
+        Row: {
+          created_at: string
+          id: string
+          meta_contatos: number
+          meta_horas: number
+          meta_vendas: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meta_contatos?: number
+          meta_horas?: number
+          meta_vendas?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meta_contatos?: number
+          meta_horas?: number
+          meta_vendas?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      prospect_metas_padrao: {
+        Row: {
+          created_at: string
+          id: boolean
+          meta_contatos: number
+          meta_horas: number
+          meta_vendas: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: boolean
+          meta_contatos?: number
+          meta_horas?: number
+          meta_vendas?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: boolean
+          meta_contatos?: number
+          meta_horas?: number
+          meta_vendas?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       prospect_pontos: {
         Row: {
           anulado_em: string | null
