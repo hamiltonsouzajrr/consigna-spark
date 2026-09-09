@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calculator, Eraser, AlertTriangle } from "lucide-react";
+import { COEFICIENTES } from "@/lib/prospeccao/coeficientes";
 
 export const Route = createFileRoute("/_authenticated/simulacao-alagoas")({
   head: () => ({
