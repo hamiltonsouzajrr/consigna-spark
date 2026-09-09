@@ -137,7 +137,7 @@ function Page() {
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
-    if (loading || more || rows.length >= total) return;
+    if (loading || more || !temMais) return;
     const obs = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) void carregarMais();
@@ -146,7 +146,7 @@ function Page() {
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [carregarMais, loading, more, rows.length, total]);
+  }, [carregarMais, loading, more, temMais]);
 
   const abordar = async (id: string, status: PromovidoRecente["status_abordagem"]) => {
     setBusy(id);
@@ -250,7 +250,7 @@ function Page() {
             {apenasNovos ? "Mostrando só não abordados" : "Ver só não abordados"}
           </Button>
           <span className="text-xs text-muted-foreground">
-            {total} lead(s) {foraDaJanela ? "na sua carteira" : "na janela"}
+            {temMais ? "aprox. " : ""}{Math.max(total, rows.length)} lead(s) {foraDaJanela ? "na sua carteira" : "na janela"}
           </span>
           {ultimaEntrega && (
             <span className="text-xs text-muted-foreground">
@@ -387,11 +387,11 @@ function Page() {
         {/* Sentinela: quando fica visível, carrega os próximos 30 automaticamente. */}
         <div ref={sentinelRef} aria-hidden="true" />
 
-        {rows.length < total && (
+        {temMais && (
           <div className="flex justify-center">
             <Button variant="outline" onClick={carregarMais} disabled={more}>
               {more ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Carregar mais ({Math.min(PAGE, total - rows.length)} restantes)
+              Carregar mais {PAGE}
             </Button>
           </div>
         )}
