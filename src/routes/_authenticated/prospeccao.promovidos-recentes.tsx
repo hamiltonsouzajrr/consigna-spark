@@ -84,6 +84,7 @@ function Page() {
   const [vinculada, setVinculada] = useState(false);
   const [loading, setLoading] = useState(true);
   const [more, setMore] = useState(false);
+  const [temMais, setTemMais] = useState(false);
   const [apenasNovos, setApenasNovos] = useState(false);
   const [cpfDraft, setCpfDraft] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
@@ -96,6 +97,7 @@ function Page() {
       const res = await fetchLeads({ data: { offset: 0, limit: PAGE, apenasNovos } });
       setRows(res.rows);
       setTotal(res.total);
+      setTemMais(res.temMais);
       setConsultoraNome(res.consultoraNome);
       setVinculada(res.vinculada);
       setUltimaEntrega(res.ultimaEntrega);
@@ -115,26 +117,27 @@ function Page() {
   useEffect(() => { void carregar(); }, [carregar]);
 
   const carregarMais = useCallback(async () => {
-    if (more || loading || rows.length >= total) return;
+    if (more || loading || !temMais) return;
     setMore(true);
     try {
       const res = await fetchLeads({ data: { offset: rows.length, limit: PAGE, apenasNovos } });
       setRows((r) => [...r, ...res.rows]);
-      // Nas páginas seguintes o servidor não recontar a base (economia); mantém o total da 1ª página.
+      setTemMais(res.temMais);
+      // Nas páginas seguintes o servidor não reconta a base (economia); mantém o total da 1ª página.
       if (res.total > 0) setTotal(res.total);
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao carregar mais.");
     } finally {
       setMore(false);
     }
-  }, [fetchLeads, apenasNovos, rows.length, total, more, loading]);
+  }, [fetchLeads, apenasNovos, rows.length, temMais, more, loading]);
 
   // Carregamento automático 30 em 30: ao chegar perto do fim da lista,
   // a próxima página entra sozinha, sem a consultora precisar clicar.
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
-    if (loading || more || rows.length >= total) return;
+    if (loading || more || !temMais) return;
     const obs = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) void carregarMais();
@@ -143,7 +146,7 @@ function Page() {
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [carregarMais, loading, more, rows.length, total]);
+  }, [carregarMais, loading, more, temMais]);
 
   const abordar = async (id: string, status: PromovidoRecente["status_abordagem"]) => {
     setBusy(id);
@@ -247,7 +250,7 @@ function Page() {
             {apenasNovos ? "Mostrando só não abordados" : "Ver só não abordados"}
           </Button>
           <span className="text-xs text-muted-foreground">
-            {total} lead(s) {foraDaJanela ? "na sua carteira" : "na janela"}
+            {temMais ? "aprox. " : ""}{Math.max(total, rows.length)} lead(s) {foraDaJanela ? "na sua carteira" : "na janela"}
           </span>
           {ultimaEntrega && (
             <span className="text-xs text-muted-foreground">
@@ -384,11 +387,11 @@ function Page() {
         {/* Sentinela: quando fica visível, carrega os próximos 30 automaticamente. */}
         <div ref={sentinelRef} aria-hidden="true" />
 
-        {rows.length < total && (
+        {temMais && (
           <div className="flex justify-center">
             <Button variant="outline" onClick={carregarMais} disabled={more}>
               {more ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Carregar mais ({Math.min(PAGE, total - rows.length)} restantes)
+              Carregar mais {PAGE}
             </Button>
           </div>
         )}
