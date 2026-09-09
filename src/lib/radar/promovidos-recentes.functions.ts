@@ -131,15 +131,19 @@ export const getPromovidosRecentes = createServerFn({ method: "POST" })
     const listar = async (comJanela: boolean) => {
       let query = base(comJanela);
       if (data.apenasNovos) query = query.eq("status_abordagem", "novo");
+      // Buscamos um registro além da página para saber com certeza se ainda há
+      // mais leads (o total é aproximado e não serve para isso).
       const res = await query
         .order("data_publicacao", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
+        .range(offset, offset + limit);
       if (res.error) throw new Error(res.error.message);
-      return { rows: (res.data ?? []) as unknown as PromovidoRecente[], count: res.count ?? 0 };
+      const todas = (res.data ?? []) as unknown as PromovidoRecente[];
+      const temMais = todas.length > limit;
+      return { rows: todas.slice(0, limit), count: res.count ?? 0, temMais };
     };
 
-    let { rows, count } = await listar(true);
+    let { rows, count, temMais } = await listar(true);
     let foraDaJanela = false;
 
     // Sem nada publicado nos últimos 15 dias: em vez de tela vazia, mostramos
@@ -149,9 +153,16 @@ export const getPromovidosRecentes = createServerFn({ method: "POST" })
       if (fallback.rows.length) {
         rows = fallback.rows;
         count = fallback.count;
+        temMais = fallback.temMais;
         foraDaJanela = true;
       }
     }
+
+    // O total é uma estimativa rápida; nunca deixamos que ele fique abaixo do
+    // que já foi carregado, senão a tela esconderia leads existentes.
+    const totalMin = offset + rows.length + (temMais ? 1 : 0);
+    if (count > 0 && count < totalMin) count = totalMin;
+
 
     const hoje = new Date().toISOString().slice(0, 10);
     const contar = async (build: (q: any) => any): Promise<number> => {
