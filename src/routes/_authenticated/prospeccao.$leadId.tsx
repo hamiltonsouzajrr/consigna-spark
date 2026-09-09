@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Phone, PhoneCall, MessageCircle, StickyNote, CalendarClock, CheckCircle2,
   Copy, SkipForward, Tag, ChevronDown, ChevronUp, AlertTriangle, MapPin, Activity,
+  Landmark, Briefcase, IdCard,
 } from "lucide-react";
 import {
   STATUS_FLOW, STATUS_LABEL, STATUS_TONE, SLA_LABEL, SLA_TONE, EVENT_LABEL, LOSS_REASONS,
@@ -59,16 +60,41 @@ type Lead = {
 
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
+/** Normaliza uma chave da planilha (sem acento, minúscula, sem espaços extras). */
+function normKey(k: string): string {
+  return k
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/** Lê um campo da planilha aceitando variações de acento/caixa/espaços. */
+function rawField(raw: Record<string, unknown> | null, names: string[]): string | null {
+  if (!raw) return null;
+  const wanted = names.map(normKey);
+  for (const [key, value] of Object.entries(raw)) {
+    const low = normKey(key);
+    if (!wanted.some((w) => low === w || low.includes(w))) continue;
+    const v = String(value ?? "").trim();
+    if (v) return v;
+  }
+  return null;
+}
+
+/** Campos promovidos ao topo — não repetem em "Ver mais detalhes". */
+const CAMPOS_DESTAQUE = ["orgao", "lotacao", "cargo", "matricula"];
+
 /** Extra columns kept from the imported spreadsheet, shown as-is. */
 function extrasPlanilha(raw: Record<string, unknown> | null): { k: string; v: string }[] {
   if (!raw) return [];
   const wanted = [
-    "orgao", "órgão", "matricula", "matrícula", "cargo", "lotacao", "lotação",
-    "situacao", "situação", "vinculo", "vínculo", "nascimento", "categoria", "banco", "especie", "espécie",
+    "situacao", "vinculo", "nascimento", "categoria", "banco", "especie",
   ];
   const out: { k: string; v: string }[] = [];
   for (const [key, value] of Object.entries(raw)) {
-    const low = key.toLowerCase().trim();
+    const low = normKey(key);
+    if (CAMPOS_DESTAQUE.some((w) => low === w || low.includes(w))) continue;
     if (!wanted.some((w) => low === w || low.includes(w))) continue;
     const v = String(value ?? "").trim();
     if (v) out.push({ k: key, v });
@@ -479,6 +505,18 @@ function Page() {
                 <div className="rounded-lg border bg-muted/30 px-3 py-2">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Margem informada</p>
                   <p className="truncate text-sm font-semibold">{lead.orcamento != null ? BRL.format(lead.orcamento) : <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
+                </div>
+                <div className="rounded-lg border bg-muted/30 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><Landmark className="h-3 w-3" /> Órgão / lotação</p>
+                  <p className="truncate text-sm font-semibold">{rawField(lead.raw_data, ["orgao", "lotacao"]) ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
+                </div>
+                <div className="rounded-lg border bg-muted/30 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><Briefcase className="h-3 w-3" /> Cargo</p>
+                  <p className="truncate text-sm font-semibold">{rawField(lead.raw_data, ["cargo"]) ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
+                </div>
+                <div className="rounded-lg border bg-muted/30 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1"><IdCard className="h-3 w-3" /> Matrícula</p>
+                  <p className="truncate text-sm font-semibold">{rawField(lead.raw_data, ["matricula"]) ?? <span className="text-xs font-normal text-muted-foreground">Não veio na planilha</span>}</p>
                 </div>
                 {(lead.idade != null || lead.sexo) && (
                   <div className="rounded-lg border bg-muted/30 px-3 py-2">
