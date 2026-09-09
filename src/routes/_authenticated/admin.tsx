@@ -101,6 +101,13 @@ const sections: AdminSection[] = [
     title: "Métricas e desempenho",
     description: "Indicadores da equipe: metas, ranking, competição e qualidade das ligações.",
     links: [
+      {
+        to: "/prospeccao/admin/metas",
+        label: "Metas por consultora",
+        description:
+          "Meta semanal de contatos, vendas confirmadas e horas ativas por consultora, com o progresso real da semana.",
+        icon: Target,
+      },
       { to: "/producao/metas", label: "Metas", description: "Metas de produção da equipe.", icon: Target },
       {
         to: "/producao/ranking",
