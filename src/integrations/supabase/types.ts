@@ -1454,6 +1454,74 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_conversoes: {
+        Row: {
+          cliente_nome: string
+          cpf: string | null
+          created_at: string
+          data_operacao: string
+          id: string
+          lead_id: string | null
+          lembrete_em: string | null
+          margem_restante: boolean
+          margem_restante_valor: number | null
+          observacao: string | null
+          prazo: number | null
+          task_id: string | null
+          updated_at: string
+          user_id: string
+          valor_liberado: number
+          valor_parcela: number | null
+          venda_id: string | null
+        }
+        Insert: {
+          cliente_nome: string
+          cpf?: string | null
+          created_at?: string
+          data_operacao?: string
+          id?: string
+          lead_id?: string | null
+          lembrete_em?: string | null
+          margem_restante?: boolean
+          margem_restante_valor?: number | null
+          observacao?: string | null
+          prazo?: number | null
+          task_id?: string | null
+          updated_at?: string
+          user_id: string
+          valor_liberado?: number
+          valor_parcela?: number | null
+          venda_id?: string | null
+        }
+        Update: {
+          cliente_nome?: string
+          cpf?: string | null
+          created_at?: string
+          data_operacao?: string
+          id?: string
+          lead_id?: string | null
+          lembrete_em?: string | null
+          margem_restante?: boolean
+          margem_restante_valor?: number | null
+          observacao?: string | null
+          prazo?: number | null
+          task_id?: string | null
+          updated_at?: string
+          user_id?: string
+          valor_liberado?: number
+          valor_parcela?: number | null
+          venda_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_conversoes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prospect_jornada: {
         Row: {
           almoco_inicio: string
@@ -1509,6 +1577,7 @@ export type Database = {
           origem: string | null
           quality_score: number
           raw_data: Json | null
+          renda: number | null
           respondeu_whatsapp: boolean
           score: number
           sexo: string | null
@@ -1541,6 +1610,7 @@ export type Database = {
           origem?: string | null
           quality_score?: number
           raw_data?: Json | null
+          renda?: number | null
           respondeu_whatsapp?: boolean
           score?: number
           sexo?: string | null
@@ -1573,6 +1643,7 @@ export type Database = {
           origem?: string | null
           quality_score?: number
           raw_data?: Json | null
+          renda?: number | null
           respondeu_whatsapp?: boolean
           score?: number
           sexo?: string | null

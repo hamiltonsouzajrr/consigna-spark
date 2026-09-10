@@ -56,7 +56,7 @@ export const Route = createFileRoute("/_authenticated/prospeccao/$leadId")({
 
 type Lead = {
   id: string; nome: string; telefone: string | null; telefones: string[] | null; cpf: string | null; cidade: string | null;
-  origem: string | null; orcamento: number | null; urgencia: string | null; status: LeadStatus; situacao: string | null;
+  origem: string | null; orcamento: number | null; renda: number | null; urgencia: string | null; status: LeadStatus; situacao: string | null;
   score: number; quality_score: number | null; sla_status: SlaStatus; loss_reason: string | null; notes: string | null;
   next_follow_up_at: string | null; last_contact_at: string | null; first_response_at: string | null;
   respondeu_whatsapp: boolean; consultant_id: string | null; import_batch: string | null; created_at: string | null;
@@ -528,13 +528,22 @@ function Page() {
 
               {/* 2. Margens e crédito estimado */}
               {(() => {
+                // Coluna de margem confirmada na planilha (quando a linha original foi guardada).
+                const colMargem = rawField(lead.raw_data, ["_col_margem"]);
+                const margemDireta = margemPlanilha(lead.raw_data, [
+                  "margem_disp_emprestimo",
+                  "margem disponivel emprestimo",
+                  "margem emprestimo",
+                ]);
+                // Sem coluna de margem identificada, o valor antigo é ambíguo (pode ser renda).
+                const margemEmprestimo = margemDireta ?? (colMargem ? lead.orcamento : null);
+                const valorAmbiguo = margemDireta == null && !colMargem ? lead.orcamento : null;
+
                 const margens = [
                   {
-                    label: "Empréstimo",
+                    label: colMargem && !margemDireta ? colMargem : "Empréstimo",
                     prazo,
-                    valor:
-                      margemPlanilha(lead.raw_data, ["margem_disp_emprestimo", "margem disponivel emprestimo", "margem emprestimo"]) ??
-                      lead.orcamento,
+                    valor: margemEmprestimo,
                   },
                   {
                     label: "Cartão de crédito",
@@ -548,6 +557,7 @@ function Page() {
                   },
                 ].map((m) => ({ ...m, liberado: valorLiberado(m.valor, m.prazo) }));
                 const total = margens.reduce((s, m) => s + (m.liberado ?? 0), 0);
+                const colRenda = rawField(lead.raw_data, ["_col_renda"]);
                 return (
                   <div className="rounded-lg border bg-muted/30 p-3">
                     <div className="mb-2 flex items-center justify-between gap-2">
@@ -582,6 +592,20 @@ function Page() {
                       <p className="mt-2 text-xs text-muted-foreground">
                         Total estimado: <span className="font-semibold text-foreground">{BRL.format(total)}</span> · valores aproximados, sujeitos a análise do banco.
                       </p>
+                    )}
+                    {valorAmbiguo != null && valorAmbiguo > 0 && (
+                      <div className="mt-2 rounded-md border border-dashed bg-background/60 px-3 py-2">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Valor importado da planilha</p>
+                        <p className="text-sm font-semibold">{BRL.format(valorAmbiguo)}</p>
+                        <p className="text-xs text-muted-foreground">Não é possível confirmar se é margem ou renda. Consultar no app do servidor.</p>
+                      </div>
+                    )}
+                    {lead.renda != null && lead.renda > 0 && (
+                      <div className="mt-2 rounded-md border bg-background/60 px-3 py-2">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{colRenda ?? "Renda"}</p>
+                        <p className="text-sm font-semibold">{BRL.format(lead.renda)}</p>
+                        <p className="text-xs text-muted-foreground">Renda não é margem — não usar para calcular crédito.</p>
+                      </div>
                     )}
                   </div>
                 );

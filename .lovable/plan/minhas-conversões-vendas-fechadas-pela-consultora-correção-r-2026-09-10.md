@@ -1,6 +1,6 @@
 # Minhas conversões (vendas fechadas pela consultora) + correção renda x margem
 
-## Parte 1 — Nova aba "Minhas conversões"
+## Parte 1 — Nova aba "Minha carteira - conversões"
 
 Uma aba própria na prospecção onde a consultora registra o cliente que conseguiu converter.
 
@@ -50,12 +50,14 @@ Confirmei que a importação aceitava colunas de **renda** e **salário** como s
 ## Detalhes técnicos
 
 **Parte 1**
+
 - Migração: tabela `prospect_conversoes` (`user_id`, `lead_id` nullable, `cliente_nome`, `cpf`, `data_operacao`, `valor_liberado`, `prazo`, `valor_parcela`, `margem_restante` bool + `margem_restante_valor`, `observacao`, `lembrete_em`, `venda_id`), GRANT para `authenticated`/`service_role`, RLS: dono lê/escreve o próprio; `has_role(auth.uid(),'admin')` e gestor leem tudo; trigger `set_updated_at`.
 - `src/lib/prospeccao/conversoes.functions.ts`: `listarConversoes`, `criarConversao`, `atualizarConversao`, `removerConversao` com `requireSupabaseAuth` + Zod; `criarConversao` chama `registrarVendaPendente` (`origem: 'conversao'`, `ref_tabela: 'prospect_conversoes'`) e insere `lead_tasks` com `due_at` calculado a partir da opção de lembrete.
 - Rota `src/routes/_authenticated/prospeccao.conversoes.tsx` + botão na prospecção; formulário em `src/components/prospeccao/ConversaoDialog.tsx`, lista em `ConversoesList.tsx`; leitura via `useSuspenseQuery`/`queryOptions`.
 - Quando `lead_id` existir, marcar o lead como `ganho` reutilizando o fluxo atual (sem duplicar pontos).
 
 **Parte 2**
+
 - `src/lib/prospeccao/admin-import.ts`: retirar `renda`/`salario`/`salário` de `MARGIN_ALIASES`, criar `INCOME_ALIASES`, gravar em `raw_data` as chaves `_col_margem`/`_col_renda` com o nome original da coluna.
 - Migração: `prospect_leads.renda numeric`; ajustar `compute_prospect_lead` para não pontuar `orcamento` ambíguo (resto do score/SLA intacto) e `update` neutro para recalcular.
 - `prospeccao.utils.ts` / `prospeccao.functions.ts`: aceitar e gravar `renda`.

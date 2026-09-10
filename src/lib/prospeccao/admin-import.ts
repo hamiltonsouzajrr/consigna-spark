@@ -9,6 +9,7 @@ export type ParsedLead = {
   cidade?: string;
   origem?: string;
   orcamento?: number;
+  renda?: number;
   urgencia?: "alta" | "media" | "baixa";
   idade?: number;
   sexo?: string;
@@ -36,7 +37,9 @@ const CITY_ALIASES = ["cidade", "municipio", "município", "localidade", "city"]
 const AGE_ALIASES = ["idade", "anos"];
 const BIRTH_ALIASES = ["nascimento", "data_nascimento", "data de nascimento", "dt_nascimento", "dtnascimento"];
 const SEX_ALIASES = ["sexo", "genero", "gênero"];
-const MARGIN_ALIASES = ["orcamento", "orçamento", "margem", "margem_disponivel", "margem disponível", "renda", "salario", "salário"];
+// Só colunas que realmente falam de margem. Renda/salário NÃO é margem.
+const MARGIN_ALIASES = ["margem", "margem_disponivel", "margem disponível", "margem disponivel", "orcamento", "orçamento"];
+const INCOME_ALIASES = ["renda", "salario", "salário", "remuneracao", "remuneração", "vencimento", "bruto"];
 
 /** Auto-detect the column that holds a phone/WhatsApp number from the spreadsheet headers. */
 export function detectPhoneColumn(headers: string[]): string | null {
@@ -176,6 +179,20 @@ export function buildParsed(
       }
       return "";
     };
+    /** Igual ao getAny, mas devolve também o nome original da coluna usada. */
+    const getAnyCol = (aliases: string[]): { value: string; col: string | null } => {
+      for (const a of aliases) {
+        const v = get(a);
+        if (v) return { value: v, col: keys[a] ?? a };
+      }
+      for (const k of Object.keys(keys)) {
+        if (aliases.some((a) => k === a || k.includes(a))) {
+          const v = get(k);
+          if (v) return { value: v, col: keys[k] ?? k };
+        }
+      }
+      return { value: "", col: null };
+    };
 
     const nomeRaw = get("nome") || getAny(["nome", "cliente", "servidor", "name"]);
     const isEmptyRow = Object.values(r).every((v) => String(v ?? "").trim() === "");
@@ -185,7 +202,9 @@ export function buildParsed(
     }
     const { nome, matricula: matriculaNoNome } = limparNome(nomeRaw);
 
-    const margemRaw = getAny(MARGIN_ALIASES);
+    const margemCol = getAnyCol(MARGIN_ALIASES);
+    const margemRaw = margemCol.value;
+    const rendaCol = getAnyCol(INCOME_ALIASES);
     const urg = (get("urgencia") || get("urgência")).toLowerCase();
 
     // Collect every phone-like column on this row, plus the chosen/auto column.
@@ -237,6 +256,7 @@ export function buildParsed(
       Number.isFinite(idadeNum) && idadeNum >= 16 && idadeNum <= 110 ? idadeNum : idadeDeNascimento(getAny(BIRTH_ALIASES));
     const sexo = normalizeSexo(getAny(SEX_ALIASES));
     const orcamento = margemRaw ? parseNumeroBr(margemRaw) : undefined;
+    const renda = rendaCol.value ? parseNumeroBr(rendaCol.value) : undefined;
 
     if (cidade) comCidade++;
     if (idade != null) comIdade++;
@@ -244,6 +264,9 @@ export function buildParsed(
 
     const raw: Record<string, unknown> = { ...r };
     if (matriculaNoNome && !raw.matricula) raw.matricula = matriculaNoNome;
+    // Guarda o nome exato da coluna de origem, para a ficha usar a mesma nomenclatura.
+    if (margemCol.col) raw._col_margem = margemCol.col;
+    if (rendaCol.col) raw._col_renda = rendaCol.col;
 
     out.push({
       nome,
@@ -255,6 +278,7 @@ export function buildParsed(
       sexo,
       origem: get("origem") || "planilha",
       orcamento: orcamento != null && orcamento > 0 ? orcamento : undefined,
+      renda: renda != null && renda > 0 ? renda : undefined,
       urgencia:
         urg === "alta" || urg === "media" || urg === "média" || urg === "baixa"
           ? urg === "média"

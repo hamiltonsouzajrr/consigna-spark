@@ -1,0 +1,1 @@
+ALTER FUNCTION public.compute_prospect_lead() SET search_path = public;
