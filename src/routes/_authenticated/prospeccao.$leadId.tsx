@@ -528,13 +528,22 @@ function Page() {
 
               {/* 2. Margens e crédito estimado */}
               {(() => {
+                // Coluna de margem confirmada na planilha (quando a linha original foi guardada).
+                const colMargem = rawField(lead.raw_data, ["_col_margem"]);
+                const margemDireta = margemPlanilha(lead.raw_data, [
+                  "margem_disp_emprestimo",
+                  "margem disponivel emprestimo",
+                  "margem emprestimo",
+                ]);
+                // Sem coluna de margem identificada, o valor antigo é ambíguo (pode ser renda).
+                const margemEmprestimo = margemDireta ?? (colMargem ? lead.orcamento : null);
+                const valorAmbiguo = margemDireta == null && !colMargem ? lead.orcamento : null;
+
                 const margens = [
                   {
-                    label: "Empréstimo",
+                    label: colMargem && !margemDireta ? colMargem : "Empréstimo",
                     prazo,
-                    valor:
-                      margemPlanilha(lead.raw_data, ["margem_disp_emprestimo", "margem disponivel emprestimo", "margem emprestimo"]) ??
-                      lead.orcamento,
+                    valor: margemEmprestimo,
                   },
                   {
                     label: "Cartão de crédito",
@@ -548,6 +557,7 @@ function Page() {
                   },
                 ].map((m) => ({ ...m, liberado: valorLiberado(m.valor, m.prazo) }));
                 const total = margens.reduce((s, m) => s + (m.liberado ?? 0), 0);
+                const colRenda = rawField(lead.raw_data, ["_col_renda"]);
                 return (
                   <div className="rounded-lg border bg-muted/30 p-3">
                     <div className="mb-2 flex items-center justify-between gap-2">
