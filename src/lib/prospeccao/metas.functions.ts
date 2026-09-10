@@ -61,6 +61,8 @@ export const getMetasSemana = createServerFn({ method: "GET" })
 
     const ws = data.weekStart ?? weekStart();
     const inicioIso = `${ws}T03:00:00.000Z`;
+    // Fim da semana selecionada: segunda seguinte 00h de Maceió (03h UTC).
+    const fimIso = new Date(new Date(inicioIso).getTime() + 7 * DIA_MS).toISOString();
     const fimDia = new Date(new Date(`${ws}T12:00:00Z`).getTime() + 6 * DIA_MS)
       .toISOString()
       .slice(0, 10);
@@ -74,7 +76,8 @@ export const getMetasSemana = createServerFn({ method: "GET" })
         .from("lead_events")
         .select("consultant_id")
         .in("kind", ["ligacao", "whatsapp"])
-        .gte("created_at", inicioIso),
+        .gte("created_at", inicioIso)
+        .lt("created_at", fimIso),
       db.from("prospect_vendas").select("user_id").eq("week_start", ws).eq("status", "confirmada"),
       db.from("app_uso_ativo").select("user_id,segundos").gte("ref_date", ws).lte("ref_date", fimDia),
     ]);
