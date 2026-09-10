@@ -36,7 +36,9 @@ const CITY_ALIASES = ["cidade", "municipio", "município", "localidade", "city"]
 const AGE_ALIASES = ["idade", "anos"];
 const BIRTH_ALIASES = ["nascimento", "data_nascimento", "data de nascimento", "dt_nascimento", "dtnascimento"];
 const SEX_ALIASES = ["sexo", "genero", "gênero"];
-const MARGIN_ALIASES = ["orcamento", "orçamento", "margem", "margem_disponivel", "margem disponível", "renda", "salario", "salário"];
+// Só colunas que realmente falam de margem. Renda/salário NÃO é margem.
+const MARGIN_ALIASES = ["margem", "margem_disponivel", "margem disponível", "margem disponivel", "orcamento", "orçamento"];
+const INCOME_ALIASES = ["renda", "salario", "salário", "remuneracao", "remuneração", "vencimento", "bruto"];
 
 /** Auto-detect the column that holds a phone/WhatsApp number from the spreadsheet headers. */
 export function detectPhoneColumn(headers: string[]): string | null {
