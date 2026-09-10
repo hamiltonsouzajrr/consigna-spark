@@ -51,6 +51,7 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
       cidade: l.cidade || null,
       origem: l.origem || "planilha",
       orcamento: l.orcamento ?? null,
+      renda: l.renda ?? null,
       urgencia: l.urgencia || "media",
       idade: l.idade ?? null,
       sexo: l.sexo || null,
@@ -92,7 +93,7 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
         }
         const { data: ex } = await supabaseAdmin
           .from("prospect_leads")
-          .select("id,cpf,telefone,telefones,cidade,orcamento,idade,sexo,raw_data")
+          .select("id,cpf,telefone,telefones,cidade,orcamento,renda,idade,sexo,raw_data")
           .in("cpf", [...variants]);
         (ex ?? []).forEach((e: any) => { if (e.cpf) existingByCpf.set(norm(e.cpf), e); });
       }
@@ -113,6 +114,7 @@ export const adminCreateLeads = createServerFn({ method: "POST" })
             if (r.telefone && !existing.telefone) patch.telefone = r.telefone;
             if (r.cidade && !existing.cidade) patch.cidade = r.cidade;
             if (r.orcamento != null && existing.orcamento == null) patch.orcamento = r.orcamento;
+            if (r.renda != null && existing.renda == null) patch.renda = r.renda;
             if (r.idade != null && existing.idade == null) patch.idade = r.idade;
             if (r.sexo && !existing.sexo) patch.sexo = r.sexo;
             if (r.raw_data && !existing.raw_data) patch.raw_data = r.raw_data;
