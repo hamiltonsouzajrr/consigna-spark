@@ -593,6 +593,20 @@ function Page() {
                         Total estimado: <span className="font-semibold text-foreground">{BRL.format(total)}</span> · valores aproximados, sujeitos a análise do banco.
                       </p>
                     )}
+                    {valorAmbiguo != null && valorAmbiguo > 0 && (
+                      <div className="mt-2 rounded-md border border-dashed bg-background/60 px-3 py-2">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Valor importado da planilha</p>
+                        <p className="text-sm font-semibold">{BRL.format(valorAmbiguo)}</p>
+                        <p className="text-xs text-muted-foreground">Não é possível confirmar se é margem ou renda. Consultar no app do servidor.</p>
+                      </div>
+                    )}
+                    {lead.renda != null && lead.renda > 0 && (
+                      <div className="mt-2 rounded-md border bg-background/60 px-3 py-2">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{colRenda ?? "Renda"}</p>
+                        <p className="text-sm font-semibold">{BRL.format(lead.renda)}</p>
+                        <p className="text-xs text-muted-foreground">Renda não é margem — não usar para calcular crédito.</p>
+                      </div>
+                    )}
                   </div>
                 );
               })()}
