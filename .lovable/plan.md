@@ -1,29 +1,45 @@
-# Corrigir a confusão entre renda e margem
+# Minhas conversões (vendas fechadas pela consultora) + correção renda x margem
 
-Confirmei o problema: na leitura das planilhas, colunas de **renda** e **salário** eram aceitas como se fossem margem. O valor caía no mesmo campo usado como "margem" na ficha, no cartão da fila e no cálculo da nota do lead.
+## Parte 1 — Nova aba "Minhas conversões"
 
-Também confirmei o tamanho do estrago: dos 36.604 leads, 10.664 têm esse valor gravado (média R$ 1.618, máximo R$ 29.824) e **nenhum** guardou a linha original da planilha, então não há como saber, lead por lead, se aquele número era renda ou margem.
+Uma aba própria na prospecção onde a consultora registra o cliente que conseguiu converter.
 
-## O que vou fazer
+### Formulário de registro
 
-**1. Leitura das planilhas (daqui pra frente)**
+- Cliente: escolhe um lead da própria carteira (busca por nome/CPF) ou digita o nome à mão, quando o cliente não veio da base.
+- Data da operação.
+- Valor liberado (retirado).
+- Prazo (parcelas).
+- Valor da parcela.
+- Situação da margem: **"Ainda restou margem"** ou **"Usou toda a margem"**; quando restou, um campo opcional para o valor que sobrou.
+- Observação livre (opcional).
+- **Lembrar de contatar novamente em:** 2 semanas · 3 semanas · 1 mês · 2 meses · 3 meses · não lembrar.
 
-- Só aceitar como margem colunas que realmente falam de margem (margem, margem disponível, margem para empréstimo, margem cartão de crédito, margem cartão benefício).
-- Renda e salário passam a ser lidos em campo próprio, nunca como margem.
-- Guardar junto do lead **o nome exato da coluna** de onde cada valor veio, para a ficha poder usar essa nomenclatura.
-- Nada de estimar margem a partir da renda — conforme sua decisão.
+### Lista de conversões
 
-**2. Ficha do lead**
+Cartões/linhas com cliente, data, valor liberado, prazo x parcela, situação da margem, próximo lembrete e o status da venda (aguardando confirmação do gerente / confirmada / recusada). Totais do mês: quantidade e valor liberado.
 
-- Cada valor aparece com o nome da coluna da planilha (ex.: "MARGEM DISP. EMPRÉSTIMO", "RENDA BRUTA"), sem inventar rótulo.
-- O crédito liberado aproximado só é calculado sobre margem. Renda aparece como informação, sem valor liberado.
-- Onde não há margem: continua "Consultar no app do servidor".
+### Lembretes
 
-**3. Leads já importados**
+A data escolhida gera um follow-up na agenda da consultora (mesma lista de follow-ups que ela já usa), com o título "Retornar ao cliente — pode ter margem nova". Aparece em "Meu dia"/follow-ups e pode ser remarcado ou concluído normalmente.
 
-- O valor único desses leads deixa de ser chamado de "margem". Passa a aparecer como **"Valor importado da planilha"**, com o nome do lote de origem, e sem gerar crédito liberado.
-- A nota (score) deixa de ganhar pontos por esse valor ambíguo, para não privilegiar leads por um número que talvez seja só o salário.
-- A nomenclatura real da coluna volta para esses leads apenas com a reimportação do arquivo usando "Atualizar leads existentes".
+### Pontuação
+
+Registrar a conversão aqui **cria a venda como pendente**, exatamente como hoje: os pontos só entram quando o gerente confirma na tela de vendas do admin. Nada muda nas regras da campanha.
+
+### Quem vê o quê
+
+- Consultora vê e edita apenas as próprias conversões.
+- Administrador/gestor vê todas, com filtro por consultora e período.
+
+## Parte 2 — Renda deixa de ser tratada como margem
+
+Confirmei que a importação aceitava colunas de **renda** e **salário** como se fossem margem, e esse valor era exibido como "margem" e usado na nota do lead. Dos 36.604 leads, 10.664 têm esse valor (média R$ 1.618, máximo R$ 29.824) e nenhum guardou a linha original, então não é possível saber lead por lead o que era.
+
+- Só colunas de margem valem como margem; renda/salário passam a campo próprio.
+- Cada valor passa a ser exibido com **o nome da coluna da planilha**, conforme você pediu; nada de estimar margem a partir da renda.
+- Crédito liberado aproximado só sobre margem.
+- Nos leads antigos o valor ambíguo aparece como "Valor importado da planilha" (com o lote de origem) e deixa de dar pontos na nota. A nomenclatura real volta com a reimportação usando "Atualizar leads existentes".
 
 ## Não entra neste trabalho
 
@@ -33,8 +49,14 @@ Também confirmei o tamanho do estrago: dos 36.604 leads, 10.664 têm esse valor
 
 ## Detalhes técnicos
 
-- `src/lib/prospeccao/admin-import.ts`: remover `renda`/`salario`/`salário` de `MARGIN_ALIASES`; novo `INCOME_ALIASES`; registrar em `raw_data` as chaves `_col_margem` e `_col_renda` com o nome original da coluna usada.
-- `src/lib/prospeccao/prospeccao.utils.ts` / `prospeccao.functions.ts`: aceitar e gravar `renda` (nova coluna numérica em `prospect_leads`).
-- Migração: `alter table prospect_leads add column renda numeric`; ajustar `compute_prospect_lead` para pontuar por margem confirmada, não por `orcamento` ambíguo, mantendo o resto do score e do SLA intacto; `update` neutro para recalcular.
-- `src/routes/_authenticated/prospeccao.$leadId.tsx`: bloco de margens usa o rótulo vindo de `_col_margem`/`_col_renda` quando existir, com fallback "Valor importado da planilha"; `valorLiberado` só para margens.
-- `src/components/prospeccao/CrmCockpit.tsx` e a fila: trocar o rótulo "Margem" pelo mesmo critério.
+**Parte 1**
+- Migração: tabela `prospect_conversoes` (`user_id`, `lead_id` nullable, `cliente_nome`, `cpf`, `data_operacao`, `valor_liberado`, `prazo`, `valor_parcela`, `margem_restante` bool + `margem_restante_valor`, `observacao`, `lembrete_em`, `venda_id`), GRANT para `authenticated`/`service_role`, RLS: dono lê/escreve o próprio; `has_role(auth.uid(),'admin')` e gestor leem tudo; trigger `set_updated_at`.
+- `src/lib/prospeccao/conversoes.functions.ts`: `listarConversoes`, `criarConversao`, `atualizarConversao`, `removerConversao` com `requireSupabaseAuth` + Zod; `criarConversao` chama `registrarVendaPendente` (`origem: 'conversao'`, `ref_tabela: 'prospect_conversoes'`) e insere `lead_tasks` com `due_at` calculado a partir da opção de lembrete.
+- Rota `src/routes/_authenticated/prospeccao.conversoes.tsx` + botão na prospecção; formulário em `src/components/prospeccao/ConversaoDialog.tsx`, lista em `ConversoesList.tsx`; leitura via `useSuspenseQuery`/`queryOptions`.
+- Quando `lead_id` existir, marcar o lead como `ganho` reutilizando o fluxo atual (sem duplicar pontos).
+
+**Parte 2**
+- `src/lib/prospeccao/admin-import.ts`: retirar `renda`/`salario`/`salário` de `MARGIN_ALIASES`, criar `INCOME_ALIASES`, gravar em `raw_data` as chaves `_col_margem`/`_col_renda` com o nome original da coluna.
+- Migração: `prospect_leads.renda numeric`; ajustar `compute_prospect_lead` para não pontuar `orcamento` ambíguo (resto do score/SLA intacto) e `update` neutro para recalcular.
+- `prospeccao.utils.ts` / `prospeccao.functions.ts`: aceitar e gravar `renda`.
+- `src/routes/_authenticated/prospeccao.$leadId.tsx` e a fila (`CrmCockpit.tsx`): rótulo vindo de `_col_margem`/`_col_renda`, fallback "Valor importado da planilha", `valorLiberado` só para margens.
