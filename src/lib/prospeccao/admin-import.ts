@@ -201,7 +201,9 @@ export function buildParsed(
     }
     const { nome, matricula: matriculaNoNome } = limparNome(nomeRaw);
 
-    const margemRaw = getAny(MARGIN_ALIASES);
+    const margemCol = getAnyCol(MARGIN_ALIASES);
+    const margemRaw = margemCol.value;
+    const rendaCol = getAnyCol(INCOME_ALIASES);
     const urg = (get("urgencia") || get("urgência")).toLowerCase();
 
     // Collect every phone-like column on this row, plus the chosen/auto column.
