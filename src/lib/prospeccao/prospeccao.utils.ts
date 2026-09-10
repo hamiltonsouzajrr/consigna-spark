@@ -8,6 +8,7 @@ export const leadInput = z.object({
   cidade: z.string().trim().max(120).optional().nullable(),
   origem: z.string().trim().max(60).optional().nullable(),
   orcamento: z.number().nonnegative().max(1_000_000_000_000).optional().nullable(),
+  renda: z.number().nonnegative().max(1_000_000_000).optional().nullable(),
   urgencia: z.enum(["alta", "media", "baixa"]).optional().nullable(),
   idade: z.number().int().min(16).max(110).optional().nullable(),
   sexo: z.string().trim().max(20).optional().nullable(),

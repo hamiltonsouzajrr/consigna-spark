@@ -9,6 +9,7 @@ export type ParsedLead = {
   cidade?: string;
   origem?: string;
   orcamento?: number;
+  renda?: number;
   urgencia?: "alta" | "media" | "baixa";
   idade?: number;
   sexo?: string;
@@ -255,6 +256,7 @@ export function buildParsed(
       Number.isFinite(idadeNum) && idadeNum >= 16 && idadeNum <= 110 ? idadeNum : idadeDeNascimento(getAny(BIRTH_ALIASES));
     const sexo = normalizeSexo(getAny(SEX_ALIASES));
     const orcamento = margemRaw ? parseNumeroBr(margemRaw) : undefined;
+    const renda = rendaCol.value ? parseNumeroBr(rendaCol.value) : undefined;
 
     if (cidade) comCidade++;
     if (idade != null) comIdade++;
@@ -262,6 +264,9 @@ export function buildParsed(
 
     const raw: Record<string, unknown> = { ...r };
     if (matriculaNoNome && !raw.matricula) raw.matricula = matriculaNoNome;
+    // Guarda o nome exato da coluna de origem, para a ficha usar a mesma nomenclatura.
+    if (margemCol.col) raw._col_margem = margemCol.col;
+    if (rendaCol.col) raw._col_renda = rendaCol.col;
 
     out.push({
       nome,
@@ -273,6 +278,7 @@ export function buildParsed(
       sexo,
       origem: get("origem") || "planilha",
       orcamento: orcamento != null && orcamento > 0 ? orcamento : undefined,
+      renda: renda != null && renda > 0 ? renda : undefined,
       urgencia:
         urg === "alta" || urg === "media" || urg === "média" || urg === "baixa"
           ? urg === "média"
