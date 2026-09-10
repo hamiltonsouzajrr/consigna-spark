@@ -178,6 +178,20 @@ export function buildParsed(
       }
       return "";
     };
+    /** Igual ao getAny, mas devolve também o nome original da coluna usada. */
+    const getAnyCol = (aliases: string[]): { value: string; col: string | null } => {
+      for (const a of aliases) {
+        const v = get(a);
+        if (v) return { value: v, col: keys[a] ?? a };
+      }
+      for (const k of Object.keys(keys)) {
+        if (aliases.some((a) => k === a || k.includes(a))) {
+          const v = get(k);
+          if (v) return { value: v, col: keys[k] ?? k };
+        }
+      }
+      return { value: "", col: null };
+    };
 
     const nomeRaw = get("nome") || getAny(["nome", "cliente", "servidor", "name"]);
     const isEmptyRow = Object.values(r).every((v) => String(v ?? "").trim() === "");
