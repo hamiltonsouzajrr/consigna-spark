@@ -156,9 +156,13 @@ function Page() {
         observacao: form.observacao.trim() || null,
         lembrete: form.lembrete,
       };
-      return form.id
-        ? atualizar({ data: { ...payload, id: form.id } })
-        : criar({ data: payload });
+      if (form.id) return atualizar({ data: { ...payload, id: form.id } });
+      return criar({
+        data: {
+          ...payload,
+          lembrete: form.lembrete === "manter" ? "nenhum" : form.lembrete,
+        },
+      });
     },
     onSuccess: () => {
       toast.success(form.id ? "Conversão atualizada" : "Conversão registrada — o gerente vai confirmar a venda");
