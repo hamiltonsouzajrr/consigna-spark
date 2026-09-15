@@ -229,12 +229,20 @@ export const criarConversao = createServerFn({ method: "POST" })
 
 export const atualizarConversao = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => conversaoSchema.extend({ id: z.string().uuid() }).parse(data))
+  .inputValidator((data) =>
+    conversaoSchema
+      .omit({ lembrete: true })
+      .extend({
+        id: z.string().uuid(),
+        lembrete: z.enum(["nenhum", "2s", "3s", "1m", "2m", "3m", "manter"]),
+      })
+      .parse(data),
+  )
   .handler(async ({ context, data }) => {
     const db = await admin();
     const { data: atual, error: e0 } = await db
       .from("prospect_conversoes")
-      .select("id,user_id,task_id")
+      .select("id,user_id,lead_id,lembrete_em,task_id")
       .eq("id", data.id)
       .maybeSingle();
     if (e0) throw new Error(e0.message);
@@ -242,7 +250,7 @@ export const atualizarConversao = createServerFn({ method: "POST" })
     const { assertAdmin } = await import("./prospeccao.server");
     if (atual.user_id !== context.userId) await assertAdmin(context.supabase, context.userId);
 
-    const lembreteEm = dataLembrete(data.lembrete);
+    const lembreteEm = data.lembrete === "manter" ? atual.lembrete_em : dataLembrete(data.lembrete);
     const { error } = await db
       .from("prospect_conversoes")
       .update({
@@ -261,9 +269,51 @@ export const atualizarConversao = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
 
-    if (atual.task_id) {
-      if (lembreteEm) await db.from("lead_tasks").update({ due_at: lembreteEm }).eq("id", atual.task_id);
-      else await db.from("lead_tasks").update({ status: "canceled" }).eq("id", atual.task_id);
+    if (lembreteEm && data.leadId) {
+      let taskId = atual.task_id as string | null;
+      if (taskId) {
+        const { error: taskError } = await db
+          .from("lead_tasks")
+          .update({
+            lead_id: data.leadId,
+            consultant_id: context.userId,
+            title: TITULO_LEMBRETE,
+            due_at: lembreteEm,
+            status: "pending",
+          })
+          .eq("id", taskId);
+        if (taskError) throw new Error(taskError.message);
+      } else {
+        const { data: task, error: taskError } = await db
+          .from("lead_tasks")
+          .insert({
+            lead_id: data.leadId,
+            consultant_id: context.userId,
+            title: TITULO_LEMBRETE,
+            due_at: lembreteEm,
+            status: "pending",
+          })
+          .select("id")
+          .single();
+        if (taskError) throw new Error(taskError.message);
+        taskId = task.id as string;
+        const { error: linkError } = await db
+          .from("prospect_conversoes")
+          .update({ task_id: taskId })
+          .eq("id", data.id);
+        if (linkError) throw new Error(linkError.message);
+      }
+      const { error: leadError } = await db
+        .from("prospect_leads")
+        .update({ next_follow_up_at: lembreteEm })
+        .eq("id", data.leadId);
+      if (leadError) throw new Error(leadError.message);
+    } else if (atual.task_id) {
+      const { error: taskError } = await db
+        .from("lead_tasks")
+        .update({ status: "canceled" })
+        .eq("id", atual.task_id);
+      if (taskError) throw new Error(taskError.message);
     }
     return { ok: true };
   });
