@@ -31,6 +31,7 @@ import {
   LEMBRETE_OPCOES,
   type Conversao,
   type LembreteOpcao,
+  type TipoMargemConversao,
 } from "@/lib/prospeccao/conversoes.functions";
 
 export const Route = createFileRoute("/_authenticated/prospeccao/conversoes")({
@@ -74,6 +75,8 @@ function numeroBr(v: string): number | null {
 type FormState = {
   id?: string;
   leadId: string | null;
+  tomadorId: string | null;
+  origem: "crm" | "tomadores_al";
   clienteNome: string;
   cpf: string;
   dataOperacao: string;
@@ -81,6 +84,8 @@ type FormState = {
   prazo: string;
   valorParcela: string;
   margemRestante: "toda" | "restou";
+  tipoMargem: TipoMargemConversao;
+  margemUsada: string;
   margemRestanteValor: string;
   observacao: string;
   lembrete: LembreteOpcao | "manter";
@@ -88,6 +93,8 @@ type FormState = {
 
 const vazio = (): FormState => ({
   leadId: null,
+  tomadorId: null,
+  origem: "crm",
   clienteNome: "",
   cpf: "",
   dataOperacao: hojeISO(),
@@ -95,6 +102,8 @@ const vazio = (): FormState => ({
   prazo: "",
   valorParcela: "",
   margemRestante: "toda",
+  tipoMargem: "emprestimo",
+  margemUsada: "",
   margemRestanteValor: "",
   observacao: "",
   lembrete: "1m",
@@ -145,6 +154,8 @@ function Page() {
       if (valor == null || valor <= 0) throw new Error("Informe o valor liberado");
       const payload = {
         leadId: form.leadId,
+        tomadorId: form.tomadorId,
+        origem: form.origem,
         clienteNome: form.clienteNome.trim(),
         cpf: form.cpf || null,
         dataOperacao: form.dataOperacao,
@@ -152,6 +163,8 @@ function Page() {
         prazo: form.prazo ? Number(form.prazo.replace(/\D/g, "")) : null,
         valorParcela: numeroBr(form.valorParcela),
         margemRestante: form.margemRestante === "restou",
+        tipoMargem: form.tipoMargem,
+        margemUsada: numeroBr(form.margemUsada) ?? 0,
         margemRestanteValor: form.margemRestante === "restou" ? numeroBr(form.margemRestanteValor) : null,
         observacao: form.observacao.trim() || null,
         lembrete: form.lembrete,
@@ -186,6 +199,8 @@ function Page() {
     setForm({
       id: c.id,
       leadId: c.lead_id,
+      tomadorId: c.tomador_id,
+      origem: c.origem,
       clienteNome: c.cliente_nome,
       cpf: c.cpf ?? "",
       dataOperacao: c.data_operacao,
@@ -193,6 +208,8 @@ function Page() {
       prazo: c.prazo ? String(c.prazo) : "",
       valorParcela: c.valor_parcela != null ? String(c.valor_parcela).replace(".", ",") : "",
       margemRestante: c.margem_restante ? "restou" : "toda",
+      tipoMargem: c.tipo_margem ?? "emprestimo",
+      margemUsada: c.margem_usada != null ? String(c.margem_usada).replace(".", ",") : "",
       margemRestanteValor: c.margem_restante_valor != null ? String(c.margem_restante_valor).replace(".", ",") : "",
       observacao: c.observacao ?? "",
       lembrete: c.lembrete_em ? "manter" : "nenhum",
@@ -264,7 +281,11 @@ function Page() {
                   )}
                 </div>
 
-                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                  <div className="rounded-md border bg-muted/30 px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Margem usada</p>
+                    <p className="text-sm font-semibold">{c.tipo_margem === "cartao_credito" ? "Cartão crédito" : c.tipo_margem === "cartao_beneficio" ? "Cartão benefício" : "Empréstimo"} · {c.margem_usada != null ? BRL.format(c.margem_usada) : "—"}</p>
+                  </div>
                   <div className="rounded-md border bg-muted/30 px-3 py-2">
                     <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Valor liberado</p>
                     <p className="text-sm font-semibold">{BRL.format(c.valor_liberado)}</p>
@@ -405,6 +426,14 @@ function Page() {
                   value={form.valorParcela}
                   onChange={(e) => setForm((f) => ({ ...f, valorParcela: e.target.value }))}
                 />
+              </div>
+              <div>
+                <Label>Tipo de margem usada</Label>
+                <Select value={form.tipoMargem} onValueChange={(v) => setForm((f) => ({ ...f, tipoMargem: v as TipoMargemConversao }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="emprestimo">Empréstimo</SelectItem><SelectItem value="cartao_credito">Cartão de crédito</SelectItem><SelectItem value="cartao_beneficio">Cartão benefício</SelectItem></SelectContent></Select>
+              </div>
+              <div>
+                <Label>Margem usada</Label>
+                <Input inputMode="decimal" placeholder="0,00" value={form.margemUsada} onChange={(e) => setForm((f) => ({ ...f, margemUsada: e.target.value }))} />
               </div>
               <div>
                 <Label>Margem</Label>

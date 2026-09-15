@@ -189,6 +189,9 @@ export type VendaPendente = {
   revisado_em: string | null;
   created_at: string;
   valor: number | null;
+  tipo_margem: string | null;
+  margem_usada: number | null;
+  margem_restante_valor: number | null;
 };
 
 /** Registra (ou reaproveita) a venda pendente. Nunca credita pontos. */
@@ -271,6 +274,7 @@ export async function listarVendas(status?: "pendente" | "confirmada" | "recusad
   const tomadorIds = rows.filter((r) => r.ref_tabela === "tomadores_al").map((r) => r.ref_id);
   const clientes = new Map<string, string>();
   const valores = new Map<string, number | null>();
+  const detalhes = new Map<string, { tipo_margem: string | null; margem_usada: number | null; margem_restante_valor: number | null }>();
   if (leadIds.length) {
     const { data: leads } = await db.from("prospect_leads").select("id,nome,orcamento").in("id", leadIds);
     for (const l of leads ?? []) {
@@ -288,12 +292,24 @@ export async function listarVendas(status?: "pendente" | "confirmada" | "recusad
       valores.set(t.id, (t as any).margem_disp_emprestimo ?? null);
     }
   }
+  const conversaoIds = rows.filter((r) => r.ref_tabela === "prospect_conversoes").map((r) => r.ref_id);
+  if (conversaoIds.length) {
+    const { data: conversoes } = await db.from("prospect_conversoes").select("id,cliente_nome,valor_liberado,tipo_margem,margem_usada,margem_restante_valor").in("id", conversaoIds);
+    for (const c of conversoes ?? []) {
+      clientes.set(c.id, c.cliente_nome);
+      valores.set(c.id, Number(c.valor_liberado ?? 0));
+      detalhes.set(c.id, { tipo_margem: c.tipo_margem, margem_usada: c.margem_usada == null ? null : Number(c.margem_usada), margem_restante_valor: c.margem_restante_valor == null ? null : Number(c.margem_restante_valor) });
+    }
+  }
 
   return rows.map((r) => ({
     ...r,
     nome: nomes.get(r.user_id) ?? "Consultora",
     cliente_nome: r.cliente_nome ?? clientes.get(r.ref_id) ?? null,
     valor: valores.get(r.ref_id) ?? null,
+    tipo_margem: detalhes.get(r.ref_id)?.tipo_margem ?? null,
+    margem_usada: detalhes.get(r.ref_id)?.margem_usada ?? null,
+    margem_restante_valor: detalhes.get(r.ref_id)?.margem_restante_valor ?? null,
   })) as VendaPendente[];
 }
 

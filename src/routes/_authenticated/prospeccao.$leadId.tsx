@@ -38,6 +38,7 @@ import {
 
 import { useRhAccess } from "@/hooks/use-rh-access";
 import { formatCpf } from "@/lib/cpf";
+import { RegistrarConversaoDialog } from "@/components/prospeccao/RegistrarConversaoDialog";
 
 
 export const Route = createFileRoute("/_authenticated/prospeccao/$leadId")({
@@ -185,6 +186,7 @@ function Page() {
   const [busy, setBusy] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [showPhones, setShowPhones] = useState(false);
+  const [convertendo, setConvertendo] = useState(false);
   const [prazo, setPrazo] = useState(PRAZO_EMPRESTIMO_PADRAO);
   const noteRef = useRef<HTMLTextAreaElement>(null);
 
@@ -293,6 +295,7 @@ function Page() {
 
   const changeStatus = async (status: LeadStatus) => {
     if (!lead) return;
+    if (status === "ganho") { setConvertendo(true); return; }
     if (status === "perdido" && !lossReason) { toast.error("Selecione o motivo da perda."); return; }
     setBusy(true);
     try {
@@ -808,6 +811,7 @@ function Page() {
           </Card>
         </div>
       </div>
+      <RegistrarConversaoDialog open={convertendo} onOpenChange={setConvertendo} origem="crm" clienteId={lead.id} clienteNome={lead.nome} cpf={lead.cpf} onSaved={async () => { await qualificarFn({ data: { leadId, status: "ganho" } }); await load(); }} />
     </AppShell>
   );
 }
