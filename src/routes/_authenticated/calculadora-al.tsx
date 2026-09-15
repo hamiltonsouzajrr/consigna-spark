@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
@@ -22,6 +22,7 @@ import { calcMargens } from "@/lib/al/margem";
 import { estimarCredito } from "@/lib/al/credito";
 
 export const Route = createFileRoute("/_authenticated/calculadora-al")({
+  beforeLoad: () => { throw redirect({ to: "/calculadoras", search: { aba: "contracheque" } }); },
   head: () => ({
     meta: [
       { title: "Calculadora de Margem Consignável — ARACAJU" },

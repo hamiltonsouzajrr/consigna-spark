@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Sparkles, TrendingUp, CreditCard, Wallet, Building2, Star } from "lucid
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/alagoas")({
+  beforeLoad: () => { throw redirect({ to: "/calculadoras", search: { aba: "bancos" } }); },
   head: () => ({
     meta: [
       { title: "​SIMULAÇÃO GOVERNO DE ALAGOAS — Simulação de Consignado" },

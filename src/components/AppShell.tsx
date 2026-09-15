@@ -89,14 +89,14 @@ function useFollowupsCount(enabled: boolean) {
     let cancelled = false;
     const load = async () => {
       const { count, error } = await supabase
-        .from("prospect_leads")
+        .from("lead_tasks")
         .select("id", { count: "exact", head: true })
-        .not("next_follow_up_at", "is", null)
-        .lte("next_follow_up_at", new Date().toISOString())
-        .not("status", "in", "(ganho,perdido)");
+        .eq("status", "pending")
+        .lte("due_at", new Date().toISOString());
       if (!cancelled && !error) setCount(count ?? 0);
     };
     load();
+    window.addEventListener("followups-updated", load);
     const ch = supabase
       .channel("prospect_leads_followups_count")
       .on(
@@ -108,6 +108,7 @@ function useFollowupsCount(enabled: boolean) {
     return () => {
       cancelled = true;
       supabase.removeChannel(ch);
+      window.removeEventListener("followups-updated", load);
     };
   }, [enabled]);
   return count;
