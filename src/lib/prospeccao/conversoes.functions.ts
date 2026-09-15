@@ -187,6 +187,16 @@ export const criarConversao = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const db = await admin();
     const lembreteEm = dataLembrete(data.lembrete);
+    if (data.origem === "crm" && !data.leadId) throw new Error("Selecione o cliente do CRM.");
+    if (data.origem === "tomadores_al" && !data.tomadorId) throw new Error("Selecione o cliente de Tomadores.");
+    if (data.leadId) {
+      const { data: lead } = await context.supabase.from("prospect_leads").select("id").eq("id", data.leadId).maybeSingle();
+      if (!lead) throw new Error("Este cliente não está na sua carteira.");
+    }
+    if (data.tomadorId) {
+      const { data: tomador } = await context.supabase.from("tomadores_al").select("id").eq("id", data.tomadorId).maybeSingle();
+      if (!tomador) throw new Error("Este cliente não está na sua carteira.");
+    }
 
     const { data: inserted, error } = await db
       .from("prospect_conversoes")
