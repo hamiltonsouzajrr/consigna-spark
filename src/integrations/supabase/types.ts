@@ -1465,9 +1465,13 @@ export type Database = {
           lembrete_em: string | null
           margem_restante: boolean
           margem_restante_valor: number | null
+          margem_usada: number | null
           observacao: string | null
+          origem: string
           prazo: number | null
           task_id: string | null
+          tipo_margem: string | null
+          tomador_id: string | null
           updated_at: string
           user_id: string
           valor_liberado: number
@@ -1484,9 +1488,13 @@ export type Database = {
           lembrete_em?: string | null
           margem_restante?: boolean
           margem_restante_valor?: number | null
+          margem_usada?: number | null
           observacao?: string | null
+          origem?: string
           prazo?: number | null
           task_id?: string | null
+          tipo_margem?: string | null
+          tomador_id?: string | null
           updated_at?: string
           user_id: string
           valor_liberado?: number
@@ -1503,9 +1511,13 @@ export type Database = {
           lembrete_em?: string | null
           margem_restante?: boolean
           margem_restante_valor?: number | null
+          margem_usada?: number | null
           observacao?: string | null
+          origem?: string
           prazo?: number | null
           task_id?: string | null
+          tipo_margem?: string | null
+          tomador_id?: string | null
           updated_at?: string
           user_id?: string
           valor_liberado?: number
@@ -1518,6 +1530,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "prospect_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_conversoes_tomador_id_fkey"
+            columns: ["tomador_id"]
+            isOneToOne: false
+            referencedRelation: "tomadores_al"
             referencedColumns: ["id"]
           },
         ]
@@ -2616,6 +2635,7 @@ export type Database = {
           orgao: string | null
           pct_utilizado_emprestimo: number | null
           status_abordagem: string
+          telefones: string[]
           updated_at: string
         }
         Insert: {
@@ -2642,6 +2662,7 @@ export type Database = {
           orgao?: string | null
           pct_utilizado_emprestimo?: number | null
           status_abordagem?: string
+          telefones?: string[]
           updated_at?: string
         }
         Update: {
@@ -2668,6 +2689,7 @@ export type Database = {
           orgao?: string | null
           pct_utilizado_emprestimo?: number | null
           status_abordagem?: string
+          telefones?: string[]
           updated_at?: string
         }
         Relationships: []
