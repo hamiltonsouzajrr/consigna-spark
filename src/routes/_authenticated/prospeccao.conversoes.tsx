@@ -83,7 +83,7 @@ type FormState = {
   margemRestante: "toda" | "restou";
   margemRestanteValor: string;
   observacao: string;
-  lembrete: LembreteOpcao;
+  lembrete: LembreteOpcao | "manter";
 };
 
 const vazio = (): FormState => ({
@@ -156,9 +156,13 @@ function Page() {
         observacao: form.observacao.trim() || null,
         lembrete: form.lembrete,
       };
-      return form.id
-        ? atualizar({ data: { ...payload, id: form.id } })
-        : criar({ data: payload });
+      if (form.id) return atualizar({ data: { ...payload, id: form.id } });
+      return criar({
+        data: {
+          ...payload,
+          lembrete: form.lembrete === "manter" ? "nenhum" : form.lembrete,
+        },
+      });
     },
     onSuccess: () => {
       toast.success(form.id ? "Conversão atualizada" : "Conversão registrada — o gerente vai confirmar a venda");
@@ -191,7 +195,7 @@ function Page() {
       margemRestante: c.margem_restante ? "restou" : "toda",
       margemRestanteValor: c.margem_restante_valor != null ? String(c.margem_restante_valor).replace(".", ",") : "",
       observacao: c.observacao ?? "",
-      lembrete: "nenhum",
+      lembrete: c.lembrete_em ? "manter" : "nenhum",
     });
     setAberto(true);
   }
@@ -432,10 +436,13 @@ function Page() {
               <Label>Lembrar de contatar novamente</Label>
               <Select
                 value={form.lembrete}
-                onValueChange={(v) => setForm((f) => ({ ...f, lembrete: v as LembreteOpcao }))}
+                onValueChange={(v) => setForm((f) => ({ ...f, lembrete: v as LembreteOpcao | "manter" }))}
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  {form.lembrete === "manter" && (
+                    <SelectItem value="manter">Manter a data atual</SelectItem>
+                  )}
                   {LEMBRETE_OPCOES.map((o) => (
                     <SelectItem key={o} value={o}>{LEMBRETE_LABEL[o]}</SelectItem>
                   ))}
