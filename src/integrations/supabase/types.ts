@@ -822,27 +822,30 @@ export type Database = {
           created_at: string
           due_at: string
           id: string
-          lead_id: string
+          lead_id: string | null
           status: Database["public"]["Enums"]["prospect_task_status"]
           title: string
+          tomador_id: string | null
         }
         Insert: {
           consultant_id?: string | null
           created_at?: string
           due_at: string
           id?: string
-          lead_id: string
+          lead_id?: string | null
           status?: Database["public"]["Enums"]["prospect_task_status"]
           title: string
+          tomador_id?: string | null
         }
         Update: {
           consultant_id?: string | null
           created_at?: string
           due_at?: string
           id?: string
-          lead_id?: string
+          lead_id?: string | null
           status?: Database["public"]["Enums"]["prospect_task_status"]
           title?: string
+          tomador_id?: string | null
         }
         Relationships: [
           {
@@ -850,6 +853,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "prospect_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_tasks_tomador_id_fkey"
+            columns: ["tomador_id"]
+            isOneToOne: false
+            referencedRelation: "tomadores_al"
             referencedColumns: ["id"]
           },
         ]
