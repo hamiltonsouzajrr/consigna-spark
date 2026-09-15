@@ -33,9 +33,7 @@ const navSections: NavSection[] = [
   {
     section: "Simulação",
     items: [
-      { to: "/alagoas", label: "Prévia AL – Todos Bancos", full: "SIMULAÇÃO PRÉVIA ALAGOAS - TODOS BANCOS", icon: Calculator, consultoraOnly: true },
-      { to: "/calculadora-al", label: "Contracheque – GOV AL", full: "CALCULADORA POR CONTRA CHEQUE - GOV AL", icon: Calculator, consultoraOnly: true },
-      { to: "/simulacao-alagoas", label: "Banese", full: "SIMULAÇÃO BANESE", icon: Calculator, consultoraOnly: true },
+      { to: "/calculadoras", label: "Calculadoras", full: "TODAS AS CALCULADORAS", icon: Calculator, consultoraOnly: true },
     ],
   },
   {
