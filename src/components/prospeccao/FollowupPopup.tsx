@@ -6,7 +6,6 @@ import { Link } from "@tanstack/react-router";
 import { CalendarClock, Phone, AlertTriangle, Settings2, BellRing, Check, Clock3 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";

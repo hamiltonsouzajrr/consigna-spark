@@ -15,8 +15,8 @@
 - [x] Qualificação deixa de pontuar (venda confirmada passa a 40 pts) e pontos de qualificação da semana zerados
 - [x] Tela "Minha semana" por consultora: pontos, tempo ativo, ritmo diário, evolução das semanas e histórico por ação
 - [x] Revisão geral: importação de leads restrita a admin, índices de busca por nome/CPF, contagens caras reduzidas, título na tela de importação, erros silenciosos passam a ser registrados, cache do vínculo consultora/e-mail
-- [ ] Follow-ups: concluir ao marcar visto, reunir CRM e Tomadores e organizar o aviso
-- [ ] Unificar as três calculadoras em uma única opção
-- [ ] Conversão no CRM/Tomadores com tipo, margem usada e restante
-- [ ] Telefones manuais e por CPF em Tomadores
+- [x] Follow-ups: concluir ao marcar visto, reunir CRM e Tomadores e organizar o aviso
+- [x] Unificar as três calculadoras em uma única opção
+- [x] Conversão no CRM/Tomadores com tipo, margem usada e restante
+- [x] Telefones manuais e por CPF em Tomadores
 - [ ] Revisão visual e funcional geral em computador e celular
