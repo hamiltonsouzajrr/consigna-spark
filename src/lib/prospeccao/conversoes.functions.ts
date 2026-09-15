@@ -249,6 +249,9 @@ export const criarConversao = createServerFn({ method: "POST" })
         .single();
       if (task?.id) await db.from("prospect_conversoes").update({ task_id: task.id }).eq("id", id);
       await db.from("prospect_leads").update({ next_follow_up_at: lembreteEm }).eq("id", data.leadId);
+    } else if (lembreteEm && data.tomadorId) {
+      const { data: task } = await db.from("lead_tasks").insert({ tomador_id: data.tomadorId, consultant_id: context.userId, title: TITULO_LEMBRETE, due_at: lembreteEm, status: "pending" }).select("id").single();
+      if (task?.id) await db.from("prospect_conversoes").update({ task_id: task.id }).eq("id", id);
     }
 
     return { id };

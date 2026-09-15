@@ -246,6 +246,7 @@ export const concluirFollowup = createServerFn({ method: "POST" })
     if (!task) throw new Error("Follow-up não encontrado.");
 
     await db.from("lead_tasks").update({ status: "done" } as any).eq("id", data.taskId);
+    await db.from("prospect_leads").update({ next_follow_up_at: null } as any).eq("id", task.lead_id);
     await db.from("lead_events").insert({
       lead_id: task.lead_id,
       consultant_id: userId,
