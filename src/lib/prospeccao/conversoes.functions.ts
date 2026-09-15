@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type LembreteOpcao = "nenhum" | "2s" | "3s" | "1m" | "2m" | "3m";
+export type TipoMargemConversao = "emprestimo" | "cartao_credito" | "cartao_beneficio";
 
 export const LEMBRETE_LABEL: Record<LembreteOpcao, string> = {
   nenhum: "Não lembrar",
@@ -36,6 +37,8 @@ export type Conversao = {
   user_id: string;
   consultora_nome: string | null;
   lead_id: string | null;
+  tomador_id: string | null;
+  origem: "crm" | "tomadores_al";
   cliente_nome: string;
   cpf: string | null;
   data_operacao: string;
@@ -43,6 +46,8 @@ export type Conversao = {
   prazo: number | null;
   valor_parcela: number | null;
   margem_restante: boolean;
+  tipo_margem: TipoMargemConversao | null;
+  margem_usada: number | null;
   margem_restante_valor: number | null;
   observacao: string | null;
   lembrete_em: string | null;
@@ -54,6 +59,8 @@ const TITULO_LEMBRETE = "Retornar ao cliente — pode ter margem nova";
 
 const conversaoSchema = z.object({
   leadId: z.string().uuid().optional().nullable(),
+  tomadorId: z.string().uuid().optional().nullable(),
+  origem: z.enum(["crm", "tomadores_al"]).default("crm"),
   clienteNome: z.string().trim().min(2).max(200),
   cpf: z.string().trim().max(20).optional().nullable(),
   dataOperacao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -61,6 +68,8 @@ const conversaoSchema = z.object({
   prazo: z.number().int().min(1).max(240).optional().nullable(),
   valorParcela: z.number().min(0).max(10_000_000).optional().nullable(),
   margemRestante: z.boolean(),
+  tipoMargem: z.enum(["emprestimo", "cartao_credito", "cartao_beneficio"]),
+  margemUsada: z.number().min(0).max(10_000_000),
   margemRestanteValor: z.number().min(0).max(10_000_000).optional().nullable(),
   observacao: z.string().trim().max(1000).optional().nullable(),
   lembrete: z.enum(["nenhum", "2s", "3s", "1m", "2m", "3m"]),
@@ -133,6 +142,8 @@ export const listarConversoes = createServerFn({ method: "GET" })
         user_id: r.user_id,
         consultora_nome: nomes.get(r.user_id) ?? null,
         lead_id: r.lead_id,
+        tomador_id: r.tomador_id,
+        origem: r.origem === "tomadores_al" ? "tomadores_al" : "crm",
         cliente_nome: r.cliente_nome,
         cpf: r.cpf,
         data_operacao: r.data_operacao,
@@ -140,6 +151,8 @@ export const listarConversoes = createServerFn({ method: "GET" })
         prazo: r.prazo,
         valor_parcela: r.valor_parcela != null ? Number(r.valor_parcela) : null,
         margem_restante: !!r.margem_restante,
+        tipo_margem: r.tipo_margem,
+        margem_usada: r.margem_usada != null ? Number(r.margem_usada) : null,
         margem_restante_valor: r.margem_restante_valor != null ? Number(r.margem_restante_valor) : null,
         observacao: r.observacao,
         lembrete_em: r.lembrete_em,
@@ -180,6 +193,8 @@ export const criarConversao = createServerFn({ method: "POST" })
       .insert({
         user_id: context.userId,
         lead_id: data.leadId ?? null,
+        tomador_id: data.tomadorId ?? null,
+        origem: data.origem,
         cliente_nome: data.clienteNome,
         cpf: data.cpf?.replace(/\D/g, "") || null,
         data_operacao: data.dataOperacao,
@@ -187,6 +202,8 @@ export const criarConversao = createServerFn({ method: "POST" })
         prazo: data.prazo ?? null,
         valor_parcela: data.valorParcela ?? null,
         margem_restante: data.margemRestante,
+        tipo_margem: data.tipoMargem,
+        margem_usada: data.margemUsada,
         margem_restante_valor: data.margemRestante ? (data.margemRestanteValor ?? null) : null,
         observacao: data.observacao ?? null,
         lembrete_em: lembreteEm,
@@ -200,7 +217,7 @@ export const criarConversao = createServerFn({ method: "POST" })
     const { registrarVendaPendente } = await import("./competicao.server");
     await registrarVendaPendente(
       context.userId,
-      "crm",
+      data.origem,
       "prospect_conversoes",
       id,
       data.clienteNome,
@@ -255,6 +272,8 @@ export const atualizarConversao = createServerFn({ method: "POST" })
       .from("prospect_conversoes")
       .update({
         lead_id: data.leadId ?? null,
+        tomador_id: data.tomadorId ?? null,
+        origem: data.origem,
         cliente_nome: data.clienteNome,
         cpf: data.cpf?.replace(/\D/g, "") || null,
         data_operacao: data.dataOperacao,
@@ -262,6 +281,8 @@ export const atualizarConversao = createServerFn({ method: "POST" })
         prazo: data.prazo ?? null,
         valor_parcela: data.valorParcela ?? null,
         margem_restante: data.margemRestante,
+        tipo_margem: data.tipoMargem,
+        margem_usada: data.margemUsada,
         margem_restante_valor: data.margemRestante ? (data.margemRestanteValor ?? null) : null,
         observacao: data.observacao ?? null,
         lembrete_em: lembreteEm,
