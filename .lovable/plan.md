@@ -1,26 +1,52 @@
-# Painéis de métricas travando por tempo limite do banco
+# Follow-ups, ferramentas unificadas e dados da conversão
 
-## O problema (confirmado)
+## 1. Organizar o aviso de follow-up
 
-Os painéis de métricas leem dezenas de milhares de linhas de uma vez e somam tudo dentro do aplicativo. Conforme a base cresceu, o banco passou a cancelar essas leituras por tempo limite — resultado: gráficos vazios, carregamento infinito ou erro.
+- Simplificar o pop-up para mostrar cada cliente com ações claras: **Ligar**, **WhatsApp**, **Reagendar** e **Marcar como visto**.
+- **Marcar como visto** concluirá o follow-up, retirará o cliente da lista e impedirá que o mesmo aviso apareça novamente.
+- Manter a opção de adiar, mas remover o comportamento de reabrir repetidamente um lembrete já concluído.
+- Unificar no aviso os retornos do CRM e de Tomadores, identificando a origem e abrindo a tela correta.
+- Atualizar imediatamente o contador e a página de follow-ups após concluir ou reagendar.
 
-Telas afetadas: Evolução da Prospecção, gráficos do administrador, gráficos da prospecção e o painel de consultoras.
+## 2. Unificar as calculadoras sem alterar os cálculos
 
-## O que fazer
+- Criar uma única opção **Calculadoras** no menu.
+- Reunir na mesma tela, em abas:
+  - Prévia AL — Todos os bancos;
+  - Cálculo por contracheque — Governo de AL;
+  - Banese.
+- Preservar fórmulas, coeficientes, campos, resultados e regras atuais de cada calculadora.
+- Manter os endereços antigos funcionando por redirecionamento para a aba correspondente, evitando links quebrados.
 
-1. Criar contadores no próprio banco (funções que já devolvem os totais agrupados por consultora, por dia, por origem e por período), em vez de trazer as linhas cruas.
-2. Criar os índices que essas contagens precisam (data de criação, consultora, data de atribuição).
-3. Ajustar as quatro telas para usar esses contadores, mantendo exatamente os mesmos números e o mesmo formato de gráfico já exibido hoje.
-4. Reduzir a janela padrão da Evolução da Prospecção para o período realmente mostrado, em vez de varrer seis meses inteiros a cada abertura.
-5. Manter um caminho de segurança: se um contador falhar, a tela mostra aviso claro em vez de ficar carregando para sempre.
+## 3. Registrar margem ao converter no CRM ou em Tomadores
+
+- Ao escolher **Convertido**, abrir o cadastro da venda antes de concluir a conversão.
+- A consultora escolherá o tipo de margem usado: **Empréstimo**, **Cartão de crédito** ou **Cartão benefício**.
+- Registrar **margem usada** e **margem restante**, além dos dados já existentes da venda: data, valor liberado, prazo, parcela, observação e lembrete.
+- Reutilizar a tela e o histórico de conversões existentes, vinculando corretamente a venda ao cliente do CRM ou de Tomadores.
+- A venda continuará pendente até a confirmação do gerente; as regras de pontuação não serão alteradas.
+- Mostrar tipo, margem usada e margem restante no histórico da conversão e na conferência do gerente.
+
+## 4. Telefone em Tomadores
+
+- Continuar buscando automaticamente telefones no CRM pelo CPF, como já acontece hoje.
+- Quando não existir telefone encontrado, permitir que a consultora cadastre um ou mais números diretamente no cliente de Tomadores.
+- Exibir juntos os telefones encontrados pelo CPF e os cadastrados manualmente, sem duplicações.
+- Permitir ligar e abrir o WhatsApp pelos números salvos.
+- Restringir a alteração à consultora responsável pelo cliente; administradores mantêm acesso de gestão.
 
 ## Detalhes técnicos
 
-- Novas funções SQL `security definer` com `GROUP BY` para: contatos/follow-ups por período (`lead_events`, `lead_tasks`), ranking por consultora (`do_registros`), follow-ups por origem, série diária de `tomadores_al.atribuido_em`, e os cinco agregados do painel de consultoras.
-- Índices: `lead_events(created_at, kind)`, `lead_events(consultant_id, created_at)`, `lead_tasks(created_at)`, `lead_tasks(consultant_id, status, due_at)`, `do_registros(consultora_responsavel)`, `tomadores_al(consultora_responsavel, atribuido_em)`.
-- Substituir os `.limit(50000)`/`.limit(100000)` em `evolucao.functions.ts`, `charts.functions.ts`, `admin/charts.functions.ts` e `dashboard-consultoras.functions.ts` por chamadas `rpc(...)`.
-- Verificação: `EXPLAIN (ANALYZE)` antes/depois em cada agregado e comparação dos números atuais com os novos.
+- Migração em `prospect_conversoes`: adicionar origem da conversão, vínculo opcional com Tomadores, tipo de margem e valor da margem usada; manter `margem_restante_valor` para o saldo.
+- Migração em `tomadores_al`: adicionar armazenamento dos telefones informados manualmente, com os GRANTs e políticas atuais preservados.
+- Criar funções autenticadas para concluir/reagendar follow-ups e salvar telefones, validando a responsável no servidor.
+- Adaptar a lista de follow-ups para consultar CRM e Tomadores; ao concluir, limpar `next_follow_up_at` e concluir a tarefa vinculada quando houver.
+- Fazer a conversão de CRM/Tomadores usar o mesmo formulário de conversão e evitar vendas pendentes duplicadas.
+- Extrair o conteúdo das três calculadoras para módulos reutilizáveis e montar uma rota única com abas, sem reescrever a lógica financeira.
+- Validar em computador e celular: conclusão definitiva do aviso, reagendamento, conversão nas duas origens, telefone por CPF/manual e todas as calculadoras.
 
-## Fora de escopo
+## Fora do escopo
 
-Competição, Tomadores AL, Radar e importação de leads não mudam.
+- Alterar coeficientes ou fórmulas financeiras.
+- Alterar regras, pontos ou confirmação da campanha.
+- Apagar históricos existentes de follow-up, vendas ou contatos.
