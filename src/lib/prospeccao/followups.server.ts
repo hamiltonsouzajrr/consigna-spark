@@ -14,28 +14,35 @@ export async function dispararLembretesFollowup(): Promise<{
 
   const limite = new Date(Date.now() + JANELA_MIN * 60_000).toISOString();
   const { data, error } = await supabaseAdmin
-    .from("prospect_leads")
-    .select("id,nome,consultant_id,next_follow_up_at")
-    .not("next_follow_up_at", "is", null)
-    .lte("next_follow_up_at", limite)
-    .not("status", "in", "(ganho,perdido)")
+    .from("lead_tasks")
+    .select("id,consultant_id,due_at,lead_id,tomador_id")
+    .eq("status", "pending")
+    .lte("due_at", limite)
     .limit(5000);
   if (error) throw new Error(error.message);
 
+  const leadIds = (data ?? []).map((r: any) => r.lead_id).filter(Boolean);
+  const tomadorIds = (data ?? []).map((r: any) => r.tomador_id).filter(Boolean);
+  const [leads, tomadores] = await Promise.all([
+    leadIds.length ? supabaseAdmin.from("prospect_leads").select("id,nome").in("id", leadIds) : Promise.resolve({ data: [] }),
+    tomadorIds.length ? supabaseAdmin.from("tomadores_al").select("id,nome").in("id", tomadorIds) : Promise.resolve({ data: [] }),
+  ]);
+  const nomes = new Map<string, string>([...(leads.data ?? []), ...(tomadores.data ?? [])].map((r: any) => [r.id, r.nome]));
   const porConsultora = new Map<string, { total: number; proximo: string; nome: string; atrasados: number }>();
   const agora = new Date().toISOString();
   for (const l of data ?? []) {
     const uid = (l as any).consultant_id as string | null;
     if (!uid) continue;
-    const quando = (l as any).next_follow_up_at as string;
+    const quando = (l as any).due_at as string;
+    const nome = nomes.get((l as any).lead_id ?? (l as any).tomador_id) ?? "cliente";
     const isAtrasado = quando <= agora;
     const atual = porConsultora.get(uid);
     if (!atual) {
-      porConsultora.set(uid, { total: 1, proximo: quando, nome: (l as any).nome, atrasados: isAtrasado ? 1 : 0 });
+      porConsultora.set(uid, { total: 1, proximo: quando, nome, atrasados: isAtrasado ? 1 : 0 });
     } else {
       atual.total += 1;
       if (isAtrasado) atual.atrasados += 1;
-      if (quando < atual.proximo) { atual.proximo = quando; atual.nome = (l as any).nome; }
+      if (quando < atual.proximo) { atual.proximo = quando; atual.nome = nome; }
     }
   }
 

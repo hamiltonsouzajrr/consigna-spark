@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { Calculator, Eraser, AlertTriangle } from "lucide-react";
 import { COEFICIENTES } from "@/lib/prospeccao/coeficientes";
 
 export const Route = createFileRoute("/_authenticated/simulacao-alagoas")({
+  beforeLoad: () => { throw redirect({ to: "/calculadoras", search: { aba: "banese" } }); },
   head: () => ({
     meta: [
       { title: "SIMULAÇÃO BANESE | Grupo Positive" },
