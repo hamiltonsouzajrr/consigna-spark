@@ -268,13 +268,12 @@ function CaixaPrazos() {
   );
 }
 
-function AlagoasPage() {
+export function AlagoasPage({ embedded = false }: { embedded?: boolean } = {}) {
   const principais = PRODUTOS.filter((p) => p.tipo === "principal");
   const credito = PRODUTOS.filter((p) => p.tipo === "cartao_credito");
   const beneficio = PRODUTOS.filter((p) => p.tipo === "cartao_beneficio");
 
-  return (
-    <AppShell>
+  const content = (
       <div className="space-y-8">
         <div className="text-center">
           <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-primary">
@@ -318,6 +317,6 @@ function AlagoasPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AppShell>
   );
+  return embedded ? content : <AppShell>{content}</AppShell>;
 }

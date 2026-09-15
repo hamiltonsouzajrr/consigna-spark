@@ -49,7 +49,7 @@ function formatMoedaInput(valor: string): string {
   return n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function SimulacaoAlagoasPage() {
+export function SimulacaoAlagoasPage({ embedded = false }: { embedded?: boolean } = {}) {
   const [idade, setIdade] = useState("");
   const [parcela, setParcela] = useState("");
   const [prazo, setPrazo] = useState("60");
@@ -104,8 +104,7 @@ function SimulacaoAlagoasPage() {
     setAvisoPrazo("");
   };
 
-  return (
-    <AppShell>
+  const content = (
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: "#003B7A" }}>
@@ -245,6 +244,6 @@ function SimulacaoAlagoasPage() {
           </CardContent>
         </Card>
       </div>
-    </AppShell>
   );
+  return embedded ? content : <AppShell>{content}</AppShell>;
 }

@@ -25,7 +25,8 @@
 - Registrar **margem usada** e **margem restante**, além dos dados já existentes da venda: data, valor liberado, prazo, parcela, observação e lembrete.
 - Reutilizar a tela e o histórico de conversões existentes, vinculando corretamente a venda ao cliente do CRM ou de Tomadores.
 - A venda continuará pendente até a confirmação do gerente; as regras de pontuação não serão alteradas.
-- Mostrar tipo, margem usada e margem restante no histórico da conversão e na conferência do gerente.
+- Mostrar tipo, margem usada e margem restante no histórico da conversão e na conferência do gerente.  
+Ao converter a venda ela aparecerá na aba Minha carteira de clientes na Aba lateral abaixo da calculadora
 
 ## 4. Telefone em Tomadores
 
@@ -33,7 +34,9 @@
 - Quando não existir telefone encontrado, permitir que a consultora cadastre um ou mais números diretamente no cliente de Tomadores.
 - Exibir juntos os telefones encontrados pelo CPF e os cadastrados manualmente, sem duplicações.
 - Permitir ligar e abrir o WhatsApp pelos números salvos.
-- Restringir a alteração à consultora responsável pelo cliente; administradores mantêm acesso de gestão.
+- Restringir a alteração à consultora responsável pelo cliente; administradores mantêm acesso de gestão.  
+  
+5. Ajustar todo o site para abrir corretamente e ser possivel utilizar as funcoes sem encobrir ou nao mostrar as funçoes, isso deve acontecer uma revisao em todo site e ser ajustado
 
 ## Detalhes técnicos
 

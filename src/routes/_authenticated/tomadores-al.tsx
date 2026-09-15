@@ -30,7 +30,7 @@ import tomadoresAsset from "@/assets/tomadores_al.json.asset.json";
 import {
   getTomadoresAl, marcarAbordagemTomador, distribuirTomadoresAl, getDistribuicaoTomadoresAl,
   getResumoCarteiraTomadores, importarConsultorasDosAcessos, getContagemFaixasTomadores,
-  registrarContatoTomador,
+  registrarContatoTomador, salvarTelefoneTomador,
   type TomadorAl, type DistribuicaoConsultora, type ResumoCarteira,
 } from "@/lib/prospeccao/tomadores-al.functions";
 import {
@@ -40,6 +40,7 @@ import {
 import {
   getConsultoras, adicionarConsultora, toggleConsultora, type Consultora,
 } from "@/lib/radar/radar.functions";
+import { RegistrarConversaoDialog } from "@/components/prospeccao/RegistrarConversaoDialog";
 
 export const Route = createFileRoute("/_authenticated/tomadores-al")({
   head: () => ({
@@ -151,6 +152,7 @@ function Page() {
   const fetchTomadores = useServerFn(getTomadoresAl);
   const abordagemFn = useServerFn(marcarAbordagemTomador);
   const contatoFn = useServerFn(registrarContatoTomador);
+  const salvarTelefoneFn = useServerFn(salvarTelefoneTomador);
 
   // Contato aqui entra no MESMO histórico e no MESMO volume do CRM
   // (meta do dia + campanha da semana).
@@ -196,6 +198,9 @@ function Page() {
   const [page, setPage] = useState(0);
   const [aba, setAba] = useState<"carteira" | "historico">("carteira");
   const [motivoPara, setMotivoPara] = useState<string | null>(null);
+  const [convertendo, setConvertendo] = useState<TomadorAl | null>(null);
+  const [telefonePara, setTelefonePara] = useState<string | null>(null);
+  const [novoTelefone, setNovoTelefone] = useState("");
   const [rows, setRows] = useState<TomadorAl[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -338,6 +343,15 @@ function Page() {
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao atualizar.");
     }
+  };
+
+  const adicionarTelefone = async (id: string) => {
+    try {
+      const res = await salvarTelefoneFn({ data: { id, telefone: novoTelefone } });
+      setRows((lista) => lista.map((r) => r.id === id ? { ...r, telefones: res.telefones } : r));
+      setTelefonePara(null); setNovoTelefone("");
+      toast.success("Telefone adicionado.");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível salvar o telefone."); }
   };
 
 
@@ -983,6 +997,10 @@ function Page() {
                       <span className="text-xs text-muted-foreground">Telefone não cadastrado</span>
                     </div>
                   )}
+                  <Button size="sm" variant="ghost" className="h-7 px-2 text-[11px]" onClick={() => { setTelefonePara(r.id); setNovoTelefone(""); }}>
+                    Adicionar telefone
+                  </Button>
+                  {telefonePara === r.id && <div className="flex w-full gap-2 pt-1"><Input className="h-8 max-w-56" inputMode="tel" placeholder="Telefone com DDD" value={novoTelefone} onChange={(e) => setNovoTelefone(e.target.value)} /><Button size="sm" onClick={() => adicionarTelefone(r.id)}>Salvar</Button><Button size="sm" variant="ghost" onClick={() => setTelefonePara(null)}>Cancelar</Button></div>}
                 </div>
 
 
@@ -1098,6 +1116,8 @@ function Page() {
                         onClick={() =>
                           o.value === "sem_interesse"
                             ? setMotivoPara(r.id)
+                            : o.value === "convertido"
+                            ? setConvertendo(r)
                             : handleAbordagem(r.id, o.value)
                         }
                       >
@@ -1122,6 +1142,8 @@ function Page() {
         </>
         )}
       </div>
+
+      {convertendo && <RegistrarConversaoDialog open={!!convertendo} onOpenChange={(open) => { if (!open) setConvertendo(null); }} origem="tomadores_al" clienteId={convertendo.id} clienteNome={convertendo.nome} cpf={convertendo.documento} onSaved={async () => { await handleAbordagem(convertendo.id, "convertido"); setConvertendo(null); }} />}
 
     </AppShell>
   );

@@ -61,7 +61,7 @@ export type DistribuicaoConsultora = {
 };
 
 const SELECT_COLS =
-  "id,nome,documento,descricao_cargo,descricao_lotacao,orgao,matricula,dt_nascimento,margem_bruta_emprestimo,margem_bruta_cartao_credito,margem_disp_cartao_credito,margem_disp_emprestimo,margem_util_emprestimo,margem_util_cartao_credito,margem_util_cartao_beneficio,pct_utilizado_emprestimo,consultora_responsavel,status_abordagem,motivo_sem_interesse,finalizado_em";
+  "id,nome,documento,descricao_cargo,descricao_lotacao,orgao,matricula,dt_nascimento,margem_bruta_emprestimo,margem_bruta_cartao_credito,margem_disp_cartao_credito,margem_disp_emprestimo,margem_util_emprestimo,margem_util_cartao_credito,margem_util_cartao_beneficio,pct_utilizado_emprestimo,consultora_responsavel,status_abordagem,motivo_sem_interesse,finalizado_em,telefones";
 
 // Telefones não vêm na planilha — buscamos nos enriquecimentos já feitos
 // (pesquisas Nova Vida e leads de prospecção) pelo CPF do tomador.
@@ -426,7 +426,11 @@ export const getTomadoresAl = createServerFn({ method: "POST" })
 
 
       return {
-        rows: base.map((r) => ({ ...r, telefones: tels[String(r.documento ?? "").replace(/\D/g, "")] ?? [] })),
+        rows: base.map((r) => {
+          const encontrados = tels[String(r.documento ?? "").replace(/\D/g, "")] ?? [];
+          const manuais = Array.isArray(r.telefones) ? r.telefones : [];
+          return { ...r, telefones: [...new Set([...manuais, ...encontrados].map((v) => String(v).replace(/\D/g, "")).filter((v) => v.length >= 10))] };
+        }),
         total: count ?? 0,
         consultoraNome: minha,
         vinculada: Boolean(minha),
@@ -537,6 +541,24 @@ export const registrarContatoTomador = createServerFn({ method: "POST" })
     return { pontos };
   });
 
+export const salvarTelefoneTomador = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id: z.string().uuid(), telefone: z.string().trim().min(10).max(24) }).parse(data))
+  .handler(async ({ context, data }) => {
+    const admin = await isAdmin(context.supabase, context.userId);
+    const minha = await nomeConsultora(context.supabase, context.claims, !admin);
+    const client = await getAdminClient();
+    const { data: row } = await client.from("tomadores_al").select("consultora_responsavel,telefones").eq("id", data.id).maybeSingle();
+    if (!row) throw new Error("Tomador não encontrado.");
+    if (!admin && (!minha || row.consultora_responsavel !== minha)) throw new Error("Este lead não está na sua carteira.");
+    const telefone = data.telefone.replace(/\D/g, "");
+    if (telefone.length < 10 || telefone.length > 13) throw new Error("Informe um telefone válido com DDD.");
+    const telefones = [...new Set([...(row.telefones ?? []), telefone])];
+    const { error } = await client.from("tomadores_al").update({ telefones }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { telefones };
+  });
+
 
 // Atualiza a situação de abordagem. Consultora só altera os leads dela.
 // Ao finalizar (convertido / sem interesse), a carteira é reposta na hora com
@@ -597,9 +619,7 @@ export const marcarAbordagemTomador = createServerFn({ method: "POST" })
     // encerrar sem interesse cancela a pendência e estorna o bônus.
     try {
       const { registrarVendaPendente, cancelarVenda } = await import("./competicao.server");
-      if (data.status === "convertido") {
-        await registrarVendaPendente(context.userId, "tomadores_al", "tomadores_al", data.id, null, "Tomador convertido");
-      } else if (data.status === "novo" || data.status === "sem_interesse") {
+      if (data.status === "novo" || data.status === "sem_interesse") {
         await cancelarVenda("tomadores_al", data.id, `status ${data.status}`);
       }
     } catch { /* pontuação nunca bloqueia a atualização do lead */ }

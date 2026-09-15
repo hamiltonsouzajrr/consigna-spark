@@ -17,6 +17,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAlagoasRouteImport } from './routes/_authenticated/alagoas'
 import { Route as AuthenticatedCalculadoraAlRouteImport } from './routes/_authenticated/calculadora-al'
+import { Route as AuthenticatedCalculadorasRouteImport } from './routes/_authenticated/calculadoras'
 import { Route as AuthenticatedContratoRouteImport } from './routes/_authenticated/contrato'
 import { Route as AuthenticatedPesquisasRouteImport } from './routes/_authenticated/pesquisas'
 import { Route as AuthenticatedQrcodesRouteImport } from './routes/_authenticated/qrcodes'
@@ -132,6 +133,12 @@ const AuthenticatedCalculadoraAlRoute =
   AuthenticatedCalculadoraAlRouteImport.update({
     id: '/calculadora-al',
     path: '/calculadora-al',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCalculadorasRoute =
+  AuthenticatedCalculadorasRouteImport.update({
+    id: '/calculadoras',
+    path: '/calculadoras',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedContratoRoute = AuthenticatedContratoRouteImport.update({
@@ -579,6 +586,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/alagoas': typeof AuthenticatedAlagoasRoute
   '/calculadora-al': typeof AuthenticatedCalculadoraAlRoute
+  '/calculadoras': typeof AuthenticatedCalculadorasRoute
   '/contrato': typeof AuthenticatedContratoRoute
   '/pesquisas': typeof AuthenticatedPesquisasRoute
   '/qrcodes': typeof AuthenticatedQrcodesRoute
@@ -664,6 +672,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/alagoas': typeof AuthenticatedAlagoasRoute
   '/calculadora-al': typeof AuthenticatedCalculadoraAlRoute
+  '/calculadoras': typeof AuthenticatedCalculadorasRoute
   '/contrato': typeof AuthenticatedContratoRoute
   '/pesquisas': typeof AuthenticatedPesquisasRoute
   '/qrcodes': typeof AuthenticatedQrcodesRoute
@@ -748,6 +757,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/alagoas': typeof AuthenticatedAlagoasRoute
   '/_authenticated/calculadora-al': typeof AuthenticatedCalculadoraAlRoute
+  '/_authenticated/calculadoras': typeof AuthenticatedCalculadorasRoute
   '/_authenticated/contrato': typeof AuthenticatedContratoRoute
   '/_authenticated/pesquisas': typeof AuthenticatedPesquisasRoute
   '/_authenticated/qrcodes': typeof AuthenticatedQrcodesRoute
@@ -835,6 +845,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/alagoas'
     | '/calculadora-al'
+    | '/calculadoras'
     | '/contrato'
     | '/pesquisas'
     | '/qrcodes'
@@ -920,6 +931,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/alagoas'
     | '/calculadora-al'
+    | '/calculadoras'
     | '/contrato'
     | '/pesquisas'
     | '/qrcodes'
@@ -1003,6 +1015,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/alagoas'
     | '/_authenticated/calculadora-al'
+    | '/_authenticated/calculadoras'
     | '/_authenticated/contrato'
     | '/_authenticated/pesquisas'
     | '/_authenticated/qrcodes'
@@ -1156,6 +1169,13 @@ declare module '@tanstack/react-router' {
       path: '/calculadora-al'
       fullPath: '/calculadora-al'
       preLoaderRoute: typeof AuthenticatedCalculadoraAlRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/calculadoras': {
+      id: '/_authenticated/calculadoras'
+      path: '/calculadoras'
+      fullPath: '/calculadoras'
+      preLoaderRoute: typeof AuthenticatedCalculadorasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/contrato': {
@@ -1830,6 +1850,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAlagoasRoute: typeof AuthenticatedAlagoasRoute
   AuthenticatedCalculadoraAlRoute: typeof AuthenticatedCalculadoraAlRoute
+  AuthenticatedCalculadorasRoute: typeof AuthenticatedCalculadorasRoute
   AuthenticatedContratoRoute: typeof AuthenticatedContratoRoute
   AuthenticatedPesquisasRoute: typeof AuthenticatedPesquisasRoute
   AuthenticatedQrcodesRoute: typeof AuthenticatedQrcodesRoute
@@ -1864,6 +1885,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAlagoasRoute: AuthenticatedAlagoasRoute,
   AuthenticatedCalculadoraAlRoute: AuthenticatedCalculadoraAlRoute,
+  AuthenticatedCalculadorasRoute: AuthenticatedCalculadorasRoute,
   AuthenticatedContratoRoute: AuthenticatedContratoRoute,
   AuthenticatedPesquisasRoute: AuthenticatedPesquisasRoute,
   AuthenticatedQrcodesRoute: AuthenticatedQrcodesRoute,

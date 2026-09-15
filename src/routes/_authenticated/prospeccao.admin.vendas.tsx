@@ -154,6 +154,7 @@ function Page() {
                   <TableHead>Cliente</TableHead>
                   <TableHead>Origem</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
+                  <TableHead>Margem</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -167,6 +168,7 @@ function Page() {
                       <Badge variant="secondary">{ORIGEM_LABEL[v.origem] ?? v.origem}</Badge>
                     </TableCell>
                     <TableCell className="text-right">{fmtMoeda(v.valor)}</TableCell>
+                    <TableCell className="whitespace-nowrap text-xs">{v.tipo_margem ? `${v.tipo_margem === "cartao_credito" ? "Cartão crédito" : v.tipo_margem === "cartao_beneficio" ? "Cartão benefício" : "Empréstimo"} · usada ${fmtMoeda(v.margem_usada)} · restante ${fmtMoeda(v.margem_restante_valor)}` : "—"}</TableCell>
                     <TableCell className="text-right">
                       {recusandoId === v.id ? (
                         <div className="flex items-center justify-end gap-2">

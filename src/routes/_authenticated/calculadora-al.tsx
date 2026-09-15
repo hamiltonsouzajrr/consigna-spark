@@ -705,13 +705,12 @@ function MargemRow({
 // Página principal com Tabs
 // ============================================================================
 
-function CalculadoraALPage() {
+export function CalculadoraALPage({ embedded = false }: { embedded?: boolean } = {}) {
   const [salario, setSalario] = useState("");
   const [descontos, setDescontos] = useState<Descontos>(emptyDesc);
   const [showResults, setShowResults] = useState(false);
 
-  return (
-    <AppShell>
+  const content = (
       <div className="mx-auto max-w-5xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
@@ -751,6 +750,6 @@ function CalculadoraALPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AppShell>
   );
+  return embedded ? content : <AppShell>{content}</AppShell>;
 }
