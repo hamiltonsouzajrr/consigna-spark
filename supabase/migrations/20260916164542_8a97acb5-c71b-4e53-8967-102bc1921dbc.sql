@@ -1,0 +1,2 @@
+DROP POLICY IF EXISTS "Autenticados podem ver metas" ON public.prospect_metas;
+CREATE POLICY "Ver propria meta ou admin" ON public.prospect_metas FOR SELECT TO authenticated USING (user_id = auth.uid() OR public.has_role(auth.uid(), 'admin'));
