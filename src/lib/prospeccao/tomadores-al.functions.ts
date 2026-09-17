@@ -244,7 +244,7 @@ async function garantirPoolFaixa(
     const novos = await callRpc<number>("garantir_pool_tomadores_faixa", {
       _nome: nome,
       _faixa: faixa,
-      _alvo: Math.max(1, Math.min(POOL_ALVO, alvo)),
+      _alvo: Math.max(1, Math.min(200, alvo)),
       _dias_reciclagem: DIAS_RECICLAGEM,
       _dias_sem_interesse: DIAS_SEM_INTERESSE_PADRAO,
     });
@@ -293,7 +293,10 @@ export type ResultadoDistribuicaoTomadores = {
 // completada até 10 leads em aberto por faixa. Quando o estoque é menor que o
 // necessário, a entrega é feita em rodadas de 1 lead por consultora e por
 // faixa, então a diferença entre as carteiras nunca passa de um lead.
-export async function distribuirTomadoresIgualmente(): Promise<ResultadoDistribuicaoTomadores> {
+export async function distribuirTomadoresIgualmente(
+  alvoPorFaixa: number = POOL_ALVO,
+): Promise<ResultadoDistribuicaoTomadores> {
+  const alvo = Math.max(1, Math.min(200, Math.round(alvoPorFaixa)));
   const client = await getAdminClient();
   const { data, error } = await client.from("radar_consultoras").select("nome").eq("ativo", true);
   if (error) throw new Error(error.message);
@@ -307,12 +310,12 @@ export async function distribuirTomadoresIgualmente(): Promise<ResultadoDistribu
 
   for (const faixa of FAIXAS_POOL) {
     const estoque = await contarEstoqueLivreFaixa(client, faixa);
-    const necessario = nomes.length * POOL_ALVO;
+    const necessario = nomes.length * alvo;
 
     if (estoque >= necessario) {
       // Sobra estoque: completar a carteira de cada uma já deixa todas iguais.
       for (const nome of nomes) {
-        const n = await garantirPoolFaixa(nome, faixa);
+        const n = await garantirPoolFaixa(nome, faixa, alvo);
         porConsultora[nome] += n;
         atribuidos += n;
       }
@@ -322,7 +325,7 @@ export async function distribuirTomadoresIgualmente(): Promise<ResultadoDistribu
     // Estoque curto: rodadas de 1 em 1, alternando a ordem das consultoras
     // para ninguém ser sempre a primeira da fila.
     estoqueCurto = true;
-    for (let rodada = 1; rodada <= POOL_ALVO; rodada++) {
+    for (let rodada = 1; rodada <= alvo; rodada++) {
       let novosNaRodada = 0;
       const ordem: string[] = nomes.map((_: string, i: number) => String(nomes[(i + rodada) % nomes.length]));
       for (const nome of ordem) {
