@@ -546,10 +546,28 @@ export async function analisarTextoServidor(input: {
       }
     } catch (e: any) {
       const msg = String(e?.message ?? e);
-      if (/429/.test(msg)) throw new Error("Limite de uso da IA atingido. Tente novamente em instantes.");
-      if (/402/.test(msg)) throw new Error("Créditos de IA esgotados. Adicione créditos para continuar.");
+      // Erros terminais do gateway de IA: interrompem a análise em vez de
+      // devolver resultado vazio como se tivesse dado certo.
+      if (/429|too many requests|rate.?limit/i.test(msg)) {
+        throw new Error("Limite de uso da IA atingido. Tente novamente em instantes.");
+      }
+      if (/402|payment required|insufficient (credits|funds)|quota/i.test(msg)) {
+        throw new Error("Créditos de IA esgotados. Adicione créditos para continuar.");
+      }
+      if (/401|403|unauthorized|forbidden|api key/i.test(msg)) {
+        throw new Error(`Acesso à IA bloqueado ao analisar o Diário Oficial: ${msg}`);
+      }
+      falhas += 1;
+      ultimoErro = msg;
       console.error("[analisarTextoServidor] chunk falhou:", msg);
     }
+  }
+
+  // Todos os trechos falharam: não é "sem novidades", é erro de análise.
+  if (chunks.length > 0 && falhas === chunks.length) {
+    throw new Error(
+      `Não foi possível analisar o Diário Oficial: todos os ${chunks.length} trecho(s) falharam. Último erro: ${ultimoErro ?? "desconhecido"}`,
+    );
   }
 
   return out;
