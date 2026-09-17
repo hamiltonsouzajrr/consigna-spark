@@ -23,7 +23,6 @@ import { Route as AuthenticatedPesquisasRouteImport } from './routes/_authentica
 import { Route as AuthenticatedQrcodesRouteImport } from './routes/_authenticated/qrcodes'
 import { Route as AuthenticatedRadarRouteImport } from './routes/_authenticated/radar'
 import { Route as AuthenticatedRhRouteImport } from './routes/_authenticated/rh'
-import { Route as AuthenticatedServidoresSemAcessoRouteImport } from './routes/_authenticated/servidores-sem-acesso'
 import { Route as AuthenticatedSimulacaoAlagoasRouteImport } from './routes/_authenticated/simulacao-alagoas'
 import { Route as AuthenticatedTomadoresAlRouteImport } from './routes/_authenticated/tomadores-al'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
@@ -166,12 +165,6 @@ const AuthenticatedRhRoute = AuthenticatedRhRouteImport.update({
   path: '/rh',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedServidoresSemAcessoRoute =
-  AuthenticatedServidoresSemAcessoRouteImport.update({
-    id: '/servidores-sem-acesso',
-    path: '/servidores-sem-acesso',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedSimulacaoAlagoasRoute =
   AuthenticatedSimulacaoAlagoasRouteImport.update({
     id: '/simulacao-alagoas',
@@ -592,7 +585,6 @@ export interface FileRoutesByFullPath {
   '/qrcodes': typeof AuthenticatedQrcodesRoute
   '/radar': typeof AuthenticatedRadarRouteWithChildren
   '/rh': typeof AuthenticatedRhRouteWithChildren
-  '/servidores-sem-acesso': typeof AuthenticatedServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof AuthenticatedSimulacaoAlagoasRoute
   '/tomadores-al': typeof AuthenticatedTomadoresAlRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
@@ -676,7 +668,6 @@ export interface FileRoutesByTo {
   '/contrato': typeof AuthenticatedContratoRoute
   '/pesquisas': typeof AuthenticatedPesquisasRoute
   '/qrcodes': typeof AuthenticatedQrcodesRoute
-  '/servidores-sem-acesso': typeof AuthenticatedServidoresSemAcessoRoute
   '/simulacao-alagoas': typeof AuthenticatedSimulacaoAlagoasRoute
   '/tomadores-al': typeof AuthenticatedTomadoresAlRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
@@ -763,7 +754,6 @@ export interface FileRoutesById {
   '/_authenticated/qrcodes': typeof AuthenticatedQrcodesRoute
   '/_authenticated/radar': typeof AuthenticatedRadarRouteWithChildren
   '/_authenticated/rh': typeof AuthenticatedRhRouteWithChildren
-  '/_authenticated/servidores-sem-acesso': typeof AuthenticatedServidoresSemAcessoRoute
   '/_authenticated/simulacao-alagoas': typeof AuthenticatedSimulacaoAlagoasRoute
   '/_authenticated/tomadores-al': typeof AuthenticatedTomadoresAlRoute
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
@@ -851,7 +841,6 @@ export interface FileRouteTypes {
     | '/qrcodes'
     | '/radar'
     | '/rh'
-    | '/servidores-sem-acesso'
     | '/simulacao-alagoas'
     | '/tomadores-al'
     | '/whatsapp'
@@ -935,7 +924,6 @@ export interface FileRouteTypes {
     | '/contrato'
     | '/pesquisas'
     | '/qrcodes'
-    | '/servidores-sem-acesso'
     | '/simulacao-alagoas'
     | '/tomadores-al'
     | '/whatsapp'
@@ -1021,7 +1009,6 @@ export interface FileRouteTypes {
     | '/_authenticated/qrcodes'
     | '/_authenticated/radar'
     | '/_authenticated/rh'
-    | '/_authenticated/servidores-sem-acesso'
     | '/_authenticated/simulacao-alagoas'
     | '/_authenticated/tomadores-al'
     | '/_authenticated/whatsapp'
@@ -1211,13 +1198,6 @@ declare module '@tanstack/react-router' {
       path: '/rh'
       fullPath: '/rh'
       preLoaderRoute: typeof AuthenticatedRhRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/servidores-sem-acesso': {
-      id: '/_authenticated/servidores-sem-acesso'
-      path: '/servidores-sem-acesso'
-      fullPath: '/servidores-sem-acesso'
-      preLoaderRoute: typeof AuthenticatedServidoresSemAcessoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/simulacao-alagoas': {
@@ -1856,7 +1836,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedQrcodesRoute: typeof AuthenticatedQrcodesRoute
   AuthenticatedRadarRoute: typeof AuthenticatedRadarRouteWithChildren
   AuthenticatedRhRoute: typeof AuthenticatedRhRouteWithChildren
-  AuthenticatedServidoresSemAcessoRoute: typeof AuthenticatedServidoresSemAcessoRoute
   AuthenticatedSimulacaoAlagoasRoute: typeof AuthenticatedSimulacaoAlagoasRoute
   AuthenticatedTomadoresAlRoute: typeof AuthenticatedTomadoresAlRoute
   AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
@@ -1891,7 +1870,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedQrcodesRoute: AuthenticatedQrcodesRoute,
   AuthenticatedRadarRoute: AuthenticatedRadarRouteWithChildren,
   AuthenticatedRhRoute: AuthenticatedRhRouteWithChildren,
-  AuthenticatedServidoresSemAcessoRoute: AuthenticatedServidoresSemAcessoRoute,
   AuthenticatedSimulacaoAlagoasRoute: AuthenticatedSimulacaoAlagoasRoute,
   AuthenticatedTomadoresAlRoute: AuthenticatedTomadoresAlRoute,
   AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
