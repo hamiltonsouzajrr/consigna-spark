@@ -340,19 +340,81 @@ async function applyAssignments(
 }
 
 // Distribute UNASSIGNED open leads across consultants. Each lead goes to exactly one.
+// Carga atual (leads em aberto) de cada consultora selecionada.
+async function cargaAtualPorConsultora(
+  supabaseAdmin: any,
+  consultantIds: string[],
+): Promise<Record<string, number>> {
+  const load: Record<string, number> = {};
+  consultantIds.forEach((id) => (load[id] = 0));
+  const { data: rows } = await supabaseAdmin
+    .from("prospect_leads")
+    .select("consultant_id")
+    .not("status", "in", "(ganho,perdido)")
+    .in("consultant_id", consultantIds)
+    .limit(200000);
+  (rows ?? []).forEach((r: any) => {
+    if (r.consultant_id && r.consultant_id in load) load[r.consultant_id]++;
+  });
+  return load;
+}
+
+// Quem está com a menor fila recebe primeiro; empate resolvido pela ordem
+// embaralhada, então ninguém é sempre a primeira da fila.
+function menorFila(load: Record<string, number>, ids: string[]): string {
+  let melhor = ids[0];
+  for (const id of ids) if (load[id] < load[melhor]) melhor = id;
+  return melhor;
+}
+
+// Divide os leads livres deixando as filas o mais iguais possível.
+function montarDivisaoEquilibrada(
+  leads: { id: string; cidade?: string | null; score?: number | null }[],
+  ids: string[],
+  mode: "round_robin" | "score" | "city",
+  load: Record<string, number>,
+): Map<string, string> {
+  const assignment = new Map<string, string>();
+  const carga = { ...load };
+
+  if (mode === "city") {
+    const cityMap = new Map<string, typeof leads>();
+    for (const l of leads) {
+      const c = (l.cidade || "—").toLowerCase().trim();
+      const bucket = cityMap.get(c) ?? [];
+      bucket.push(l);
+      cityMap.set(c, bucket);
+    }
+    const cities = [...cityMap.entries()].sort((a, b) => b[1].length - a[1].length);
+    for (const [, arr] of cities) {
+      const cons = menorFila(carga, ids);
+      for (const l of arr) assignment.set(l.id, cons);
+      carga[cons] += arr.length;
+    }
+    return assignment;
+  }
+
+  const ordered = [...leads];
+  if (mode === "score") ordered.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  for (const l of ordered) {
+    const cons = menorFila(carga, ids);
+    assignment.set(l.id, cons);
+    carga[cons] += 1;
+  }
+  return assignment;
+}
+
+const distribuirSchema = z.object({
+  consultantIds: z.array(z.string().uuid()).min(1).max(100),
+  mode: z.enum(["round_robin", "score", "city"]),
+});
+
 export const adminDistributeLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) =>
-    z
-      .object({
-        consultantIds: z.array(z.string().uuid()).min(1).max(100),
-        mode: z.enum(["round_robin", "score", "city"]),
-      })
-      .parse(data),
-  )
+  .inputValidator((data) => distribuirSchema.parse(data))
   .handler(async ({ context, data }): Promise<{ assigned: number; perConsultant: Record<string, number> }> => {
     const { supabase, userId } = context;
-    const { assertAdmin, applyAssignments } = await import("./prospeccao.server");
+    const { assertAdmin, applyAssignments, shuffle } = await import("./prospeccao.server");
     await assertAdmin(supabase, userId);
 
 
@@ -365,32 +427,62 @@ export const adminDistributeLeads = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!leads?.length) return { assigned: 0, perConsultant: {} };
 
-    const ids = data.consultantIds;
-    const assignment = new Map<string, string>();
-
-    if (data.mode === "city") {
-      const cityMap = new Map<string, any[]>();
-      for (const l of leads) {
-        const c = (l.cidade || "—").toLowerCase().trim();
-        const bucket = cityMap.get(c) ?? [];
-        bucket.push(l);
-        cityMap.set(c, bucket);
-      }
-      const cities = [...cityMap.entries()].sort((a, b) => b[1].length - a[1].length);
-      let ci = 0;
-      for (const [, arr] of cities) {
-        const cons = ids[ci % ids.length];
-        ci++;
-        for (const l of arr) assignment.set(l.id, cons);
-      }
-    } else {
-      const ordered = [...leads];
-      if (data.mode === "score") ordered.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-      ordered.forEach((l, i) => assignment.set(l.id, ids[i % ids.length]));
-    }
+    const ids = shuffle(data.consultantIds);
+    const load = await cargaAtualPorConsultora(supabaseAdmin, ids);
+    const assignment = montarDivisaoEquilibrada(shuffle(leads as any[]), ids, data.mode, load);
 
     const perConsultant = await applyAssignments(supabaseAdmin, assignment);
     return { assigned: assignment.size, perConsultant };
+  });
+
+// Prévia da distribuição (não grava nada): fila atual, quanto cada uma recebe
+// e como fica a fila depois.
+export const adminPreviewDistribution = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => distribuirSchema.parse(data))
+  .handler(async ({ context, data }): Promise<{
+    disponiveis: number;
+    linhas: { consultantId: string; email: string; atual: number; recebe: number; final: number }[];
+  }> => {
+    const { supabase, userId } = context;
+    const { assertAdmin, shuffle } = await import("./prospeccao.server");
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: leads, error } = await supabaseAdmin
+      .from("prospect_leads")
+      .select("id,cidade,score")
+      .is("consultant_id", null)
+      .not("status", "in", "(ganho,perdido)");
+    if (error) throw new Error(error.message);
+
+    const ids = data.consultantIds;
+    const load = await cargaAtualPorConsultora(supabaseAdmin, ids);
+    const assignment = montarDivisaoEquilibrada(shuffle((leads ?? []) as any[]), ids, data.mode, load);
+
+    const recebe: Record<string, number> = {};
+    ids.forEach((id) => (recebe[id] = 0));
+    for (const cons of assignment.values()) recebe[cons] = (recebe[cons] ?? 0) + 1;
+
+    const { data: users } = await supabaseAdmin
+      .from("profiles")
+      .select("id,email")
+      .in("id", ids);
+    const emailById = new Map<string, string>(
+      ((users ?? []) as any[]).map((u) => [String(u.id), String(u.email ?? "")]),
+    );
+
+    const linhas = ids
+      .map((id) => ({
+        consultantId: id,
+        email: emailById.get(id) || id.slice(0, 8),
+        atual: load[id] ?? 0,
+        recebe: recebe[id] ?? 0,
+        final: (load[id] ?? 0) + (recebe[id] ?? 0),
+      }))
+      .sort((a, b) => b.recebe - a.recebe || a.email.localeCompare(b.email));
+
+    return { disponiveis: (leads ?? []).length, linhas };
   });
 
 // Recycle stale leads (assigned but neglected) to the least-loaded consultants.
