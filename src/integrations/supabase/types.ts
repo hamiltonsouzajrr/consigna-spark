@@ -2976,6 +2976,7 @@ export type Database = {
         Returns: boolean
       }
       minha_consultora_nome: { Args: never; Returns: string }
+      prospect_dashboard_admin: { Args: never; Returns: Json }
       ranking_competicao: {
         Args: { _week_start?: string }
         Returns: {
