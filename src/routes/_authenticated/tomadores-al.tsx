@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
+import { ChegaramParaVoce } from "@/components/prospeccao/ChegaramParaVoce";
 import { supabase } from "@/integrations/supabase/client";
 import { useRhAccess } from "@/hooks/use-rh-access";
 import { Input } from "@/components/ui/input";
@@ -465,6 +466,7 @@ function Page() {
 
   return (
     <AppShell>
+      <ChegaramParaVoce base="tomadores" />
       <div className="space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>

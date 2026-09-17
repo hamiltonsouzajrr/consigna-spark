@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { AppShell } from "@/components/AppShell";
+import { ChegaramParaVoce } from "@/components/prospeccao/ChegaramParaVoce";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -192,6 +193,7 @@ function Page() {
 
   return (
     <AppShell>
+      <ChegaramParaVoce base="promovidos" />
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
