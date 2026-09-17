@@ -8,6 +8,7 @@ import { refillMyQueue } from "@/lib/prospeccao/prospeccao.functions";
 import { CrmCockpit } from "@/components/prospeccao/CrmCockpit";
 import { CrmCockpitAdmin } from "@/components/prospeccao/CrmCockpitAdmin";
 import { ProspeccaoCharts } from "@/components/prospeccao/ProspeccaoCharts";
+import { ChegaramParaVoce } from "@/components/prospeccao/ChegaramParaVoce";
 
 import { registrarContato, registrarQualificacao, agendarFollowup } from "@/lib/prospeccao/competicao.functions";
 import { AppShell } from "@/components/AppShell";
