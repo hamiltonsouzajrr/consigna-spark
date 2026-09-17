@@ -42,7 +42,7 @@ const navSections: NavSection[] = [
     items: [
       { to: "/prospeccao", label: "CRM", full: "CRM DE PROSPECÇÃO - FILA, SCORE E FOLLOW-UP", icon: Phone, exact: true, consultoraOnly: true },
       { to: "/tomadores-al", label: "Tomadores com Margem – AL", full: "CLIENTES TOMADORES COM MARGEM - AL", icon: Wallet },
-      { to: "/servidores-sem-acesso", label: "Servidores sem acesso", icon: Users, badge: "leads", consultoraOnly: true },
+      
       { to: "/prospeccao/recentes", label: "Recentes Prospectados", icon: Flame, consultoraOnly: true },
       { to: "/prospeccao/promovidos-recentes", label: "Promovidos Recentemente", full: "PROMOVIDOS RECENTEMENTE - ALTA CHANCE DE CONVERSÃO", icon: PartyPopper, consultoraOnly: true },
       { to: "/prospeccao/followups", label: "Follow-ups", icon: CalendarClock, badge: "followups", consultoraOnly: true },
