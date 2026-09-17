@@ -831,10 +831,10 @@ export const getDistribuicaoTomadoresAl = createServerFn({ method: "POST" })
 // (10 leads por faixa para cada consultora).
 export const distribuirTomadoresAl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ atribuidos: number; consultoras: number }> => {
+  .handler(async ({ context }): Promise<ResultadoDistribuicaoTomadores> => {
     const admin = await isAdmin(context.supabase, context.userId);
     if (!admin) throw new Error("Apenas administradores podem executar esta ação.");
-    return reporTodasCarteirasInterno();
+    return distribuirTomadoresIgualmente();
   });
 
 
