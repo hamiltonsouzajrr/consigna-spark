@@ -457,8 +457,17 @@ export async function analisarTextoServidor(input: {
   let falhas = 0;
   let ultimoErro: string | null = null;
 
-  for (const chunk of chunks) {
-    try {
+  // PDFs grandes geram dezenas de trechos. Processá-los um por vez fazia a
+  // execução diária expirar depois dos primeiros trechos e deixava a edição
+  // presa como pendente, sem qualquer promovido salvo. Quatro trabalhadores
+  // mantêm a pressão no gateway moderada e concluem dentro da janela do servidor.
+  let proximoChunk = 0;
+  const processarChunks = async () => {
+    while (true) {
+      const indice = proximoChunk++;
+      const chunk = chunks[indice];
+      if (chunk === undefined) return;
+      try {
       const { text } = await generateText({
         model,
         system: SYSTEM_PROMPT,
@@ -546,24 +555,29 @@ export async function analisarTextoServidor(input: {
           motivo_classificacao: str(r.motivo_classificacao),
         });
       }
-    } catch (e: any) {
-      const msg = String(e?.message ?? e);
-      // Erros terminais do gateway de IA: interrompem a análise em vez de
-      // devolver resultado vazio como se tivesse dado certo.
-      if (/429|too many requests|rate.?limit/i.test(msg)) {
-        throw new Error("Limite de uso da IA atingido. Tente novamente em instantes.");
+      } catch (e: any) {
+        const msg = String(e?.message ?? e);
+        // Erros terminais do gateway de IA: interrompem a análise em vez de
+        // devolver resultado vazio como se tivesse dado certo.
+        if (/429|too many requests|rate.?limit/i.test(msg)) {
+          throw new Error("Limite de uso da IA atingido. Tente novamente em instantes.");
+        }
+        if (/402|payment required|insufficient (credits|funds)|quota/i.test(msg)) {
+          throw new Error("Créditos de IA esgotados. Adicione créditos para continuar.");
+        }
+        if (/401|403|unauthorized|forbidden|api key/i.test(msg)) {
+          throw new Error(`Acesso à IA bloqueado ao analisar o Diário Oficial: ${msg}`);
+        }
+        falhas += 1;
+        ultimoErro = msg;
+        console.error("[analisarTextoServidor] chunk falhou:", msg);
       }
-      if (/402|payment required|insufficient (credits|funds)|quota/i.test(msg)) {
-        throw new Error("Créditos de IA esgotados. Adicione créditos para continuar.");
-      }
-      if (/401|403|unauthorized|forbidden|api key/i.test(msg)) {
-        throw new Error(`Acesso à IA bloqueado ao analisar o Diário Oficial: ${msg}`);
-      }
-      falhas += 1;
-      ultimoErro = msg;
-      console.error("[analisarTextoServidor] chunk falhou:", msg);
     }
-  }
+  };
+
+  await Promise.all(
+    Array.from({ length: Math.min(4, chunks.length) }, () => processarChunks()),
+  );
 
   // Todos os trechos falharam: não é "sem novidades", é erro de análise.
   if (chunks.length > 0 && falhas === chunks.length) {

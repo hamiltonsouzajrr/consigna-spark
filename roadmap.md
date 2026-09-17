@@ -27,3 +27,8 @@
 - [x] Tomadores: rodízio por lead/faixa
 - [x] Aba de administração reorganizada (ações simples, avançadas colapsadas, ações delicadas separadas)
 - [x] Revisão em computador e celular
+
+## Correção das filas e promovidos
+- [x] CRM: equilibrar pela fila visível, sem contar clientes antigos que não aparecem para trabalhar
+- [x] Radar: processar os trechos do Diário em paralelo para edições grandes não expirarem sem salvar promovidos
+- [ ] Reprocessar as edições recentes interrompidas e confirmar os novos promovidos nas carteiras
