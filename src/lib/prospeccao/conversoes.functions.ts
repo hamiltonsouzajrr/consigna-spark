@@ -303,13 +303,19 @@ export const atualizarConversao = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
 
-    if (lembreteEm && data.leadId) {
+    const clienteDoLembrete = data.leadId
+      ? { lead_id: data.leadId, tomador_id: null }
+      : data.tomadorId
+        ? { lead_id: null, tomador_id: data.tomadorId }
+        : null;
+
+    if (lembreteEm && clienteDoLembrete) {
       let taskId = atual.task_id as string | null;
       if (taskId) {
         const { error: taskError } = await db
           .from("lead_tasks")
           .update({
-            lead_id: data.leadId,
+            ...clienteDoLembrete,
             consultant_id: context.userId,
             title: TITULO_LEMBRETE,
             due_at: lembreteEm,
@@ -321,7 +327,7 @@ export const atualizarConversao = createServerFn({ method: "POST" })
         const { data: task, error: taskError } = await db
           .from("lead_tasks")
           .insert({
-            lead_id: data.leadId,
+            ...clienteDoLembrete,
             consultant_id: context.userId,
             title: TITULO_LEMBRETE,
             due_at: lembreteEm,
@@ -337,11 +343,13 @@ export const atualizarConversao = createServerFn({ method: "POST" })
           .eq("id", data.id);
         if (linkError) throw new Error(linkError.message);
       }
-      const { error: leadError } = await db
-        .from("prospect_leads")
-        .update({ next_follow_up_at: lembreteEm })
-        .eq("id", data.leadId);
-      if (leadError) throw new Error(leadError.message);
+      if (data.leadId) {
+        const { error: leadError } = await db
+          .from("prospect_leads")
+          .update({ next_follow_up_at: lembreteEm })
+          .eq("id", data.leadId);
+        if (leadError) throw new Error(leadError.message);
+      }
     } else if (atual.task_id) {
       const { error: taskError } = await db
         .from("lead_tasks")
