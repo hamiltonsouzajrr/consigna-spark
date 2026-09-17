@@ -266,6 +266,50 @@ export const confirmarCpfPromovido = createServerFn({ method: "POST" })
     return { ok: true, cpf };
   });
 
+export const atualizarStatusPromovido = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["novo", "contatado", "proposta_enviada", "convertido", "sem_interesse"]),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ status: PromovidoRecente["status_abordagem"] }> => {
+    const { isAdmin, nome } = await identificar(context);
+    const { data: registros, error: readError } = await context.supabase
+      .from("do_registros")
+      .select("id,consultora_responsavel")
+      .eq("id", data.id)
+      .limit(1);
+    if (readError) throw new Error(readError.message);
+    const registro = registros?.[0] as { id: string; consultora_responsavel: string | null } | undefined;
+    if (!registro) throw new Error("Promovido não encontrado.");
+    if (!isAdmin && (!nome || registro.consultora_responsavel !== nome)) {
+      throw new Error("Este lead não está na sua carteira.");
+    }
+
+    const agora = new Date().toISOString();
+    const patch: Record<string, unknown> = { status_abordagem: data.status };
+    if (data.status === "contatado") {
+      patch.contatado_em = agora;
+      patch.contatado_por = context.userId;
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: atualizados, error } = await supabaseAdmin
+      .from("do_registros")
+      .update(patch as any)
+      .eq("id", data.id)
+      .select("status_abordagem")
+      .limit(1);
+    if (error) throw new Error(error.message);
+    const atualizado = atualizados?.[0] as { status_abordagem?: string } | undefined;
+    if (!atualizado?.status_abordagem) throw new Error("Não foi possível atualizar este promovido.");
+    return { status: atualizado.status_abordagem };
+  });
+
 export const distribuirPromovidosAgora = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ atribuidos: number; consultoras: number }> => {

@@ -16,9 +16,8 @@ import {
   Phone, RefreshCw, IdCard,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
-import { marcarAbordagem } from "@/lib/radar/radar.functions";
 import {
-  getPromovidosRecentes, confirmarCpfPromovido, distribuirPromovidosAgora,
+  getPromovidosRecentes, confirmarCpfPromovido, atualizarStatusPromovido, distribuirPromovidosAgora,
   type PromovidoRecente,
 } from "@/lib/radar/promovidos-recentes.functions";
 import { useRhAccess } from "@/hooks/use-rh-access";
@@ -72,7 +71,7 @@ function Page() {
   const { isAdmin } = useRhAccess();
   const fetchLeads = useServerFn(getPromovidosRecentes);
   const confirmarCpf = useServerFn(confirmarCpfPromovido);
-  const abordagemFn = useServerFn(marcarAbordagem);
+  const abordagemFn = useServerFn(atualizarStatusPromovido);
   const distribuirFn = useServerFn(distribuirPromovidosAgora);
 
   const [rows, setRows] = useState<PromovidoRecente[]>([]);
@@ -152,8 +151,17 @@ function Page() {
   const abordar = async (id: string, status: PromovidoRecente["status_abordagem"]) => {
     setBusy(id);
     try {
-      await abordagemFn({ data: { id, status: status as any } });
-      setRows((r) => r.map((x) => (x.id === id ? { ...x, status_abordagem: status } : x)));
+      const anterior = rows.find((x) => x.id === id)?.status_abordagem;
+      const res = await abordagemFn({ data: { id, status: status as any } });
+      setRows((atuais) =>
+        apenasNovos && res.status !== "novo"
+          ? atuais.filter((item) => item.id !== id)
+          : atuais.map((item) => (item.id === id ? { ...item, status_abordagem: res.status } : item)),
+      );
+      if (anterior === "novo" && res.status !== "novo") {
+        setStats((atuais) => ({ ...atuais, naoAbordados: Math.max(0, atuais.naoAbordados - 1) }));
+        if (apenasNovos) setTotal((atual) => Math.max(0, atual - 1));
+      }
       toast.success("Situação atualizada.");
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao atualizar.");
