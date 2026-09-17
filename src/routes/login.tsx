@@ -294,7 +294,7 @@ function LoginPage() {
             className="h-11 w-11 shrink-0 rounded-xl bg-white object-contain p-1 shadow-[var(--shadow-elegant)] sm:h-12 sm:w-12"
           />
           <div className="min-w-0">
-            <h1 className="truncate text-lg font-bold sm:text-xl">Consulta de Margem</h1>
+            <h1 className="truncate text-lg font-bold sm:text-xl">MEU CRM</h1>
             <p className="truncate text-sm text-muted-foreground">Acesse o painel administrativo</p>
           </div>
         </div>
