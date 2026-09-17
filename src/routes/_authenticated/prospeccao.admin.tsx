@@ -42,6 +42,7 @@ import { LeadsTab } from "@/components/prospeccao/admin/LeadsTab";
 import { CompeticaoTab } from "@/components/prospeccao/admin/CompeticaoTab";
 import { AcessosTab } from "@/components/prospeccao/admin/AcessosTab";
 import { ConfirmDialog } from "@/components/prospeccao/admin/ConfirmDialog";
+import { ResumoGeralTab } from "@/components/prospeccao/admin/ResumoGeralTab";
 
 export const Route = createFileRoute("/_authenticated/prospeccao/admin")({
   head: () => ({
