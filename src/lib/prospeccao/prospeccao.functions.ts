@@ -423,30 +423,49 @@ const REINICIO_LEAD = {
   sla_status: null,
 } as const;
 
+// A Data API devolve no máximo 1.000 linhas por requisição, então paginamos —
+// sem isso a distribuição só enxergava os 1.000 primeiros clientes livres.
+const PAGINA_POOL = 1000;
+
+async function lerTudoPaginado(
+  montar: () => any,
+  limite = LIMITE_POOL,
+): Promise<any[]> {
+  const todos: any[] = [];
+  for (let inicio = 0; inicio < limite; inicio += PAGINA_POOL) {
+    const { data, error } = await montar()
+      .order("id", { ascending: true })
+      .range(inicio, Math.min(inicio + PAGINA_POOL, limite) - 1);
+    if (error) throw new Error(error.message);
+    const lote = (data ?? []) as any[];
+    todos.push(...lote);
+    if (lote.length < PAGINA_POOL) break;
+  }
+  return todos;
+}
+
 // Leads livres separados entre "nunca trabalhados" (aparecem na fila) e
 // "já trabalhados" (só entram quando o admin pedir, e são reiniciados).
 async function carregarPoolLivre(supabaseAdmin: any) {
   const cols = "id,cidade,score";
-  const [{ data: novos, error: e1 }, { data: trabalhados, error: e2 }] = await Promise.all([
+  const novos = await lerTudoPaginado(() =>
     supabaseAdmin
       .from("prospect_leads")
       .select(cols)
       .is("consultant_id", null)
       .eq("status", "novo")
       .is("opened_at", null)
-      .is("first_response_at", null)
-      .limit(LIMITE_POOL),
+      .is("first_response_at", null),
+  );
+  const trabalhados = await lerTudoPaginado(() =>
     supabaseAdmin
       .from("prospect_leads")
       .select(cols)
       .is("consultant_id", null)
       .not("status", "in", "(ganho,perdido)")
-      .or("opened_at.not.is.null,first_response_at.not.is.null")
-      .limit(LIMITE_POOL),
-  ]);
-  if (e1) throw new Error(e1.message);
-  if (e2) throw new Error(e2.message);
-  return { novos: (novos ?? []) as any[], trabalhados: (trabalhados ?? []) as any[] };
+      .or("opened_at.not.is.null,first_response_at.not.is.null"),
+  );
+  return { novos, trabalhados };
 }
 
 export const adminDistributeLeads = createServerFn({ method: "POST" })
