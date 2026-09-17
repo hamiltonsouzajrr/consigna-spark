@@ -7,11 +7,18 @@ import { routeTree } from "./routeTree.gen";
 // um pedaço que já não existe. Nesse caso recarregamos a página uma única vez.
 const CHUNK_ERROR_PATTERNS = [
   "importing a module script failed",
+  "module script failed",
   "failed to fetch dynamically imported module",
   "error loading dynamically imported module",
+  "dynamically imported module",
   "chunkloaderror",
   "loading chunk",
   "unable to preload css",
+  "expected a javascript module script",
+  "mime type",
+  "failed to fetch",
+  "load failed",
+  "networkerror when attempting to fetch resource",
 ];
 
 function isChunkError(error: Error) {
@@ -20,6 +27,26 @@ function isChunkError(error: Error) {
 }
 
 const RELOAD_FLAG = "app-chunk-reload";
+/** Espera antes de tentar recarregar de novo, para não entrar em laço. */
+const RELOAD_COOLDOWN_MS = 60_000;
+
+/** Limpa versões antigas guardadas pelo navegador antes de recarregar. */
+async function limparCacheDoApp() {
+  try {
+    if (typeof caches !== "undefined") {
+      const nomes = await caches.keys();
+      await Promise.all(nomes.map((n) => caches.delete(n)));
+    }
+  } catch {
+    /* cache indisponível */
+  }
+  try {
+    const regs = await navigator.serviceWorker?.getRegistrations?.();
+    await Promise.all((regs ?? []).map((r) => r.unregister()));
+  } catch {
+    /* sem service worker */
+  }
+}
 
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
@@ -30,12 +57,13 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
     console.error("[app] erro na tela:", error);
     if (typeof window === "undefined" || !isChunkError(error)) return;
     try {
-      if (window.sessionStorage.getItem(RELOAD_FLAG)) return;
-      window.sessionStorage.setItem(RELOAD_FLAG, "1");
+      const anterior = Number(window.sessionStorage.getItem(RELOAD_FLAG) ?? "0");
+      if (anterior && Date.now() - anterior < RELOAD_COOLDOWN_MS) return;
+      window.sessionStorage.setItem(RELOAD_FLAG, String(Date.now()));
     } catch {
       return;
     }
-    window.location.reload();
+    void limparCacheDoApp().then(() => window.location.reload());
   }, [error]);
 
   return (
