@@ -245,6 +245,29 @@ function chunkText(text: string, maxChars: number): string[] {
   return chunks;
 }
 
+// Em edições extensas, envia à IA principalmente os blocos próximos de termos
+// funcionais. Isso evita diluir atos de promoção em centenas de páginas de
+// contratos e avisos e também reduz bastante o tempo total da leitura.
+function selecionarTrechosFuncionais(text: string): string {
+  const linhas = text.split("\n");
+  const relevantes = new Set<number>();
+  const marcador =
+    /promovid|promo[cç][aã]o|progress[aã]o|reenquadr|enquadr|mudan[cç]a de (?:classe|n[íi]vel|refer[êe]ncia)|eleva[cç][aã]o de (?:classe|n[íi]vel|padr[aã]o)|reserva remunerada|aposentadoria com promo[cç][aã]o/i;
+
+  linhas.forEach((linha, indice) => {
+    if (!marcador.test(linha)) return;
+    for (let i = Math.max(0, indice - 8); i <= Math.min(linhas.length - 1, indice + 12); i++) {
+      relevantes.add(i);
+    }
+  });
+
+  if (!relevantes.size) return text;
+  return [...relevantes]
+    .sort((a, b) => a - b)
+    .map((indice) => linhas[indice])
+    .join("\n");
+}
+
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 
 // Fallback por regex: extrai o primeiro CPF presente no trecho, aceitando também
@@ -452,7 +475,8 @@ export async function analisarTextoServidor(input: {
         .join("\n")}`
     : "";
 
-  const chunks = chunkText(input.text, 24_000).slice(0, input.maxChunks ?? 40);
+  const textoParaAnalise = selecionarTrechosFuncionais(input.text);
+  const chunks = chunkText(textoParaAnalise, 24_000).slice(0, input.maxChunks ?? 40);
   const out: RegistroExtraido[] = [];
   let falhas = 0;
   let ultimoErro: string | null = null;
