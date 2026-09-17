@@ -324,7 +324,7 @@ export async function distribuirTomadoresIgualmente(): Promise<ResultadoDistribu
     estoqueCurto = true;
     for (let rodada = 1; rodada <= POOL_ALVO; rodada++) {
       let novosNaRodada = 0;
-      const ordem = nomes.map((_, i) => nomes[(i + rodada) % nomes.length]);
+      const ordem: string[] = nomes.map((_: string, i: number) => String(nomes[(i + rodada) % nomes.length]));
       for (const nome of ordem) {
         const n = await garantirPoolFaixa(nome, faixa, rodada);
         porConsultora[nome] += n;
