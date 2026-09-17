@@ -238,7 +238,7 @@ async function processarEdicao(
       .upload(caminho, dl.buffer, { contentType: "application/pdf", upsert: true });
     if (upErr) throw new Error(`Upload falhou: ${upErr.message}`);
 
-    await supabaseAdmin
+    const { error: fonteOkErr } = await supabaseAdmin
       .from("fontes_diario_oficial")
       .update({ status_download: "concluido", hash_arquivo: dl.hash, caminho_arquivo: caminho, status_processamento: "processando" })
       .eq("id", fonteId);
