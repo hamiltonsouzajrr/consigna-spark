@@ -229,17 +229,22 @@ async function reciclarSemInteresseBase(
 
 
 
-// Completa a carteira de uma faixa específica de empréstimo até POOL_ALVO.
-// A regra roda inteira no banco (garantir_pool_tomadores_faixa): contagem,
-// reserva com travas por linha e reciclagem acontecem na mesma transação, então
-// duas consultoras nunca disputam o mesmo tomador nem ficam com carteira curta.
-async function garantirPoolFaixa(nome: string, faixa: "alta" | "media" | "baixa"): Promise<number> {
+// Completa a carteira de uma faixa específica de empréstimo até `alvo`
+// (padrão POOL_ALVO). A regra roda inteira no banco
+// (garantir_pool_tomadores_faixa): contagem, reserva com travas por linha e
+// reciclagem acontecem na mesma transação, então duas consultoras nunca
+// disputam o mesmo tomador nem ficam com carteira curta.
+async function garantirPoolFaixa(
+  nome: string,
+  faixa: "alta" | "media" | "baixa",
+  alvo: number = POOL_ALVO,
+): Promise<number> {
   const { callRpc } = await import("@/lib/radar/rpc.server");
   try {
     const novos = await callRpc<number>("garantir_pool_tomadores_faixa", {
       _nome: nome,
       _faixa: faixa,
-      _alvo: POOL_ALVO,
+      _alvo: Math.max(1, Math.min(POOL_ALVO, alvo)),
       _dias_reciclagem: DIAS_RECICLAGEM,
       _dias_sem_interesse: DIAS_SEM_INTERESSE_PADRAO,
     });
@@ -262,39 +267,100 @@ async function garantirPoolTomadores(nome: string, prioridade?: FaixaMargem): Pr
   return novos;
 }
 
+// Quantos tomadores livres (sem responsável) existem na faixa de empréstimo.
+async function contarEstoqueLivreFaixa(
+  client: any,
+  faixa: "alta" | "media" | "baixa",
+): Promise<number> {
+  let q: any = client
+    .from("tomadores_al")
+    .select("id", { count: "exact", head: true })
+    .is("consultora_responsavel", null);
+  q = aplicarFiltroMargem(q, "emprestimo", faixa, 0);
+  const { count, error } = await q;
+  if (error) return 0;
+  return Number(count ?? 0);
+}
+
+export type ResultadoDistribuicaoTomadores = {
+  atribuidos: number;
+  consultoras: number;
+  porConsultora: Record<string, number>;
+  estoqueCurto: boolean;
+};
+
+// Distribuição igualitária: quando há estoque de sobra, cada consultora é
+// completada até 10 leads em aberto por faixa. Quando o estoque é menor que o
+// necessário, a entrega é feita em rodadas de 1 lead por consultora e por
+// faixa, então a diferença entre as carteiras nunca passa de um lead.
+export async function distribuirTomadoresIgualmente(): Promise<ResultadoDistribuicaoTomadores> {
+  const client = await getAdminClient();
+  const { data, error } = await client.from("radar_consultoras").select("nome").eq("ativo", true);
+  if (error) throw new Error(error.message);
+  const nomes = (data ?? []).map((c: any) => String(c.nome ?? "").trim()).filter(Boolean);
+  if (!nomes.length) return { atribuidos: 0, consultoras: 0, porConsultora: {}, estoqueCurto: false };
+
+  const porConsultora: Record<string, number> = {};
+  for (const nome of nomes) porConsultora[nome] = 0;
+  let atribuidos = 0;
+  let estoqueCurto = false;
+
+  for (const faixa of FAIXAS_POOL) {
+    const estoque = await contarEstoqueLivreFaixa(client, faixa);
+    const necessario = nomes.length * POOL_ALVO;
+
+    if (estoque >= necessario) {
+      // Sobra estoque: completar a carteira de cada uma já deixa todas iguais.
+      for (const nome of nomes) {
+        const n = await garantirPoolFaixa(nome, faixa);
+        porConsultora[nome] += n;
+        atribuidos += n;
+      }
+      continue;
+    }
+
+    // Estoque curto: rodadas de 1 em 1, alternando a ordem das consultoras
+    // para ninguém ser sempre a primeira da fila.
+    estoqueCurto = true;
+    for (let rodada = 1; rodada <= POOL_ALVO; rodada++) {
+      let novosNaRodada = 0;
+      const ordem = nomes.map((_, i) => nomes[(i + rodada) % nomes.length]);
+      for (const nome of ordem) {
+        const n = await garantirPoolFaixa(nome, faixa, rodada);
+        porConsultora[nome] += n;
+        atribuidos += n;
+        novosNaRodada += n;
+      }
+      if (novosNaRodada === 0) break; // estoque da faixa esgotado
+    }
+  }
+
+  return { atribuidos, consultoras: nomes.length, porConsultora, estoqueCurto };
+}
+
 
 // Reposição automática de todas as carteiras ativas — usada pelo job diário
 // (/api/public/hooks/tomadores-repor) e pelo painel admin.
 export const reporTodasCarteiras = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ atribuidos: number; consultoras: number }> => {
+  .handler(async ({ context }): Promise<ResultadoDistribuicaoTomadores> => {
     const admin = await isAdmin(context.supabase, context.userId);
     if (!admin) throw new Error("Apenas administradores podem executar esta ação.");
-    const client = await getAdminClient();
-    const { data, error } = await client.from("radar_consultoras").select("nome").eq("ativo", true);
-    if (error) throw new Error(error.message);
-    const nomes = (data ?? []).map((c: any) => String(c.nome ?? "").trim()).filter(Boolean);
-    let atribuidos = 0;
-    for (const nome of nomes) atribuidos += await garantirPoolTomadores(nome);
+    const res = await distribuirTomadoresIgualmente();
     const { logAdminAction } = await import("@/lib/admin/audit.server");
     await logAdminAction({
       actorId: context.userId,
       actorEmail: (context.claims as { email?: string } | undefined)?.email ?? null,
       action: "tomadores_repor_carteiras",
-      detail: { atribuidos, consultoras: nomes.length },
+      detail: { atribuidos: res.atribuidos, consultoras: res.consultoras },
     });
-    return { atribuidos, consultoras: nomes.length };
+    return res;
   });
 
 // Versão interna (sem auth) para o job diário.
 export async function reporTodasCarteirasInterno(): Promise<{ atribuidos: number; consultoras: number }> {
-  const client = await getAdminClient();
-  const { data, error } = await client.from("radar_consultoras").select("nome").eq("ativo", true);
-  if (error) throw new Error(error.message);
-  const nomes = (data ?? []).map((c: any) => String(c.nome ?? "").trim()).filter(Boolean);
-  let atribuidos = 0;
-  for (const nome of nomes) atribuidos += await garantirPoolTomadores(nome);
-  return { atribuidos, consultoras: nomes.length };
+  const res = await distribuirTomadoresIgualmente();
+  return { atribuidos: res.atribuidos, consultoras: res.consultoras };
 }
 
 
