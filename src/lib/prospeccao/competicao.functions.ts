@@ -150,6 +150,17 @@ export const registrarQualificacao = createServerFn({ method: "POST" })
       } as any);
     }
 
+    // Cliente ganho ou perdido não deve continuar cobrando retorno.
+    if (data.status === "ganho" || data.status === "perdido") {
+      await db
+        .from("lead_tasks")
+        .update({ status: "canceled" })
+        .eq("lead_id", data.leadId)
+        .eq("status", "pending");
+      await db.from("prospect_leads").update({ next_follow_up_at: null }).eq("id", data.leadId);
+    }
+
+
     // Voltar para "novo" desfaz a qualificação: estorna.
     if (data.status === "novo") {
       await estornar("prospect_leads", data.leadId, ["qualificacao", "ganho"], "lead voltou para novo");
