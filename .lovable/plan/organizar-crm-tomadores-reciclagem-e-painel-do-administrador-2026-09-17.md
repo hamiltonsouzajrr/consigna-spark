@@ -4,13 +4,15 @@
 
 Trocar os nomes técnicos por frases que a consultora entende, nas duas telas e na ficha do cliente:
 
-| Hoje | Passa a ser |
-| --- | --- |
-| Novo | Ainda não falei |
+
+| Hoje        | Passa a ser             |
+| ----------- | ----------------------- |
+| Novo        | Ainda não falei         |
 | Qualificado | Já falei, tem interesse |
-| Proposta | Proposta enviada |
-| Ganho | Fechou (venda) |
-| Perdido | Não quer agora |
+| Proposta    | Proposta enviada        |
+| Ganho       | Fechou (venda)          |
+| Perdido     | Não quer agora          |
+
 
 Também: "Follow-up" passa a "Retornar contato", "Score" passa a "Chance de fechar", "Situação" passa a "O que aconteceu". Cada bloco da tela ganha uma linha curta explicando para que serve. Nada de regra, cálculo ou pontuação muda — só o texto que aparece.
 
@@ -21,7 +23,7 @@ Nova área "Reciclar clientes" dentro do painel do administrador, para CRM e par
 - O administrador escolhe o tempo sem movimento: 7, 15 ou 30 dias.
 - A tela mostra antes quantos clientes entram na conta, separados por consultora, e permite escolher quais consultoras vão receber.
 - Ao confirmar, os clientes voltam para a fila das consultoras selecionadas, com aviso na ficha de que já foi trabalhado antes e por quem, mantendo todo o histórico de contatos, anotações e vendas.
-- Clientes com venda fechada não voltam.
+- Clientes com venda fechada devera ir para a carteira da consultora que fechou
 - Fica registrado cada reciclagem (quem fez, quando, quantos, quantos dias), para conferência.
 
 ## 3. Aviso com pop-up e som quando a base estiver acabando
