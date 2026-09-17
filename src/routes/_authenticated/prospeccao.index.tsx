@@ -380,6 +380,9 @@ function Page() {
         <RhStatCard label="1ª resposta (méd.)" value={stats.avgMin ? `${stats.avgMin} min` : "—"} icon={Timer} tone="violet" />
       </div>
 
+      <ChegaramParaVoce base="crm" />
+
+
       <div className="mt-6">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Indicadores</h2>
         <ProspeccaoCharts />
