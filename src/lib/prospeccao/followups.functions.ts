@@ -28,20 +28,30 @@ export const listarMeusFollowups = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ ate: z.string().optional(), limit: z.number().int().min(1).max(300).default(200) }).parse(data ?? {}))
   .handler(async ({ context, data }): Promise<FollowupUnificado[]> => {
     const db = await admin();
-    const { data: role } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
-    let q = db.from("lead_tasks").select("id,title,due_at,lead_id,tomador_id,consultant_id").eq("status", "pending").order("due_at").limit(data.limit);
-    if (!role) q = q.eq("consultant_id", context.userId);
+    // Cada pessoa vê apenas os próprios retornos — inclusive administradores,
+    // para o aviso não encher a tela com clientes de outras consultoras.
+    let q = db
+      .from("lead_tasks")
+      .select("id,title,due_at,lead_id,tomador_id,consultant_id")
+      .eq("status", "pending")
+      .eq("consultant_id", context.userId)
+      .order("due_at")
+      .limit(data.limit);
     if (data.ate) q = q.lte("due_at", data.ate);
     const { data: tasks, error } = await q;
     if (error) throw new Error(error.message);
     const leadIds = (tasks ?? []).map((t: any) => t.lead_id).filter(Boolean);
     const tomadorIds = (tasks ?? []).map((t: any) => t.tomador_id).filter(Boolean);
     const [leads, tomadores] = await Promise.all([
-      leadIds.length ? db.from("prospect_leads").select("id,nome,telefone,telefones").in("id", leadIds) : Promise.resolve({ data: [] }),
+      leadIds.length ? db.from("prospect_leads").select("id,nome,telefone,telefones,status").in("id", leadIds) : Promise.resolve({ data: [] }),
       tomadorIds.length ? db.from("tomadores_al").select("id,nome,telefones").in("id", tomadorIds) : Promise.resolve({ data: [] }),
     ]);
     const clientes = new Map<string, { nome: string; telefone: string | null }>();
-    for (const l of leads.data ?? []) clientes.set(l.id, { nome: l.nome, telefone: l.telefone ?? l.telefones?.[0] ?? null });
+    // Cliente já ganho ou perdido não volta a cobrar retorno.
+    for (const l of leads.data ?? []) {
+      if (l.status === "ganho" || l.status === "perdido") continue;
+      clientes.set(l.id, { nome: l.nome, telefone: l.telefone ?? l.telefones?.[0] ?? null });
+    }
     for (const t of tomadores.data ?? []) clientes.set(t.id, { nome: t.nome, telefone: t.telefones?.[0] ?? null });
     return (tasks ?? []).flatMap((t: any) => {
       const clienteId = t.lead_id ?? t.tomador_id;
