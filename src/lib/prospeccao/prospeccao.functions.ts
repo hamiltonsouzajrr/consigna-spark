@@ -464,12 +464,9 @@ export const adminPreviewDistribution = createServerFn({ method: "POST" })
     ids.forEach((id) => (recebe[id] = 0));
     for (const cons of assignment.values()) recebe[cons] = (recebe[cons] ?? 0) + 1;
 
-    const { data: users } = await supabaseAdmin
-      .from("profiles")
-      .select("id,email")
-      .in("id", ids);
+    const { listConsultantUsers } = await import("./prospeccao.server");
     const emailById = new Map<string, string>(
-      ((users ?? []) as any[]).map((u) => [String(u.id), String(u.email ?? "")]),
+      (await listConsultantUsers(supabaseAdmin)).map((u) => [u.id, u.email]),
     );
 
     const linhas = ids
