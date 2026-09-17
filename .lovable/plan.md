@@ -1,51 +1,59 @@
-# Distribuição igualitária de leads + limpeza da aba de administração
+# Qualidade da prospecção — corrigir números e abrir para as consultoras
 
-## O que você pediz e o que eu encontrei
+## 1. Corrigir os números errados (prioridade)
 
-**No CRM (botão "Distribuir agora")**: hoje a divisão é feita só sobre os clientes que estão sem responsável, na ordem em que aparecem no banco, uma para cada consultora em rodízio. Resultado: quem já tinha uma fila grande fica com fila ainda maior, porque a carteira que cada uma já tem não entra na conta. Não há sorteio: a ordem da lista influencia quem recebe os melhores.
+Confirmei no banco os três problemas:
 
-**Na aba Tomadores (botão de distribuir)**: o sistema completa a carteira de uma consultora por vez, na ordem alfabética, até 10 clientes por faixa (alta, média, baixa). Quando o estoque acaba no meio, as primeiras da lista saem com carteira cheia e as últimas ficam sem nada.
+- **Taxa de abordagem sempre 100%.** O cálculo usa os recém-promovidos do Radar (1.330 registros, todos com situação "novo") e conta como "abordado" tudo que não está marcado como "pendente" — como ninguém usa essa palavra, todos entram como abordados. Passa a usar os clientes do CRM e a considerar abordado quem realmente teve contato registrado (primeira resposta ou último contato).
+- **Tabela "Desempenho real por consultora" sem contatos e sem vendas.** O vínculo entre a pessoa e os números vem do cadastro de colaboradores, que hoje casa com zero consultoras (24.465 contatos em 30 dias, nenhum atribuído a alguém na tela). Passa a usar o próprio vínculo das consultoras do CRM, com nome no perfil e e-mail como reserva.
+- **"Leads qualificados" travado em 1.000.** A leitura traz no máximo 1.000 linhas. Passa a contar no banco, mostrando o número real.
 
-## O que vou fazer
+Ainda nesta parte: cada número passa a dizer de onde vem e de que período é, e a tela ganha aviso claro quando a leitura falha (hoje ela simplesmente fica vazia).
 
-### 1. Divisão realmente igual no CRM
-- Antes de dividir, contar quantos clientes em aberto cada consultora selecionada já tem.
-- Entregar sempre para quem está com a fila menor, até todas ficarem com o mesmo total (a sobra que não divide exato vai para as menores filas).
-- Embaralhar a lista antes de dividir, para ninguém receber sempre os mesmos tipos de cliente.
-- A tela vai mostrar, antes de confirmar, uma prévia por consultora: fila atual, quanto vai receber, fila final.
-- Os critérios "por score" e "por cidade" continuam existindo, mas também passam a respeitar o equilíbrio de fila.
+## 2. Filtro único de período no topo
 
-### 2. Divisão realmente igual em Tomadores
-- Em vez de completar uma consultora por vez, o sistema passa a distribuir cliente por cliente em rodízio entre todas as consultoras ativas, alternando as faixas.
-- Quando o estoque for menor que o necessário, a diferença entre as carteiras nunca passa de um cliente.
-- Mensagem final informando quantos cada uma recebeu, e aviso claro quando o estoque acabar.
+Um seletor de 7, 30 ou 90 dias que vale para a tela inteira. Todos os blocos passam a responder ao mesmo período, com botão de atualizar e a hora da última leitura.
 
-### 3. Revisão da aba de administração (o que funciona, o que sai, o que melhora)
-A tela "Distribuição de Leads" tem hoje **oito** ações diferentes, várias fazendo quase a mesma coisa. Proposta de organização:
+## 3. Alertas de quem precisa de atenção
 
-Fica (funcionando e útil):
-- Distribuir clientes sem responsável (com a divisão igual nova)
-- Reciclar clientes parados
-- Redistribuir clientes já trabalhados
-- Reiniciar recém-promovidos
-- Encerrar acesso de quem está sem entrar há 10 dias
-- Quadro com a carteira de cada consultora
+Acima da tabela, uma faixa com as consultoras que precisam de ajuda no período escolhido:
 
-Sai ou vira uma coisa só:
-- "Sorteio aleatório geral" e "Distribuir agora" viram uma única ação de distribuição, com uma opção "embaralhar tudo, inclusive o que já está atribuído".
-- "Redistribuir igualmente (Radar)" passa a ser a mesma ação de distribuição, escolhendo a base (CRM, Radar, Tomadores) — deixa de ser um bloco separado.
-- "Entrega por desempenho (meritocracia)" fica escondida atrás de um link "opções avançadas", porque ela contraria a divisão igual que você pediu (posso remover de vez, se preferir).
-- "Limpar todos os vínculos" sai da tela principal e vai para o fim, em área de risco, com confirmação por texto.
+- retornos atrasados acima do aceitável;
+- poucos contatos em relação à média da equipe;
+- carteira grande com muitos clientes nunca abordados.
 
-Também na aba:
-- Nomes mais simples nas abas e nos blocos, uma linha explicando cada ação.
-- Ajuste para celular: os blocos hoje passam da largura e o quadro de carteiras fica cortado.
+Cada alerta mostra o nome, o número que disparou o aviso e um atalho para a carteira dessa consultora. A tabela passa a ordenar da melhor para a que mais precisa de apoio, com nome (não e-mail) e destaque visual nas linhas em alerta.
+
+## 4. Fim da repetição na tela
+
+Hoje três blocos mostram as mesmas coisas (contatos, qualificados, follow-ups) com períodos diferentes. Fica:
+
+1. **Resumo do período** — contatos, taxa de abordagem, taxa de conversão, retornos atrasados.
+2. **Evolução** — comparação com o período anterior.
+3. **Funil** — do cliente entregue à venda fechada.
+4. **Quem precisa de atenção** + tabela por consultora.
+
+Títulos e colunas em linguagem simples ("Já falou com", "Retornos atrasados", "Fechou venda").
+
+## 5. Bloco de qualidade dentro de "Minha semana" (consultora)
+
+Na tela que as consultoras já usam, um bloco novo com os números dela: quantos clientes recebeu, com quantos já falou, retornos atrasados, vendas do período e como ela está em relação à média da equipe (sem expor os números individuais das colegas). Admin continua podendo escolher a consultora no seletor que já existe.
+
+## 6. Revisão de tela
+
+Conferir em computador e celular: tabelas com rolagem lateral, gráficos sem cortar e cartões sem estourar a largura.
 
 ## Detalhes técnicos
-- `adminDistributeLeads` (`prospeccao.functions.ts`): carregar carga atual por `consultant_id` (status fora de ganho/perdido), embaralhar os leads livres e atribuir sempre à consultora de menor carga, reaproveitando `applyAssignments`/`reattachLeadHistory`. Nova função de prévia (sem gravar) para a tela.
-- Tomadores: substituir o laço sequencial de `reporTodasCarteirasInterno` por rodízio por lead/faixa, reutilizando a RPC `garantir_pool_tomadores_faixa` com alvo incremental (1 por vez por consultora) — sem alterar as regras de reciclagem e travas já existentes na RPC.
-- `DistribuicaoTab.tsx`: consolidar cards, adicionar prévia por consultora, mover ações destrutivas para bloco separado, revisar grid responsivo.
-- Sem migração de banco. Nenhuma mudança em pontuação, campanha, coeficientes ou histórico.
+
+- `src/lib/prospeccao/qualidade.functions.ts`: trocar as leituras em massa (`.limit(50000)` em `do_registros`, `lead_events`, `prospect_leads`, `lead_tasks`) por uma função de banco agregada (`SECURITY DEFINER` com checagem de admin, no padrão de `prospect_dashboard_admin`) que recebe o número de dias e devolve os totais e as linhas por consultora já calculados — resolve de uma vez o teto de 1.000 linhas, o risco de estouro de tempo e a base errada.
+- Abordagem passa a sair de `prospect_leads` (`first_response_at`/`last_contact_at`), não de `do_registros`; identificação por `consultant_id` com nome de `profiles.nome_completo` e e-mail via Auth Admin como reserva; abandonar o cruzamento por `rh_employees.full_name`.
+- `getCallQualityStats` (`prospeccao.functions.ts`): contagem de qualificados por agregação no banco e recorte de dias vindo do filtro, em vez de 7 dias fixos e leitura completa de `prospect_leads`.
+- `getEvolucaoProspeccao`: aceitar o mesmo parâmetro de dias para acompanhar o filtro.
+- `prospeccao.qualidade.tsx`: substituir `useEffect`/`useState` por `useQuery` com estado de erro e botão de atualizar; estado do filtro compartilhado com os dois painéis.
+- Consultora: nova função autenticada com escopo no próprio `consultant_id` (sem admin), consumida por um bloco novo em `prospeccao.minha-semana.tsx`.
+- Índices de apoio, se a medição mostrar necessidade, em `lead_events(consultant_id, created_at)` e `lead_tasks(consultant_id, status, due_at)`.
+- Validar com `npx tsgo --noEmit` e conferir no navegador (desktop e celular).
 
 ## Fora do escopo
-Fórmulas e coeficientes, regras de pontuação/campanha, exclusão de históricos.
+
+Fórmulas e coeficientes das calculadoras, regras de pontuação e da campanha, confirmação de vendas pelo gerente e qualquer exclusão de histórico.
