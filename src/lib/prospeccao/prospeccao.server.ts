@@ -36,6 +36,11 @@ export async function assertConsultantIds(supabaseAdmin: any, consultantIds: str
 export async function applyAssignments(
   supabaseAdmin: any,
   assignment: Map<string, string>,
+  /**
+   * Campos extras gravados junto da atribuição. Usado para reiniciar leads já
+   * trabalhados ("ainda não falei") sem apagar histórico de contatos/anotações.
+   */
+  extra: Record<string, unknown> = {},
 ): Promise<Record<string, number>> {
   await assertConsultantIds(supabaseAdmin, [...assignment.values()]);
   const byCons = new Map<string, string[]>();
@@ -50,7 +55,7 @@ export async function applyAssignments(
       const chunk = leadIds.slice(i, i + 500);
       const { error } = await supabaseAdmin
         .from("prospect_leads")
-        .update({ consultant_id: cons } as any)
+        .update({ consultant_id: cons, ...extra } as any)
         .in("id", chunk);
       if (error) throw new Error(error.message);
     }
