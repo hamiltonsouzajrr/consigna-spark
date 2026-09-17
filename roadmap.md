@@ -19,4 +19,5 @@
 - [x] Unificar as três calculadoras em uma única opção
 - [x] Conversão no CRM/Tomadores com tipo, margem usada e restante
 - [x] Telefones manuais e por CPF em Tomadores
-- [ ] Revisão visual e funcional geral em computador e celular
+- [x] "Minha carteira de clientes" no menu lateral, abaixo de Calculadoras
+- [ ] Revisão visual e funcional geral em computador e celular (bloqueada: banco/login pausados)
