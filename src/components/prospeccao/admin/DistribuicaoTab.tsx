@@ -388,7 +388,7 @@ export function DistribuicaoTab({
                     <tbody>
                       {previa.linhas.map((l) => (
                         <tr key={l.consultantId} className="border-t">
-                          <td className="max-w-[180px] truncate px-2 py-1.5">{l.email}</td>
+                          <td className="max-w-[110px] truncate px-2 py-1.5 sm:max-w-[220px]">{l.email}</td>
                           <td className="px-2 py-1.5">{l.atual}</td>
                           <td className="px-2 py-1.5 font-medium">+{l.recebe}</td>
                           <td className="px-2 py-1.5">{l.final}</td>
