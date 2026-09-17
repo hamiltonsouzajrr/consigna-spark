@@ -21,3 +21,9 @@
 - [x] Telefones manuais e por CPF em Tomadores
 - [x] "Minha carteira de clientes" no menu lateral, abaixo de Calculadoras
 - [ ] Revisão visual e funcional geral em computador e celular (bloqueada: banco/login pausados)
+
+## Distribuição igualitária (admin)
+- [x] CRM: entrega equilibrada por fila atual + prévia por consultora
+- [x] Tomadores: rodízio por lead/faixa
+- [x] Aba de administração reorganizada (ações simples, avançadas colapsadas, ações delicadas separadas)
+- [x] Revisão em computador e celular
