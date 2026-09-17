@@ -454,6 +454,8 @@ export async function analisarTextoServidor(input: {
 
   const chunks = chunkText(input.text, 24_000).slice(0, input.maxChunks ?? 40);
   const out: RegistroExtraido[] = [];
+  let falhas = 0;
+  let ultimoErro: string | null = null;
 
   for (const chunk of chunks) {
     try {
