@@ -1,0 +1,1 @@
+UPDATE public.app_sessions SET blocked_at = NULL WHERE user_id = '230576b4-9367-460a-9ace-122ad7bd4a3d';
