@@ -238,10 +238,11 @@ async function processarEdicao(
       .upload(caminho, dl.buffer, { contentType: "application/pdf", upsert: true });
     if (upErr) throw new Error(`Upload falhou: ${upErr.message}`);
 
-    const { error: fonteOkErr } = await supabaseAdmin
+    const { error: fonteProcessandoErr } = await supabaseAdmin
       .from("fontes_diario_oficial")
       .update({ status_download: "concluido", hash_arquivo: dl.hash, caminho_arquivo: caminho, status_processamento: "processando" })
       .eq("id", fonteId);
+    if (fonteProcessandoErr) throw new Error(`Falha ao iniciar a edição: ${fonteProcessandoErr.message}`);
 
     await criarAlerta(
       "nova_edicao",
@@ -309,7 +310,7 @@ async function processarEdicao(
       .update({ status_processamento: "concluido", total_registros_extraidos: inserted })
       .eq("id", arquivoId);
 
-    await supabaseAdmin
+    const { error: fonteOkErr } = await supabaseAdmin
       .from("fontes_diario_oficial")
       .update({
         status_processamento: "concluido",
