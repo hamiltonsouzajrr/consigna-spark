@@ -176,12 +176,7 @@ function Page() {
 
         {/* 1. Visão Geral */}
         <TabsContent value="visao" className="space-y-6">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <RhStatCard label="Total de leads" value={stats?.totalLeads ?? "—"} icon={Trophy} tone="sky" />
-            <RhStatCard label="Sem tratativa" value={stats?.semTratativa ?? "—"} icon={AlertTriangle} tone="amber" />
-            <RhStatCard label="Esquecidos (3+ dias)" value={stats?.esquecidos ?? "—"} icon={Ghost} tone="rose" />
-            <RhStatCard label="Consultoras ativas" value={stats?.ranking.filter((r) => r.consultantId).length ?? "—"} icon={UserPlus} tone="violet" />
-          </div>
+          <ResumoGeralTab />
 
           <div className="grid gap-4 lg:grid-cols-2">
             <Card className="p-5">
