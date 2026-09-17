@@ -644,6 +644,36 @@ export function DistribuicaoTab({
           </div>
         </details>
 
+        {/* Clientes presos em contas de administrador */}
+        <div className="min-w-0 rounded-lg border p-4 md:col-span-2">
+          <p className="mb-2 text-sm font-medium">Devolver ao estoque os clientes em contas de administrador</p>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Contas de administrador não trabalham fila. Os clientes que estão nelas voltam ao estoque
+            e podem ser entregues às consultoras. O histórico é preservado.
+          </p>
+          <ConfirmDialog
+            title="Devolver esses clientes ao estoque?"
+            description="Todos os clientes hoje atribuídos a contas de administrador ficam sem responsável e entram na próxima entrega."
+            confirmLabel="Devolver ao estoque"
+            onConfirm={async () => {
+              setBusy(true);
+              try {
+                const d = await liberarDeAdmins();
+                toast.success(`${d.liberados} cliente(s) devolvidos ao estoque.`);
+                setPrevia(null);
+                qc.invalidateQueries({ queryKey: ["prospect"] });
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Falha ao devolver os clientes.");
+              }
+              setBusy(false);
+            }}
+          >
+            <Button variant="secondary" disabled={busy}>
+              <RotateCcw className="mr-2 h-4 w-4" /> Devolver ao estoque
+            </Button>
+          </ConfirmDialog>
+        </div>
+
         {/* Quadro de carteiras */}
         <div className="min-w-0 rounded-lg border p-4 md:col-span-2">
           <p className="mb-2 text-sm font-medium">Carteira de cada consultora</p>
