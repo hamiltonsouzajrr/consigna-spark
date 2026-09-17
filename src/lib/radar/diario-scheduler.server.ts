@@ -122,6 +122,9 @@ async function salvarRegistros(
       motivo_classificacao: r.motivo_classificacao || null,
       status_revisao: dup ? "Duplicado" : "Novo",
       duplicado_possivel: dup,
+      // Publicação automática: o promovido já entra visível para a consultora,
+      // sem depender de um clique manual de liberação do administrador.
+      liberado_em: dup ? null : new Date().toISOString(),
     };
   });
 
