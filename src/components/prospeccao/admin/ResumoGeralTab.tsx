@@ -66,7 +66,12 @@ export function ResumoGeralTab() {
   const q = useQuery({
     queryKey: ["prospect", "painel-resumo"],
     queryFn: () => fetchResumo(),
-    refetchInterval: 120_000,
+    // Fiscalização ao vivo: atualiza sozinho a cada 15s e sempre que a tela
+    // volta ao foco, sem depender de nenhuma ação manual.
+    refetchInterval: 15_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    placeholderData: (prev) => prev,
   });
 
   const r = q.data;
@@ -99,6 +104,11 @@ export function ResumoGeralTab() {
     );
   }
 
+  // Totais somando as três bases (CRM, Tomadores AL e recém-promovidos).
+  const entregues = r.crm.atribuidos + r.tomadores.atribuidos + r.promovidos.atribuidos;
+  const trabalhados = r.crm.trabalhados + r.tomadores.trabalhados + r.promovidos.contatados;
+  const vendidos = r.crm.ganhos + r.tomadores.convertidos;
+
   const usoCrm = r.crm.total ? Math.round((r.crm.trabalhados / r.crm.total) * 100) : 0;
   const usoTomadores = r.tomadores.total
     ? Math.round((r.tomadores.trabalhados / r.tomadores.total) * 100)
@@ -107,13 +117,39 @@ export function ResumoGeralTab() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">
-          Números exatos de toda a base. Atualiza sozinho a cada 2 minutos.
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="relative grid h-2 w-2 place-items-center">
+            <span className="absolute h-2 w-2 animate-ping rounded-full bg-emerald-500/70" />
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          </span>
+          Ao vivo: números exatos de toda a base, atualizados sozinhos a cada 15 segundos.
         </p>
         <Button size="sm" variant="outline" onClick={() => q.refetch()} disabled={q.isFetching}>
           <RefreshCw className={`mr-2 h-4 w-4 ${q.isFetching ? "animate-spin" : ""}`} /> Atualizar
         </Button>
       </div>
+
+      <Bloco
+        titulo="Acompanhamento ao vivo"
+        descricao="Somando CRM, Tomadores AL e recém-promovidos, sem precisar de entrega manual."
+        icon={TrendingUp}
+      >
+        <div className="grid grid-cols-3 gap-2">
+          <Numero label="Entregues às consultoras" value={entregues} />
+          <Numero
+            label="Já trabalhados"
+            value={trabalhados}
+            tone="text-emerald-600 dark:text-emerald-400"
+            hint={entregues ? `${Math.round((trabalhados / entregues) * 100)}% do que foi entregue` : undefined}
+          />
+          <Numero
+            label="Vendidos (fechados)"
+            value={vendidos}
+            tone="text-emerald-600 dark:text-emerald-400"
+            hint={trabalhados ? `${Math.round((vendidos / trabalhados) * 100)}% dos trabalhados` : undefined}
+          />
+        </div>
+      </Bloco>
 
       <Bloco
         titulo="Clientes do CRM (prospecção)"
@@ -284,6 +320,7 @@ export function ResumoGeralTab() {
       <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
         <Clock className="h-3 w-3" /> Números gerados em{" "}
         {new Date(r.gerado_em).toLocaleString("pt-BR")}
+        {q.isFetching && " · atualizando…"}
       </p>
     </div>
   );
