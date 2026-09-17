@@ -26,6 +26,7 @@ import {
   adminRecycleLeads,
   adminRandomRedistribute,
   adminResetAllAccess,
+  adminLiberarLeadsDeAdmins,
 } from "@/lib/prospeccao/prospeccao.functions";
 import { adminRedistributeTrabalhados } from "@/lib/prospeccao/trabalhados.functions";
 import {
@@ -71,6 +72,7 @@ export function DistribuicaoTab({
   const recycleLeads = useServerFn(adminRecycleLeads);
   const randomRedistribute = useServerFn(adminRandomRedistribute);
   const resetAll = useServerFn(adminResetAllAccess);
+  const liberarDeAdmins = useServerFn(adminLiberarLeadsDeAdmins);
   const redistribuirRadar = useServerFn(redistribuirPromovidosIgualmente);
   const fetchResumo = useServerFn(getResumoCarteiras);
   const reiniciarTodosPromovidos = useServerFn(reiniciarPromovidosTodos);
@@ -82,7 +84,14 @@ export function DistribuicaoTab({
   const [base, setBase] = useState<"crm" | "radar" | "tomadores">("crm");
   const [distMode, setDistMode] = useState<"round_robin" | "score" | "city">("round_robin");
   const [embaralharTudo, setEmbaralharTudo] = useState(false);
-  const [previa, setPrevia] = useState<{ disponiveis: number; linhas: PreviaLinha[] } | null>(null);
+  const [previa, setPrevia] = useState<{
+    disponiveis: number;
+    disponiveisNovos: number;
+    disponiveisTrabalhados: number;
+    linhas: PreviaLinha[];
+  } | null>(null);
+  const [incluirTrabalhados, setIncluirTrabalhados] = useState(false);
+  const [alvoTomadores, setAlvoTomadores] = useState(10);
   const [recycleMode, setRecycleMode] = useState<"round_robin" | "score">("score");
   const [idleDays, setIdleDays] = useState(3);
   const [busy, setBusy] = useState(false);
@@ -116,9 +125,17 @@ export function DistribuicaoTab({
     if (selected.size === 0) { toast.error("Selecione ao menos uma consultora."); return; }
     setBusy(true);
     try {
-      const p = await previewDistribution({ data: { consultantIds: [...selected], mode: distMode } });
+      const p = await previewDistribution({
+        data: { consultantIds: [...selected], mode: distMode, incluirTrabalhados },
+      });
       setPrevia(p);
-      if (p.disponiveis === 0) toast.info("Nenhum cliente sem responsável no momento.");
+      if (p.disponiveis === 0) {
+        toast.info(
+          incluirTrabalhados
+            ? "Nenhum cliente disponível no estoque."
+            : `Nenhum cliente novo no estoque. Há ${p.disponiveisTrabalhados} já trabalhado(s) — marque a opção abaixo para entregá-los.`,
+        );
+      }
     } catch (e) { toast.error(e instanceof Error ? e.message : "Falha ao calcular a prévia."); }
     setBusy(false);
   };
@@ -133,9 +150,20 @@ export function DistribuicaoTab({
         if (!d.assigned && !d.promovidos && !d.tomadores) toast.info("Nenhum cliente disponível para dividir.");
         else toast.success(`${d.assigned} cliente(s) redivididos entre ${selected.size} consultora(s)${extra}.`);
       } else {
-        const d = await distributeLeads({ data: { consultantIds: [...selected], mode: distMode } });
-        if (d.assigned === 0) toast.info("Nenhum cliente sem responsável para entregar.");
-        else toast.success(`${d.assigned} cliente(s) divididos igualmente entre ${Object.keys(d.perConsultant).length} consultora(s).`);
+        const d = await distributeLeads({
+          data: { consultantIds: [...selected], mode: distMode, incluirTrabalhados },
+        });
+        if (d.assigned === 0)
+          toast.info(
+            incluirTrabalhados
+              ? "Nenhum cliente disponível no estoque."
+              : "Nenhum cliente novo no estoque. Marque \"incluir clientes já trabalhados\" para reaproveitar a base.",
+          );
+        else
+          toast.success(
+            `${d.assigned} cliente(s) divididos igualmente entre ${Object.keys(d.perConsultant).length} consultora(s).` +
+              (d.reiniciados ? ` ${d.reiniciados} já trabalhado(s) voltaram para "ainda não falei".` : ""),
+          );
       }
       setPrevia(null);
       qc.invalidateQueries({ queryKey: ["prospect"] });
@@ -159,7 +187,7 @@ export function DistribuicaoTab({
   const runDistribuirTomadores = async () => {
     setBusy(true);
     try {
-      const d = await distribuirTomadores();
+      const d = await distribuirTomadores({ data: { alvoPorFaixa: alvoTomadores } });
       if (d.consultoras === 0) toast.error("Nenhuma consultora ativa cadastrada.");
       else if (d.atribuidos === 0) toast.info("As carteiras já estão completas — nada novo para entregar.");
       else {
@@ -360,6 +388,14 @@ export function DistribuicaoTab({
                 {unassignedCount} cliente(s) sem responsável no momento.
               </p>
               <label className="flex items-start gap-2 text-xs">
+                <Checkbox
+                  checked={incluirTrabalhados}
+                  onCheckedChange={(v) => { setIncluirTrabalhados(v === true); setPrevia(null); }}
+                />
+                Incluir clientes já trabalhados (eles voltam para "ainda não falei" e reaparecem na
+                fila, sem perder o histórico de contatos)
+              </label>
+              <label className="flex items-start gap-2 text-xs">
                 <Checkbox checked={embaralharTudo} onCheckedChange={(v) => { setEmbaralharTudo(v === true); setPrevia(null); }} />
                 Embaralhar tudo, inclusive os clientes que já estão com alguém
               </label>
@@ -373,6 +409,13 @@ export function DistribuicaoTab({
                 <Button variant="outline" size="sm" onClick={verPrevia} disabled={busy}>
                   <Eye className="mr-2 h-4 w-4" /> Ver prévia por consultora
                 </Button>
+              )}
+              {previa && !embaralharTudo && (
+                <p className="text-xs text-muted-foreground">
+                  No estoque: {previa.disponiveisNovos} cliente(s) novo(s) e{" "}
+                  {previa.disponiveisTrabalhados} já trabalhado(s). Vão ser entregues{" "}
+                  {previa.disponiveis}.
+                </p>
               )}
               {previa && !embaralharTudo && (
                 <div className="max-h-56 overflow-auto rounded-md border">
@@ -409,10 +452,21 @@ export function DistribuicaoTab({
           )}
 
           {base === "tomadores" && (
-            <p className="mt-3 text-xs text-muted-foreground">
-              Cada consultora ativa mantém até 10 clientes em aberto por faixa de margem (alta, média
-              e baixa). Se o estoque acabar, a diferença entre as carteiras não passa de um cliente.
-            </p>
+            <div className="mt-3 space-y-2">
+              <Label className="text-xs">Clientes em aberto por faixa de margem</Label>
+              <Input
+                type="number"
+                min={1}
+                max={200}
+                value={alvoTomadores}
+                onChange={(e) => setAlvoTomadores(Math.max(1, Math.min(200, Number(e.target.value) || 10)))}
+                className="h-9 w-24"
+              />
+              <p className="text-xs text-muted-foreground">
+                Cada consultora ativa fica com essa quantidade em aberto em cada faixa (alta, média e
+                baixa). Se o estoque acabar, a diferença entre as carteiras não passa de um cliente.
+              </p>
+            </div>
           )}
 
           <ConfirmDialog
