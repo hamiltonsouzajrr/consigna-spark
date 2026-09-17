@@ -24,10 +24,18 @@ export async function dispararLembretesFollowup(): Promise<{
   const leadIds = (data ?? []).map((r: any) => r.lead_id).filter(Boolean);
   const tomadorIds = (data ?? []).map((r: any) => r.tomador_id).filter(Boolean);
   const [leads, tomadores] = await Promise.all([
-    leadIds.length ? supabaseAdmin.from("prospect_leads").select("id,nome").in("id", leadIds) : Promise.resolve({ data: [] }),
+    leadIds.length ? supabaseAdmin.from("prospect_leads").select("id,nome,status").in("id", leadIds) : Promise.resolve({ data: [] }),
     tomadorIds.length ? supabaseAdmin.from("tomadores_al").select("id,nome").in("id", tomadorIds) : Promise.resolve({ data: [] }),
   ]);
-  const nomes = new Map<string, string>([...(leads.data ?? []), ...(tomadores.data ?? [])].map((r: any) => [r.id, r.nome]));
+  // Clientes já ganhos ou perdidos não geram lembrete.
+  const encerrados = new Set(
+    (leads.data ?? []).filter((r: any) => r.status === "ganho" || r.status === "perdido").map((r: any) => r.id as string),
+  );
+  const nomes = new Map<string, string>(
+    [...(leads.data ?? []), ...(tomadores.data ?? [])]
+      .filter((r: any) => !encerrados.has(r.id))
+      .map((r: any) => [r.id, r.nome]),
+  );
   const porConsultora = new Map<string, { total: number; proximo: string; nome: string; atrasados: number }>();
   const agora = new Date().toISOString();
   for (const l of data ?? []) {
