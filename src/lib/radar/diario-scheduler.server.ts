@@ -182,14 +182,18 @@ async function processarEdicao(
   // Dedup por chave única (data + numero + tipo + suplemento).
   const { data: existente } = await supabaseAdmin
     .from("fontes_diario_oficial")
-    .select("id,hash_arquivo")
+    .select("id,hash_arquivo,status_processamento,arquivo_id")
     .eq("data_publicacao", ed.data_publicacao)
     .eq("numero_edicao", ed.numero_edicao)
     .eq("tipo_edicao", ed.tipo_edicao)
     .eq("suplemento", ed.suplemento)
     .maybeSingle();
 
-  if (existente && !opts.fonteId) {
+  const concluida =
+    existente &&
+    ["concluido", "requer_ocr"].includes(String(existente.status_processamento)) &&
+    !!existente.arquivo_id;
+  if (concluida && !opts.fonteId) {
     res.fontes.push({ id: existente.id, nome: ed.nome_arquivo, status: "ja_existente", registros: 0 });
     return; // não reprocessa, exceto via reprocessarFonte
   }
@@ -218,7 +222,7 @@ async function processarEdicao(
     if (error) throw new Error(error.message);
     fonteId = nova.id as string;
   } else {
-    await supabaseAdmin
+    const { error: fonteOkErr } = await supabaseAdmin
       .from("fontes_diario_oficial")
       .update({ status_download: "baixando", status_processamento: "pendente", erro_processamento: null })
       .eq("id", fonteId);
@@ -234,10 +238,11 @@ async function processarEdicao(
       .upload(caminho, dl.buffer, { contentType: "application/pdf", upsert: true });
     if (upErr) throw new Error(`Upload falhou: ${upErr.message}`);
 
-    await supabaseAdmin
+    const { error: fonteProcessandoErr } = await supabaseAdmin
       .from("fontes_diario_oficial")
       .update({ status_download: "concluido", hash_arquivo: dl.hash, caminho_arquivo: caminho, status_processamento: "processando" })
       .eq("id", fonteId);
+    if (fonteProcessandoErr) throw new Error(`Falha ao iniciar a edição: ${fonteProcessandoErr.message}`);
 
     await criarAlerta(
       "nova_edicao",
@@ -305,7 +310,7 @@ async function processarEdicao(
       .update({ status_processamento: "concluido", total_registros_extraidos: inserted })
       .eq("id", arquivoId);
 
-    await supabaseAdmin
+    const { error: fonteOkErr } = await supabaseAdmin
       .from("fontes_diario_oficial")
       .update({
         status_processamento: "concluido",
@@ -315,6 +320,7 @@ async function processarEdicao(
         erro_processamento: null,
       })
       .eq("id", fonteId);
+    if (fonteOkErr) throw new Error(`Falha ao concluir a edição: ${fonteOkErr.message}`);
 
     // Alertas de negócio.
     const confirmadas = registros.filter((r) => r.categoria === "Promoção confirmada").length;
@@ -697,7 +703,8 @@ export async function existeEdicaoDaData(data: string): Promise<boolean> {
   const { count } = await supabaseAdmin
     .from("fontes_diario_oficial")
     .select("id", { count: "exact", head: true })
-    .eq("data_publicacao", data);
+    .eq("data_publicacao", data)
+    .in("status_processamento", ["concluido", "requer_ocr"]);
   return (count ?? 0) > 0;
 }
 

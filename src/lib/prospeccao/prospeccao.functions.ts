@@ -340,7 +340,9 @@ async function applyAssignments(
 }
 
 // Distribute UNASSIGNED open leads across consultants. Each lead goes to exactly one.
-// Carga atual (leads em aberto) de cada consultora selecionada.
+// Carga atual que realmente aparece na fila de cada consultora selecionada.
+// Contar todos os leads antigos em aberto deixava algumas consultoras com fila
+// zerada sem receber nada, porque o equilíbrio considerava clientes invisíveis.
 async function cargaAtualPorConsultora(
   supabaseAdmin: any,
   consultantIds: string[],
@@ -353,8 +355,10 @@ async function cargaAtualPorConsultora(
       const { count } = await supabaseAdmin
         .from("prospect_leads")
         .select("id", { count: "exact", head: true })
-        .not("status", "in", "(ganho,perdido)")
-        .eq("consultant_id", id);
+        .eq("consultant_id", id)
+        .eq("status", "novo")
+        .is("first_response_at", null)
+        .is("opened_at", null);
       load[id] = Number(count ?? 0);
     }),
   );

@@ -90,7 +90,9 @@ export function DistribuicaoTab({
     disponiveisTrabalhados: number;
     linhas: PreviaLinha[];
   } | null>(null);
-  const [incluirTrabalhados, setIncluirTrabalhados] = useState(false);
+  // A base atual não tem clientes inéditos livres; deixar a reciclagem marcada
+  // evita uma entrega vazia e garante reposição para quem já terminou a fila.
+  const [incluirTrabalhados, setIncluirTrabalhados] = useState(true);
   const [alvoTomadores, setAlvoTomadores] = useState(10);
   const [recycleMode, setRecycleMode] = useState<"round_robin" | "score">("score");
   const [idleDays, setIdleDays] = useState(3);
