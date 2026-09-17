@@ -407,32 +407,81 @@ function montarDivisaoEquilibrada(
 const distribuirSchema = z.object({
   consultantIds: z.array(z.string().uuid()).min(1).max(100),
   mode: z.enum(["round_robin", "score", "city"]),
+  // Quando ligado, também entrega leads já trabalhados (reiniciando-os para
+  // "ainda não falei" para que voltem a aparecer na fila da consultora).
+  incluirTrabalhados: z.boolean().optional().default(false),
 });
+
+const LIMITE_POOL = 50000;
+
+// Campos que fazem o lead voltar a aparecer na fila da consultora.
+const REINICIO_LEAD = {
+  status: "novo",
+  opened_at: null,
+  first_response_at: null,
+  next_follow_up_at: null,
+  sla_status: null,
+} as const;
+
+// Leads livres separados entre "nunca trabalhados" (aparecem na fila) e
+// "já trabalhados" (só entram quando o admin pedir, e são reiniciados).
+async function carregarPoolLivre(supabaseAdmin: any) {
+  const cols = "id,cidade,score";
+  const [{ data: novos, error: e1 }, { data: trabalhados, error: e2 }] = await Promise.all([
+    supabaseAdmin
+      .from("prospect_leads")
+      .select(cols)
+      .is("consultant_id", null)
+      .eq("status", "novo")
+      .is("opened_at", null)
+      .is("first_response_at", null)
+      .limit(LIMITE_POOL),
+    supabaseAdmin
+      .from("prospect_leads")
+      .select(cols)
+      .is("consultant_id", null)
+      .not("status", "in", "(ganho,perdido)")
+      .or("opened_at.not.is.null,first_response_at.not.is.null")
+      .limit(LIMITE_POOL),
+  ]);
+  if (e1) throw new Error(e1.message);
+  if (e2) throw new Error(e2.message);
+  return { novos: (novos ?? []) as any[], trabalhados: (trabalhados ?? []) as any[] };
+}
 
 export const adminDistributeLeads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => distribuirSchema.parse(data))
-  .handler(async ({ context, data }): Promise<{ assigned: number; perConsultant: Record<string, number> }> => {
+  .handler(async ({ context, data }): Promise<{ assigned: number; reiniciados: number; perConsultant: Record<string, number> }> => {
     const { supabase, userId } = context;
     const { assertAdmin, applyAssignments, shuffle } = await import("./prospeccao.server");
     await assertAdmin(supabase, userId);
 
-
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: leads, error } = await supabaseAdmin
-      .from("prospect_leads")
-      .select("id,cidade,score")
-      .is("consultant_id", null)
-      .not("status", "in", "(ganho,perdido)");
-    if (error) throw new Error(error.message);
-    if (!leads?.length) return { assigned: 0, perConsultant: {} };
+    const { novos, trabalhados } = await carregarPoolLivre(supabaseAdmin);
+    if (!novos.length && !(data.incluirTrabalhados && trabalhados.length)) {
+      return { assigned: 0, reiniciados: 0, perConsultant: {} };
+    }
 
     const ids = shuffle(data.consultantIds);
     const load = await cargaAtualPorConsultora(supabaseAdmin, ids);
-    const assignment = montarDivisaoEquilibrada(shuffle(leads as any[]), ids, data.mode, load);
 
-    const perConsultant = await applyAssignments(supabaseAdmin, assignment);
-    return { assigned: assignment.size, perConsultant };
+    // Primeiro os novos (sem reinício), depois — se pedido — os já trabalhados,
+    // que precisam voltar para "ainda não falei" para aparecer na fila.
+    const divNovos = montarDivisaoEquilibrada(shuffle(novos), ids, data.mode, load);
+    const perConsultant = novos.length ? await applyAssignments(supabaseAdmin, divNovos) : {};
+
+    let reiniciados = 0;
+    if (data.incluirTrabalhados && trabalhados.length) {
+      const load2 = { ...load };
+      for (const cons of divNovos.values()) load2[cons] = (load2[cons] ?? 0) + 1;
+      const divTrab = montarDivisaoEquilibrada(shuffle(trabalhados), ids, data.mode, load2);
+      const per2 = await applyAssignments(supabaseAdmin, divTrab, { ...REINICIO_LEAD });
+      reiniciados = divTrab.size;
+      for (const [k, v] of Object.entries(per2)) perConsultant[k] = (perConsultant[k] ?? 0) + v;
+    }
+
+    return { assigned: divNovos.size + reiniciados, reiniciados, perConsultant };
   });
 
 // Prévia da distribuição (não grava nada): fila atual, quanto cada uma recebe
@@ -442,6 +491,8 @@ export const adminPreviewDistribution = createServerFn({ method: "POST" })
   .inputValidator((data) => distribuirSchema.parse(data))
   .handler(async ({ context, data }): Promise<{
     disponiveis: number;
+    disponiveisNovos: number;
+    disponiveisTrabalhados: number;
     linhas: { consultantId: string; email: string; atual: number; recebe: number; final: number }[];
   }> => {
     const { supabase, userId } = context;
@@ -449,16 +500,12 @@ export const adminPreviewDistribution = createServerFn({ method: "POST" })
     await assertAdmin(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: leads, error } = await supabaseAdmin
-      .from("prospect_leads")
-      .select("id,cidade,score")
-      .is("consultant_id", null)
-      .not("status", "in", "(ganho,perdido)");
-    if (error) throw new Error(error.message);
+    const { novos, trabalhados } = await carregarPoolLivre(supabaseAdmin);
+    const usados = data.incluirTrabalhados ? [...novos, ...trabalhados] : novos;
 
     const ids = data.consultantIds;
     const load = await cargaAtualPorConsultora(supabaseAdmin, ids);
-    const assignment = montarDivisaoEquilibrada(shuffle((leads ?? []) as any[]), ids, data.mode, load);
+    const assignment = montarDivisaoEquilibrada(shuffle(usados), ids, data.mode, load);
 
     const recebe: Record<string, number> = {};
     ids.forEach((id) => (recebe[id] = 0));
@@ -479,7 +526,42 @@ export const adminPreviewDistribution = createServerFn({ method: "POST" })
       }))
       .sort((a, b) => b.recebe - a.recebe || a.email.localeCompare(b.email));
 
-    return { disponiveis: (leads ?? []).length, linhas };
+    return {
+      disponiveis: usados.length,
+      disponiveisNovos: novos.length,
+      disponiveisTrabalhados: trabalhados.length,
+      linhas,
+    };
+  });
+
+// Devolve ao estoque os leads presos em contas de administrador (elas não
+// trabalham fila, então esses clientes ficam parados).
+export const adminLiberarLeadsDeAdmins = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ liberados: number }> => {
+    const { supabase, userId } = context;
+    const { assertAdmin } = await import("./prospeccao.server");
+    await assertAdmin(supabase, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id, role");
+    const adminIds = [
+      ...new Set((roles ?? []).filter((r: any) => r.role === "admin").map((r: any) => String(r.user_id))),
+    ];
+    if (!adminIds.length) return { liberados: 0 };
+
+    let liberados = 0;
+    for (let i = 0; i < adminIds.length; i += 50) {
+      const chunk = adminIds.slice(i, i + 50);
+      const { data, error } = await supabaseAdmin
+        .from("prospect_leads")
+        .update({ consultant_id: null } as any)
+        .in("consultant_id", chunk)
+        .select("id");
+      if (error) throw new Error(error.message);
+      liberados += data?.length ?? 0;
+    }
+    return { liberados };
   });
 
 // Recycle stale leads (assigned but neglected) to the least-loaded consultants.
