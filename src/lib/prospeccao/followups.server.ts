@@ -41,8 +41,10 @@ export async function dispararLembretesFollowup(): Promise<{
   for (const l of data ?? []) {
     const uid = (l as any).consultant_id as string | null;
     if (!uid) continue;
+    const clienteId = ((l as any).lead_id ?? (l as any).tomador_id) as string | null;
+    if (!clienteId || encerrados.has(clienteId)) continue;
     const quando = (l as any).due_at as string;
-    const nome = nomes.get((l as any).lead_id ?? (l as any).tomador_id) ?? "cliente";
+    const nome = nomes.get(clienteId) ?? "cliente";
     const isAtrasado = quando <= agora;
     const atual = porConsultora.get(uid);
     if (!atual) {
