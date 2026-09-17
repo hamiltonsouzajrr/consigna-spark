@@ -834,10 +834,13 @@ export const getDistribuicaoTomadoresAl = createServerFn({ method: "POST" })
 // (10 leads por faixa para cada consultora).
 export const distribuirTomadoresAl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<ResultadoDistribuicaoTomadores> => {
+  .inputValidator((data) =>
+    z.object({ alvoPorFaixa: z.number().int().min(1).max(200).optional() }).parse(data ?? {}),
+  )
+  .handler(async ({ context, data }): Promise<ResultadoDistribuicaoTomadores> => {
     const admin = await isAdmin(context.supabase, context.userId);
     if (!admin) throw new Error("Apenas administradores podem executar esta ação.");
-    return distribuirTomadoresIgualmente();
+    return distribuirTomadoresIgualmente(data.alvoPorFaixa ?? POOL_ALVO);
   });
 
 
