@@ -93,6 +93,12 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <button
             onClick={() => {
+              if (isChunkError(error)) {
+                // Versão antiga guardada no navegador: limpa e busca a nova.
+                try { window.sessionStorage.removeItem(RELOAD_FLAG); } catch { /* noop */ }
+                void limparCacheDoApp().then(() => window.location.reload());
+                return;
+              }
               router.invalidate();
               reset();
             }}
