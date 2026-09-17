@@ -426,6 +426,8 @@ export const salvarRegistros = createServerFn({ method: "POST" })
         motivo_classificacao: r.motivo_classificacao || null,
         status_revisao: dup ? "Duplicado" : "Novo",
         duplicado_possivel: dup,
+        // Publicação automática (sem liberação manual do administrador).
+        liberado_em: dup ? null : new Date().toISOString(),
       };
     });
 
