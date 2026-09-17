@@ -346,16 +346,18 @@ async function cargaAtualPorConsultora(
   consultantIds: string[],
 ): Promise<Record<string, number>> {
   const load: Record<string, number> = {};
-  consultantIds.forEach((id) => (load[id] = 0));
-  const { data: rows } = await supabaseAdmin
-    .from("prospect_leads")
-    .select("consultant_id")
-    .not("status", "in", "(ganho,perdido)")
-    .in("consultant_id", consultantIds)
-    .limit(200000);
-  (rows ?? []).forEach((r: any) => {
-    if (r.consultant_id && r.consultant_id in load) load[r.consultant_id]++;
-  });
+  // Contagem no banco, uma por consultora: ler as linhas traria no máximo
+  // 1.000 registros (limite da Data API) e falsearia o equilíbrio das filas.
+  await Promise.all(
+    consultantIds.map(async (id) => {
+      const { count } = await supabaseAdmin
+        .from("prospect_leads")
+        .select("id", { count: "exact", head: true })
+        .not("status", "in", "(ganho,perdido)")
+        .eq("consultant_id", id);
+      load[id] = Number(count ?? 0);
+    }),
+  );
   return load;
 }
 
