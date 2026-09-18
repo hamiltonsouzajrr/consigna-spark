@@ -499,7 +499,7 @@ function AcessosPage() {
 
 
         <TabsContent value="usuarios">
-          <div className="grid gap-6 lg:grid-cols-[minmax(420px,36%)_1fr]">
+          <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(440px,38%)_minmax(0,1fr)]">
             {/* Lista de usuários */}
             <Card className="h-fit">
               <CardHeader className="pb-3">
