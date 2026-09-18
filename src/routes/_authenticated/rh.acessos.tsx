@@ -627,35 +627,45 @@ function AcessosPage() {
                             </Badge>
                           </button>
                           {canManageUsers && (
-                            <>
+                            <div className="flex shrink-0 items-center gap-1">
                               <Button
                                 size="icon"
                                 variant="ghost"
                                 className="h-7 w-7 shrink-0"
                                 onClick={() => openEdit(u)}
                                 title="Editar usuário"
+                                aria-label={`Editar ${u.email}`}
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 shrink-0"
-                                onClick={() => onRevokeSessions(u)}
-                                title="Encerrar sessões ativas"
-                              >
-                                <LogOut className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
-                                onClick={() => setDeleteTarget(u)}
-                                title="Excluir usuário"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7 shrink-0"
+                                    title="Mais ações"
+                                    aria-label={`Mais ações para ${u.email}`}
+                                  >
+                                    <MoreHorizontal className="h-3.5 w-3.5" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openEdit(u)}>
+                                    <Pencil className="mr-2 h-3.5 w-3.5" /> Editar usuário
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => onRevokeSessions(u)}>
+                                    <LogOut className="mr-2 h-3.5 w-3.5" /> Encerrar sessões ativas
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => setDeleteTarget(u)}
+                                  >
+                                    <Trash2 className="mr-2 h-3.5 w-3.5" /> Excluir usuário
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           )}
                         </div>
                       ))
