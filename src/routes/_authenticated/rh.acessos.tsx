@@ -6,8 +6,11 @@ import { toast } from "sonner";
 import {
   Search, ShieldCheck, Save, Loader2, UserCog, IdCard, Plus, Pencil, Trash2,
   ShieldAlert, Download, KeyRound, Lock, LockOpen, Copy, RefreshCw, History,
-  Users, Link2, CheckCircle2, AlertCircle, LogOut, Undo2, Trash,
+  Users, Link2, CheckCircle2, AlertCircle, LogOut, Undo2, Trash, MoreHorizontal,
 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -496,7 +499,7 @@ function AcessosPage() {
 
 
         <TabsContent value="usuarios">
-          <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+          <div className="grid gap-6 lg:grid-cols-[minmax(420px,36%)_1fr]">
             {/* Lista de usuários */}
             <Card className="h-fit">
               <CardHeader className="pb-3">
@@ -624,35 +627,45 @@ function AcessosPage() {
                             </Badge>
                           </button>
                           {canManageUsers && (
-                            <>
+                            <div className="flex shrink-0 items-center gap-1">
                               <Button
                                 size="icon"
                                 variant="ghost"
                                 className="h-7 w-7 shrink-0"
                                 onClick={() => openEdit(u)}
                                 title="Editar usuário"
+                                aria-label={`Editar ${u.email}`}
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 shrink-0"
-                                onClick={() => onRevokeSessions(u)}
-                                title="Encerrar sessões ativas"
-                              >
-                                <LogOut className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
-                                onClick={() => setDeleteTarget(u)}
-                                title="Excluir usuário"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7 shrink-0"
+                                    title="Mais ações"
+                                    aria-label={`Mais ações para ${u.email}`}
+                                  >
+                                    <MoreHorizontal className="h-3.5 w-3.5" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openEdit(u)}>
+                                    <Pencil className="mr-2 h-3.5 w-3.5" /> Editar usuário
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => onRevokeSessions(u)}>
+                                    <LogOut className="mr-2 h-3.5 w-3.5" /> Encerrar sessões ativas
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => setDeleteTarget(u)}
+                                  >
+                                    <Trash2 className="mr-2 h-3.5 w-3.5" /> Excluir usuário
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           )}
                         </div>
                       ))
