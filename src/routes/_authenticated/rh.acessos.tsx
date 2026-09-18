@@ -499,7 +499,7 @@ function AcessosPage() {
 
 
         <TabsContent value="usuarios">
-          <div className="grid gap-6 lg:grid-cols-[minmax(420px,36%)_1fr]">
+          <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(440px,38%)_minmax(0,1fr)]">
             {/* Lista de usuários */}
             <Card className="h-fit">
               <CardHeader className="pb-3">
@@ -705,12 +705,40 @@ function AcessosPage() {
             </Card>
 
             {/* Detalhe do usuário */}
-            <Card>
+            <Card className="min-w-0">
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <UserCog className="h-4 w-4" />
-                  {selected ? selected.email : "Selecione um usuário"}
-                </CardTitle>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                  <CardTitle className="flex min-w-0 items-center gap-2 text-base">
+                    <UserCog className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{selected ? selected.email : "Selecione um usuário"}</span>
+                  </CardTitle>
+                  {canManageUsers && selected && (
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button size="sm" variant="outline" onClick={() => openEdit(selected)}>
+                        <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onRevokeSessions(selected)}
+                        title="Encerrar sessões ativas"
+                        aria-label="Encerrar sessões ativas"
+                      >
+                        <LogOut className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeleteTarget(selected)}
+                        title="Excluir usuário"
+                        aria-label="Excluir usuário"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {!selected ? (
