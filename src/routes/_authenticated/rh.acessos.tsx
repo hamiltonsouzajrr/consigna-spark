@@ -6,8 +6,11 @@ import { toast } from "sonner";
 import {
   Search, ShieldCheck, Save, Loader2, UserCog, IdCard, Plus, Pencil, Trash2,
   ShieldAlert, Download, KeyRound, Lock, LockOpen, Copy, RefreshCw, History,
-  Users, Link2, CheckCircle2, AlertCircle, LogOut, Undo2, Trash,
+  Users, Link2, CheckCircle2, AlertCircle, LogOut, Undo2, Trash, MoreHorizontal,
 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
