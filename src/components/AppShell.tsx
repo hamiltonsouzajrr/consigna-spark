@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
 import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
 import { FollowupPopup } from "@/components/prospeccao/FollowupPopup";
+import { AmortizacaoPopup } from "@/components/prospeccao/AmortizacaoPopup";
 import { PromovidosPopup } from "@/components/prospeccao/PromovidosPopup";
 import { CompeticaoPopup } from "@/components/prospeccao/CompeticaoPopup";
 import { MetaTopIndicator } from "@/components/MetaTopIndicator";
