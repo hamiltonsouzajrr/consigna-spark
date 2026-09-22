@@ -32,3 +32,6 @@
 - [x] CRM: equilibrar pela fila visível, sem contar clientes antigos que não aparecem para trabalhar
 - [x] Radar: processar os trechos do Diário em paralelo para edições grandes não expirarem sem salvar promovidos
 - [ ] Reprocessar as edições recentes interrompidas e confirmar os novos promovidos nas carteiras
+
+## Painéis hierárquicos
+- [ ] Painéis de consultora e administrador: indicadores hierárquicos, cores semânticas e validação responsiva
