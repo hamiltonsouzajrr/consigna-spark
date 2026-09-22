@@ -415,6 +415,17 @@ export function EsteiraTab() {
               ))}
             </div>
 
+            <div className="space-y-2 rounded-lg border p-3">
+              <div>
+                <h4 className="text-sm font-semibold">O que as consultoras vão ver</h4>
+                <p className="text-xs text-muted-foreground">
+                  Nome, CPF, telefone, dia da ligação e margem aparecem sempre. O repasse nunca aparece para a
+                  consultora.
+                </p>
+              </div>
+              <CamposToggles campos={campos} onChange={setCampos} idPrefix="novo" />
+            </div>
+
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Nome do lote</Label>
