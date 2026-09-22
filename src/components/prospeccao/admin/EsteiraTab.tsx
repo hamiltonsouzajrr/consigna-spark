@@ -98,27 +98,73 @@ function ordenarContratos(lista: EsteiraContrato[]): EsteiraContrato[] {
   return [...lista].sort((a, b) => peso(a) - peso(b) || (a.proximo_contato_em ?? "9999").localeCompare(b.proximo_contato_em ?? "9999"));
 }
 
-function ConsultoraDetalhe({ consultantId }: { consultantId: string | null }) {
+function ConsultoraDetalhe({
+  consultantId,
+  contas,
+}: {
+  consultantId: string | null;
+  contas: { user_id: string; nome: string }[];
+}) {
+  const qc = useQueryClient();
   const listar = useServerFn(esteiraListar);
+  const remover = useServerFn(esteiraRemoverContrato);
+  const [verRemovidos, setVerRemovidos] = useState(false);
+  const [editando, setEditando] = useState<EsteiraContrato | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
   const q = useQuery({
-    queryKey: ["esteira", "detalhe", consultantId ?? "sem-responsavel"],
+    queryKey: ["esteira", "detalhe", consultantId ?? "sem-responsavel", verRemovidos],
     queryFn: () =>
       listar({
-        data: consultantId
-          ? { consultantId, somenteAtivos: false, limit: 500 }
-          : { semResponsavel: true, somenteAtivos: false, limit: 500 },
+        data: {
+          ...(consultantId ? { consultantId } : { semResponsavel: true }),
+          somenteAtivos: false,
+          somenteRemovidos: verRemovidos,
+          limit: 500,
+        },
       }),
     staleTime: 60_000,
   });
   const hoje = hojeISO();
 
+  const alternar = async (c: EsteiraContrato, removerAgora: boolean) => {
+    if (removerAgora && !window.confirm(`Remover ${c.nome} da carteira da consultora?`)) return;
+    setBusy(c.id);
+    try {
+      await remover({ data: { contratoId: c.id, remover: removerAgora } });
+      toast.success(removerAgora ? "Cliente removido da carteira" : "Cliente devolvido à carteira");
+      await qc.invalidateQueries({ queryKey: ["esteira"] });
+    } catch (e: any) {
+      toast.error("Não foi possível concluir", { description: e?.message });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const cabecalho = (
+    <div className="flex items-center justify-between gap-2 px-1 pb-2">
+      <p className="text-xs text-muted-foreground">
+        {verRemovidos ? "Clientes removidos da carteira" : "Clientes ativos na carteira"}
+      </p>
+      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setVerRemovidos((v) => !v)}>
+        <Eye className="mr-1 h-3.5 w-3.5" /> {verRemovidos ? "Ver ativos" : "Ver removidos"}
+      </Button>
+    </div>
+  );
+
   if (q.isLoading) return <p className="p-3 text-sm text-muted-foreground">Carregando contratos…</p>;
   if (q.isError) return <p className="p-3 text-sm text-rose-600">Não foi possível carregar os contratos.</p>;
   const lista = ordenarContratos(q.data ?? []);
-  if (!lista.length) return <p className="p-3 text-sm text-muted-foreground">Nenhum contrato nesta carteira.</p>;
 
   return (
     <div className="space-y-1 p-2">
+      {cabecalho}
+      <EditarContratoDialog contrato={editando} contas={contas} onClose={() => setEditando(null)} />
+      {!lista.length && (
+        <p className="p-1 text-sm text-muted-foreground">
+          {verRemovidos ? "Nenhum cliente removido." : "Nenhum contrato nesta carteira."}
+        </p>
+      )}
       {lista.map((c) => {
         const atrasado = c.acompanhamento_ativo && c.proximo_contato_em && c.proximo_contato_em < hoje;
         const ehHoje = c.acompanhamento_ativo && c.proximo_contato_em === hoje;
