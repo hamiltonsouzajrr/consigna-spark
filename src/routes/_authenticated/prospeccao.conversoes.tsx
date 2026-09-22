@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowLeft, Plus, Trash2, Pencil, CalendarClock, Wallet, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { CarteiraTabs } from "@/components/prospeccao/CarteiraTabs";
+import { ClientesPlanilhaCards } from "@/components/prospeccao/ClientesPlanilhaCards";
 import {
   listarConversoes,
   criarConversao,
