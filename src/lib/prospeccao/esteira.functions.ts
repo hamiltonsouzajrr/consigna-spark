@@ -381,10 +381,11 @@ export const esteiraMetricas = createServerFn({ method: "GET" })
       contatosMesPorNome.set(nome, (contatosMesPorNome.get(nome) ?? 0) + 1);
     }
 
-    const agrupado = new Map<string, { total: number; pendentes: number }>();
+    const agrupado = new Map<string, { consultant_id: string | null; total: number; pendentes: number }>();
     for (const r of rows ?? []) {
       const nome = r.consultora || "Sem responsável";
-      const g = agrupado.get(nome) ?? { total: 0, pendentes: 0 };
+      const g = agrupado.get(nome) ?? { consultant_id: r.consultant_id ?? null, total: 0, pendentes: 0 };
+      if (!g.consultant_id && r.consultant_id) g.consultant_id = r.consultant_id;
       g.total += 1;
       if (r.acompanhamento_ativo && r.proximo_contato_em && r.proximo_contato_em <= hoje0) g.pendentes += 1;
       agrupado.set(nome, g);
