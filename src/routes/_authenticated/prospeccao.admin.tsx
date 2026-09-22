@@ -28,6 +28,7 @@ import {
   Share2,
   Layers,
   ShieldCheck,
+  PiggyBank,
 } from "lucide-react";
 import {
   getProspectConsultants,
