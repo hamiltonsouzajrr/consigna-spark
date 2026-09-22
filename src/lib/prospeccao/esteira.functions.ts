@@ -153,6 +153,15 @@ async function sincronizarTarefa(db: any, contrato: any) {
   });
 }
 
+async function obterPrazoEfetivo(db: any, contrato: { id: string; prazo: number | null }) {
+  const { data } = await db
+    .from("esteira_ajustes_consultora")
+    .select("prazo")
+    .eq("contrato_id", contrato.id)
+    .maybeSingle();
+  return data ? data.prazo : contrato.prazo;
+}
+
 export const esteiraConsultoras = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ user_id: string; nome: string; email: string | null }[]> => {
@@ -467,7 +476,8 @@ export const esteiraRegistrarContato = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
 
-    const limite = limiteAcompanhamento(contrato.data_venda, contrato.prazo);
+    const prazoEfetivo = await obterPrazoEfetivo(db, contrato);
+    const limite = limiteAcompanhamento(contrato.data_venda, prazoEfetivo);
     const base = hoje();
     const proximo = proximaData(contrato.dia_amortizacao, new Date(base.getTime() + 24 * 60 * 60 * 1000), limite);
     const ativo = proximo !== null;
@@ -490,7 +500,8 @@ export const esteiraEncerrarAcompanhamento = createServerFn({ method: "POST" })
       throw new Error("Contrato de outra consultora.");
     let proximo = contrato.proximo_contato_em;
     if (data.ativo && !proximo) {
-      proximo = proximaData(contrato.dia_amortizacao, hoje(), limiteAcompanhamento(contrato.data_venda, contrato.prazo));
+      const prazoEfetivo = await obterPrazoEfetivo(db, contrato);
+      proximo = proximaData(contrato.dia_amortizacao, hoje(), limiteAcompanhamento(contrato.data_venda, prazoEfetivo));
     }
     await db
       .from("esteira_contratos")
@@ -724,7 +735,8 @@ export const esteiraRemoverContrato = createServerFn({ method: "POST" })
       return { ok: true, removido: true };
     }
 
-    const limite = limiteAcompanhamento(contrato.data_venda, contrato.prazo);
+    const prazoEfetivo = await obterPrazoEfetivo(db, contrato);
+    const limite = limiteAcompanhamento(contrato.data_venda, prazoEfetivo);
     const proximo = contrato.proximo_contato_em ?? proximaData(contrato.dia_amortizacao, hoje(), limite);
     await db
       .from("esteira_contratos")
