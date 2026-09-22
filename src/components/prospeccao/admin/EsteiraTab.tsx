@@ -66,8 +66,14 @@ export function EsteiraTab() {
         },
       });
       toast.success(`${r.salvos} contrato(s) na esteira`, {
-        description: r.semResponsavel ? `${r.semResponsavel} sem responsável definido` : "Lembretes de amortização criados",
+        description: [
+          r.duplicados ? `${r.duplicados} linha(s) repetida(s) na planilha foram ignoradas` : null,
+          r.semResponsavel ? `${r.semResponsavel} sem responsável definido` : "Lembretes de amortização criados",
+        ]
+          .filter(Boolean)
+          .join(" · "),
       });
+
       setLinhas([]);
       setArquivo("");
       qc.invalidateQueries({ queryKey: ["esteira"] });
