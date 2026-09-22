@@ -20,7 +20,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ArrowLeft, Phone, PiggyBank, CalendarClock, CheckCircle2, BellOff, Bell, History } from "lucide-react";
-import { whatsappLink } from "@/lib/prospeccao/constants";
 import {
   esteiraListar,
   esteiraRegistrarContato,
@@ -229,7 +228,6 @@ function Page() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            {contato && whatsappLink(contato.cpf) && null}
             <div className="grid grid-cols-2 gap-2">
               {RESULTADOS.map((r) => (
                 <Button
