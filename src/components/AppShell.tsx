@@ -225,6 +225,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <HorariosOuroDialog />
       <HorariosOuroReminder />
       {!isAdmin && <FollowupPopup />}
+      {!isAdmin && <AmortizacaoPopup />}
       {!isAdmin && <PromovidosPopup />}
       <CompeticaoPopup />
 
