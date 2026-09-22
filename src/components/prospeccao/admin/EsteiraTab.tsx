@@ -83,10 +83,10 @@ export function EsteiraTab() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <RhStatCard title="Contratos na esteira" value={m?.total ?? 0} icon={FileSpreadsheet} />
-        <RhStatCard title="Ligações de hoje" value={m?.vencendoHoje ?? 0} icon={Phone} />
-        <RhStatCard title="Atrasadas" value={m?.atrasados ?? 0} icon={AlertTriangle} />
-        <RhStatCard title="Amortizações no mês" value={m?.amortizacoesMes ?? 0} icon={PiggyBank} />
+        <RhStatCard label="Contratos na esteira" value={m?.total ?? 0} icon={FileSpreadsheet} />
+        <RhStatCard label="Ligações de hoje" value={m?.vencendoHoje ?? 0} icon={Phone} tone="sky" />
+        <RhStatCard label="Atrasadas" value={m?.atrasados ?? 0} icon={AlertTriangle} tone="rose" />
+        <RhStatCard label="Amortizações no mês" value={m?.amortizacoesMes ?? 0} icon={PiggyBank} tone="emerald" />
       </div>
 
       <Card className="space-y-4 p-4">
