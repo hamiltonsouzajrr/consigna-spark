@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, Trash2, Pencil, CalendarClock, Wallet, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Pencil, CalendarClock, Wallet, CheckCircle2, Clock, XCircle, X } from "lucide-react";
 import { CarteiraTabs } from "@/components/prospeccao/CarteiraTabs";
 import { ClientesPlanilhaCards } from "@/components/prospeccao/ClientesPlanilhaCards";
 import {
@@ -31,9 +31,11 @@ import {
   buscarLeadsCarteira,
   LEMBRETE_LABEL,
   LEMBRETE_OPCOES,
+  PRODUTO_LABEL,
+  PRODUTO_OPCOES,
   type Conversao,
   type LembreteOpcao,
-  type TipoMargemConversao,
+  type ProdutoConversao,
 } from "@/lib/prospeccao/conversoes.functions";
 
 export const Route = createFileRoute("/_authenticated/prospeccao/conversoes")({
@@ -43,12 +45,12 @@ export const Route = createFileRoute("/_authenticated/prospeccao/conversoes")({
       {
         name: "description",
         content:
-          "Registre o cliente convertido com data, valor liberado, prazo e parcela, marque se restou margem e agende quando retornar.",
+          "Registre o cliente convertido com os produtos vendidos, banco, valor liberado, prazo e parcela, marque se restou margem e agende quando retornar.",
       },
       { property: "og:title", content: "Minha carteira — conversões" },
       {
         property: "og:description",
-        content: "Clientes convertidos, valores, margem restante e lembretes de retorno.",
+        content: "Clientes convertidos, produtos vendidos, margem restante e lembretes de retorno.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -74,41 +76,53 @@ function numeroBr(v: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+const dec = (n: number | null | undefined) => (n != null ? String(n).replace(".", ",") : "");
+
+type ItemForm = {
+  produto: ProdutoConversao;
+  banco: string;
+  valorLiberado: string;
+  prazo: string;
+  valorParcela: string;
+  margemUsada: string;
+};
+
+const itemVazio = (): ItemForm => ({
+  produto: "emprestimo_novo",
+  banco: "",
+  valorLiberado: "",
+  prazo: "",
+  valorParcela: "",
+  margemUsada: "",
+});
+
 type FormState = {
   id?: string;
   leadId: string | null;
   tomadorId: string | null;
-  origem: "crm" | "tomadores_al";
+  origem: "crm" | "tomadores_al" | "manual";
   clienteNome: string;
   cpf: string;
   dataOperacao: string;
-  valorLiberado: string;
-  prazo: string;
-  valorParcela: string;
   margemRestante: "toda" | "restou";
-  tipoMargem: TipoMargemConversao;
-  margemUsada: string;
   margemRestanteValor: string;
   observacao: string;
   lembrete: LembreteOpcao | "manter";
+  itens: ItemForm[];
 };
 
 const vazio = (): FormState => ({
   leadId: null,
   tomadorId: null,
-  origem: "crm",
+  origem: "manual",
   clienteNome: "",
   cpf: "",
   dataOperacao: hojeISO(),
-  valorLiberado: "",
-  prazo: "",
-  valorParcela: "",
   margemRestante: "toda",
-  tipoMargem: "emprestimo",
-  margemUsada: "",
   margemRestanteValor: "",
   observacao: "",
   lembrete: "1m",
+  itens: [itemVazio()],
 });
 
 const STATUS_BADGE: Record<string, { label: string; icon: typeof Clock; cls: string }> = {
@@ -149,11 +163,29 @@ function Page() {
     return { qtd: doMes.length, valor: doMes.reduce((s, i) => s + i.valor_liberado, 0) };
   }, [itens]);
 
+  const totaisForm = useMemo(() => {
+    const valor = form.itens.reduce((s, i) => s + (numeroBr(i.valorLiberado) ?? 0), 0);
+    const margem = form.itens.reduce((s, i) => s + (numeroBr(i.margemUsada) ?? 0), 0);
+    return { valor, margem };
+  }, [form.itens]);
+
+  function setItem(idx: number, patch: Partial<ItemForm>) {
+    setForm((f) => ({ ...f, itens: f.itens.map((it, i) => (i === idx ? { ...it, ...patch } : it)) }));
+  }
+
   const salvar = useMutation({
     mutationFn: async () => {
-      const valor = numeroBr(form.valorLiberado);
       if (!form.clienteNome.trim()) throw new Error("Informe o nome do cliente");
-      if (valor == null || valor <= 0) throw new Error("Informe o valor liberado");
+      const linhas = form.itens.map((it) => ({
+        produto: it.produto,
+        banco: it.banco.trim() || null,
+        valorLiberado: numeroBr(it.valorLiberado) ?? 0,
+        prazo: it.prazo ? Number(it.prazo.replace(/\D/g, "")) : null,
+        valorParcela: numeroBr(it.valorParcela),
+        margemUsada: numeroBr(it.margemUsada) ?? 0,
+      }));
+      if (!linhas.length) throw new Error("Adicione pelo menos um produto");
+      if (linhas.every((l) => l.valorLiberado <= 0)) throw new Error("Informe o valor liberado de cada produto");
       const payload = {
         leadId: form.leadId,
         tomadorId: form.tomadorId,
@@ -161,15 +193,11 @@ function Page() {
         clienteNome: form.clienteNome.trim(),
         cpf: form.cpf || null,
         dataOperacao: form.dataOperacao,
-        valorLiberado: valor,
-        prazo: form.prazo ? Number(form.prazo.replace(/\D/g, "")) : null,
-        valorParcela: numeroBr(form.valorParcela),
         margemRestante: form.margemRestante === "restou",
-        tipoMargem: form.tipoMargem,
-        margemUsada: numeroBr(form.margemUsada) ?? 0,
         margemRestanteValor: form.margemRestante === "restou" ? numeroBr(form.margemRestanteValor) : null,
         observacao: form.observacao.trim() || null,
         lembrete: form.lembrete,
+        itens: linhas,
       };
       if (form.id) return atualizar({ data: { ...payload, id: form.id } });
       return criar({
@@ -198,6 +226,30 @@ function Page() {
   });
 
   function editar(c: Conversao) {
+    const linhas: ItemForm[] = c.itens.length
+      ? c.itens.map((i) => ({
+          produto: i.produto,
+          banco: i.banco ?? "",
+          valorLiberado: dec(i.valor_liberado),
+          prazo: i.prazo ? String(i.prazo) : "",
+          valorParcela: dec(i.valor_parcela),
+          margemUsada: dec(i.margem_usada),
+        }))
+      : [
+          {
+            produto:
+              c.tipo_margem === "cartao_credito"
+                ? "cartao_credito"
+                : c.tipo_margem === "cartao_beneficio"
+                  ? "cartao_beneficio"
+                  : "emprestimo_novo",
+            banco: "",
+            valorLiberado: dec(c.valor_liberado),
+            prazo: c.prazo ? String(c.prazo) : "",
+            valorParcela: dec(c.valor_parcela),
+            margemUsada: dec(c.margem_usada),
+          },
+        ];
     setForm({
       id: c.id,
       leadId: c.lead_id,
@@ -206,15 +258,11 @@ function Page() {
       clienteNome: c.cliente_nome,
       cpf: c.cpf ?? "",
       dataOperacao: c.data_operacao,
-      valorLiberado: String(c.valor_liberado).replace(".", ","),
-      prazo: c.prazo ? String(c.prazo) : "",
-      valorParcela: c.valor_parcela != null ? String(c.valor_parcela).replace(".", ",") : "",
       margemRestante: c.margem_restante ? "restou" : "toda",
-      tipoMargem: c.tipo_margem ?? "emprestimo",
-      margemUsada: c.margem_usada != null ? String(c.margem_usada).replace(".", ",") : "",
-      margemRestanteValor: c.margem_restante_valor != null ? String(c.margem_restante_valor).replace(".", ",") : "",
+      margemRestanteValor: dec(c.margem_restante_valor),
       observacao: c.observacao ?? "",
       lembrete: c.lembrete_em ? "manter" : "nenhum",
+      itens: linhas,
     });
     setAberto(true);
   }
@@ -229,7 +277,7 @@ function Page() {
           </Button>
           <h1 className="truncate text-2xl font-bold">Minha carteira — conversões</h1>
           <p className="text-sm text-muted-foreground">
-            Registre o cliente que fechou, o valor retirado e quando você quer ser lembrada de voltar.
+            Registre o cliente que fechou, todos os produtos vendidos e quando você quer ser lembrada de voltar.
           </p>
         </div>
         <Button
@@ -277,6 +325,7 @@ function Page() {
                     <p className="text-xs text-muted-foreground">
                       {fmtData(c.data_operacao)}
                       {data?.isAdmin && c.consultora_nome ? ` · ${c.consultora_nome}` : ""}
+                      {c.cliente_manual ? " · cliente avulso" : ""}
                     </p>
                   </div>
                   {st && (
@@ -286,24 +335,49 @@ function Page() {
                   )}
                 </div>
 
-                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
-                  <div className="rounded-md border bg-muted/30 px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Margem usada</p>
-                    <p className="text-sm font-semibold">{c.tipo_margem === "cartao_credito" ? "Cartão crédito" : c.tipo_margem === "cartao_beneficio" ? "Cartão benefício" : "Empréstimo"} · {c.margem_usada != null ? BRL.format(c.margem_usada) : "—"}</p>
-                  </div>
-                  <div className="rounded-md border bg-muted/30 px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Valor liberado</p>
+                <div className="mt-3 space-y-2">
+                  {(c.itens.length
+                    ? c.itens
+                    : [
+                        {
+                          id: c.id,
+                          produto: (c.tipo_margem === "cartao_credito"
+                            ? "cartao_credito"
+                            : c.tipo_margem === "cartao_beneficio"
+                              ? "cartao_beneficio"
+                              : "emprestimo_novo") as ProdutoConversao,
+                          banco: null,
+                          valor_liberado: c.valor_liberado,
+                          prazo: c.prazo,
+                          valor_parcela: c.valor_parcela,
+                          margem_usada: c.margem_usada ?? 0,
+                        },
+                      ]
+                  ).map((p) => (
+                    <div key={p.id} className="rounded-md border bg-muted/30 px-3 py-2">
+                      <p className="text-sm font-semibold">
+                        {PRODUTO_LABEL[p.produto]}
+                        {p.banco ? ` · ${p.banco}` : ""}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Liberado {BRL.format(p.valor_liberado)} · Prazo {p.prazo ? `${p.prazo}x` : "—"} · Parcela{" "}
+                        {p.valor_parcela != null ? BRL.format(p.valor_parcela) : "—"} · Margem{" "}
+                        {BRL.format(p.margem_usada)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  <div className="rounded-md border px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Total liberado</p>
                     <p className="text-sm font-semibold">{BRL.format(c.valor_liberado)}</p>
                   </div>
-                  <div className="rounded-md border bg-muted/30 px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Prazo</p>
-                    <p className="text-sm font-semibold">{c.prazo ? `${c.prazo}x` : "—"}</p>
+                  <div className="rounded-md border px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Margem usada</p>
+                    <p className="text-sm font-semibold">{c.margem_usada != null ? BRL.format(c.margem_usada) : "—"}</p>
                   </div>
-                  <div className="rounded-md border bg-muted/30 px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Parcela</p>
-                    <p className="text-sm font-semibold">{c.valor_parcela != null ? BRL.format(c.valor_parcela) : "—"}</p>
-                  </div>
-                  <div className="rounded-md border bg-muted/30 px-3 py-2">
+                  <div className="rounded-md border px-3 py-2">
                     <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Margem</p>
                     <p className="text-sm font-semibold">
                       {c.margem_restante
@@ -355,7 +429,8 @@ function Page() {
           <DialogHeader>
             <DialogTitle>{form.id ? "Editar conversão" : "Nova conversão"}</DialogTitle>
             <DialogDescription>
-              Os pontos da campanha entram somente depois que o gerente confirmar a venda.
+              Você pode registrar vários produtos na mesma conversão. Os pontos da campanha entram somente depois que o
+              gerente confirmar a venda.
             </DialogDescription>
           </DialogHeader>
 
@@ -366,7 +441,7 @@ function Page() {
                 value={form.clienteNome}
                 placeholder="Nome do cliente"
                 onChange={(e) => {
-                  setForm((f) => ({ ...f, clienteNome: e.target.value, leadId: null }));
+                  setForm((f) => ({ ...f, clienteNome: e.target.value, leadId: null, tomadorId: null, origem: "manual" }));
                   setTermoLead(e.target.value);
                 }}
               />
@@ -378,7 +453,13 @@ function Page() {
                       type="button"
                       className="block w-full truncate px-3 py-2 text-left text-sm hover:bg-muted"
                       onClick={() => {
-                        setForm((f) => ({ ...f, leadId: l.id, clienteNome: l.nome, cpf: l.cpf ?? "" }));
+                        setForm((f) => ({
+                          ...f,
+                          leadId: l.id,
+                          origem: "crm",
+                          clienteNome: l.nome,
+                          cpf: l.cpf ?? "",
+                        }));
                         setTermoLead("");
                       }}
                     >
@@ -387,8 +468,12 @@ function Page() {
                   ))}
                 </div>
               )}
-              {form.leadId && (
+              {form.leadId ? (
                 <Badge variant="secondary" className="mt-1">Cliente da sua carteira</Badge>
+              ) : (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Se o cliente não estiver na sua carteira, basta digitar o nome — será salvo como cliente avulso.
+                </p>
               )}
             </div>
 
@@ -405,41 +490,109 @@ function Page() {
                 <Label>CPF (opcional)</Label>
                 <Input value={form.cpf} onChange={(e) => setForm((f) => ({ ...f, cpf: e.target.value }))} />
               </div>
-              <div>
-                <Label>Valor liberado</Label>
-                <Input
-                  inputMode="decimal"
-                  placeholder="0,00"
-                  value={form.valorLiberado}
-                  onChange={(e) => setForm((f) => ({ ...f, valorLiberado: e.target.value }))}
-                />
+            </div>
+
+            <div className="space-y-3 rounded-md border p-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold">Produtos vendidos</Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setForm((f) => ({ ...f, itens: [...f.itens, itemVazio()] }))}
+                >
+                  <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar produto
+                </Button>
               </div>
-              <div>
-                <Label>Prazo (parcelas)</Label>
-                <Input
-                  inputMode="numeric"
-                  placeholder="96"
-                  value={form.prazo}
-                  onChange={(e) => setForm((f) => ({ ...f, prazo: e.target.value }))}
-                />
+
+              {form.itens.map((it, idx) => (
+                <div key={idx} className="space-y-2 rounded-md border bg-muted/20 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-muted-foreground">Produto {idx + 1}</span>
+                    {form.itens.length > 1 && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive"
+                        onClick={() => setForm((f) => ({ ...f, itens: f.itens.filter((_, i) => i !== idx) }))}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="col-span-2">
+                      <Label>Tipo de produto</Label>
+                      <Select value={it.produto} onValueChange={(v) => setItem(idx, { produto: v as ProdutoConversao })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {PRODUTO_OPCOES.map((p) => (
+                            <SelectItem key={p} value={p}>{PRODUTO_LABEL[p]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-2">
+                      <Label>Banco</Label>
+                      <Input
+                        placeholder="Ex.: Banese, C6, Daycoval"
+                        value={it.banco}
+                        onChange={(e) => setItem(idx, { banco: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label>Valor liberado</Label>
+                      <Input
+                        inputMode="decimal"
+                        placeholder="0,00"
+                        value={it.valorLiberado}
+                        onChange={(e) => setItem(idx, { valorLiberado: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label>Prazo (parcelas)</Label>
+                      <Input
+                        inputMode="numeric"
+                        placeholder="96"
+                        value={it.prazo}
+                        onChange={(e) => setItem(idx, { prazo: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label>Valor da parcela</Label>
+                      <Input
+                        inputMode="decimal"
+                        placeholder="0,00"
+                        value={it.valorParcela}
+                        onChange={(e) => setItem(idx, { valorParcela: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label>Margem usada</Label>
+                      <Input
+                        inputMode="decimal"
+                        placeholder="0,00"
+                        value={it.margemUsada}
+                        onChange={(e) => setItem(idx, { margemUsada: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <div className="flex flex-wrap gap-4 text-sm">
+                <span>
+                  Total liberado: <strong>{BRL.format(totaisForm.valor)}</strong>
+                </span>
+                <span>
+                  Margem usada: <strong>{BRL.format(totaisForm.margem)}</strong>
+                </span>
               </div>
-              <div>
-                <Label>Valor da parcela</Label>
-                <Input
-                  inputMode="decimal"
-                  placeholder="0,00"
-                  value={form.valorParcela}
-                  onChange={(e) => setForm((f) => ({ ...f, valorParcela: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label>Tipo de margem usada</Label>
-                <Select value={form.tipoMargem} onValueChange={(v) => setForm((f) => ({ ...f, tipoMargem: v as TipoMargemConversao }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="emprestimo">Empréstimo</SelectItem><SelectItem value="cartao_credito">Cartão de crédito</SelectItem><SelectItem value="cartao_beneficio">Cartão benefício</SelectItem></SelectContent></Select>
-              </div>
-              <div>
-                <Label>Margem usada</Label>
-                <Input inputMode="decimal" placeholder="0,00" value={form.margemUsada} onChange={(e) => setForm((f) => ({ ...f, margemUsada: e.target.value }))} />
-              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Margem</Label>
                 <Select
@@ -454,7 +607,7 @@ function Page() {
                 </Select>
               </div>
               {form.margemRestante === "restou" && (
-                <div className="col-span-2">
+                <div>
                   <Label>Margem que sobrou (opcional)</Label>
                   <Input
                     inputMode="decimal"
