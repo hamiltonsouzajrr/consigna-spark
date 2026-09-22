@@ -187,12 +187,31 @@ export const listarConversoes = createServerFn({ method: "GET" })
 
     // Status da venda (aguardando/confirmada/recusada) e nome da consultora.
     const ids = list.map((r) => r.id);
-    const [{ data: vendas }, { data: perfis }] = await Promise.all([
+    const [{ data: vendas }, { data: perfis }, { data: itensRows }] = await Promise.all([
       db.from("prospect_vendas").select("ref_id,status").eq("ref_tabela", "prospect_conversoes").in("ref_id", ids),
       isAdmin
         ? db.from("profiles").select("user_id,nome_completo").in("user_id", [...new Set(list.map((r) => r.user_id))])
         : Promise.resolve({ data: [] }),
+      db
+        .from("prospect_conversao_itens")
+        .select("id,conversao_id,produto,banco,valor_liberado,prazo,valor_parcela,margem_usada,ordem")
+        .in("conversao_id", ids)
+        .order("ordem", { ascending: true }),
     ]);
+    const itensPorConversao = new Map<string, ConversaoItem[]>();
+    for (const i of (itensRows ?? []) as any[]) {
+      const arr = itensPorConversao.get(i.conversao_id) ?? [];
+      arr.push({
+        id: i.id,
+        produto: i.produto,
+        banco: i.banco,
+        valor_liberado: Number(i.valor_liberado ?? 0),
+        prazo: i.prazo,
+        valor_parcela: i.valor_parcela != null ? Number(i.valor_parcela) : null,
+        margem_usada: Number(i.margem_usada ?? 0),
+      });
+      itensPorConversao.set(i.conversao_id, arr);
+    }
     const statusPorRef = new Map<string, string>();
     for (const v of (vendas ?? []) as any[]) {
       const atual = statusPorRef.get(v.ref_id);
