@@ -32,13 +32,40 @@ export function dataLembrete(op: LembreteOpcao, base: Date = new Date()): string
   return d.toISOString();
 }
 
+export type ProdutoConversao = "emprestimo_novo" | "cartao_credito" | "cartao_beneficio" | "refinanciamento";
+
+export const PRODUTO_LABEL: Record<ProdutoConversao, string> = {
+  emprestimo_novo: "Empréstimo novo",
+  cartao_credito: "Cartão de crédito",
+  cartao_beneficio: "Cartão benefício",
+  refinanciamento: "Refinanciamento",
+};
+
+export const PRODUTO_OPCOES: ProdutoConversao[] = [
+  "emprestimo_novo",
+  "cartao_credito",
+  "cartao_beneficio",
+  "refinanciamento",
+];
+
+export type ConversaoItem = {
+  id: string;
+  produto: ProdutoConversao;
+  banco: string | null;
+  valor_liberado: number;
+  prazo: number | null;
+  valor_parcela: number | null;
+  margem_usada: number;
+};
+
 export type Conversao = {
   id: string;
   user_id: string;
   consultora_nome: string | null;
   lead_id: string | null;
   tomador_id: string | null;
-  origem: "crm" | "tomadores_al";
+  origem: "crm" | "tomadores_al" | "manual";
+  cliente_manual: boolean;
   cliente_nome: string;
   cpf: string | null;
   data_operacao: string;
@@ -52,28 +79,68 @@ export type Conversao = {
   observacao: string | null;
   lembrete_em: string | null;
   venda_status: "pendente" | "confirmada" | "recusada" | null;
+  itens: ConversaoItem[];
   created_at: string;
 };
 
 const TITULO_LEMBRETE = "Retornar ao cliente — pode ter margem nova";
 
-const conversaoSchema = z.object({
-  leadId: z.string().uuid().optional().nullable(),
-  tomadorId: z.string().uuid().optional().nullable(),
-  origem: z.enum(["crm", "tomadores_al"]).default("crm"),
-  clienteNome: z.string().trim().min(2).max(200),
-  cpf: z.string().trim().max(20).optional().nullable(),
-  dataOperacao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+const itemSchema = z.object({
+  produto: z.enum(["emprestimo_novo", "cartao_credito", "cartao_beneficio", "refinanciamento"]),
+  banco: z.string().trim().max(120).optional().nullable(),
   valorLiberado: z.number().min(0).max(100_000_000),
   prazo: z.number().int().min(1).max(240).optional().nullable(),
   valorParcela: z.number().min(0).max(10_000_000).optional().nullable(),
-  margemRestante: z.boolean(),
-  tipoMargem: z.enum(["emprestimo", "cartao_credito", "cartao_beneficio"]),
   margemUsada: z.number().min(0).max(10_000_000),
+});
+
+const conversaoSchema = z.object({
+  leadId: z.string().uuid().optional().nullable(),
+  tomadorId: z.string().uuid().optional().nullable(),
+  origem: z.enum(["crm", "tomadores_al", "manual"]).default("crm"),
+  clienteNome: z.string().trim().min(2).max(200),
+  cpf: z.string().trim().max(20).optional().nullable(),
+  dataOperacao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  margemRestante: z.boolean(),
   margemRestanteValor: z.number().min(0).max(10_000_000).optional().nullable(),
   observacao: z.string().trim().max(1000).optional().nullable(),
   lembrete: z.enum(["nenhum", "2s", "3s", "1m", "2m", "3m"]),
+  itens: z.array(itemSchema).min(1).max(12),
 });
+
+/** Totais do registro-pai: soma dos produtos, mantendo dashboards e vendas iguais. */
+function totaisDosItens(itens: z.infer<typeof itemSchema>[]) {
+  const valorLiberado = itens.reduce((s, i) => s + (i.valorLiberado ?? 0), 0);
+  const margemUsada = itens.reduce((s, i) => s + (i.margemUsada ?? 0), 0);
+  const valorParcela = itens.reduce((s, i) => s + (i.valorParcela ?? 0), 0);
+  const principal = itens[0]!;
+  const tipoMargem: TipoMargemConversao =
+    principal.produto === "cartao_credito"
+      ? "cartao_credito"
+      : principal.produto === "cartao_beneficio"
+        ? "cartao_beneficio"
+        : "emprestimo";
+  return {
+    valorLiberado,
+    margemUsada,
+    valorParcela: valorParcela > 0 ? valorParcela : null,
+    prazo: principal.prazo ?? null,
+    tipoMargem,
+  };
+}
+
+function linhasItens(conversaoId: string, itens: z.infer<typeof itemSchema>[]) {
+  return itens.map((i, idx) => ({
+    conversao_id: conversaoId,
+    produto: i.produto,
+    banco: i.banco?.trim() || null,
+    valor_liberado: i.valorLiberado,
+    prazo: i.prazo ?? null,
+    valor_parcela: i.valorParcela ?? null,
+    margem_usada: i.margemUsada,
+    ordem: idx,
+  }));
+}
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
