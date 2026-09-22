@@ -293,17 +293,30 @@ export function EsteiraTab() {
       {m && m.porConsultora.length > 0 && (
         <Card className="p-4">
           <h3 className="mb-3 font-semibold">Acompanhamento por consultora</h3>
+          <p className="mb-3 text-xs text-muted-foreground">Toque na consultora para ver os contratos dela.</p>
           <div className="space-y-1">
-            {m.porConsultora.map((c) => (
-              <div key={c.nome} className="flex items-center gap-3 rounded-md border p-2 text-sm">
-                <span className="min-w-0 flex-1 truncate">{c.nome}</span>
-                <Badge variant="outline">{c.total} contratos</Badge>
-                <Badge variant="outline" className={c.pendentes ? "border-amber-300 text-amber-700" : ""}>
-                  {c.pendentes} a ligar
-                </Badge>
-                <Badge variant="outline">{c.contatos_mes} ligações no mês</Badge>
-              </div>
-            ))}
+            {m.porConsultora.map((c) => {
+              const chave = c.consultant_id ?? "sem-responsavel";
+              const estaAberta = aberta === chave;
+              return (
+                <div key={c.nome} className="overflow-hidden rounded-md border">
+                  <button
+                    type="button"
+                    onClick={() => setAberta(estaAberta ? null : chave)}
+                    className="flex w-full items-center gap-3 p-2 text-left text-sm transition-colors hover:bg-muted/50"
+                  >
+                    <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${estaAberta ? "" : "-rotate-90"}`} />
+                    <span className="min-w-0 flex-1 truncate font-medium">{c.nome}</span>
+                    <Badge variant="outline">{c.total} contratos</Badge>
+                    <Badge variant="outline" className={c.pendentes ? "border-amber-300 text-amber-700" : ""}>
+                      {c.pendentes} a ligar
+                    </Badge>
+                    <Badge variant="outline">{c.contatos_mes} ligações no mês</Badge>
+                  </button>
+                  {estaAberta && <ConsultoraDetalhe consultantId={c.consultant_id} />}
+                </div>
+              );
+            })}
           </div>
         </Card>
       )}
