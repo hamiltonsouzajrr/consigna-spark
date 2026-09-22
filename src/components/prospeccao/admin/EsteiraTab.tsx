@@ -197,6 +197,40 @@ function ConsultoraDetalhe({
                 ? `Última: ${c.ultimo_contato_em.slice(0, 10)}${c.ultimo_resultado ? ` · ${RESULTADO_LABEL[c.ultimo_resultado] ?? c.ultimo_resultado}` : ""}`
                 : "Nunca contatado"}
             </span>
+            <div className="flex shrink-0 items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                title="Editar cliente"
+                onClick={() => setEditando(c)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              {verRemovidos ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-emerald-600"
+                  title="Devolver à carteira"
+                  disabled={busy === c.id}
+                  onClick={() => alternar(c, false)}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-rose-600"
+                  title="Remover da carteira"
+                  disabled={busy === c.id}
+                  onClick={() => alternar(c, true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         );
       })}
