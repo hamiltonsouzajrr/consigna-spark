@@ -55,7 +55,7 @@ export async function applyAssignments(
       const chunk = leadIds.slice(i, i + 500);
       const { error } = await supabaseAdmin
         .from("prospect_leads")
-        .update({ consultant_id: cons, ...extra } as any)
+        .update({ consultant_id: cons, atribuido_em: new Date().toISOString(), ...extra } as any)
         .in("id", chunk);
       if (error) throw new Error(error.message);
     }

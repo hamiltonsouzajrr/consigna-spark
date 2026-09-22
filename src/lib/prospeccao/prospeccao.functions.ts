@@ -193,7 +193,7 @@ export const adminAssignLeads = createServerFn({ method: "POST" })
     }
     const { error } = await supabaseAdmin
       .from("prospect_leads")
-      .update({ consultant_id: data.consultantId } as any)
+      .update({ consultant_id: data.consultantId, atribuido_em: new Date().toISOString() } as any)
       .in("id", data.leadIds);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -245,7 +245,7 @@ export const refillMyQueue = createServerFn({ method: "POST" })
     const candidateIds = pool.map((r: any) => r.id).slice(0, need);
     const { data: claimedRows, error: claimErr } = await supabaseAdmin
       .from("prospect_leads")
-      .update({ consultant_id: userId } as any)
+      .update({ consultant_id: userId, atribuido_em: new Date().toISOString() } as any)
       .in("id", candidateIds)
       .is("consultant_id", null)
       .select("id");
@@ -270,7 +270,7 @@ export const markLeadOpened = createServerFn({ method: "POST" })
     // consultant owns (or an unassigned one, which we also claim on open).
     const { data: updated, error } = await supabaseAdmin
       .from("prospect_leads")
-      .update({ opened_at: new Date().toISOString(), consultant_id: userId } as any)
+      .update({ opened_at: new Date().toISOString(), consultant_id: userId, atribuido_em: new Date().toISOString() } as any)
       .eq("id", data.leadId)
       .is("opened_at", null)
       .select("id");
@@ -305,7 +305,7 @@ export const markLeadOpened = createServerFn({ method: "POST" })
     const candidateIds = pool.map((r: any) => r.id).slice(0, need);
     const { data: claimedRows } = await supabaseAdmin
       .from("prospect_leads")
-      .update({ consultant_id: userId } as any)
+      .update({ consultant_id: userId, atribuido_em: new Date().toISOString() } as any)
       .in("id", candidateIds)
       .is("consultant_id", null)
       .select("id");
@@ -330,7 +330,7 @@ async function applyAssignments(
       const chunk = leadIds.slice(i, i + 500);
       const { error } = await supabaseAdmin
         .from("prospect_leads")
-        .update({ consultant_id: cons } as any)
+        .update({ consultant_id: cons, atribuido_em: new Date().toISOString() } as any)
         .in("id", chunk);
       if (error) throw new Error(error.message);
     }

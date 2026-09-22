@@ -160,6 +160,7 @@ export const assignBatchToConsultant = createServerFn({ method: "POST" })
         cidade: findField(row, ["cidade", "city"]),
         cpf: findField(row, ["cpf", "documento"]),
         consultant_id: consultantId,
+        atribuido_em: consultantId ? new Date().toISOString() : null,
         created_by: userId,
         status: "novo" as const,
         origem: "planilha_importada",
