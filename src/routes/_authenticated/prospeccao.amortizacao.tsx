@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ArrowLeft, Phone, PiggyBank, CalendarClock, CheckCircle2, BellOff, Bell, History } from "lucide-react";
+import { CarteiraTabs } from "@/components/prospeccao/CarteiraTabs";
 import {
   esteiraListar,
   esteiraRegistrarContato,
