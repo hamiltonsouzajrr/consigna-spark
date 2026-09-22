@@ -91,7 +91,7 @@ export function ProspeccaoCharts() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Leads por consultora</CardTitle>
           <CardDescription>
@@ -103,7 +103,7 @@ export function ProspeccaoCharts() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Follow-ups por origem</CardTitle>
           <CardDescription>De onde vêm os acompanhamentos agendados.</CardDescription>
@@ -133,7 +133,7 @@ export function ProspeccaoCharts() {
         </CardContent>
       </Card>
 
-      <Card className="lg:col-span-2">
+      <Card className="shadow-sm lg:col-span-2">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Evolução da minha carteira</CardTitle>
           <CardDescription>Tomadores atribuídos a você por dia (14 dias).</CardDescription>

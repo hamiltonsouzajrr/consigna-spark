@@ -83,7 +83,7 @@ export function AdminCharts() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Leads por consultora</CardTitle>
           <CardDescription>Promovidos distribuídos, top 10.</CardDescription>
@@ -93,7 +93,7 @@ export function AdminCharts() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Follow-ups por consultora</CardTitle>
           <CardDescription>Tarefas de acompanhamento registradas, top 10.</CardDescription>
@@ -103,7 +103,7 @@ export function AdminCharts() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Tomadores por origem</CardTitle>
           <CardDescription>Distribuição do estoque por órgão.</CardDescription>
@@ -133,7 +133,7 @@ export function AdminCharts() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Evolução da carteira</CardTitle>
           <CardDescription>Tomadores atribuídos por dia (14 dias).</CardDescription>

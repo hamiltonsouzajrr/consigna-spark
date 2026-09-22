@@ -27,7 +27,7 @@ function Numero({
   tone?: string;
 }) {
   return (
-    <div className="rounded-lg border bg-card p-3">
+    <div className="min-h-24 rounded-lg border border-border/70 bg-card/80 p-3 shadow-sm">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className={`text-2xl font-bold tabular-nums ${tone ?? ""}`}>
         {typeof value === "number" ? nf.format(value) : value}
@@ -46,9 +46,9 @@ function Bloco({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="p-4">
+    <Card className="p-4 shadow-sm sm:p-5">
       <div className="mb-3 flex items-start gap-2">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
           <Icon className="h-4.5 w-4.5" />
         </span>
         <div className="min-w-0">
@@ -108,6 +108,7 @@ export function ResumoGeralTab() {
   const entregues = r.crm.atribuidos + r.tomadores.atribuidos + r.promovidos.atribuidos;
   const trabalhados = r.crm.trabalhados + r.tomadores.trabalhados + r.promovidos.contatados;
   const vendidos = r.crm.ganhos + r.tomadores.convertidos;
+  const aproveitamento = entregues ? Math.round((trabalhados / entregues) * 100) : 0;
 
   const usoCrm = r.crm.total ? Math.round((r.crm.trabalhados / r.crm.total) * 100) : 0;
   const usoTomadores = r.tomadores.total
@@ -129,34 +130,55 @@ export function ResumoGeralTab() {
         </Button>
       </div>
 
-      <Bloco
-        titulo="Acompanhamento ao vivo"
-        descricao="Somando CRM, Tomadores AL e recém-promovidos, sem precisar de entrega manual."
-        icon={TrendingUp}
-      >
-        <div className="grid grid-cols-3 gap-2">
-          <Numero label="Entregues às consultoras" value={entregues} />
-          <Numero
-            label="Já trabalhados"
-            value={trabalhados}
-            tone="text-emerald-600 dark:text-emerald-400"
-            hint={entregues ? `${Math.round((trabalhados / entregues) * 100)}% do que foi entregue` : undefined}
-          />
-          <Numero
-            label="Vendidos (fechados)"
-            value={vendidos}
-            tone="text-emerald-600 dark:text-emerald-400"
-            hint={trabalhados ? `${Math.round((vendidos / trabalhados) * 100)}% dos trabalhados` : undefined}
-          />
+      <Card className="overflow-hidden border-sidebar-border bg-sidebar text-sidebar-foreground shadow-lg">
+        <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(360px,1fr)]">
+          <div className="flex min-h-52 flex-col justify-between">
+            <div className="flex items-start gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                <TrendingUp className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold">Acompanhamento ao vivo</p>
+                <p className="text-xs text-sidebar-foreground/65">CRM, Tomadores AL e recém-promovidos</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-sidebar-foreground/65">Clientes entregues às consultoras</p>
+              <p className="mt-1 text-4xl font-extrabold tabular-nums sm:text-5xl">{nf.format(entregues)}</p>
+              <div className="mt-5 flex items-center justify-between text-xs">
+                <span>{nf.format(trabalhados)} já trabalhados</span>
+                <span className="font-semibold text-success">{aproveitamento}% utilizado</span>
+              </div>
+              <div className="mt-2 h-3 overflow-hidden rounded-full bg-sidebar-accent">
+                <div className="h-full rounded-full bg-success transition-all" style={{ width: `${Math.min(100, aproveitamento)}%` }} />
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg border border-sidebar-border bg-sidebar-accent/70 p-4">
+              <p className="text-xs text-sidebar-foreground/65">Já trabalhados</p>
+              <p className="mt-1 text-3xl font-bold tabular-nums">{nf.format(trabalhados)}</p>
+              <p className="mt-2 text-xs text-success">{aproveitamento}% do entregue</p>
+            </div>
+            <div className="rounded-lg border border-sidebar-border bg-sidebar-accent/70 p-4">
+              <p className="text-xs text-sidebar-foreground/65">Vendas fechadas</p>
+              <p className="mt-1 text-3xl font-bold tabular-nums">{nf.format(vendidos)}</p>
+              <p className="mt-2 text-xs text-success">{trabalhados ? Math.round((vendidos / trabalhados) * 100) : 0}% dos trabalhados</p>
+            </div>
+            <div className="col-span-2 rounded-lg border border-sidebar-border bg-sidebar-accent/45 p-4">
+              <p className="text-xs text-sidebar-foreground/65">Valor liberado confirmado</p>
+              <p className="mt-1 text-2xl font-bold tabular-nums">{brl(Number(r.vendas.valor_total ?? 0))}</p>
+            </div>
+          </div>
         </div>
-      </Bloco>
+      </Card>
 
       <Bloco
         titulo="Clientes do CRM (prospecção)"
         descricao="Tudo que já entrou no sistema e quanto já foi usado."
         icon={Database}
       >
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
           <Numero label="Cadastrados no sistema" value={r.crm.total} />
           <Numero label="Já trabalhados" value={r.crm.trabalhados} tone="text-emerald-600 dark:text-emerald-400"
             hint={`${usoCrm}% da base`} />
@@ -174,7 +196,7 @@ export function ResumoGeralTab() {
           <Progress value={usoCrm} className="h-2" />
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
           <Numero label="Fechou (venda)" value={r.crm.ganhos} tone="text-emerald-600 dark:text-emerald-400" />
           <Numero label="Não quer agora" value={r.crm.perdidos} />
           <Numero label="Falados hoje" value={r.crm.contatados_hoje} />
