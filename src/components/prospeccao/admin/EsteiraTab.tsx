@@ -440,6 +440,8 @@ export function EsteiraTab() {
         )}
       </Card>
 
+      <LotesCard />
+
       {m && m.porConsultora.length > 0 && (
         <Card className="p-4">
           <h3 className="mb-3 font-semibold">Acompanhamento por consultora</h3>
