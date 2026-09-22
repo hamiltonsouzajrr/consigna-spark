@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ArrowLeft, Plus, Trash2, Pencil, CalendarClock, Wallet, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { CarteiraTabs } from "@/components/prospeccao/CarteiraTabs";
 import {
   listarConversoes,
   criarConversao,
@@ -219,6 +220,7 @@ function Page() {
 
   return (
     <AppShell>
+      <CarteiraTabs />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <Button asChild variant="ghost" size="sm" className="-ml-2 mb-1">

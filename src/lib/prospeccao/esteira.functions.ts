@@ -27,6 +27,10 @@ export type EsteiraContrato = {
   ultimo_contato_em: string | null;
   ultimo_resultado: string | null;
   contatos: number;
+  telefone: string | null;
+  margem_usada: number | null;
+  margem_restante_valor: number | null;
+  tipo_margem: string | null;
 };
 
 export type EsteiraContato = {
@@ -233,13 +237,48 @@ export const esteiraListar = createServerFn({ method: "GET" })
       }
     }
 
+    // Margem usada/restante e telefone vêm da carteira de conversões e do CRM,
+    // casados pelo CPF do cliente.
+    const cpfs = [...new Set((rows ?? []).map((r: any) => String(r.cpf ?? "").replace(/\D/g, "")).filter(Boolean))];
+    const margens = new Map<string, { usada: number | null; restante: number | null; tipo: string | null }>();
+    const telefones = new Map<string, string>();
+    if (cpfs.length) {
+      const [{ data: convs }, { data: leads }] = await Promise.all([
+        db
+          .from("prospect_conversoes")
+          .select("cpf,margem_usada,margem_restante_valor,tipo_margem,data_operacao")
+          .in("cpf", cpfs)
+          .order("data_operacao", { ascending: false }),
+        db.from("prospect_leads").select("cpf,telefone").in("cpf", cpfs),
+      ]);
+      for (const c of convs ?? []) {
+        const k = String(c.cpf ?? "").replace(/\D/g, "");
+        if (!k || margens.has(k)) continue;
+        margens.set(k, {
+          usada: c.margem_usada ?? null,
+          restante: c.margem_restante_valor ?? null,
+          tipo: c.tipo_margem ?? null,
+        });
+      }
+      for (const l of leads ?? []) {
+        const k = String(l.cpf ?? "").replace(/\D/g, "");
+        if (k && l.telefone && !telefones.has(k)) telefones.set(k, l.telefone);
+      }
+    }
+
     return (rows ?? []).map((r: any) => {
       const c = contatos.get(r.id);
+      const k = String(r.cpf ?? "").replace(/\D/g, "");
+      const m = margens.get(k);
       return {
         ...r,
         ultimo_contato_em: c?.em ?? null,
         ultimo_resultado: c?.resultado ?? null,
         contatos: c?.total ?? 0,
+        telefone: telefones.get(k) ?? null,
+        margem_usada: m?.usada ?? null,
+        margem_restante_valor: m?.restante ?? null,
+        tipo_margem: m?.tipo ?? null,
       } as EsteiraContrato;
     });
   });

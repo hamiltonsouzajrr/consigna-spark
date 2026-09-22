@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ArrowLeft, Phone, PiggyBank, CalendarClock, CheckCircle2, BellOff, Bell, History } from "lucide-react";
+import { CarteiraTabs } from "@/components/prospeccao/CarteiraTabs";
 import {
   esteiraListar,
   esteiraRegistrarContato,
@@ -142,10 +143,23 @@ function Page() {
           Ligar todo dia {c.dia_amortizacao} · próxima {fmtData(c.proximo_contato_em)}
           {c.ultimo_contato_em ? ` · último contato ${fmtData(c.ultimo_contato_em)}` : " · nunca contatado"}
         </p>
+        <p className="truncate text-xs text-muted-foreground">
+          Margem usada: {c.margem_usada != null ? BRL.format(c.margem_usada) : "consultar no app do servidor"} · resta:{" "}
+          {c.margem_restante_valor != null ? BRL.format(c.margem_restante_valor) : "consultar no app do servidor"}
+        </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {c.status && <Badge variant="outline" className="text-[10px]">{c.status}</Badge>}
         <Badge variant="outline" className="text-[10px]">{c.contatos} contato(s)</Badge>
+        {c.telefone && (
+          <a
+            href={`tel:${c.telefone.replace(/\D/g, "")}`}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary/15 text-primary"
+            title="Ligar"
+          >
+            <Phone className="h-4 w-4" />
+          </a>
+        )}
         <Button size="sm" onClick={() => setContato(c)}>
           <Phone className="mr-1.5 h-3.5 w-3.5" /> Registrar contato
         </Button>
@@ -190,6 +204,9 @@ function Page() {
             </p>
           </div>
         </div>
+
+        <CarteiraTabs />
+
 
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1.5">

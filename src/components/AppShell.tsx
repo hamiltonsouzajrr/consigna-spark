@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { HorariosOuroDialog } from "@/components/HorariosOuroDialog";
 import { HorariosOuroReminder } from "@/components/HorariosOuroReminder";
 import { FollowupPopup } from "@/components/prospeccao/FollowupPopup";
+import { AmortizacaoPopup } from "@/components/prospeccao/AmortizacaoPopup";
 import { PromovidosPopup } from "@/components/prospeccao/PromovidosPopup";
 import { CompeticaoPopup } from "@/components/prospeccao/CompeticaoPopup";
 import { MetaTopIndicator } from "@/components/MetaTopIndicator";
@@ -34,8 +35,7 @@ const navSections: NavSection[] = [
     section: "Simulação",
     items: [
       { to: "/calculadoras", label: "Calculadoras", full: "TODAS AS CALCULADORAS", icon: Calculator, consultoraOnly: true },
-      { to: "/prospeccao/conversoes", label: "Minha carteira de clientes", full: "MINHA CARTEIRA DE CLIENTES CONVERTIDOS", icon: Wallet, consultoraOnly: true },
-      { to: "/prospeccao/amortizacao", label: "Amortização mensal", full: "CARTEIRA DE AMORTIZAÇÃO - LIGAR TODO MÊS", icon: PiggyBank, consultoraOnly: true },
+      { to: "/prospeccao/conversoes", label: "Minha carteira", full: "MINHA CARTEIRA - CLIENTES, MARGEM E AMORTIZAÇÃO", icon: Wallet, consultoraOnly: true },
     ],
   },
   {
@@ -225,6 +225,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <HorariosOuroDialog />
       <HorariosOuroReminder />
       {!isAdmin && <FollowupPopup />}
+      {!isAdmin && <AmortizacaoPopup />}
       {!isAdmin && <PromovidosPopup />}
       <CompeticaoPopup />
 
