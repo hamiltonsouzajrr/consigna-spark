@@ -19,8 +19,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Phone, PiggyBank, CalendarClock, CheckCircle2, BellOff, Bell, History } from "lucide-react";
+import { ArrowLeft, Phone, PiggyBank, CalendarClock, CheckCircle2, BellOff, Bell, History, Pencil } from "lucide-react";
 import { CarteiraTabs } from "@/components/prospeccao/CarteiraTabs";
+import { AjustarCarteiraDialog } from "@/components/prospeccao/AjustarCarteiraDialog";
 import {
   esteiraListar,
   esteiraRegistrarContato,
@@ -76,6 +77,7 @@ function Page() {
   const [obs, setObs] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [verHistorico, setVerHistorico] = useState<EsteiraContrato | null>(null);
+  const [editando, setEditando] = useState<EsteiraContrato | null>(null);
 
   const listaQ = useQuery({
     queryKey: ["esteira", "carteira", busca, mostrarEncerrados],
@@ -162,6 +164,9 @@ function Page() {
         )}
         <Button size="sm" onClick={() => setContato(c)}>
           <Phone className="mr-1.5 h-3.5 w-3.5" /> Registrar contato
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => setEditando(c)}>
+          <Pencil className="mr-1.5 h-3.5 w-3.5" /> Atualizar margem e prazo
         </Button>
         <Button size="sm" variant="outline" onClick={() => setVerHistorico(c)}>
           <History className="h-3.5 w-3.5" />
@@ -306,6 +311,7 @@ function Page() {
           </div>
         </DialogContent>
       </Dialog>
+      <AjustarCarteiraDialog contrato={editando} onClose={() => setEditando(null)} />
     </AppShell>
   );
 }
