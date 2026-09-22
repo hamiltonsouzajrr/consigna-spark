@@ -191,6 +191,9 @@ function Page() {
           </div>
         </div>
 
+        <CarteiraTabs />
+
+
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1.5">
             <Label className="text-xs">Buscar por nome ou CPF</Label>
