@@ -289,6 +289,7 @@ export function EsteiraTab() {
       const r = await importar({
         data: {
           lote: arquivo || undefined,
+          campos,
           items: validas.map(({ linha, erros, ...rest }) => rest),
         },
       });
