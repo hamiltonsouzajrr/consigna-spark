@@ -353,7 +353,7 @@ export const esteiraListar = createServerFn({ method: "GET" })
         ultimo_contato_em: c?.em ?? null,
         ultimo_resultado: c?.resultado ?? null,
         contatos: c?.total ?? 0,
-        telefone: telefones.get(k) ?? null,
+        telefone: r.telefone || telefones.get(k) || null,
         margem_usada: m?.usada ?? null,
         margem_restante_valor: m?.restante ?? null,
         tipo_margem: m?.tipo ?? null,
