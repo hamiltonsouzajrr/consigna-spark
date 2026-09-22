@@ -1658,8 +1658,59 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_conversao_itens: {
+        Row: {
+          banco: string | null
+          conversao_id: string
+          created_at: string
+          id: string
+          margem_usada: number
+          ordem: number
+          prazo: number | null
+          produto: string
+          updated_at: string
+          valor_liberado: number
+          valor_parcela: number | null
+        }
+        Insert: {
+          banco?: string | null
+          conversao_id: string
+          created_at?: string
+          id?: string
+          margem_usada?: number
+          ordem?: number
+          prazo?: number | null
+          produto: string
+          updated_at?: string
+          valor_liberado?: number
+          valor_parcela?: number | null
+        }
+        Update: {
+          banco?: string | null
+          conversao_id?: string
+          created_at?: string
+          id?: string
+          margem_usada?: number
+          ordem?: number
+          prazo?: number | null
+          produto?: string
+          updated_at?: string
+          valor_liberado?: number
+          valor_parcela?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_conversao_itens_conversao_id_fkey"
+            columns: ["conversao_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_conversoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prospect_conversoes: {
         Row: {
+          cliente_manual: boolean
           cliente_nome: string
           cpf: string | null
           created_at: string
@@ -1683,6 +1734,7 @@ export type Database = {
           venda_id: string | null
         }
         Insert: {
+          cliente_manual?: boolean
           cliente_nome: string
           cpf?: string | null
           created_at?: string
@@ -1706,6 +1758,7 @@ export type Database = {
           venda_id?: string | null
         }
         Update: {
+          cliente_manual?: boolean
           cliente_nome?: string
           cpf?: string | null
           created_at?: string
