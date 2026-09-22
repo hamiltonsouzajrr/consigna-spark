@@ -34,4 +34,5 @@
 - [ ] Reprocessar as edições recentes interrompidas e confirmar os novos promovidos nas carteiras
 
 ## Painéis hierárquicos
-- [ ] Painéis de consultora e administrador: indicadores hierárquicos, cores semânticas e validação responsiva
+- [x] Painéis de consultora e administrador: indicadores hierárquicos e cores semânticas
+- [ ] Validação visual autenticada em computador e celular (bloqueada: não há sessão de teste disponível)
