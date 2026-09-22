@@ -262,6 +262,8 @@ export const esteiraListar = createServerFn({ method: "GET" })
         semResponsavel: z.boolean().default(false),
         busca: z.string().max(120).optional(),
         somenteAtivos: z.boolean().default(true),
+        incluirRemovidos: z.boolean().default(false),
+        somenteRemovidos: z.boolean().default(false),
         limit: z.number().int().min(1).max(500).default(300),
       })
       .parse(data ?? {}),
@@ -274,6 +276,8 @@ export const esteiraListar = createServerFn({ method: "GET" })
       .select("*")
       .order("proximo_contato_em", { ascending: true, nullsFirst: false })
       .limit(data.limit);
+    if (admEh && data.somenteRemovidos) q = q.not("removido_em", "is", null);
+    else if (!admEh || !data.incluirRemovidos) q = q.is("removido_em", null);
     if (!admEh) q = q.eq("consultant_id", context.userId);
     else if (data.semResponsavel) q = q.is("consultant_id", null);
     else if (data.consultantId) q = q.eq("consultant_id", data.consultantId);
