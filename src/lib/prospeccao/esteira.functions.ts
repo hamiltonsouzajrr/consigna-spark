@@ -401,6 +401,7 @@ export const esteiraRegistrarContato = createServerFn({ method: "POST" })
     if (!contrato) throw new Error("Contrato não encontrado.");
     if (contrato.consultant_id !== context.userId && !(await isAdmin(context)))
       throw new Error("Contrato de outra consultora.");
+    if (contrato.removido_em) throw new Error("Este cliente foi removido da carteira.");
 
     const { error } = await db.from("esteira_contatos").insert({
       contrato_id: contrato.id,
