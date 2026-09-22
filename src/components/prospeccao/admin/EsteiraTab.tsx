@@ -251,6 +251,8 @@ export function EsteiraTab() {
   const [arquivo, setArquivo] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [aberta, setAberta] = useState<string | null>(null);
+  const [campos, setCampos] = useState<CamposVisiveis>(CAMPOS_VISIVEIS_PADRAO);
+
 
   const consultorasQ = useQuery({ queryKey: ["esteira", "consultoras"], queryFn: () => listarConsultoras() });
   const metricasQ = useQuery({ queryKey: ["esteira", "metricas"], queryFn: () => metricas(), refetchInterval: 60_000 });
