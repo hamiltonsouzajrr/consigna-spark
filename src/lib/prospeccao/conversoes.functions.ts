@@ -275,6 +275,7 @@ export const criarConversao = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const db = await admin();
     const lembreteEm = dataLembrete(data.lembrete);
+    const totais = totaisDosItens(data.itens);
     if (data.origem === "crm" && !data.leadId) throw new Error("Selecione o cliente do CRM.");
     if (data.origem === "tomadores_al" && !data.tomadorId) throw new Error("Selecione o cliente de Tomadores.");
     if (data.leadId) {
