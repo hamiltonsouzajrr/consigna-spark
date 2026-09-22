@@ -29,7 +29,7 @@ function Metric({
   to?: string;
 }) {
   const inner = (
-    <div className="rounded-lg border bg-muted/30 p-2.5 transition hover:bg-muted/60">
+    <div className="rounded-lg border border-border/70 bg-card/80 p-3 shadow-sm transition hover:border-primary/30">
       <p className="text-[11px] leading-tight text-muted-foreground">{label}</p>
       <p className={cn("mt-0.5 text-lg font-bold tabular-nums", tone)}>{value}</p>
       {hint && <p className="mt-0.5 text-[10px] text-muted-foreground">{hint}</p>}
@@ -74,19 +74,19 @@ export function CrmCockpitAdmin() {
     (health?.tomadoresLivres ?? 0);
 
   return (
-    <div className="grid gap-4 xl:grid-cols-3">
+    <div className="grid gap-4 xl:grid-cols-6">
       {/* 1. Saúde da operação */}
-      <Card className="flex flex-col gap-4 p-4">
+      <Card className="flex min-h-[340px] flex-col gap-5 border-sidebar-border bg-sidebar p-5 text-sidebar-foreground shadow-lg xl:col-span-3 sm:p-6">
         <div className="flex items-center gap-2">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
             <Activity className="h-4.5 w-4.5" />
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">Saúde da operação</p>
-            <p className="text-xs text-muted-foreground">Visão exclusiva do administrador</p>
+            <p className="text-xs text-sidebar-foreground/70">Visão exclusiva do administrador</p>
           </div>
           {semDono > 0 && (
-            <Badge variant="outline" className="gap-1 text-[10px] text-amber-600 dark:text-amber-400">
+            <Badge variant="outline" className="gap-1 border-warning/50 bg-warning/15 text-[10px] text-warning">
               <AlertTriangle className="h-3 w-3" /> {semDono} sem dono
             </Badge>
           )}
@@ -96,11 +96,11 @@ export function CrmCockpitAdmin() {
 
         {health && (
           <>
-            <div className="rounded-lg border p-3">
+            <div className="rounded-lg border border-sidebar-border bg-sidebar-accent/55 p-4">
               <p className="flex items-center gap-2 text-xs font-medium">
                 <Radar className="h-3.5 w-3.5 text-primary" /> Radar Diário Oficial
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-xs text-sidebar-foreground/70">
                 Última execução: {quando(health.radarUltimaExecucao)} · status{" "}
                 <span className="font-medium">{health.radarUltimoStatus ?? "—"}</span>
               </p>
@@ -109,7 +109,7 @@ export function CrmCockpitAdmin() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 [&>a>div]:border-sidebar-border [&>a>div]:bg-sidebar-accent/70 [&>a>div>p:first-child]:text-sidebar-foreground/65 [&>a>div>p:nth-child(2)]:text-sidebar-foreground [&>div]:border-sidebar-border [&>div]:bg-sidebar-accent/70 [&>div>p:first-child]:text-sidebar-foreground/65 [&>div>p:nth-child(2)]:text-sidebar-foreground">
               <Metric label="Leads sem consultora" value={health.leadsSemConsultora}
                 tone={health.leadsSemConsultora ? "text-amber-600 dark:text-amber-400" : undefined}
                 to="/prospeccao/admin" />
@@ -123,7 +123,7 @@ export function CrmCockpitAdmin() {
                 tone={health.consultorasInativas7d ? "text-rose-600 dark:text-rose-400" : undefined} />
             </div>
 
-            <div className="mt-auto flex flex-wrap gap-2 text-xs text-muted-foreground">
+            <div className="mt-auto flex flex-wrap gap-3 text-xs text-sidebar-foreground/70">
               <span className="inline-flex items-center gap-1">
                 <ShieldAlert className="h-3 w-3 text-rose-500" /> {health.incidentesAbertos} incidente(s)
               </span>
@@ -139,9 +139,9 @@ export function CrmCockpitAdmin() {
       </Card>
 
       {/* 2. Cobertura da carteira */}
-      <Card className="flex flex-col gap-4 p-4">
+      <Card className="flex min-h-[340px] flex-col gap-4 p-5 shadow-sm xl:col-span-3 sm:p-6">
         <div className="flex items-center gap-2">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
             <Layers className="h-4.5 w-4.5" />
           </span>
           <div className="min-w-0">
@@ -202,10 +202,10 @@ export function CrmCockpitAdmin() {
       </Card>
 
       {/* 3. Desempenho + ações */}
-      <div className="flex flex-col gap-4">
-        <Card className="p-4">
+      <div className="grid gap-4 xl:col-span-6 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+        <Card className="p-5 shadow-sm sm:p-6">
           <div className="flex items-center gap-2">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-warning/20 text-warning-foreground">
               <Trophy className="h-4.5 w-4.5" />
             </span>
             <div className="min-w-0 flex-1">

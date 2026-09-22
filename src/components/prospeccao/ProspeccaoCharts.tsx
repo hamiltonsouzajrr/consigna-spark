@@ -19,12 +19,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getProspeccaoCharts, type SerieItem } from "@/lib/prospeccao/charts.functions";
 
 const CORES = [
-  "hsl(var(--primary))",
-  "hsl(var(--chart-2, 200 80% 45%))",
-  "hsl(var(--chart-3, 262 70% 55%))",
-  "hsl(var(--chart-4, 24 85% 55%))",
-  "hsl(var(--chart-5, 150 60% 40%))",
-  "hsl(var(--muted-foreground))",
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--muted-foreground)",
 ];
 
 const curto = (s: string, n = 16) => (s.length > n ? `${s.slice(0, n)}…` : s);
@@ -58,8 +58,8 @@ function Barras({ dados, destaque }: { dados: SerieItem[]; destaque?: string | n
               key={i}
               fill={
                 destaque && d.label === destaque
-                  ? "hsl(var(--primary))"
-                  : "hsl(var(--muted-foreground) / 0.5)"
+                   ? "var(--chart-1)"
+                   : "color-mix(in oklab, var(--muted-foreground) 50%, transparent)"
               }
             />
           ))}
@@ -152,7 +152,7 @@ export function ProspeccaoCharts() {
               <Line
                 type="monotone"
                 dataKey="atribuidos"
-                stroke="hsl(var(--primary))"
+                 stroke="var(--chart-1)"
                 strokeWidth={2}
                 dot={false}
               />
