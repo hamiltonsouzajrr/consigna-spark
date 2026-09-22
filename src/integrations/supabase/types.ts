@@ -697,6 +697,8 @@ export type Database = {
           prazo: number | null
           producao: number | null
           proximo_contato_em: string | null
+          removido_em: string | null
+          removido_por: string | null
           repasse: number | null
           seguro: string | null
           status: string | null
@@ -721,6 +723,8 @@ export type Database = {
           prazo?: number | null
           producao?: number | null
           proximo_contato_em?: string | null
+          removido_em?: string | null
+          removido_por?: string | null
           repasse?: number | null
           seguro?: string | null
           status?: string | null
@@ -745,11 +749,37 @@ export type Database = {
           prazo?: number | null
           producao?: number | null
           proximo_contato_em?: string | null
+          removido_em?: string | null
+          removido_por?: string | null
           repasse?: number | null
           seguro?: string | null
           status?: string | null
           updated_at?: string
           valor_bruto?: number | null
+        }
+        Relationships: []
+      }
+      esteira_lotes: {
+        Row: {
+          campos_visiveis: Json
+          created_at: string
+          lote_id: string
+          nome: string | null
+          updated_at: string
+        }
+        Insert: {
+          campos_visiveis?: Json
+          created_at?: string
+          lote_id: string
+          nome?: string | null
+          updated_at?: string
+        }
+        Update: {
+          campos_visiveis?: Json
+          created_at?: string
+          lote_id?: string
+          nome?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
