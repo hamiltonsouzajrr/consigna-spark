@@ -681,7 +681,7 @@ export type Database = {
       esteira_contratos: {
         Row: {
           acompanhamento_ativo: boolean
-          banco: string | null
+          banco: string
           consultant_id: string | null
           consultora: string | null
           cpf: string
@@ -705,7 +705,7 @@ export type Database = {
         }
         Insert: {
           acompanhamento_ativo?: boolean
-          banco?: string | null
+          banco?: string
           consultant_id?: string | null
           consultora?: string | null
           cpf: string
@@ -729,7 +729,7 @@ export type Database = {
         }
         Update: {
           acompanhamento_ativo?: boolean
-          banco?: string | null
+          banco?: string
           consultant_id?: string | null
           consultora?: string | null
           cpf?: string
