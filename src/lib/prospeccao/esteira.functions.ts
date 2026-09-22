@@ -136,39 +136,55 @@ export const esteiraImportar = createServerFn({ method: "POST" })
   .inputValidator((data) =>
     z.object({ lote: z.string().trim().max(160).optional(), items: z.array(itemSchema).min(1).max(3000) }).parse(data),
   )
-  .handler(async ({ context, data }): Promise<{ salvos: number; semResponsavel: number }> => {
+  .handler(async ({ context, data }): Promise<{ salvos: number; semResponsavel: number; duplicados: number }> => {
     await assertAdmin(context);
     const db = await admin();
     const hoje0 = hoje();
     const loteId = crypto.randomUUID();
 
-    const rows = data.items.map((it) => {
+    // Uma planilha pode repetir o mesmo contrato (mesmo CPF + data + banco).
+    // O banco não aceita gravar a mesma linha duas vezes no mesmo comando,
+    // então mantemos apenas a última ocorrência de cada contrato.
+    const unicos = new Map<string, any>();
+    for (const it of data.items) {
+      const cpf = it.cpf.replace(/\D/g, "");
+      const banco = (it.banco ?? "").trim();
       const dia = Number(it.data_venda.slice(8, 10)) || 1;
       const limite = limiteAcompanhamento(it.data_venda, it.prazo ?? null);
-      return {
+      unicos.set(`${cpf}|${it.data_venda}|${banco.toLowerCase()}`, {
         ...it,
-        cpf: it.cpf.replace(/\D/g, ""),
+        cpf,
+        banco,
         lote_id: loteId,
         lote_nome: data.lote ?? null,
         dia_amortizacao: dia,
         proximo_contato_em: proximaData(dia, hoje0, limite),
         acompanhamento_ativo: true,
-      };
-    });
+      });
+    }
+    const rows = [...unicos.values()];
+    const duplicados = data.items.length - rows.length;
 
-    const { data: saved, error } = await db
-      .from("esteira_contratos")
-      .upsert(rows, { onConflict: "cpf,data_venda,banco", ignoreDuplicates: false })
-      .select("id,nome,consultant_id,proximo_contato_em,acompanhamento_ativo");
-    if (error) throw new Error(error.message);
+    const salvosIds: any[] = [];
+    for (let i = 0; i < rows.length; i += 200) {
+      const fatia = rows.slice(i, i + 200);
+      const { data: saved, error } = await db
+        .from("esteira_contratos")
+        .upsert(fatia, { onConflict: "cpf,data_venda,banco", ignoreDuplicates: false })
+        .select("id,nome,consultant_id,proximo_contato_em,acompanhamento_ativo");
+      if (error) throw new Error(error.message);
+      salvosIds.push(...(saved ?? []));
+    }
 
-    for (const c of saved ?? []) await sincronizarTarefa(db, c);
+    for (const c of salvosIds) await sincronizarTarefa(db, c);
 
     return {
-      salvos: (saved ?? []).length,
+      salvos: salvosIds.length,
       semResponsavel: rows.filter((r) => !r.consultant_id).length,
+      duplicados,
     };
   });
+
 
 export const esteiraListar = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
