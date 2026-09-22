@@ -525,3 +525,160 @@ export const esteiraMetricas = createServerFn({ method: "GET" })
         .sort((a, b) => b.total - a.total),
     };
   });
+
+// ===== Painel do admin: configuração de exibição, edição e remoção =====
+
+export type EsteiraLote = {
+  lote_id: string;
+  nome: string | null;
+  campos_visiveis: CamposVisiveis;
+  total: number;
+  created_at: string;
+};
+
+export const esteiraLotes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<EsteiraLote[]> => {
+    await assertAdmin(context);
+    const db = await admin();
+    const { data: lotes, error } = await db
+      .from("esteira_lotes")
+      .select("lote_id,nome,campos_visiveis,created_at")
+      .order("created_at", { ascending: false })
+      .limit(60);
+    if (error) throw new Error(error.message);
+
+    const totais = new Map<string, number>();
+    const ids = (lotes ?? []).map((l: any) => l.lote_id);
+    if (ids.length) {
+      const { data: rows } = await db
+        .from("esteira_contratos")
+        .select("lote_id")
+        .in("lote_id", ids)
+        .is("removido_em", null)
+        .limit(20000);
+      for (const r of rows ?? []) totais.set(r.lote_id, (totais.get(r.lote_id) ?? 0) + 1);
+    }
+
+    return (lotes ?? []).map((l: any) => ({
+      lote_id: l.lote_id,
+      nome: l.nome ?? null,
+      campos_visiveis: normalizarCampos(l.campos_visiveis),
+      total: totais.get(l.lote_id) ?? 0,
+      created_at: l.created_at,
+    }));
+  });
+
+export const esteiraAtualizarLote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        loteId: z.string().uuid(),
+        nome: z.string().trim().max(160).nullable().optional(),
+        campos: camposSchema,
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const db = await admin();
+    const { error } = await db
+      .from("esteira_lotes")
+      .upsert(
+        { lote_id: data.loteId, nome: data.nome ?? null, campos_visiveis: data.campos },
+        { onConflict: "lote_id" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const esteiraAtualizarContrato = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        contratoId: z.string().uuid(),
+        nome: z.string().trim().min(2).max(200),
+        cpf: z.string().trim().min(3).max(20),
+        telefone: z.string().trim().max(30).nullable().optional(),
+        banco: z.string().trim().max(120).nullable().optional(),
+        data_venda: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        prazo: z.number().int().min(0).max(240).nullable().optional(),
+        valor_bruto: z.number().nullable().optional(),
+        seguro: z.string().trim().max(40).nullable().optional(),
+        status: z.string().trim().max(80).nullable().optional(),
+        observacao: z.string().trim().max(500).nullable().optional(),
+        dia_amortizacao: z.number().int().min(1).max(31),
+        proximo_contato_em: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+        acompanhamento_ativo: z.boolean(),
+        consultant_id: z.string().uuid().nullable().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ proximo: string | null }> => {
+    await assertAdmin(context);
+    const db = await admin();
+    const { data: contrato } = await db.from("esteira_contratos").select("*").eq("id", data.contratoId).maybeSingle();
+    if (!contrato) throw new Error("Contrato não encontrado.");
+
+    const limite = limiteAcompanhamento(data.data_venda, data.prazo ?? null);
+    let proximo: string | null = data.acompanhamento_ativo ? (data.proximo_contato_em ?? null) : null;
+    if (data.acompanhamento_ativo && !proximo) proximo = proximaData(data.dia_amortizacao, hoje(), limite);
+    const ativo = data.acompanhamento_ativo && proximo !== null;
+
+    const patch = {
+      nome: data.nome,
+      cpf: data.cpf.replace(/\D/g, "") || data.cpf,
+      telefone: data.telefone || null,
+      banco: data.banco || null,
+      data_venda: data.data_venda,
+      prazo: data.prazo ?? null,
+      valor_bruto: data.valor_bruto ?? null,
+      seguro: data.seguro || null,
+      status: data.status || null,
+      observacao: data.observacao || null,
+      dia_amortizacao: data.dia_amortizacao,
+      proximo_contato_em: proximo,
+      acompanhamento_ativo: ativo,
+      consultant_id: data.consultant_id ?? null,
+    };
+    const { error } = await db.from("esteira_contratos").update(patch).eq("id", contrato.id);
+    if (error) throw new Error(error.message);
+
+    await sincronizarTarefa(db, { ...contrato, ...patch, id: contrato.id });
+    return { proximo };
+  });
+
+export const esteiraRemoverContrato = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ contratoId: z.string().uuid(), remover: z.boolean().default(true) }).parse(data))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const db = await admin();
+    const { data: contrato } = await db.from("esteira_contratos").select("*").eq("id", data.contratoId).maybeSingle();
+    if (!contrato) throw new Error("Contrato não encontrado.");
+
+    if (data.remover) {
+      await db
+        .from("esteira_contratos")
+        .update({ removido_em: new Date().toISOString(), removido_por: context.userId })
+        .eq("id", contrato.id);
+      await sincronizarTarefa(db, { ...contrato, acompanhamento_ativo: false, proximo_contato_em: null });
+      return { ok: true, removido: true };
+    }
+
+    const limite = limiteAcompanhamento(contrato.data_venda, contrato.prazo);
+    const proximo = contrato.proximo_contato_em ?? proximaData(contrato.dia_amortizacao, hoje(), limite);
+    await db
+      .from("esteira_contratos")
+      .update({
+        removido_em: null,
+        removido_por: null,
+        proximo_contato_em: proximo,
+        acompanhamento_ativo: proximo !== null,
+      })
+      .eq("id", contrato.id);
+    await sincronizarTarefa(db, { ...contrato, proximo_contato_em: proximo, acompanhamento_ativo: proximo !== null });
+    return { ok: true, removido: false };
+  });
