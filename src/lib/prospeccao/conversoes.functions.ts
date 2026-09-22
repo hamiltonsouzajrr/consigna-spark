@@ -313,11 +313,17 @@ export const criarConversao = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const id = inserted.id as string;
 
+    const { error: eItens } = await db.from("prospect_conversao_itens").insert(linhasItens(id, data.itens));
+    if (eItens) {
+      await db.from("prospect_conversoes").delete().eq("id", id);
+      throw new Error(eItens.message);
+    }
+
     // Venda entra como pendente: pontos só após confirmação do gestor.
     const { registrarVendaPendente } = await import("./competicao.server");
     await registrarVendaPendente(
       context.userId,
-      data.origem,
+      data.origem === "tomadores_al" ? "tomadores_al" : "crm",
       "prospect_conversoes",
       id,
       data.clienteNome,
