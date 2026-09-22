@@ -8,17 +8,73 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { RhStatCard } from "@/components/rh/RhStatCard";
-import { FileSpreadsheet, Upload, AlertTriangle, CheckCircle2, Phone, PiggyBank, ChevronDown } from "lucide-react";
+import {
+  FileSpreadsheet,
+  Upload,
+  AlertTriangle,
+  CheckCircle2,
+  Phone,
+  PiggyBank,
+  ChevronDown,
+  Pencil,
+  Trash2,
+  RotateCcw,
+  Eye,
+} from "lucide-react";
 import { brl } from "@/lib/rh/mock";
 import { lerEsteira, casarConsultora, type EsteiraLinha } from "@/lib/prospeccao/esteira-parse";
+import { EditarContratoDialog } from "./EditarContratoDialog";
 import {
   esteiraConsultoras,
   esteiraImportar,
   esteiraListar,
   esteiraMetricas,
+  esteiraLotes,
+  esteiraAtualizarLote,
+  esteiraRemoverContrato,
+  CAMPOS_VISIVEIS_PADRAO,
+  type CamposVisiveis,
   type EsteiraContrato,
 } from "@/lib/prospeccao/esteira.functions";
+
+const CAMPOS_LABEL: { key: keyof CamposVisiveis; label: string }[] = [
+  { key: "status", label: "Status da venda" },
+  { key: "banco", label: "Banco" },
+  { key: "data_prazo", label: "Data da venda e prazo" },
+  { key: "valor_bruto", label: "Valor bruto" },
+  { key: "producao", label: "Produção" },
+  { key: "digitador", label: "Digitador" },
+  { key: "observacao", label: "Observação da planilha" },
+];
+
+function CamposToggles({
+  campos,
+  onChange,
+  idPrefix,
+}: {
+  campos: CamposVisiveis;
+  onChange: (c: CamposVisiveis) => void;
+  idPrefix: string;
+}) {
+  return (
+    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {CAMPOS_LABEL.map((c) => (
+        <div key={c.key} className="flex items-center gap-2 rounded-md border p-2">
+          <Switch
+            id={`${idPrefix}-${c.key}`}
+            checked={campos[c.key]}
+            onCheckedChange={(v) => onChange({ ...campos, [c.key]: v })}
+          />
+          <Label htmlFor={`${idPrefix}-${c.key}`} className="text-xs">
+            {c.label}
+          </Label>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const RESULTADO_LABEL: Record<string, string> = {
   amortizou: "Amortizou",
