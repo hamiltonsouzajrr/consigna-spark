@@ -27,6 +27,10 @@ export type EsteiraContrato = {
   ultimo_contato_em: string | null;
   ultimo_resultado: string | null;
   contatos: number;
+  telefone: string | null;
+  margem_usada: number | null;
+  margem_restante_valor: number | null;
+  tipo_margem: string | null;
 };
 
 export type EsteiraContato = {
