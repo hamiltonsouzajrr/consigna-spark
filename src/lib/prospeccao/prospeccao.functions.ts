@@ -270,7 +270,7 @@ export const markLeadOpened = createServerFn({ method: "POST" })
     // consultant owns (or an unassigned one, which we also claim on open).
     const { data: updated, error } = await supabaseAdmin
       .from("prospect_leads")
-      .update({ opened_at: new Date().toISOString(), consultant_id: userId, atribuido_em: new Date().toISOString() } as any)
+      .update({ opened_at: new Date().toISOString(), consultant_id: userId } as any)
       .eq("id", data.leadId)
       .is("opened_at", null)
       .select("id");

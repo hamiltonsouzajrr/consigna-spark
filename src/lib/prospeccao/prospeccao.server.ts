@@ -81,7 +81,7 @@ export function shuffle<T>(arr: T[]): T[] {
  */
 export async function resetAllOwnership(supabaseAdmin: any) {
   const steps: [string, Record<string, unknown>][] = [
-    ["prospect_leads", { consultant_id: null, opened_at: null }],
+    ["prospect_leads", { consultant_id: null, opened_at: null, atribuido_em: null }],
     ["leads_raw", { consultant_id: null, opened_at: null }],
     ["do_registros", { consultora_responsavel: null }],
     ["tomadores_al", { consultora_responsavel: null, atribuido_em: null }],
