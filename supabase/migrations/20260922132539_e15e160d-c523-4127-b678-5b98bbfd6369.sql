@@ -1,0 +1,2 @@
+ALTER TABLE public.prospect_leads ADD COLUMN IF NOT EXISTS atribuido_em TIMESTAMP WITH TIME ZONE;
+CREATE INDEX IF NOT EXISTS idx_prospect_leads_atribuido_em ON public.prospect_leads (consultant_id, atribuido_em DESC);

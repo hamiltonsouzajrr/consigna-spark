@@ -1709,6 +1709,7 @@ export type Database = {
       }
       prospect_leads: {
         Row: {
+          atribuido_em: string | null
           batch_id: string | null
           cidade: string | null
           consultant_id: string | null
@@ -1742,6 +1743,7 @@ export type Database = {
           urgencia: string | null
         }
         Insert: {
+          atribuido_em?: string | null
           batch_id?: string | null
           cidade?: string | null
           consultant_id?: string | null
@@ -1775,6 +1777,7 @@ export type Database = {
           urgencia?: string | null
         }
         Update: {
+          atribuido_em?: string | null
           batch_id?: string | null
           cidade?: string | null
           consultant_id?: string | null
