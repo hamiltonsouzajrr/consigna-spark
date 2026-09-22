@@ -32,13 +32,40 @@ export function dataLembrete(op: LembreteOpcao, base: Date = new Date()): string
   return d.toISOString();
 }
 
+export type ProdutoConversao = "emprestimo_novo" | "cartao_credito" | "cartao_beneficio" | "refinanciamento";
+
+export const PRODUTO_LABEL: Record<ProdutoConversao, string> = {
+  emprestimo_novo: "Empréstimo novo",
+  cartao_credito: "Cartão de crédito",
+  cartao_beneficio: "Cartão benefício",
+  refinanciamento: "Refinanciamento",
+};
+
+export const PRODUTO_OPCOES: ProdutoConversao[] = [
+  "emprestimo_novo",
+  "cartao_credito",
+  "cartao_beneficio",
+  "refinanciamento",
+];
+
+export type ConversaoItem = {
+  id: string;
+  produto: ProdutoConversao;
+  banco: string | null;
+  valor_liberado: number;
+  prazo: number | null;
+  valor_parcela: number | null;
+  margem_usada: number;
+};
+
 export type Conversao = {
   id: string;
   user_id: string;
   consultora_nome: string | null;
   lead_id: string | null;
   tomador_id: string | null;
-  origem: "crm" | "tomadores_al";
+  origem: "crm" | "tomadores_al" | "manual";
+  cliente_manual: boolean;
   cliente_nome: string;
   cpf: string | null;
   data_operacao: string;
@@ -52,28 +79,68 @@ export type Conversao = {
   observacao: string | null;
   lembrete_em: string | null;
   venda_status: "pendente" | "confirmada" | "recusada" | null;
+  itens: ConversaoItem[];
   created_at: string;
 };
 
 const TITULO_LEMBRETE = "Retornar ao cliente — pode ter margem nova";
 
-const conversaoSchema = z.object({
-  leadId: z.string().uuid().optional().nullable(),
-  tomadorId: z.string().uuid().optional().nullable(),
-  origem: z.enum(["crm", "tomadores_al"]).default("crm"),
-  clienteNome: z.string().trim().min(2).max(200),
-  cpf: z.string().trim().max(20).optional().nullable(),
-  dataOperacao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+const itemSchema = z.object({
+  produto: z.enum(["emprestimo_novo", "cartao_credito", "cartao_beneficio", "refinanciamento"]),
+  banco: z.string().trim().max(120).optional().nullable(),
   valorLiberado: z.number().min(0).max(100_000_000),
   prazo: z.number().int().min(1).max(240).optional().nullable(),
   valorParcela: z.number().min(0).max(10_000_000).optional().nullable(),
-  margemRestante: z.boolean(),
-  tipoMargem: z.enum(["emprestimo", "cartao_credito", "cartao_beneficio"]),
   margemUsada: z.number().min(0).max(10_000_000),
+});
+
+const conversaoSchema = z.object({
+  leadId: z.string().uuid().optional().nullable(),
+  tomadorId: z.string().uuid().optional().nullable(),
+  origem: z.enum(["crm", "tomadores_al", "manual"]).default("crm"),
+  clienteNome: z.string().trim().min(2).max(200),
+  cpf: z.string().trim().max(20).optional().nullable(),
+  dataOperacao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  margemRestante: z.boolean(),
   margemRestanteValor: z.number().min(0).max(10_000_000).optional().nullable(),
   observacao: z.string().trim().max(1000).optional().nullable(),
   lembrete: z.enum(["nenhum", "2s", "3s", "1m", "2m", "3m"]),
+  itens: z.array(itemSchema).min(1).max(12),
 });
+
+/** Totais do registro-pai: soma dos produtos, mantendo dashboards e vendas iguais. */
+function totaisDosItens(itens: z.infer<typeof itemSchema>[]) {
+  const valorLiberado = itens.reduce((s, i) => s + (i.valorLiberado ?? 0), 0);
+  const margemUsada = itens.reduce((s, i) => s + (i.margemUsada ?? 0), 0);
+  const valorParcela = itens.reduce((s, i) => s + (i.valorParcela ?? 0), 0);
+  const principal = itens[0]!;
+  const tipoMargem: TipoMargemConversao =
+    principal.produto === "cartao_credito"
+      ? "cartao_credito"
+      : principal.produto === "cartao_beneficio"
+        ? "cartao_beneficio"
+        : "emprestimo";
+  return {
+    valorLiberado,
+    margemUsada,
+    valorParcela: valorParcela > 0 ? valorParcela : null,
+    prazo: principal.prazo ?? null,
+    tipoMargem,
+  };
+}
+
+function linhasItens(conversaoId: string, itens: z.infer<typeof itemSchema>[]) {
+  return itens.map((i, idx) => ({
+    conversao_id: conversaoId,
+    produto: i.produto,
+    banco: i.banco?.trim() || null,
+    valor_liberado: i.valorLiberado,
+    prazo: i.prazo ?? null,
+    valor_parcela: i.valorParcela ?? null,
+    margem_usada: i.margemUsada,
+    ordem: idx,
+  }));
+}
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -120,12 +187,31 @@ export const listarConversoes = createServerFn({ method: "GET" })
 
     // Status da venda (aguardando/confirmada/recusada) e nome da consultora.
     const ids = list.map((r) => r.id);
-    const [{ data: vendas }, { data: perfis }] = await Promise.all([
+    const [{ data: vendas }, { data: perfis }, { data: itensRows }] = await Promise.all([
       db.from("prospect_vendas").select("ref_id,status").eq("ref_tabela", "prospect_conversoes").in("ref_id", ids),
       isAdmin
         ? db.from("profiles").select("user_id,nome_completo").in("user_id", [...new Set(list.map((r) => r.user_id))])
         : Promise.resolve({ data: [] }),
+      db
+        .from("prospect_conversao_itens")
+        .select("id,conversao_id,produto,banco,valor_liberado,prazo,valor_parcela,margem_usada,ordem")
+        .in("conversao_id", ids)
+        .order("ordem", { ascending: true }),
     ]);
+    const itensPorConversao = new Map<string, ConversaoItem[]>();
+    for (const i of (itensRows ?? []) as any[]) {
+      const arr = itensPorConversao.get(i.conversao_id) ?? [];
+      arr.push({
+        id: i.id,
+        produto: i.produto,
+        banco: i.banco,
+        valor_liberado: Number(i.valor_liberado ?? 0),
+        prazo: i.prazo,
+        valor_parcela: i.valor_parcela != null ? Number(i.valor_parcela) : null,
+        margem_usada: Number(i.margem_usada ?? 0),
+      });
+      itensPorConversao.set(i.conversao_id, arr);
+    }
     const statusPorRef = new Map<string, string>();
     for (const v of (vendas ?? []) as any[]) {
       const atual = statusPorRef.get(v.ref_id);
@@ -143,7 +229,9 @@ export const listarConversoes = createServerFn({ method: "GET" })
         consultora_nome: nomes.get(r.user_id) ?? null,
         lead_id: r.lead_id,
         tomador_id: r.tomador_id,
-        origem: r.origem === "tomadores_al" ? "tomadores_al" : "crm",
+        origem: r.origem === "tomadores_al" ? "tomadores_al" : r.origem === "manual" ? "manual" : "crm",
+        cliente_manual: !!r.cliente_manual,
+        itens: itensPorConversao.get(r.id) ?? [],
         cliente_nome: r.cliente_nome,
         cpf: r.cpf,
         data_operacao: r.data_operacao,
@@ -187,6 +275,7 @@ export const criarConversao = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const db = await admin();
     const lembreteEm = dataLembrete(data.lembrete);
+    const totais = totaisDosItens(data.itens);
     if (data.origem === "crm" && !data.leadId) throw new Error("Selecione o cliente do CRM.");
     if (data.origem === "tomadores_al" && !data.tomadorId) throw new Error("Selecione o cliente de Tomadores.");
     if (data.leadId) {
@@ -205,15 +294,16 @@ export const criarConversao = createServerFn({ method: "POST" })
         lead_id: data.leadId ?? null,
         tomador_id: data.tomadorId ?? null,
         origem: data.origem,
+        cliente_manual: data.origem === "manual",
         cliente_nome: data.clienteNome,
         cpf: data.cpf?.replace(/\D/g, "") || null,
         data_operacao: data.dataOperacao,
-        valor_liberado: data.valorLiberado,
-        prazo: data.prazo ?? null,
-        valor_parcela: data.valorParcela ?? null,
+        valor_liberado: totais.valorLiberado,
+        prazo: totais.prazo,
+        valor_parcela: totais.valorParcela,
         margem_restante: data.margemRestante,
-        tipo_margem: data.tipoMargem,
-        margem_usada: data.margemUsada,
+        tipo_margem: totais.tipoMargem,
+        margem_usada: totais.margemUsada,
         margem_restante_valor: data.margemRestante ? (data.margemRestanteValor ?? null) : null,
         observacao: data.observacao ?? null,
         lembrete_em: lembreteEm,
@@ -223,11 +313,17 @@ export const criarConversao = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const id = inserted.id as string;
 
+    const { error: eItens } = await db.from("prospect_conversao_itens").insert(linhasItens(id, data.itens));
+    if (eItens) {
+      await db.from("prospect_conversoes").delete().eq("id", id);
+      throw new Error(eItens.message);
+    }
+
     // Venda entra como pendente: pontos só após confirmação do gestor.
     const { registrarVendaPendente } = await import("./competicao.server");
     await registrarVendaPendente(
       context.userId,
-      data.origem,
+      data.origem === "tomadores_al" ? "tomadores_al" : "crm",
       "prospect_conversoes",
       id,
       data.clienteNome,
@@ -281,27 +377,34 @@ export const atualizarConversao = createServerFn({ method: "POST" })
     if (atual.user_id !== context.userId) await assertAdmin(context.supabase, context.userId);
 
     const lembreteEm = data.lembrete === "manter" ? atual.lembrete_em : dataLembrete(data.lembrete);
+    const totais = totaisDosItens(data.itens);
     const { error } = await db
       .from("prospect_conversoes")
       .update({
         lead_id: data.leadId ?? null,
         tomador_id: data.tomadorId ?? null,
         origem: data.origem,
+        cliente_manual: data.origem === "manual",
         cliente_nome: data.clienteNome,
         cpf: data.cpf?.replace(/\D/g, "") || null,
         data_operacao: data.dataOperacao,
-        valor_liberado: data.valorLiberado,
-        prazo: data.prazo ?? null,
-        valor_parcela: data.valorParcela ?? null,
+        valor_liberado: totais.valorLiberado,
+        prazo: totais.prazo,
+        valor_parcela: totais.valorParcela,
         margem_restante: data.margemRestante,
-        tipo_margem: data.tipoMargem,
-        margem_usada: data.margemUsada,
+        tipo_margem: totais.tipoMargem,
+        margem_usada: totais.margemUsada,
         margem_restante_valor: data.margemRestante ? (data.margemRestanteValor ?? null) : null,
         observacao: data.observacao ?? null,
         lembrete_em: lembreteEm,
       })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+
+    // Produtos: substitui as linhas pela lista enviada.
+    await db.from("prospect_conversao_itens").delete().eq("conversao_id", data.id);
+    const { error: eItens } = await db.from("prospect_conversao_itens").insert(linhasItens(data.id, data.itens));
+    if (eItens) throw new Error(eItens.message);
 
     const clienteDoLembrete = data.leadId
       ? { lead_id: data.leadId, tomador_id: null }
