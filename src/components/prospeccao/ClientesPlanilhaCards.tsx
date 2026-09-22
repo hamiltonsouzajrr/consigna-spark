@@ -101,8 +101,8 @@ export function ClientesPlanilhaCards({ limite = 6 }: { limite?: number }) {
                 <Button asChild size="sm" variant="ghost">
                   <Link to="/prospeccao/amortizacao">Registrar contato</Link>
                 </Button>
-                <Button size="icon" variant="ghost" onClick={() => setEditando(c)} title="Atualizar margem e prazo">
-                  <Pencil className="h-3.5 w-3.5" />
+                <Button size="sm" variant="outline" onClick={() => setEditando(c)}>
+                  <Pencil className="mr-1.5 h-3.5 w-3.5" /> Margem e prazo
                 </Button>
               </div>
             </Card>
