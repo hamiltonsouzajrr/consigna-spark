@@ -220,6 +220,11 @@ export function CrmCockpit({
           </div>
           <div className="h-3 w-full overflow-hidden rounded-full bg-sidebar-accent">
             <div
+              role="progressbar"
+              aria-label="Progresso da meta diária de chamadas"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={pct}
                className={cn("h-full rounded-full transition-all", chamadas >= metaDiaria ? "bg-success" : "bg-sidebar-primary")}
               style={{ width: `${pct}%` }}
             />
@@ -285,6 +290,7 @@ export function CrmCockpit({
                     key={d.date}
                     type="button"
                     onClick={() => openDetalhe({ date: d.date })}
+                     aria-label={`${d.label}: ${d.total} ligações, ${d.answered} atendidas. Abrir detalhes.`}
                     className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded outline-none transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
                     title={`${d.total} ligações · ${d.answered} atendidas — ver leads`}
                   >

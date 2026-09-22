@@ -150,7 +150,7 @@ export function ResumoGeralTab() {
                 <span className="font-semibold text-success">{aproveitamento}% utilizado</span>
               </div>
               <div className="mt-2 h-3 overflow-hidden rounded-full bg-sidebar-accent">
-                <div className="h-full rounded-full bg-success transition-all" style={{ width: `${Math.min(100, aproveitamento)}%` }} />
+                <div role="progressbar" aria-label="Percentual de clientes trabalhados" aria-valuemin={0} aria-valuemax={100} aria-valuenow={aproveitamento} className="h-full rounded-full bg-success transition-all" style={{ width: `${Math.min(100, aproveitamento)}%` }} />
               </div>
             </div>
           </div>
@@ -221,7 +221,7 @@ export function ResumoGeralTab() {
                 {STATUS_LABEL[status as LeadStatus] ?? status}
               </span>
               <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-primary/70"
+                <div role="progressbar" aria-label={`${STATUS_LABEL[status as LeadStatus] ?? status}: ${total}`} aria-valuemin={0} aria-valuemax={maxStatus} aria-valuenow={total} className="h-full rounded-full bg-primary/70"
                   style={{ width: `${Math.round((total / maxStatus) * 100)}%` }} />
               </div>
               <span className="w-16 shrink-0 text-right tabular-nums">{nf.format(total)}</span>
@@ -264,7 +264,7 @@ export function ResumoGeralTab() {
       </div>
 
       <Bloco titulo="Por lote de importação" descricao="Quanto entrou em cada planilha e quanto já foi usado." icon={Layers}>
-        <div className="max-h-72 overflow-auto rounded-md border">
+        <div className="max-h-72 overflow-auto rounded-md border" tabIndex={0} aria-label="Tabela de lotes de importação">
           <Table>
             <TableHeader className="sticky top-0 bg-muted/60">
               <TableRow>
@@ -300,7 +300,7 @@ export function ResumoGeralTab() {
       </Bloco>
 
       <Bloco titulo="Uso por consultora" descricao="Quantos clientes cada uma recebeu e quantos já trabalhou." icon={Users}>
-        <div className="max-h-96 overflow-auto rounded-md border">
+        <div className="max-h-96 overflow-auto rounded-md border" tabIndex={0} aria-label="Tabela de uso por consultora">
           <Table>
             <TableHeader className="sticky top-0 bg-muted/60">
               <TableRow>

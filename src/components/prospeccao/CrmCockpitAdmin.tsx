@@ -170,7 +170,7 @@ export function CrmCockpitAdmin() {
                     {STATUS_LABEL[status as LeadStatus] ?? status}
                   </span>
                   <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-primary/70"
+                     <div role="progressbar" aria-label={`${STATUS_LABEL[status as LeadStatus] ?? status}: ${total}`} aria-valuemin={0} aria-valuemax={maxStatus} aria-valuenow={total} className="h-full rounded-full bg-primary/70"
                       style={{ width: `${Math.round((total / maxStatus) * 100)}%` }} />
                   </div>
                   <span className="w-12 shrink-0 text-right tabular-nums">{total}</span>
