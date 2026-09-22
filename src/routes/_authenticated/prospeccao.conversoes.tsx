@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowLeft, Plus, Trash2, Pencil, CalendarClock, Wallet, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { CarteiraTabs } from "@/components/prospeccao/CarteiraTabs";
+import { ClientesPlanilhaCards } from "@/components/prospeccao/ClientesPlanilhaCards";
 import {
   listarConversoes,
   criarConversao,
@@ -251,6 +252,8 @@ function Page() {
           <p className="text-2xl font-bold">{BRL.format(totalMes.valor)}</p>
         </Card>
       </div>
+
+      <ClientesPlanilhaCards />
 
       {isLoading ? (
         <div className="space-y-3">
