@@ -31,7 +31,57 @@ export type EsteiraContrato = {
   margem_usada: number | null;
   margem_restante_valor: number | null;
   tipo_margem: string | null;
+  removido_em?: string | null;
 };
+
+export type CamposVisiveis = {
+  status: boolean;
+  banco: boolean;
+  data_prazo: boolean;
+  valor_bruto: boolean;
+  producao: boolean;
+  digitador: boolean;
+  observacao: boolean;
+};
+
+export const CAMPOS_VISIVEIS_PADRAO: CamposVisiveis = {
+  status: true,
+  banco: true,
+  data_prazo: true,
+  valor_bruto: false,
+  producao: false,
+  digitador: false,
+  observacao: true,
+};
+
+const camposSchema = z.object({
+  status: z.boolean(),
+  banco: z.boolean(),
+  data_prazo: z.boolean(),
+  valor_bruto: z.boolean(),
+  producao: z.boolean(),
+  digitador: z.boolean(),
+  observacao: z.boolean(),
+});
+
+function normalizarCampos(v: any): CamposVisiveis {
+  return { ...CAMPOS_VISIVEIS_PADRAO, ...(v && typeof v === "object" ? v : {}) };
+}
+
+/** Esconde da consultora o que o admin desligou no lote. Repasse nunca aparece. */
+function mascarar(row: any, campos: CamposVisiveis) {
+  return {
+    ...row,
+    repasse: null,
+    status: campos.status ? row.status : null,
+    banco: campos.banco ? row.banco : null,
+    prazo: campos.data_prazo ? row.prazo : null,
+    valor_bruto: campos.valor_bruto ? row.valor_bruto : null,
+    producao: campos.producao ? row.producao : null,
+    digitador: campos.digitador ? row.digitador : null,
+    observacao: campos.observacao ? row.observacao : null,
+  };
+}
 
 export type EsteiraContato = {
   id: string;
