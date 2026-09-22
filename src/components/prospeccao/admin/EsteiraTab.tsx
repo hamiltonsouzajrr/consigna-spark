@@ -475,3 +475,82 @@ export function EsteiraTab() {
     </div>
   );
 }
+
+/** Planilhas já importadas: o admin revisa o que cada uma mostra às consultoras. */
+function LotesCard() {
+  const qc = useQueryClient();
+  const listar = useServerFn(esteiraLotes);
+  const salvarFn = useServerFn(esteiraAtualizarLote);
+  const [rascunho, setRascunho] = useState<Record<string, CamposVisiveis>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [aberto, setAberto] = useState<string | null>(null);
+
+  const q = useQuery({ queryKey: ["esteira", "lotes"], queryFn: () => listar(), staleTime: 60_000 });
+  const lotes = q.data ?? [];
+
+  if (!lotes.length) return null;
+
+  const salvar = async (loteId: string, nome: string | null) => {
+    const campos = rascunho[loteId];
+    if (!campos) return;
+    setBusy(loteId);
+    try {
+      await salvarFn({ data: { loteId, nome, campos } });
+      toast.success("Exibição atualizada para as consultoras");
+      await qc.invalidateQueries({ queryKey: ["esteira"] });
+    } catch (e: any) {
+      toast.error("Não foi possível salvar", { description: e?.message });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <Card className="p-4">
+      <h3 className="mb-1 font-semibold">Planilhas importadas</h3>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Toque em uma planilha para escolher o que as consultoras veem nos clientes dela.
+      </p>
+      <div className="space-y-1">
+        {lotes.map((l) => {
+          const campos = rascunho[l.lote_id] ?? l.campos_visiveis;
+          const estaAberto = aberto === l.lote_id;
+          return (
+            <div key={l.lote_id} className="overflow-hidden rounded-md border">
+              <button
+                type="button"
+                onClick={() => setAberto(estaAberto ? null : l.lote_id)}
+                className="flex w-full items-center gap-3 p-2 text-left text-sm transition-colors hover:bg-muted/50"
+              >
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${estaAberto ? "" : "-rotate-90"}`} />
+                <span className="min-w-0 flex-1 truncate font-medium">{l.nome || "Planilha sem nome"}</span>
+                <Badge variant="outline">{l.total} clientes</Badge>
+                <span className="hidden text-xs text-muted-foreground sm:inline">
+                  {new Date(l.created_at).toLocaleDateString("pt-BR")}
+                </span>
+              </button>
+              {estaAberto && (
+                <div className="space-y-3 border-t p-3">
+                  <CamposToggles
+                    campos={campos}
+                    onChange={(c) => setRascunho((prev) => ({ ...prev, [l.lote_id]: c }))}
+                    idPrefix={l.lote_id}
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      disabled={busy === l.lote_id || !rascunho[l.lote_id]}
+                      onClick={() => salvar(l.lote_id, l.nome)}
+                    >
+                      {busy === l.lote_id ? "Salvando…" : "Salvar exibição"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
