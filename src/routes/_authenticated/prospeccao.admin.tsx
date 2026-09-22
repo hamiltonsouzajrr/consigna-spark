@@ -169,11 +169,20 @@ function Page() {
             <Layers className="h-4 w-4" />
             4. Lotes e Auditoria
           </TabsTrigger>
+          <TabsTrigger value="esteira" className="gap-2">
+            <PiggyBank className="h-4 w-4" />
+            5. Esteira de Produção
+          </TabsTrigger>
           <TabsTrigger value="acessos" className="gap-2">
             <ShieldCheck className="h-4 w-4" />
-            5. Controle de Acessos
+            6. Controle de Acessos
           </TabsTrigger>
         </TabsList>
+
+        {/* 5. Esteira de produção / amortização */}
+        <TabsContent value="esteira">
+          <EsteiraTab />
+        </TabsContent>
 
         {/* 1. Visão Geral */}
         <TabsContent value="visao" className="space-y-6">
