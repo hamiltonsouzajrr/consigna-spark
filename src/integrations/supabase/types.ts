@@ -640,6 +640,119 @@ export type Database = {
           },
         ]
       }
+      esteira_contatos: {
+        Row: {
+          consultant_id: string | null
+          contato_em: string
+          contrato_id: string
+          created_at: string
+          id: string
+          observacao: string | null
+          resultado: string
+        }
+        Insert: {
+          consultant_id?: string | null
+          contato_em?: string
+          contrato_id: string
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          resultado: string
+        }
+        Update: {
+          consultant_id?: string | null
+          contato_em?: string
+          contrato_id?: string
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          resultado?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "esteira_contatos_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "esteira_contratos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      esteira_contratos: {
+        Row: {
+          acompanhamento_ativo: boolean
+          banco: string
+          consultant_id: string | null
+          consultora: string | null
+          cpf: string
+          created_at: string
+          data_venda: string
+          dia_amortizacao: number
+          digitador: string | null
+          id: string
+          lote_id: string | null
+          lote_nome: string | null
+          nome: string
+          observacao: string | null
+          prazo: number | null
+          producao: number | null
+          proximo_contato_em: string | null
+          repasse: number | null
+          seguro: string | null
+          status: string | null
+          updated_at: string
+          valor_bruto: number | null
+        }
+        Insert: {
+          acompanhamento_ativo?: boolean
+          banco?: string
+          consultant_id?: string | null
+          consultora?: string | null
+          cpf: string
+          created_at?: string
+          data_venda: string
+          dia_amortizacao?: number
+          digitador?: string | null
+          id?: string
+          lote_id?: string | null
+          lote_nome?: string | null
+          nome: string
+          observacao?: string | null
+          prazo?: number | null
+          producao?: number | null
+          proximo_contato_em?: string | null
+          repasse?: number | null
+          seguro?: string | null
+          status?: string | null
+          updated_at?: string
+          valor_bruto?: number | null
+        }
+        Update: {
+          acompanhamento_ativo?: boolean
+          banco?: string
+          consultant_id?: string | null
+          consultora?: string | null
+          cpf?: string
+          created_at?: string
+          data_venda?: string
+          dia_amortizacao?: number
+          digitador?: string | null
+          id?: string
+          lote_id?: string | null
+          lote_nome?: string | null
+          nome?: string
+          observacao?: string | null
+          prazo?: number | null
+          producao?: number | null
+          proximo_contato_em?: string | null
+          repasse?: number | null
+          seguro?: string | null
+          status?: string | null
+          updated_at?: string
+          valor_bruto?: number | null
+        }
+        Relationships: []
+      }
       fontes_diario_oficial: {
         Row: {
           arquivo_id: string | null
@@ -821,6 +934,7 @@ export type Database = {
           consultant_id: string | null
           created_at: string
           due_at: string
+          esteira_id: string | null
           id: string
           lead_id: string | null
           status: Database["public"]["Enums"]["prospect_task_status"]
@@ -831,6 +945,7 @@ export type Database = {
           consultant_id?: string | null
           created_at?: string
           due_at: string
+          esteira_id?: string | null
           id?: string
           lead_id?: string | null
           status?: Database["public"]["Enums"]["prospect_task_status"]
@@ -841,6 +956,7 @@ export type Database = {
           consultant_id?: string | null
           created_at?: string
           due_at?: string
+          esteira_id?: string | null
           id?: string
           lead_id?: string | null
           status?: Database["public"]["Enums"]["prospect_task_status"]
@@ -848,6 +964,13 @@ export type Database = {
           tomador_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "lead_tasks_esteira_id_fkey"
+            columns: ["esteira_id"]
+            isOneToOne: false
+            referencedRelation: "esteira_contratos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lead_tasks_lead_id_fkey"
             columns: ["lead_id"]

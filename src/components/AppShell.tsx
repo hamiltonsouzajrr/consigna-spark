@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LogOut, BadgeDollarSign, Calculator, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, PhoneCall, Flame, CalendarClock, Home, Trophy, Star, MessageSquare, Clock, Sparkles, Radar, Wallet, PartyPopper, LayoutDashboard, AlertTriangle } from "lucide-react";
+import { LogOut, BadgeDollarSign, Calculator, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, PhoneCall, Flame, CalendarClock, Home, Trophy, Star, MessageSquare, Clock, Sparkles, Radar, Wallet, PartyPopper, LayoutDashboard, AlertTriangle, PiggyBank } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -35,6 +35,7 @@ const navSections: NavSection[] = [
     items: [
       { to: "/calculadoras", label: "Calculadoras", full: "TODAS AS CALCULADORAS", icon: Calculator, consultoraOnly: true },
       { to: "/prospeccao/conversoes", label: "Minha carteira de clientes", full: "MINHA CARTEIRA DE CLIENTES CONVERTIDOS", icon: Wallet, consultoraOnly: true },
+      { to: "/prospeccao/amortizacao", label: "Amortização mensal", full: "CARTEIRA DE AMORTIZAÇÃO - LIGAR TODO MÊS", icon: PiggyBank, consultoraOnly: true },
     ],
   },
   {

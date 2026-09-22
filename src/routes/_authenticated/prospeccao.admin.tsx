@@ -28,6 +28,7 @@ import {
   Share2,
   Layers,
   ShieldCheck,
+  PiggyBank,
 } from "lucide-react";
 import {
   getProspectConsultants,
@@ -43,6 +44,7 @@ import { CompeticaoTab } from "@/components/prospeccao/admin/CompeticaoTab";
 import { AcessosTab } from "@/components/prospeccao/admin/AcessosTab";
 import { ConfirmDialog } from "@/components/prospeccao/admin/ConfirmDialog";
 import { ResumoGeralTab } from "@/components/prospeccao/admin/ResumoGeralTab";
+import { EsteiraTab } from "@/components/prospeccao/admin/EsteiraTab";
 
 export const Route = createFileRoute("/_authenticated/prospeccao/admin")({
   head: () => ({
@@ -169,11 +171,20 @@ function Page() {
             <Layers className="h-4 w-4" />
             4. Lotes e Auditoria
           </TabsTrigger>
+          <TabsTrigger value="esteira" className="gap-2">
+            <PiggyBank className="h-4 w-4" />
+            5. Esteira de Produção
+          </TabsTrigger>
           <TabsTrigger value="acessos" className="gap-2">
             <ShieldCheck className="h-4 w-4" />
-            5. Controle de Acessos
+            6. Controle de Acessos
           </TabsTrigger>
         </TabsList>
+
+        {/* 5. Esteira de produção / amortização */}
+        <TabsContent value="esteira">
+          <EsteiraTab />
+        </TabsContent>
 
         {/* 1. Visão Geral */}
         <TabsContent value="visao" className="space-y-6">
