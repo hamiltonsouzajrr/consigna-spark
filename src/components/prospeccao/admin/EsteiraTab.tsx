@@ -452,7 +452,7 @@ export function EsteiraTab() {
                     </Badge>
                     <Badge variant="outline">{c.contatos_mes} ligações no mês</Badge>
                   </button>
-                  {estaAberta && <ConsultoraDetalhe consultantId={c.consultant_id} />}
+                  {estaAberta && <ConsultoraDetalhe consultantId={c.consultant_id} contas={contas} />}
                 </div>
               );
             })}
