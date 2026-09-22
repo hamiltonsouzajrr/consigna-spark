@@ -481,6 +481,7 @@ export const esteiraMetricas = createServerFn({ method: "GET" })
     const { data: rows, error } = await db
       .from("esteira_contratos")
       .select("id,consultora,consultant_id,acompanhamento_ativo,proximo_contato_em")
+      .is("removido_em", null)
       .limit(20000);
     if (error) throw new Error(error.message);
 
