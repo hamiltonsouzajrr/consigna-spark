@@ -9,10 +9,98 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RhStatCard } from "@/components/rh/RhStatCard";
-import { FileSpreadsheet, Upload, AlertTriangle, CheckCircle2, Phone, PiggyBank } from "lucide-react";
+import { FileSpreadsheet, Upload, AlertTriangle, CheckCircle2, Phone, PiggyBank, ChevronDown } from "lucide-react";
 import { brl } from "@/lib/rh/mock";
 import { lerEsteira, casarConsultora, type EsteiraLinha } from "@/lib/prospeccao/esteira-parse";
-import { esteiraConsultoras, esteiraImportar, esteiraMetricas } from "@/lib/prospeccao/esteira.functions";
+import {
+  esteiraConsultoras,
+  esteiraImportar,
+  esteiraListar,
+  esteiraMetricas,
+  type EsteiraContrato,
+} from "@/lib/prospeccao/esteira.functions";
+
+const RESULTADO_LABEL: Record<string, string> = {
+  amortizou: "Amortizou",
+  falei: "Falei com o cliente",
+  nao_atendeu: "Não atendeu",
+  nao_quis: "Não quis",
+};
+
+function hojeISO(): string {
+  return new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function ordenarContratos(lista: EsteiraContrato[]): EsteiraContrato[] {
+  const hoje = hojeISO();
+  const peso = (c: EsteiraContrato) => {
+    if (!c.acompanhamento_ativo || !c.proximo_contato_em) return 3;
+    if (c.proximo_contato_em < hoje) return 0;
+    if (c.proximo_contato_em === hoje) return 1;
+    return 2;
+  };
+  return [...lista].sort((a, b) => peso(a) - peso(b) || (a.proximo_contato_em ?? "9999").localeCompare(b.proximo_contato_em ?? "9999"));
+}
+
+function ConsultoraDetalhe({ consultantId }: { consultantId: string | null }) {
+  const listar = useServerFn(esteiraListar);
+  const q = useQuery({
+    queryKey: ["esteira", "detalhe", consultantId ?? "sem-responsavel"],
+    queryFn: () =>
+      listar({
+        data: consultantId
+          ? { consultantId, somenteAtivos: false, limit: 500 }
+          : { semResponsavel: true, somenteAtivos: false, limit: 500 },
+      }),
+    staleTime: 60_000,
+  });
+  const hoje = hojeISO();
+
+  if (q.isLoading) return <p className="p-3 text-sm text-muted-foreground">Carregando contratos…</p>;
+  if (q.isError) return <p className="p-3 text-sm text-rose-600">Não foi possível carregar os contratos.</p>;
+  const lista = ordenarContratos(q.data ?? []);
+  if (!lista.length) return <p className="p-3 text-sm text-muted-foreground">Nenhum contrato nesta carteira.</p>;
+
+  return (
+    <div className="space-y-1 p-2">
+      {lista.map((c) => {
+        const atrasado = c.acompanhamento_ativo && c.proximo_contato_em && c.proximo_contato_em < hoje;
+        const ehHoje = c.acompanhamento_ativo && c.proximo_contato_em === hoje;
+        return (
+          <div
+            key={c.id}
+            className={`flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm ${
+              atrasado ? "border-rose-200 bg-rose-50 dark:bg-rose-500/10" : ehHoje ? "border-amber-200 bg-amber-50 dark:bg-amber-500/10" : ""
+            }`}
+          >
+            <div className="min-w-[180px] flex-1">
+              <p className="truncate font-medium">{c.nome}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {c.cpf} · {c.banco || "—"} · venda {c.data_venda}
+                {c.prazo ? ` · ${c.prazo}x` : ""}
+              </p>
+            </div>
+            <span className="w-24 text-right tabular-nums">{c.valor_bruto != null ? brl(c.valor_bruto) : "—"}</span>
+            <Badge variant="outline" className={atrasado ? "border-rose-300 text-rose-700" : ehHoje ? "border-amber-300 text-amber-700" : ""}>
+              {c.acompanhamento_ativo && c.proximo_contato_em
+                ? atrasado
+                  ? `Atrasada (${c.proximo_contato_em})`
+                  : ehHoje
+                    ? "Ligar hoje"
+                    : `Próxima: ${c.proximo_contato_em}`
+                : "Encerrado"}
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              {c.ultimo_contato_em
+                ? `Última: ${c.ultimo_contato_em.slice(0, 10)}${c.ultimo_resultado ? ` · ${RESULTADO_LABEL[c.ultimo_resultado] ?? c.ultimo_resultado}` : ""}`
+                : "Nunca contatado"}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 const SEM_DONO = "__sem__";
 
@@ -26,6 +114,7 @@ export function EsteiraTab() {
   const [linhas, setLinhas] = useState<EsteiraLinha[]>([]);
   const [arquivo, setArquivo] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [aberta, setAberta] = useState<string | null>(null);
 
   const consultorasQ = useQuery({ queryKey: ["esteira", "consultoras"], queryFn: () => listarConsultoras() });
   const metricasQ = useQuery({ queryKey: ["esteira", "metricas"], queryFn: () => metricas(), refetchInterval: 60_000 });
@@ -204,17 +293,30 @@ export function EsteiraTab() {
       {m && m.porConsultora.length > 0 && (
         <Card className="p-4">
           <h3 className="mb-3 font-semibold">Acompanhamento por consultora</h3>
+          <p className="mb-3 text-xs text-muted-foreground">Toque na consultora para ver os contratos dela.</p>
           <div className="space-y-1">
-            {m.porConsultora.map((c) => (
-              <div key={c.nome} className="flex items-center gap-3 rounded-md border p-2 text-sm">
-                <span className="min-w-0 flex-1 truncate">{c.nome}</span>
-                <Badge variant="outline">{c.total} contratos</Badge>
-                <Badge variant="outline" className={c.pendentes ? "border-amber-300 text-amber-700" : ""}>
-                  {c.pendentes} a ligar
-                </Badge>
-                <Badge variant="outline">{c.contatos_mes} ligações no mês</Badge>
-              </div>
-            ))}
+            {m.porConsultora.map((c) => {
+              const chave = c.consultant_id ?? "sem-responsavel";
+              const estaAberta = aberta === chave;
+              return (
+                <div key={c.nome} className="overflow-hidden rounded-md border">
+                  <button
+                    type="button"
+                    onClick={() => setAberta(estaAberta ? null : chave)}
+                    className="flex w-full items-center gap-3 p-2 text-left text-sm transition-colors hover:bg-muted/50"
+                  >
+                    <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${estaAberta ? "" : "-rotate-90"}`} />
+                    <span className="min-w-0 flex-1 truncate font-medium">{c.nome}</span>
+                    <Badge variant="outline">{c.total} contratos</Badge>
+                    <Badge variant="outline" className={c.pendentes ? "border-amber-300 text-amber-700" : ""}>
+                      {c.pendentes} a ligar
+                    </Badge>
+                    <Badge variant="outline">{c.contatos_mes} ligações no mês</Badge>
+                  </button>
+                  {estaAberta && <ConsultoraDetalhe consultantId={c.consultant_id} />}
+                </div>
+              );
+            })}
           </div>
         </Card>
       )}

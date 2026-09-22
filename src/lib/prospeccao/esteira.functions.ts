@@ -192,6 +192,7 @@ export const esteiraListar = createServerFn({ method: "GET" })
     z
       .object({
         consultantId: z.string().uuid().nullable().optional(),
+        semResponsavel: z.boolean().default(false),
         busca: z.string().max(120).optional(),
         somenteAtivos: z.boolean().default(true),
         limit: z.number().int().min(1).max(500).default(300),
@@ -207,6 +208,7 @@ export const esteiraListar = createServerFn({ method: "GET" })
       .order("proximo_contato_em", { ascending: true, nullsFirst: false })
       .limit(data.limit);
     if (!admEh) q = q.eq("consultant_id", context.userId);
+    else if (data.semResponsavel) q = q.is("consultant_id", null);
     else if (data.consultantId) q = q.eq("consultant_id", data.consultantId);
     if (data.somenteAtivos) q = q.eq("acompanhamento_ativo", true);
     if (data.busca) {
@@ -347,7 +349,7 @@ export type EsteiraMetricas = {
   atrasados: number;
   contatosMes: number;
   amortizacoesMes: number;
-  porConsultora: { nome: string; total: number; pendentes: number; contatos_mes: number }[];
+  porConsultora: { nome: string; consultant_id: string | null; total: number; pendentes: number; contatos_mes: number }[];
 };
 
 export const esteiraMetricas = createServerFn({ method: "GET" })
@@ -379,10 +381,11 @@ export const esteiraMetricas = createServerFn({ method: "GET" })
       contatosMesPorNome.set(nome, (contatosMesPorNome.get(nome) ?? 0) + 1);
     }
 
-    const agrupado = new Map<string, { total: number; pendentes: number }>();
+    const agrupado = new Map<string, { consultant_id: string | null; total: number; pendentes: number }>();
     for (const r of rows ?? []) {
       const nome = r.consultora || "Sem responsável";
-      const g = agrupado.get(nome) ?? { total: 0, pendentes: 0 };
+      const g = agrupado.get(nome) ?? { consultant_id: r.consultant_id ?? null, total: 0, pendentes: 0 };
+      if (!g.consultant_id && r.consultant_id) g.consultant_id = r.consultant_id;
       g.total += 1;
       if (r.acompanhamento_ativo && r.proximo_contato_em && r.proximo_contato_em <= hoje0) g.pendentes += 1;
       agrupado.set(nome, g);
