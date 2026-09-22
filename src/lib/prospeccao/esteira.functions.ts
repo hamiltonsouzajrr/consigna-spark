@@ -333,7 +333,18 @@ export const esteiraListar = createServerFn({ method: "GET" })
       }
     }
 
-    return (rows ?? []).map((r: any) => {
+    // Regras de exibição por planilha importada (só valem para consultoras).
+    const camposPorLote = new Map<string, CamposVisiveis>();
+    if (!admEh) {
+      const lotes = [...new Set((rows ?? []).map((r: any) => r.lote_id).filter(Boolean))];
+      if (lotes.length) {
+        const { data: cfgs } = await db.from("esteira_lotes").select("lote_id,campos_visiveis").in("lote_id", lotes);
+        for (const cfg of cfgs ?? []) camposPorLote.set(cfg.lote_id, normalizarCampos(cfg.campos_visiveis));
+      }
+    }
+
+    return (rows ?? []).map((r0: any) => {
+      const r = admEh ? r0 : mascarar(r0, camposPorLote.get(r0.lote_id) ?? CAMPOS_VISIVEIS_PADRAO);
       const c = contatos.get(r.id);
       const k = String(r.cpf ?? "").replace(/\D/g, "");
       const m = margens.get(k);
