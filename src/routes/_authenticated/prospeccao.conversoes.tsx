@@ -219,6 +219,7 @@ function Page() {
 
   return (
     <AppShell>
+      <CarteiraTabs />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <Button asChild variant="ghost" size="sm" className="-ml-2 mb-1">
