@@ -702,6 +702,7 @@ export type Database = {
           repasse: number | null
           seguro: string | null
           status: string | null
+          telefone: string | null
           updated_at: string
           valor_bruto: number | null
         }
@@ -728,6 +729,7 @@ export type Database = {
           repasse?: number | null
           seguro?: string | null
           status?: string | null
+          telefone?: string | null
           updated_at?: string
           valor_bruto?: number | null
         }
@@ -754,6 +756,7 @@ export type Database = {
           repasse?: number | null
           seguro?: string | null
           status?: string | null
+          telefone?: string | null
           updated_at?: string
           valor_bruto?: number | null
         }
