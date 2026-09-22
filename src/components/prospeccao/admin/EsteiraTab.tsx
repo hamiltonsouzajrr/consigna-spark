@@ -8,17 +8,73 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { RhStatCard } from "@/components/rh/RhStatCard";
-import { FileSpreadsheet, Upload, AlertTriangle, CheckCircle2, Phone, PiggyBank, ChevronDown } from "lucide-react";
+import {
+  FileSpreadsheet,
+  Upload,
+  AlertTriangle,
+  CheckCircle2,
+  Phone,
+  PiggyBank,
+  ChevronDown,
+  Pencil,
+  Trash2,
+  RotateCcw,
+  Eye,
+} from "lucide-react";
 import { brl } from "@/lib/rh/mock";
 import { lerEsteira, casarConsultora, type EsteiraLinha } from "@/lib/prospeccao/esteira-parse";
+import { EditarContratoDialog } from "./EditarContratoDialog";
 import {
   esteiraConsultoras,
   esteiraImportar,
   esteiraListar,
   esteiraMetricas,
+  esteiraLotes,
+  esteiraAtualizarLote,
+  esteiraRemoverContrato,
+  CAMPOS_VISIVEIS_PADRAO,
+  type CamposVisiveis,
   type EsteiraContrato,
 } from "@/lib/prospeccao/esteira.functions";
+
+const CAMPOS_LABEL: { key: keyof CamposVisiveis; label: string }[] = [
+  { key: "status", label: "Status da venda" },
+  { key: "banco", label: "Banco" },
+  { key: "data_prazo", label: "Data da venda e prazo" },
+  { key: "valor_bruto", label: "Valor bruto" },
+  { key: "producao", label: "Produção" },
+  { key: "digitador", label: "Digitador" },
+  { key: "observacao", label: "Observação da planilha" },
+];
+
+function CamposToggles({
+  campos,
+  onChange,
+  idPrefix,
+}: {
+  campos: CamposVisiveis;
+  onChange: (c: CamposVisiveis) => void;
+  idPrefix: string;
+}) {
+  return (
+    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {CAMPOS_LABEL.map((c) => (
+        <div key={c.key} className="flex items-center gap-2 rounded-md border p-2">
+          <Switch
+            id={`${idPrefix}-${c.key}`}
+            checked={campos[c.key]}
+            onCheckedChange={(v) => onChange({ ...campos, [c.key]: v })}
+          />
+          <Label htmlFor={`${idPrefix}-${c.key}`} className="text-xs">
+            {c.label}
+          </Label>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const RESULTADO_LABEL: Record<string, string> = {
   amortizou: "Amortizou",
@@ -42,27 +98,73 @@ function ordenarContratos(lista: EsteiraContrato[]): EsteiraContrato[] {
   return [...lista].sort((a, b) => peso(a) - peso(b) || (a.proximo_contato_em ?? "9999").localeCompare(b.proximo_contato_em ?? "9999"));
 }
 
-function ConsultoraDetalhe({ consultantId }: { consultantId: string | null }) {
+function ConsultoraDetalhe({
+  consultantId,
+  contas,
+}: {
+  consultantId: string | null;
+  contas: { user_id: string; nome: string }[];
+}) {
+  const qc = useQueryClient();
   const listar = useServerFn(esteiraListar);
+  const remover = useServerFn(esteiraRemoverContrato);
+  const [verRemovidos, setVerRemovidos] = useState(false);
+  const [editando, setEditando] = useState<EsteiraContrato | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
   const q = useQuery({
-    queryKey: ["esteira", "detalhe", consultantId ?? "sem-responsavel"],
+    queryKey: ["esteira", "detalhe", consultantId ?? "sem-responsavel", verRemovidos],
     queryFn: () =>
       listar({
-        data: consultantId
-          ? { consultantId, somenteAtivos: false, limit: 500 }
-          : { semResponsavel: true, somenteAtivos: false, limit: 500 },
+        data: {
+          ...(consultantId ? { consultantId } : { semResponsavel: true }),
+          somenteAtivos: false,
+          somenteRemovidos: verRemovidos,
+          limit: 500,
+        },
       }),
     staleTime: 60_000,
   });
   const hoje = hojeISO();
 
+  const alternar = async (c: EsteiraContrato, removerAgora: boolean) => {
+    if (removerAgora && !window.confirm(`Remover ${c.nome} da carteira da consultora?`)) return;
+    setBusy(c.id);
+    try {
+      await remover({ data: { contratoId: c.id, remover: removerAgora } });
+      toast.success(removerAgora ? "Cliente removido da carteira" : "Cliente devolvido à carteira");
+      await qc.invalidateQueries({ queryKey: ["esteira"] });
+    } catch (e: any) {
+      toast.error("Não foi possível concluir", { description: e?.message });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const cabecalho = (
+    <div className="flex items-center justify-between gap-2 px-1 pb-2">
+      <p className="text-xs text-muted-foreground">
+        {verRemovidos ? "Clientes removidos da carteira" : "Clientes ativos na carteira"}
+      </p>
+      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setVerRemovidos((v) => !v)}>
+        <Eye className="mr-1 h-3.5 w-3.5" /> {verRemovidos ? "Ver ativos" : "Ver removidos"}
+      </Button>
+    </div>
+  );
+
   if (q.isLoading) return <p className="p-3 text-sm text-muted-foreground">Carregando contratos…</p>;
   if (q.isError) return <p className="p-3 text-sm text-rose-600">Não foi possível carregar os contratos.</p>;
   const lista = ordenarContratos(q.data ?? []);
-  if (!lista.length) return <p className="p-3 text-sm text-muted-foreground">Nenhum contrato nesta carteira.</p>;
 
   return (
     <div className="space-y-1 p-2">
+      {cabecalho}
+      <EditarContratoDialog contrato={editando} contas={contas} onClose={() => setEditando(null)} />
+      {!lista.length && (
+        <p className="p-1 text-sm text-muted-foreground">
+          {verRemovidos ? "Nenhum cliente removido." : "Nenhum contrato nesta carteira."}
+        </p>
+      )}
       {lista.map((c) => {
         const atrasado = c.acompanhamento_ativo && c.proximo_contato_em && c.proximo_contato_em < hoje;
         const ehHoje = c.acompanhamento_ativo && c.proximo_contato_em === hoje;
@@ -95,6 +197,40 @@ function ConsultoraDetalhe({ consultantId }: { consultantId: string | null }) {
                 ? `Última: ${c.ultimo_contato_em.slice(0, 10)}${c.ultimo_resultado ? ` · ${RESULTADO_LABEL[c.ultimo_resultado] ?? c.ultimo_resultado}` : ""}`
                 : "Nunca contatado"}
             </span>
+            <div className="flex shrink-0 items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                title="Editar cliente"
+                onClick={() => setEditando(c)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              {verRemovidos ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-emerald-600"
+                  title="Devolver à carteira"
+                  disabled={busy === c.id}
+                  onClick={() => alternar(c, false)}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-rose-600"
+                  title="Remover da carteira"
+                  disabled={busy === c.id}
+                  onClick={() => alternar(c, true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         );
       })}
@@ -115,6 +251,8 @@ export function EsteiraTab() {
   const [arquivo, setArquivo] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [aberta, setAberta] = useState<string | null>(null);
+  const [campos, setCampos] = useState<CamposVisiveis>(CAMPOS_VISIVEIS_PADRAO);
+
 
   const consultorasQ = useQuery({ queryKey: ["esteira", "consultoras"], queryFn: () => listarConsultoras() });
   const metricasQ = useQuery({ queryKey: ["esteira", "metricas"], queryFn: () => metricas(), refetchInterval: 60_000 });
@@ -151,6 +289,7 @@ export function EsteiraTab() {
       const r = await importar({
         data: {
           lote: arquivo || undefined,
+          campos,
           items: validas.map(({ linha, erros, ...rest }) => rest),
         },
       });
@@ -276,6 +415,17 @@ export function EsteiraTab() {
               ))}
             </div>
 
+            <div className="space-y-2 rounded-lg border p-3">
+              <div>
+                <h4 className="text-sm font-semibold">O que as consultoras vão ver</h4>
+                <p className="text-xs text-muted-foreground">
+                  Nome, CPF, telefone, dia da ligação e margem aparecem sempre. O repasse nunca aparece para a
+                  consultora.
+                </p>
+              </div>
+              <CamposToggles campos={campos} onChange={setCampos} idPrefix="novo" />
+            </div>
+
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Nome do lote</Label>
@@ -289,6 +439,8 @@ export function EsteiraTab() {
           </>
         )}
       </Card>
+
+      <LotesCard />
 
       {m && m.porConsultora.length > 0 && (
         <Card className="p-4">
@@ -313,7 +465,7 @@ export function EsteiraTab() {
                     </Badge>
                     <Badge variant="outline">{c.contatos_mes} ligações no mês</Badge>
                   </button>
-                  {estaAberta && <ConsultoraDetalhe consultantId={c.consultant_id} />}
+                  {estaAberta && <ConsultoraDetalhe consultantId={c.consultant_id} contas={contas} />}
                 </div>
               );
             })}
@@ -321,5 +473,84 @@ export function EsteiraTab() {
         </Card>
       )}
     </div>
+  );
+}
+
+/** Planilhas já importadas: o admin revisa o que cada uma mostra às consultoras. */
+function LotesCard() {
+  const qc = useQueryClient();
+  const listar = useServerFn(esteiraLotes);
+  const salvarFn = useServerFn(esteiraAtualizarLote);
+  const [rascunho, setRascunho] = useState<Record<string, CamposVisiveis>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [aberto, setAberto] = useState<string | null>(null);
+
+  const q = useQuery({ queryKey: ["esteira", "lotes"], queryFn: () => listar(), staleTime: 60_000 });
+  const lotes = q.data ?? [];
+
+  if (!lotes.length) return null;
+
+  const salvar = async (loteId: string, nome: string | null) => {
+    const campos = rascunho[loteId];
+    if (!campos) return;
+    setBusy(loteId);
+    try {
+      await salvarFn({ data: { loteId, nome, campos } });
+      toast.success("Exibição atualizada para as consultoras");
+      await qc.invalidateQueries({ queryKey: ["esteira"] });
+    } catch (e: any) {
+      toast.error("Não foi possível salvar", { description: e?.message });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <Card className="p-4">
+      <h3 className="mb-1 font-semibold">Planilhas importadas</h3>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Toque em uma planilha para escolher o que as consultoras veem nos clientes dela.
+      </p>
+      <div className="space-y-1">
+        {lotes.map((l) => {
+          const campos = rascunho[l.lote_id] ?? l.campos_visiveis;
+          const estaAberto = aberto === l.lote_id;
+          return (
+            <div key={l.lote_id} className="overflow-hidden rounded-md border">
+              <button
+                type="button"
+                onClick={() => setAberto(estaAberto ? null : l.lote_id)}
+                className="flex w-full items-center gap-3 p-2 text-left text-sm transition-colors hover:bg-muted/50"
+              >
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${estaAberto ? "" : "-rotate-90"}`} />
+                <span className="min-w-0 flex-1 truncate font-medium">{l.nome || "Planilha sem nome"}</span>
+                <Badge variant="outline">{l.total} clientes</Badge>
+                <span className="hidden text-xs text-muted-foreground sm:inline">
+                  {new Date(l.created_at).toLocaleDateString("pt-BR")}
+                </span>
+              </button>
+              {estaAberto && (
+                <div className="space-y-3 border-t p-3">
+                  <CamposToggles
+                    campos={campos}
+                    onChange={(c) => setRascunho((prev) => ({ ...prev, [l.lote_id]: c }))}
+                    idPrefix={l.lote_id}
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      disabled={busy === l.lote_id || !rascunho[l.lote_id]}
+                      onClick={() => salvar(l.lote_id, l.nome)}
+                    >
+                      {busy === l.lote_id ? "Salvando…" : "Salvar exibição"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }

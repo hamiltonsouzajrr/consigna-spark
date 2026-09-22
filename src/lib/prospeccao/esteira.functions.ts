@@ -31,7 +31,57 @@ export type EsteiraContrato = {
   margem_usada: number | null;
   margem_restante_valor: number | null;
   tipo_margem: string | null;
+  removido_em?: string | null;
 };
+
+export type CamposVisiveis = {
+  status: boolean;
+  banco: boolean;
+  data_prazo: boolean;
+  valor_bruto: boolean;
+  producao: boolean;
+  digitador: boolean;
+  observacao: boolean;
+};
+
+export const CAMPOS_VISIVEIS_PADRAO: CamposVisiveis = {
+  status: true,
+  banco: true,
+  data_prazo: true,
+  valor_bruto: false,
+  producao: false,
+  digitador: false,
+  observacao: true,
+};
+
+const camposSchema = z.object({
+  status: z.boolean(),
+  banco: z.boolean(),
+  data_prazo: z.boolean(),
+  valor_bruto: z.boolean(),
+  producao: z.boolean(),
+  digitador: z.boolean(),
+  observacao: z.boolean(),
+});
+
+function normalizarCampos(v: any): CamposVisiveis {
+  return { ...CAMPOS_VISIVEIS_PADRAO, ...(v && typeof v === "object" ? v : {}) };
+}
+
+/** Esconde da consultora o que o admin desligou no lote. Repasse nunca aparece. */
+function mascarar(row: any, campos: CamposVisiveis) {
+  return {
+    ...row,
+    repasse: null,
+    status: campos.status ? row.status : null,
+    banco: campos.banco ? row.banco : null,
+    prazo: campos.data_prazo ? row.prazo : null,
+    valor_bruto: campos.valor_bruto ? row.valor_bruto : null,
+    producao: campos.producao ? row.producao : null,
+    digitador: campos.digitador ? row.digitador : null,
+    observacao: campos.observacao ? row.observacao : null,
+  };
+}
 
 export type EsteiraContato = {
   id: string;
@@ -138,13 +188,26 @@ const itemSchema = z.object({
 export const esteiraImportar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({ lote: z.string().trim().max(160).optional(), items: z.array(itemSchema).min(1).max(3000) }).parse(data),
+    z
+      .object({
+        lote: z.string().trim().max(160).optional(),
+        campos: camposSchema.optional(),
+        items: z.array(itemSchema).min(1).max(3000),
+      })
+      .parse(data),
   )
   .handler(async ({ context, data }): Promise<{ salvos: number; semResponsavel: number; duplicados: number }> => {
     await assertAdmin(context);
     const db = await admin();
     const hoje0 = hoje();
     const loteId = crypto.randomUUID();
+
+    await db.from("esteira_lotes").insert({
+      lote_id: loteId,
+      nome: data.lote ?? null,
+      campos_visiveis: data.campos ?? CAMPOS_VISIVEIS_PADRAO,
+    });
+
 
     // Uma planilha pode repetir o mesmo contrato (mesmo CPF + data + banco).
     // O banco não aceita gravar a mesma linha duas vezes no mesmo comando,
@@ -199,6 +262,8 @@ export const esteiraListar = createServerFn({ method: "GET" })
         semResponsavel: z.boolean().default(false),
         busca: z.string().max(120).optional(),
         somenteAtivos: z.boolean().default(true),
+        incluirRemovidos: z.boolean().default(false),
+        somenteRemovidos: z.boolean().default(false),
         limit: z.number().int().min(1).max(500).default(300),
       })
       .parse(data ?? {}),
@@ -211,6 +276,8 @@ export const esteiraListar = createServerFn({ method: "GET" })
       .select("*")
       .order("proximo_contato_em", { ascending: true, nullsFirst: false })
       .limit(data.limit);
+    if (admEh && data.somenteRemovidos) q = q.not("removido_em", "is", null);
+    else if (!admEh || !data.incluirRemovidos) q = q.is("removido_em", null);
     if (!admEh) q = q.eq("consultant_id", context.userId);
     else if (data.semResponsavel) q = q.is("consultant_id", null);
     else if (data.consultantId) q = q.eq("consultant_id", data.consultantId);
@@ -266,7 +333,18 @@ export const esteiraListar = createServerFn({ method: "GET" })
       }
     }
 
-    return (rows ?? []).map((r: any) => {
+    // Regras de exibição por planilha importada (só valem para consultoras).
+    const camposPorLote = new Map<string, CamposVisiveis>();
+    if (!admEh) {
+      const lotes = [...new Set((rows ?? []).map((r: any) => r.lote_id).filter(Boolean))];
+      if (lotes.length) {
+        const { data: cfgs } = await db.from("esteira_lotes").select("lote_id,campos_visiveis").in("lote_id", lotes);
+        for (const cfg of cfgs ?? []) camposPorLote.set(cfg.lote_id, normalizarCampos(cfg.campos_visiveis));
+      }
+    }
+
+    return (rows ?? []).map((r0: any) => {
+      const r = admEh ? r0 : mascarar(r0, camposPorLote.get(r0.lote_id) ?? CAMPOS_VISIVEIS_PADRAO);
       const c = contatos.get(r.id);
       const k = String(r.cpf ?? "").replace(/\D/g, "");
       const m = margens.get(k);
@@ -275,7 +353,7 @@ export const esteiraListar = createServerFn({ method: "GET" })
         ultimo_contato_em: c?.em ?? null,
         ultimo_resultado: c?.resultado ?? null,
         contatos: c?.total ?? 0,
-        telefone: telefones.get(k) ?? null,
+        telefone: r.telefone || telefones.get(k) || null,
         margem_usada: m?.usada ?? null,
         margem_restante_valor: m?.restante ?? null,
         tipo_margem: m?.tipo ?? null,
@@ -323,6 +401,7 @@ export const esteiraRegistrarContato = createServerFn({ method: "POST" })
     if (!contrato) throw new Error("Contrato não encontrado.");
     if (contrato.consultant_id !== context.userId && !(await isAdmin(context)))
       throw new Error("Contrato de outra consultora.");
+    if (contrato.removido_em) throw new Error("Este cliente foi removido da carteira.");
 
     const { error } = await db.from("esteira_contatos").insert({
       contrato_id: contrato.id,
@@ -402,6 +481,7 @@ export const esteiraMetricas = createServerFn({ method: "GET" })
     const { data: rows, error } = await db
       .from("esteira_contratos")
       .select("id,consultora,consultant_id,acompanhamento_ativo,proximo_contato_em")
+      .is("removido_em", null)
       .limit(20000);
     if (error) throw new Error(error.message);
 
@@ -444,4 +524,161 @@ export const esteiraMetricas = createServerFn({ method: "GET" })
         .map(([nome, g]) => ({ nome, ...g, contatos_mes: contatosMesPorNome.get(nome) ?? 0 }))
         .sort((a, b) => b.total - a.total),
     };
+  });
+
+// ===== Painel do admin: configuração de exibição, edição e remoção =====
+
+export type EsteiraLote = {
+  lote_id: string;
+  nome: string | null;
+  campos_visiveis: CamposVisiveis;
+  total: number;
+  created_at: string;
+};
+
+export const esteiraLotes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<EsteiraLote[]> => {
+    await assertAdmin(context);
+    const db = await admin();
+    const { data: lotes, error } = await db
+      .from("esteira_lotes")
+      .select("lote_id,nome,campos_visiveis,created_at")
+      .order("created_at", { ascending: false })
+      .limit(60);
+    if (error) throw new Error(error.message);
+
+    const totais = new Map<string, number>();
+    const ids = (lotes ?? []).map((l: any) => l.lote_id);
+    if (ids.length) {
+      const { data: rows } = await db
+        .from("esteira_contratos")
+        .select("lote_id")
+        .in("lote_id", ids)
+        .is("removido_em", null)
+        .limit(20000);
+      for (const r of rows ?? []) totais.set(r.lote_id, (totais.get(r.lote_id) ?? 0) + 1);
+    }
+
+    return (lotes ?? []).map((l: any) => ({
+      lote_id: l.lote_id,
+      nome: l.nome ?? null,
+      campos_visiveis: normalizarCampos(l.campos_visiveis),
+      total: totais.get(l.lote_id) ?? 0,
+      created_at: l.created_at,
+    }));
+  });
+
+export const esteiraAtualizarLote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        loteId: z.string().uuid(),
+        nome: z.string().trim().max(160).nullable().optional(),
+        campos: camposSchema,
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const db = await admin();
+    const { error } = await db
+      .from("esteira_lotes")
+      .upsert(
+        { lote_id: data.loteId, nome: data.nome ?? null, campos_visiveis: data.campos },
+        { onConflict: "lote_id" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const esteiraAtualizarContrato = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        contratoId: z.string().uuid(),
+        nome: z.string().trim().min(2).max(200),
+        cpf: z.string().trim().min(3).max(20),
+        telefone: z.string().trim().max(30).nullable().optional(),
+        banco: z.string().trim().max(120).nullable().optional(),
+        data_venda: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        prazo: z.number().int().min(0).max(240).nullable().optional(),
+        valor_bruto: z.number().nullable().optional(),
+        seguro: z.string().trim().max(40).nullable().optional(),
+        status: z.string().trim().max(80).nullable().optional(),
+        observacao: z.string().trim().max(500).nullable().optional(),
+        dia_amortizacao: z.number().int().min(1).max(31),
+        proximo_contato_em: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+        acompanhamento_ativo: z.boolean(),
+        consultant_id: z.string().uuid().nullable().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }): Promise<{ proximo: string | null }> => {
+    await assertAdmin(context);
+    const db = await admin();
+    const { data: contrato } = await db.from("esteira_contratos").select("*").eq("id", data.contratoId).maybeSingle();
+    if (!contrato) throw new Error("Contrato não encontrado.");
+
+    const limite = limiteAcompanhamento(data.data_venda, data.prazo ?? null);
+    let proximo: string | null = data.acompanhamento_ativo ? (data.proximo_contato_em ?? null) : null;
+    if (data.acompanhamento_ativo && !proximo) proximo = proximaData(data.dia_amortizacao, hoje(), limite);
+    const ativo = data.acompanhamento_ativo && proximo !== null;
+
+    const patch = {
+      nome: data.nome,
+      cpf: data.cpf.replace(/\D/g, "") || data.cpf,
+      telefone: data.telefone || null,
+      banco: data.banco || null,
+      data_venda: data.data_venda,
+      prazo: data.prazo ?? null,
+      valor_bruto: data.valor_bruto ?? null,
+      seguro: data.seguro || null,
+      status: data.status || null,
+      observacao: data.observacao || null,
+      dia_amortizacao: data.dia_amortizacao,
+      proximo_contato_em: proximo,
+      acompanhamento_ativo: ativo,
+      consultant_id: data.consultant_id ?? null,
+    };
+    const { error } = await db.from("esteira_contratos").update(patch).eq("id", contrato.id);
+    if (error) throw new Error(error.message);
+
+    await sincronizarTarefa(db, { ...contrato, ...patch, id: contrato.id });
+    return { proximo };
+  });
+
+export const esteiraRemoverContrato = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ contratoId: z.string().uuid(), remover: z.boolean().default(true) }).parse(data))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const db = await admin();
+    const { data: contrato } = await db.from("esteira_contratos").select("*").eq("id", data.contratoId).maybeSingle();
+    if (!contrato) throw new Error("Contrato não encontrado.");
+
+    if (data.remover) {
+      await db
+        .from("esteira_contratos")
+        .update({ removido_em: new Date().toISOString(), removido_por: context.userId })
+        .eq("id", contrato.id);
+      await sincronizarTarefa(db, { ...contrato, acompanhamento_ativo: false, proximo_contato_em: null });
+      return { ok: true, removido: true };
+    }
+
+    const limite = limiteAcompanhamento(contrato.data_venda, contrato.prazo);
+    const proximo = contrato.proximo_contato_em ?? proximaData(contrato.dia_amortizacao, hoje(), limite);
+    await db
+      .from("esteira_contratos")
+      .update({
+        removido_em: null,
+        removido_por: null,
+        proximo_contato_em: proximo,
+        acompanhamento_ativo: proximo !== null,
+      })
+      .eq("id", contrato.id);
+    await sincronizarTarefa(db, { ...contrato, proximo_contato_em: proximo, acompanhamento_ativo: proximo !== null });
+    return { ok: true, removido: false };
   });

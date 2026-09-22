@@ -67,10 +67,15 @@ export function ClientesPlanilhaCards({ limite = 6 }: { limite?: number }) {
                   </Badge>
                 )}
               </div>
-              <p className="truncate text-xs text-muted-foreground">
-                {c.banco ?? "—"} · {c.prazo ? `${c.prazo}x` : "—"} ·{" "}
-                {c.valor_bruto != null ? BRL.format(c.valor_bruto) : "—"}
-              </p>
+              {[c.banco, c.prazo ? `${c.prazo}x` : null, c.valor_bruto != null ? BRL.format(c.valor_bruto) : null]
+                .filter(Boolean)
+                .join(" · ") && (
+                <p className="truncate text-xs text-muted-foreground">
+                  {[c.banco, c.prazo ? `${c.prazo}x` : null, c.valor_bruto != null ? BRL.format(c.valor_bruto) : null]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 Ligar todo dia {c.dia_amortizacao} · próxima {fmtData(c.proximo_contato_em)}
               </p>

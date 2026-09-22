@@ -137,9 +137,13 @@ export function AmortizacaoPopup() {
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{c.nome}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {c.banco ?? "—"}
-                    {c.margem_usada != null ? ` · margem usada ${BRL.format(c.margem_usada)}` : ""}
-                    {c.margem_restante_valor != null ? ` · resta ${BRL.format(c.margem_restante_valor)}` : ""}
+                    {[
+                      c.banco,
+                      c.margem_usada != null ? `margem usada ${BRL.format(c.margem_usada)}` : null,
+                      c.margem_restante_valor != null ? `resta ${BRL.format(c.margem_restante_valor)}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || "Cliente da planilha de produção"}
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-1">
