@@ -20,17 +20,19 @@ export const chegaramParaMim = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
 
     const [crmCount, leads, tomadores, promovidos] = await Promise.all([
+      // Conta apenas o que foi realmente entregue (atribuido_em), e não
+      // qualquer ficha que a consultora editou hoje.
       supabase
         .from("prospect_leads")
         .select("id", { count: "exact", head: true })
         .eq("consultant_id", userId)
-        .gte("updated_at", desde),
+        .gte("atribuido_em", desde),
       supabase
         .from("prospect_leads")
         .select("id,nome,cidade,status")
         .eq("consultant_id", userId)
-        .gte("updated_at", desde)
-        .order("updated_at", { ascending: false })
+        .gte("atribuido_em", desde)
+        .order("atribuido_em", { ascending: false })
         .limit(10),
       supabase
         .from("tomadores_al")
