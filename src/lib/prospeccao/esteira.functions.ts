@@ -188,13 +188,26 @@ const itemSchema = z.object({
 export const esteiraImportar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({ lote: z.string().trim().max(160).optional(), items: z.array(itemSchema).min(1).max(3000) }).parse(data),
+    z
+      .object({
+        lote: z.string().trim().max(160).optional(),
+        campos: camposSchema.optional(),
+        items: z.array(itemSchema).min(1).max(3000),
+      })
+      .parse(data),
   )
   .handler(async ({ context, data }): Promise<{ salvos: number; semResponsavel: number; duplicados: number }> => {
     await assertAdmin(context);
     const db = await admin();
     const hoje0 = hoje();
     const loteId = crypto.randomUUID();
+
+    await db.from("esteira_lotes").insert({
+      lote_id: loteId,
+      nome: data.lote ?? null,
+      campos_visiveis: data.campos ?? CAMPOS_VISIVEIS_PADRAO,
+    });
+
 
     // Uma planilha pode repetir o mesmo contrato (mesmo CPF + data + banco).
     // O banco não aceita gravar a mesma linha duas vezes no mesmo comando,
