@@ -252,6 +252,8 @@ function Page() {
         </Card>
       </div>
 
+      <ClientesPlanilhaCards />
+
       {isLoading ? (
         <div className="space-y-3">
           <Skeleton className="h-24 w-full" />
