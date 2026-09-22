@@ -377,27 +377,34 @@ export const atualizarConversao = createServerFn({ method: "POST" })
     if (atual.user_id !== context.userId) await assertAdmin(context.supabase, context.userId);
 
     const lembreteEm = data.lembrete === "manter" ? atual.lembrete_em : dataLembrete(data.lembrete);
+    const totais = totaisDosItens(data.itens);
     const { error } = await db
       .from("prospect_conversoes")
       .update({
         lead_id: data.leadId ?? null,
         tomador_id: data.tomadorId ?? null,
         origem: data.origem,
+        cliente_manual: data.origem === "manual",
         cliente_nome: data.clienteNome,
         cpf: data.cpf?.replace(/\D/g, "") || null,
         data_operacao: data.dataOperacao,
-        valor_liberado: data.valorLiberado,
-        prazo: data.prazo ?? null,
-        valor_parcela: data.valorParcela ?? null,
+        valor_liberado: totais.valorLiberado,
+        prazo: totais.prazo,
+        valor_parcela: totais.valorParcela,
         margem_restante: data.margemRestante,
-        tipo_margem: data.tipoMargem,
-        margem_usada: data.margemUsada,
+        tipo_margem: totais.tipoMargem,
+        margem_usada: totais.margemUsada,
         margem_restante_valor: data.margemRestante ? (data.margemRestanteValor ?? null) : null,
         observacao: data.observacao ?? null,
         lembrete_em: lembreteEm,
       })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+
+    // Produtos: substitui as linhas pela lista enviada.
+    await db.from("prospect_conversao_itens").delete().eq("conversao_id", data.id);
+    const { error: eItens } = await db.from("prospect_conversao_itens").insert(linhasItens(data.id, data.itens));
+    if (eItens) throw new Error(eItens.message);
 
     const clienteDoLembrete = data.leadId
       ? { lead_id: data.leadId, tomador_id: null }
