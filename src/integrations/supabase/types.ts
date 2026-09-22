@@ -640,6 +640,44 @@ export type Database = {
           },
         ]
       }
+      esteira_ajustes_consultora: {
+        Row: {
+          consultant_id: string
+          contrato_id: string
+          created_at: string
+          margem_restante_valor: number | null
+          margem_usada: number | null
+          prazo: number | null
+          updated_at: string
+        }
+        Insert: {
+          consultant_id: string
+          contrato_id: string
+          created_at?: string
+          margem_restante_valor?: number | null
+          margem_usada?: number | null
+          prazo?: number | null
+          updated_at?: string
+        }
+        Update: {
+          consultant_id?: string
+          contrato_id?: string
+          created_at?: string
+          margem_restante_valor?: number | null
+          margem_usada?: number | null
+          prazo?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "esteira_ajustes_consultora_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: true
+            referencedRelation: "esteira_contratos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       esteira_contatos: {
         Row: {
           consultant_id: string | null

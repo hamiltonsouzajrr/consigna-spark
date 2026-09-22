@@ -36,3 +36,6 @@
 ## Painéis hierárquicos
 - [x] Painéis de consultora e administrador: indicadores hierárquicos e cores semânticas
 - [ ] Validação visual autenticada em computador e celular (bloqueada: não há sessão de teste disponível)
+
+## Minha carteira
+- [x] Consultora pode ajustar margem utilizada, margem restante e prazo sem alterar a planilha original

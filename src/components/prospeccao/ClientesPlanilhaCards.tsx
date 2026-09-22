@@ -1,6 +1,6 @@
 // Cards dos clientes que vieram das planilhas de produção (esteira).
 // Aparecem na carteira da consultora, com a próxima ligação de amortização.
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -8,14 +8,16 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PiggyBank, Phone } from "lucide-react";
-import { esteiraListar } from "@/lib/prospeccao/esteira.functions";
+import { Pencil, PiggyBank, Phone } from "lucide-react";
+import { esteiraListar, type EsteiraContrato } from "@/lib/prospeccao/esteira.functions";
+import { AjustarCarteiraDialog } from "@/components/prospeccao/AjustarCarteiraDialog";
 
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const fmtData = (v: string | null) => (v ? new Date(`${v.slice(0, 10)}T12:00:00`).toLocaleDateString("pt-BR") : "—");
 const hojeISO = () => new Date(Date.now() - 3 * 3600_000).toISOString().slice(0, 10);
 
 export function ClientesPlanilhaCards({ limite = 6 }: { limite?: number }) {
+  const [editando, setEditando] = useState<EsteiraContrato | null>(null);
   const listar = useServerFn(esteiraListar);
   const { data, isLoading } = useQuery({
     queryKey: ["esteira", "carteira-cards"],
@@ -99,11 +101,15 @@ export function ClientesPlanilhaCards({ limite = 6 }: { limite?: number }) {
                 <Button asChild size="sm" variant="ghost">
                   <Link to="/prospeccao/amortizacao">Registrar contato</Link>
                 </Button>
+                <Button size="sm" variant="outline" onClick={() => setEditando(c)}>
+                  <Pencil className="mr-1.5 h-3.5 w-3.5" /> Margem e prazo
+                </Button>
               </div>
             </Card>
           );
         })}
       </div>
+      <AjustarCarteiraDialog contrato={editando} onClose={() => setEditando(null)} />
     </section>
   );
 }

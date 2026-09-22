@@ -31,6 +31,8 @@ export type EsteiraContrato = {
   margem_usada: number | null;
   margem_restante_valor: number | null;
   tipo_margem: string | null;
+  prazo_original?: number | null;
+  ajuste_consultora?: boolean;
   removido_em?: string | null;
 };
 
@@ -149,6 +151,15 @@ async function sincronizarTarefa(db: any, contrato: any) {
     title: `Amortização — ${contrato.nome}`,
     status: "pending",
   });
+}
+
+async function obterPrazoEfetivo(db: any, contrato: { id: string; prazo: number | null }) {
+  const { data } = await db
+    .from("esteira_ajustes_consultora")
+    .select("prazo")
+    .eq("contrato_id", contrato.id)
+    .maybeSingle();
+  return data ? data.prazo : contrato.prazo;
 }
 
 export const esteiraConsultoras = createServerFn({ method: "GET" })
@@ -308,15 +319,17 @@ export const esteiraListar = createServerFn({ method: "GET" })
     // casados pelo CPF do cliente.
     const cpfs = [...new Set((rows ?? []).map((r: any) => String(r.cpf ?? "").replace(/\D/g, "")).filter(Boolean))];
     const margens = new Map<string, { usada: number | null; restante: number | null; tipo: string | null }>();
+    const ajustes = new Map<string, { margem_usada: number | null; margem_restante_valor: number | null; prazo: number | null }>();
     const telefones = new Map<string, string>();
     if (cpfs.length) {
-      const [{ data: convs }, { data: leads }] = await Promise.all([
+      const [{ data: convs }, { data: leads }, { data: ajustesRows }] = await Promise.all([
         db
           .from("prospect_conversoes")
           .select("cpf,margem_usada,margem_restante_valor,tipo_margem,data_operacao")
           .in("cpf", cpfs)
           .order("data_operacao", { ascending: false }),
         db.from("prospect_leads").select("cpf,telefone").in("cpf", cpfs),
+        db.from("esteira_ajustes_consultora").select("contrato_id,margem_usada,margem_restante_valor,prazo").in("contrato_id", ids),
       ]);
       for (const c of convs ?? []) {
         const k = String(c.cpf ?? "").replace(/\D/g, "");
@@ -331,6 +344,7 @@ export const esteiraListar = createServerFn({ method: "GET" })
         const k = String(l.cpf ?? "").replace(/\D/g, "");
         if (k && l.telefone && !telefones.has(k)) telefones.set(k, l.telefone);
       }
+      for (const a of ajustesRows ?? []) ajustes.set(a.contrato_id, a);
     }
 
     // Regras de exibição por planilha importada (só valem para consultoras).
@@ -348,17 +362,68 @@ export const esteiraListar = createServerFn({ method: "GET" })
       const c = contatos.get(r.id);
       const k = String(r.cpf ?? "").replace(/\D/g, "");
       const m = margens.get(k);
+      const a = ajustes.get(r.id);
       return {
         ...r,
+        prazo_original: r.prazo ?? null,
+        prazo: a ? a.prazo : r.prazo,
         ultimo_contato_em: c?.em ?? null,
         ultimo_resultado: c?.resultado ?? null,
         contatos: c?.total ?? 0,
         telefone: r.telefone || telefones.get(k) || null,
-        margem_usada: m?.usada ?? null,
-        margem_restante_valor: m?.restante ?? null,
+        margem_usada: a ? a.margem_usada : (m?.usada ?? null),
+        margem_restante_valor: a ? a.margem_restante_valor : (m?.restante ?? null),
         tipo_margem: m?.tipo ?? null,
+        ajuste_consultora: Boolean(a),
       } as EsteiraContrato;
     });
+  });
+
+export const esteiraAtualizarAjustesCarteira = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({
+    contratoId: z.string().uuid(),
+    margemUsada: z.number().min(0).max(100_000_000).nullable(),
+    margemRestanteValor: z.number().min(0).max(100_000_000).nullable(),
+    prazo: z.number().int().min(1).max(240).nullable(),
+  }).parse(data))
+  .handler(async ({ context, data }) => {
+    const admEh = await isAdmin(context);
+    const { data: contrato, error: contratoErro } = await context.supabase
+      .from("esteira_contratos")
+      .select("id,consultant_id,data_venda,prazo,dia_amortizacao,proximo_contato_em,acompanhamento_ativo,removido_em,nome")
+      .eq("id", data.contratoId)
+      .maybeSingle();
+    if (contratoErro) throw new Error(contratoErro.message);
+    if (!contrato) throw new Error("Cliente não encontrado na sua carteira.");
+    if (!admEh && contrato.consultant_id !== context.userId) throw new Error("Cliente de outra consultora.");
+    if (contrato.removido_em) throw new Error("Este cliente foi removido da carteira.");
+
+    const db = await admin();
+    const { data: ajusteAnterior } = await db.from("esteira_ajustes_consultora").select("prazo").eq("contrato_id", contrato.id).maybeSingle();
+    const prazoAnterior = ajusteAnterior ? ajusteAnterior.prazo : contrato.prazo;
+    const responsavel = contrato.consultant_id ?? context.userId;
+    const { error } = await db.from("esteira_ajustes_consultora").upsert({
+      contrato_id: contrato.id,
+      consultant_id: responsavel,
+      margem_usada: data.margemUsada,
+      margem_restante_valor: data.margemRestanteValor,
+      prazo: data.prazo,
+    }, { onConflict: "contrato_id" });
+    if (error) throw new Error(error.message);
+
+    let proximo = contrato.proximo_contato_em;
+    let ativo = contrato.acompanhamento_ativo;
+    if (data.prazo !== prazoAnterior && ativo) {
+      const limite = limiteAcompanhamento(contrato.data_venda, data.prazo);
+      if (!proximo || new Date(`${proximo}T12:00:00.000Z`).getTime() > limite.getTime()) {
+        proximo = proximaData(contrato.dia_amortizacao, hoje(), limite);
+        ativo = proximo !== null;
+        await db.from("esteira_contratos").update({ proximo_contato_em: proximo, acompanhamento_ativo: ativo }).eq("id", contrato.id);
+        await sincronizarTarefa(db, { ...contrato, proximo_contato_em: proximo, acompanhamento_ativo: ativo });
+      }
+    }
+    return { ok: true, proximo, ativo };
   });
 
 export const esteiraHistorico = createServerFn({ method: "GET" })
@@ -411,7 +476,8 @@ export const esteiraRegistrarContato = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
 
-    const limite = limiteAcompanhamento(contrato.data_venda, contrato.prazo);
+    const prazoEfetivo = await obterPrazoEfetivo(db, contrato);
+    const limite = limiteAcompanhamento(contrato.data_venda, prazoEfetivo);
     const base = hoje();
     const proximo = proximaData(contrato.dia_amortizacao, new Date(base.getTime() + 24 * 60 * 60 * 1000), limite);
     const ativo = proximo !== null;
@@ -434,7 +500,8 @@ export const esteiraEncerrarAcompanhamento = createServerFn({ method: "POST" })
       throw new Error("Contrato de outra consultora.");
     let proximo = contrato.proximo_contato_em;
     if (data.ativo && !proximo) {
-      proximo = proximaData(contrato.dia_amortizacao, hoje(), limiteAcompanhamento(contrato.data_venda, contrato.prazo));
+      const prazoEfetivo = await obterPrazoEfetivo(db, contrato);
+      proximo = proximaData(contrato.dia_amortizacao, hoje(), limiteAcompanhamento(contrato.data_venda, prazoEfetivo));
     }
     await db
       .from("esteira_contratos")
@@ -668,7 +735,8 @@ export const esteiraRemoverContrato = createServerFn({ method: "POST" })
       return { ok: true, removido: true };
     }
 
-    const limite = limiteAcompanhamento(contrato.data_venda, contrato.prazo);
+    const prazoEfetivo = await obterPrazoEfetivo(db, contrato);
+    const limite = limiteAcompanhamento(contrato.data_venda, prazoEfetivo);
     const proximo = contrato.proximo_contato_em ?? proximaData(contrato.dia_amortizacao, hoje(), limite);
     await db
       .from("esteira_contratos")
