@@ -56,7 +56,7 @@ type Props = {
 
 function MiniStat({ label, value, tone = "default" }: { label: string; value: string | number; tone?: string }) {
   return (
-    <div className="rounded-lg border bg-muted/30 p-2.5">
+    <div className="rounded-lg border border-border/70 bg-card/75 p-3 shadow-sm">
       <p className="text-[11px] leading-tight text-muted-foreground">{label}</p>
       <p className={cn("mt-0.5 text-lg font-bold tabular-nums", tone)}>{value}</p>
     </div>
@@ -193,40 +193,45 @@ export function CrmCockpit({
   const maxDay = Math.max(1, ...(quality?.daily ?? []).map((d) => d.total));
 
   return (
-    <div className="grid gap-4 xl:grid-cols-3">
+    <div className="grid gap-4 xl:grid-cols-6">
       {/* 1. Meta diária + produção */}
-      <Card className="flex flex-col gap-4 p-4">
+      <Card className="relative flex min-h-[320px] flex-col gap-5 overflow-hidden border-sidebar-border bg-sidebar p-5 text-sidebar-foreground shadow-lg xl:col-span-3 sm:p-6">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
               <Target className="h-4.5 w-4.5" />
             </span>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">Meta diária de chamadas</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-sidebar-foreground/70">
                 {chamadas >= metaDiaria ? "Meta batida 🎉" : `Faltam ${metaDiaria - chamadas}`}
               </p>
             </div>
           </div>
-          <Badge variant="outline" className="gap-1 text-xs">
+          <Badge variant="outline" className="gap-1 border-sidebar-border bg-sidebar-accent text-xs text-sidebar-accent-foreground">
             <Flame className="h-3 w-3 text-amber-500" /> {streak}d
           </Badge>
         </div>
 
         <div>
           <div className="mb-1 flex items-end justify-between">
-            <span className="text-3xl font-bold tabular-nums leading-none">{chamadas}</span>
-            <span className="text-xs text-muted-foreground">de {metaDiaria} · {pct}%</span>
+            <span className="text-4xl font-extrabold tabular-nums leading-none sm:text-5xl">{chamadas}</span>
+            <span className="text-xs text-sidebar-foreground/70">de {metaDiaria} · {pct}%</span>
           </div>
-          <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+          <div className="h-3 w-full overflow-hidden rounded-full bg-sidebar-accent">
             <div
-              className={cn("h-full rounded-full transition-all", chamadas >= metaDiaria ? "bg-emerald-500" : "bg-primary")}
+              role="progressbar"
+              aria-label="Progresso da meta diária de chamadas"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={pct}
+               className={cn("h-full rounded-full transition-all", chamadas >= metaDiaria ? "bg-success" : "bg-sidebar-primary")}
               style={{ width: `${pct}%` }}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 [&>div]:border-sidebar-border [&>div]:bg-sidebar-accent/70 [&_p]:text-sidebar-foreground [&_p:first-child]:text-sidebar-foreground/65">
           <MiniStat label="Leads abertos" value={prod.abertos} />
           <MiniStat label="Qualificados" value={prod.qualificados} />
           <MiniStat label="Ligações" value={prod.ligacoes} />
@@ -235,7 +240,7 @@ export function CrmCockpit({
           <MiniStat label="Fila hoje" value={filaHoje} />
         </div>
 
-        <div className="mt-auto flex flex-wrap gap-2 text-xs text-muted-foreground">
+        <div className="mt-auto flex flex-wrap gap-3 text-xs text-sidebar-foreground/70">
           <span className="inline-flex items-center gap-1"><DoorOpen className="h-3 w-3" />{filaTotal} na fila</span>
           <span className="inline-flex items-center gap-1"><Flame className="h-3 w-3 text-amber-500" />{filaQuentes} quentes</span>
           <span className="inline-flex items-center gap-1"><AlertTriangle className="h-3 w-3 text-rose-500" />{filaAtrasados} atrasados</span>
@@ -243,9 +248,9 @@ export function CrmCockpit({
       </Card>
 
       {/* 2. Qualidade de ligações */}
-      <Card className="flex flex-col gap-4 p-4">
+      <Card className="flex min-h-[320px] flex-col gap-4 p-5 shadow-sm xl:col-span-3 sm:p-6">
         <div className="flex items-center gap-2">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
             <PhoneCall className="h-4.5 w-4.5" />
           </span>
           <div className="min-w-0 flex-1">
@@ -285,6 +290,7 @@ export function CrmCockpit({
                     key={d.date}
                     type="button"
                     onClick={() => openDetalhe({ date: d.date })}
+                     aria-label={`${d.label}: ${d.total} ligações, ${d.answered} atendidas. Abrir detalhes.`}
                     className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded outline-none transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
                     title={`${d.total} ligações · ${d.answered} atendidas — ver leads`}
                   >
@@ -335,11 +341,11 @@ export function CrmCockpit({
 
 
       {/* 3. Follow-ups + competição */}
-      <div className="flex flex-col gap-4">
-        <Card className="p-4">
+      <div className="grid gap-4 xl:col-span-6 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+        <Card className="p-5 shadow-sm sm:p-6">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-warning/20 text-warning-foreground">
                 <CalendarClock className="h-4.5 w-4.5" />
               </span>
               <div className="min-w-0">
@@ -391,7 +397,7 @@ export function CrmCockpit({
               const amanha = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d; };
               const depois = () => { const d = new Date(); d.setDate(d.getDate() + 2); d.setHours(9, 0, 0, 0); return d; };
               return (
-                <div key={f.id} className="rounded-lg border p-2 text-xs">
+                 <div key={f.id} className={cn("rounded-lg border p-3 text-xs transition-colors", atrasado ? "border-destructive/35 bg-destructive/5" : "bg-card")}>
                   <div className="flex items-center gap-2">
                     <span className={cn(
                       "grid h-7 w-7 shrink-0 place-items-center rounded-md",

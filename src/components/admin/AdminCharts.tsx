@@ -19,12 +19,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getAdminCharts, type SerieItem } from "@/lib/admin/charts.functions";
 
 const CORES = [
-  "hsl(var(--primary))",
-  "hsl(var(--chart-2, 200 80% 45%))",
-  "hsl(var(--chart-3, 262 70% 55%))",
-  "hsl(var(--chart-4, 24 85% 55%))",
-  "hsl(var(--chart-5, 150 60% 40%))",
-  "hsl(var(--muted-foreground))",
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--muted-foreground)",
 ];
 
 const curto = (s: string, n = 16) => (s.length > n ? `${s.slice(0, n)}…` : s);
@@ -47,7 +47,7 @@ function Barras({ dados }: { dados: SerieItem[] }) {
           contentStyle={{ fontSize: 12, borderRadius: 8 }}
           formatter={(v: number) => [v, "Total"]}
         />
-        <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+        <Bar dataKey="valor" fill="var(--chart-1)" radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -83,7 +83,7 @@ export function AdminCharts() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Leads por consultora</CardTitle>
           <CardDescription>Promovidos distribuídos, top 10.</CardDescription>
@@ -93,7 +93,7 @@ export function AdminCharts() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Follow-ups por consultora</CardTitle>
           <CardDescription>Tarefas de acompanhamento registradas, top 10.</CardDescription>
@@ -103,7 +103,7 @@ export function AdminCharts() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Tomadores por origem</CardTitle>
           <CardDescription>Distribuição do estoque por órgão.</CardDescription>
@@ -133,7 +133,7 @@ export function AdminCharts() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Evolução da carteira</CardTitle>
           <CardDescription>Tomadores atribuídos por dia (14 dias).</CardDescription>
@@ -152,7 +152,7 @@ export function AdminCharts() {
               <Line
                 type="monotone"
                 dataKey="atribuidos"
-                stroke="hsl(var(--primary))"
+                 stroke="var(--chart-1)"
                 strokeWidth={2}
                 dot={false}
               />
