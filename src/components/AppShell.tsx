@@ -34,8 +34,7 @@ const navSections: NavSection[] = [
     section: "Simulação",
     items: [
       { to: "/calculadoras", label: "Calculadoras", full: "TODAS AS CALCULADORAS", icon: Calculator, consultoraOnly: true },
-      { to: "/prospeccao/conversoes", label: "Minha carteira de clientes", full: "MINHA CARTEIRA DE CLIENTES CONVERTIDOS", icon: Wallet, consultoraOnly: true },
-      { to: "/prospeccao/amortizacao", label: "Amortização mensal", full: "CARTEIRA DE AMORTIZAÇÃO - LIGAR TODO MÊS", icon: PiggyBank, consultoraOnly: true },
+      { to: "/prospeccao/conversoes", label: "Minha carteira", full: "MINHA CARTEIRA - CLIENTES, MARGEM E AMORTIZAÇÃO", icon: Wallet, consultoraOnly: true },
     ],
   },
   {
