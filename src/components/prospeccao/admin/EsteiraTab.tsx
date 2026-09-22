@@ -9,10 +9,98 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RhStatCard } from "@/components/rh/RhStatCard";
-import { FileSpreadsheet, Upload, AlertTriangle, CheckCircle2, Phone, PiggyBank } from "lucide-react";
+import { FileSpreadsheet, Upload, AlertTriangle, CheckCircle2, Phone, PiggyBank, ChevronDown } from "lucide-react";
 import { brl } from "@/lib/rh/mock";
 import { lerEsteira, casarConsultora, type EsteiraLinha } from "@/lib/prospeccao/esteira-parse";
-import { esteiraConsultoras, esteiraImportar, esteiraMetricas } from "@/lib/prospeccao/esteira.functions";
+import {
+  esteiraConsultoras,
+  esteiraImportar,
+  esteiraListar,
+  esteiraMetricas,
+  type EsteiraContrato,
+} from "@/lib/prospeccao/esteira.functions";
+
+const RESULTADO_LABEL: Record<string, string> = {
+  amortizou: "Amortizou",
+  falei: "Falei com o cliente",
+  nao_atendeu: "Não atendeu",
+  nao_quis: "Não quis",
+};
+
+function hojeISO(): string {
+  return new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function ordenarContratos(lista: EsteiraContrato[]): EsteiraContrato[] {
+  const hoje = hojeISO();
+  const peso = (c: EsteiraContrato) => {
+    if (!c.acompanhamento_ativo || !c.proximo_contato_em) return 3;
+    if (c.proximo_contato_em < hoje) return 0;
+    if (c.proximo_contato_em === hoje) return 1;
+    return 2;
+  };
+  return [...lista].sort((a, b) => peso(a) - peso(b) || (a.proximo_contato_em ?? "9999").localeCompare(b.proximo_contato_em ?? "9999"));
+}
+
+function ConsultoraDetalhe({ consultantId }: { consultantId: string | null }) {
+  const listar = useServerFn(esteiraListar);
+  const q = useQuery({
+    queryKey: ["esteira", "detalhe", consultantId ?? "sem-responsavel"],
+    queryFn: () =>
+      listar({
+        data: consultantId
+          ? { consultantId, somenteAtivos: false, limit: 500 }
+          : { semResponsavel: true, somenteAtivos: false, limit: 500 },
+      }),
+    staleTime: 60_000,
+  });
+  const hoje = hojeISO();
+
+  if (q.isLoading) return <p className="p-3 text-sm text-muted-foreground">Carregando contratos…</p>;
+  if (q.isError) return <p className="p-3 text-sm text-rose-600">Não foi possível carregar os contratos.</p>;
+  const lista = ordenarContratos(q.data ?? []);
+  if (!lista.length) return <p className="p-3 text-sm text-muted-foreground">Nenhum contrato nesta carteira.</p>;
+
+  return (
+    <div className="space-y-1 p-2">
+      {lista.map((c) => {
+        const atrasado = c.acompanhamento_ativo && c.proximo_contato_em && c.proximo_contato_em < hoje;
+        const ehHoje = c.acompanhamento_ativo && c.proximo_contato_em === hoje;
+        return (
+          <div
+            key={c.id}
+            className={`flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm ${
+              atrasado ? "border-rose-200 bg-rose-50 dark:bg-rose-500/10" : ehHoje ? "border-amber-200 bg-amber-50 dark:bg-amber-500/10" : ""
+            }`}
+          >
+            <div className="min-w-[180px] flex-1">
+              <p className="truncate font-medium">{c.nome}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {c.cpf} · {c.banco || "—"} · venda {c.data_venda}
+                {c.prazo ? ` · ${c.prazo}x` : ""}
+              </p>
+            </div>
+            <span className="w-24 text-right tabular-nums">{c.valor_bruto != null ? brl(c.valor_bruto) : "—"}</span>
+            <Badge variant="outline" className={atrasado ? "border-rose-300 text-rose-700" : ehHoje ? "border-amber-300 text-amber-700" : ""}>
+              {c.acompanhamento_ativo && c.proximo_contato_em
+                ? atrasado
+                  ? `Atrasada (${c.proximo_contato_em})`
+                  : ehHoje
+                    ? "Ligar hoje"
+                    : `Próxima: ${c.proximo_contato_em}`
+                : "Encerrado"}
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              {c.ultimo_contato_em
+                ? `Última: ${c.ultimo_contato_em.slice(0, 10)}${c.ultimo_resultado ? ` · ${RESULTADO_LABEL[c.ultimo_resultado] ?? c.ultimo_resultado}` : ""}`
+                : "Nunca contatado"}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 const SEM_DONO = "__sem__";
 
