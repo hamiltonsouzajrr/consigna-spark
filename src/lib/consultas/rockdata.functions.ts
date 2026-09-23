@@ -73,12 +73,37 @@ export const consultarServidor = createServerFn({ method: "POST" })
           mensagem: pessoas.length ? null : "Nenhuma pessoa encontrada com esse nome.",
         };
       } catch (e) {
-        const msg =
-          e instanceof rockdata.RockdataError
-            ? e.message
-            : "Não foi possível consultar na RockData agora. Tente novamente em alguns minutos.";
-        console.error("[rockdata] busca por nome falhou:", e);
-        throw new Error(msg);
+        console.error("[rockdata] busca por nome falhou, usando banco interno:", e);
+        const busca = termo.replace(/[%_,()]/g, " ").trim();
+        const { data: locais } = await supabaseAdmin
+          .from("rockdata_consultas")
+          .select("cpf,nome,resultado")
+          .ilike("nome", `%${busca}%`)
+          .order("nome")
+          .limit(50);
+        const pessoas: RockdataPessoaLista[] = (locais ?? []).map((r) => {
+          const f = r.resultado as unknown as RockdataFicha | null;
+          return {
+            cpf: r.cpf,
+            nome: r.nome ?? f?.pessoa?.nome ?? "",
+            idade: f?.pessoa?.idade ?? null,
+            bairro: null,
+            cidade: null,
+            uf: null,
+          };
+        });
+        await registrar("banco", termo);
+        return {
+          tipo: "nome",
+          origem: "banco",
+          cpf: null,
+          consultadoEm: null,
+          ficha: null,
+          pessoas,
+          mensagem: pessoas.length
+            ? "A RockData está fora do ar; mostrando pessoas já salvas no sistema."
+            : "A RockData está fora do ar e ninguém com esse nome foi salvo no sistema ainda.",
+        };
       }
     }
 
