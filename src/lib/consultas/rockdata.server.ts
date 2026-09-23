@@ -195,16 +195,33 @@ export async function consultarPorCpf(cpf: string): Promise<RockdataFicha> {
   return ficha;
 }
 
-/** Busca pessoas por nome; devolve a lista para escolher o CPF. */
-export async function consultarPorNome(nome: string): Promise<RockdataPessoaLista[]> {
+/** Normaliza telefone: só dígitos, sem código do país (55). */
+export function normalizeTelefone(v: string): string {
+  let d = v.replace(/\D/g, "");
+  if (d.length > 11 && d.startsWith("55")) d = d.slice(2);
+  return d;
+}
+
+/** Telefones da ficha normalizados (para gravar na coluna telefones). */
+export function telefonesDaFicha(ficha: RockdataFicha): string[] {
+  const set = new Set<string>();
+  for (const t of ficha.telefones) {
+    const d = normalizeTelefone(t);
+    if (d.length >= 8 && d.length <= 11) set.add(d);
+  }
+  return [...set];
+}
+
+/** Busca pessoas por nome ou telefone; devolve a lista para escolher o CPF. */
+async function consultarLista(campo: "nome" | "telefone", valor: string): Promise<RockdataPessoaLista[]> {
   const cookie = await login();
   const html = await postLocalizador(cookie, "ConsultaMaisOpcoes_View", {
-    nome,
+    nome: campo === "nome" ? valor : "",
+    telefone: campo === "telefone" ? valor : "",
     cidade: "",
     uf: "",
     cep: "",
     numeroCep: "",
-    telefone: "",
     email: "",
     dtNascimentoAbertura: "",
     tipoPessoa: "pf",
@@ -230,4 +247,14 @@ export async function consultarPorNome(nome: string): Promise<RockdataPessoaList
     }
   }
   return out.slice(0, 50);
+}
+
+/** Busca pessoas por nome; devolve a lista para escolher o CPF. */
+export function consultarPorNome(nome: string): Promise<RockdataPessoaLista[]> {
+  return consultarLista("nome", nome);
+}
+
+/** Busca pessoas por telefone (com DDD, só dígitos); devolve a lista para escolher o CPF. */
+export function consultarPorTelefone(telefone: string): Promise<RockdataPessoaLista[]> {
+  return consultarLista("telefone", telefone);
 }
