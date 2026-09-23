@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeCpf, isValidCpf } from "@/lib/cpf";
-import type { RockdataFicha, RockdataPessoaLista } from "@/lib/consultas/rockdata.server";
+import type { RockdataFicha, RockdataPessoaLista, RockdataTelefone } from "@/lib/consultas/rockdata.server";
 
 const DIAS_VALIDADE = 90;
 
@@ -204,7 +204,7 @@ export const consultarServidor = createServerFn({ method: "POST" })
         origem: "banco",
         cpf,
         consultadoEm: cache.consultado_em,
-        ficha: cache.resultado as unknown as RockdataFicha,
+        ficha: await rankearTelefones(cache.resultado as unknown as RockdataFicha),
         pessoas: [],
         mensagem: null,
       };
@@ -230,7 +230,7 @@ export const consultarServidor = createServerFn({ method: "POST" })
         origem: "rockdata",
         cpf,
         consultadoEm: agora,
-        ficha,
+        ficha: await rankearTelefones(ficha),
         pessoas: [],
         mensagem: null,
       };
@@ -244,7 +244,7 @@ export const consultarServidor = createServerFn({ method: "POST" })
           origem: "banco",
           cpf,
           consultadoEm: cache.consultado_em,
-          ficha: cache.resultado as unknown as RockdataFicha,
+          ficha: await rankearTelefones(cache.resultado as unknown as RockdataFicha),
           pessoas: [],
           mensagem: "A RockData não respondeu agora; mostrando a última consulta salva.",
         };
@@ -275,4 +275,122 @@ export const listarConsultasRecentes = createServerFn({ method: "GET" })
       nome: r.nome ?? null,
       criadoEm: r.created_at,
     }));
+  });
+
+/** Ordena os telefones da ficha por confiança, somando sinais do nosso próprio histórico. */
+async function rankearTelefones(ficha: RockdataFicha): Promise<RockdataFicha> {
+  const { pontuarTelefone } = await import("@/lib/consultas/telefone-score");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const base: RockdataTelefone[] =
+    ficha.telefonesDetalhe?.length
+      ? ficha.telefonesDetalhe
+      : ficha.telefones.map((numero) => ({
+          numero, tipo: null, whatsapp: false, restricao: false, qualificacao: 0, score: 0, nivel: "duvidoso" as const, sinais: [],
+        }));
+  const dig = (v: string) => {
+    let d = v.replace(/\D/g, "");
+    if (d.length > 11 && d.startsWith("55")) d = d.slice(2);
+    return d;
+  };
+  const numeros = [...new Set(base.map((t) => dig(t.numero)).filter((d) => d.length >= 8))];
+  const respondeu = new Set<string>();
+  const contatado = new Set<string>();
+  const informado = new Set<string>();
+  if (numeros.length) {
+    try {
+      const { data: leads } = await supabaseAdmin
+        .from("prospect_leads")
+        .select("id,telefone,telefones,respondeu_whatsapp,last_contact_at")
+        .or(`telefone.in.(${numeros.join(",")}),telefones.ov.{${numeros.join(",")}}`)
+        .limit(100);
+      for (const l of leads ?? []) {
+        const tels = [l.telefone, ...((l.telefones as string[] | null) ?? [])].filter(Boolean).map((x) => dig(String(x)));
+        for (const n of tels) {
+          if (!numeros.includes(n)) continue;
+          if (l.respondeu_whatsapp) respondeu.add(n);
+          if (l.last_contact_at) contatado.add(n);
+        }
+      }
+    } catch (e) {
+      console.error("[rockdata] sinais do CRM falharam:", e);
+    }
+    try {
+      const { data: toms } = await (supabaseAdmin as any)
+        .from("tomadores_al")
+        .select("telefones_manuais")
+        .overlaps("telefones_manuais", numeros)
+        .limit(50);
+      for (const t of toms ?? []) for (const n of (t.telefones_manuais ?? []) as string[]) informado.add(dig(n));
+    } catch {
+      /* coluna opcional */
+    }
+  }
+  const telefonesDetalhe = base
+    .map((t) => {
+      const d = dig(t.numero);
+      return pontuarTelefone(t, {
+        respondeuWhatsapp: respondeu.has(d),
+        contatadoCrm: contatado.has(d),
+        informadoConsultora: informado.has(d),
+      });
+    })
+    .sort((a, b) => b.score - a.score);
+  return { ...ficha, telefonesDetalhe, telefones: telefonesDetalhe.map((t) => t.numero) };
+}
+
+/** Clique em Ligar/WhatsApp na Pesquisar Cliente: conta como contato de prospecção. */
+export const registrarContatoConsulta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        cpf: z.string().regex(/^\d{11}$/),
+        telefone: z.string().trim().min(8).max(20),
+        kind: z.enum(["ligacao", "whatsapp"]),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }): Promise<{ pontos: number; motivo?: string }> => {
+    const { userId } = context;
+    const { adminClient, creditar, cooldownLiberado, garantirSemana } = await import(
+      "@/lib/prospeccao/competicao.server"
+    );
+    const db = await adminClient();
+    const body = `Contato pela Pesquisar Cliente (${data.kind === "ligacao" ? "ligação" : "WhatsApp"}) no número ${data.telefone}`;
+
+    // Se o cliente já é lead desta consultora, registra no histórico do lead.
+    const { data: lead } = await db
+      .from("prospect_leads")
+      .select("id,first_response_at")
+      .eq("cpf", data.cpf)
+      .eq("consultant_id", userId)
+      .limit(1)
+      .maybeSingle();
+
+    const { data: log } = await db
+      .from("rockdata_consultas_log")
+      .insert({ user_id: userId, termo: data.telefone, tipo: "telefone", origem: data.kind, cpf: data.cpf, nome: null } as any)
+      .select("id")
+      .single();
+
+    let refTabela = "rockdata_consultas_log";
+    let refId = log?.id as string | undefined;
+    if (lead) {
+      await db.from("lead_events").insert({ lead_id: lead.id, consultant_id: userId, kind: data.kind, body } as any);
+      const nowIso = new Date().toISOString();
+      const patch: any = { last_contact_at: nowIso };
+      if (!lead.first_response_at) patch.first_response_at = nowIso;
+      await db.from("prospect_leads").update(patch).eq("id", lead.id);
+      refTabela = "prospect_leads";
+      refId = lead.id;
+    }
+    if (!refId) return { pontos: 0, motivo: "Contato registrado." };
+
+    const semana = await garantirSemana();
+    if (semana.pausada) return { pontos: 0, motivo: "Competição pausada pelo administrador." };
+    if (!(await cooldownLiberado(userId))) {
+      return { pontos: 0, motivo: "Contatos em sequência rápida não pontuam (intervalo mínimo de 90s)." };
+    }
+    const pontos = await creditar(userId, "contato", refTabela, refId, `Contato ${data.kind} (Pesquisar Cliente)`);
+    return { pontos };
   });
