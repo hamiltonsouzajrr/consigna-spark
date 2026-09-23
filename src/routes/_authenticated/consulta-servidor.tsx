@@ -123,7 +123,7 @@ function ConsultaServidorPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
-              {resultado.pessoas.length} pessoa(s) encontrada(s) para “{resultado.termoExibicao ?? termo}”
+              {resultado.pessoas.length} pessoa(s) encontrada(s) para “{termo}”
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
