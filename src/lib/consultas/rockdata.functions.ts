@@ -113,7 +113,7 @@ export const consultarServidor = createServerFn({ method: "POST" })
         {
           cpf,
           nome: ficha.pessoa.nome,
-          resultado: ficha as unknown as Record<string, unknown>,
+          resultado: JSON.parse(JSON.stringify(ficha)),
           consultado_em: agora,
           consultado_por: context.userId,
         },
