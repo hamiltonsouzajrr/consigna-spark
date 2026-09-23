@@ -248,3 +248,13 @@ async function consultarLista(campo: "nome" | "telefone", valor: string): Promis
   }
   return out.slice(0, 50);
 }
+
+/** Busca pessoas por nome; devolve a lista para escolher o CPF. */
+export function consultarPorNome(nome: string): Promise<RockdataPessoaLista[]> {
+  return consultarLista("nome", nome);
+}
+
+/** Busca pessoas por telefone (com DDD, só dígitos); devolve a lista para escolher o CPF. */
+export function consultarPorTelefone(telefone: string): Promise<RockdataPessoaLista[]> {
+  return consultarLista("telefone", telefone);
+}
