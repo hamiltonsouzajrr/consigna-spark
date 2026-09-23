@@ -188,38 +188,16 @@ function ConsultaServidorPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Phone className="h-4 w-4" /> Telefones ({ficha.telefones.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {ficha.telefones.length === 0 && (
-                <p className="text-sm text-muted-foreground">Nenhum telefone disponível.</p>
-              )}
-              {ficha.telefones.map((t) => (
-                <div key={t} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2">
-                  <span className="font-medium">{t}</span>
-                  <div className="flex items-center gap-1">
-                    <Button size="sm" variant="outline" asChild>
-                      <a href={`tel:+55${soDigitos(t)}`}>Ligar</a>
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1" asChild>
-                      <a href={`https://wa.me/55${soDigitos(t)}`} target="_blank" rel="noreferrer">
-                        <WhatsAppIcon className="h-4 w-4" /> WhatsApp
-                      </a>
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => copiar(t)}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-4 lg:grid-cols-2">
+          <TelefonesRanking
+            cpf={resultado?.cpf ?? null}
+            telefones={
+              ficha.telefonesDetalhe?.length
+                ? ficha.telefonesDetalhe
+                : ficha.telefones.map((numero) => ({
+                    numero, tipo: null, whatsapp: false, restricao: false, qualificacao: 0, score: 0, nivel: "duvidoso" as const, sinais: [],
+                  }))
+            }
+          />
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
