@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/consulta-servidor")({
   head: () => ({
     meta: [
       { title: "Pesquisar Cliente | Grupo Positive" },
-      { name: "description", content: "Consulte telefones, endereços e dados cadastrais do cliente por CPF ou nome." },
+      { name: "description", content: "Consulte telefones, endereços e dados cadastrais do cliente por CPF, nome ou telefone." },
       { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: "Pesquisar Cliente" },
       { property: "og:description", content: "Consulta de telefones, endereços e dados cadastrais do cliente." },
@@ -67,7 +67,7 @@ function ConsultaServidorPage() {
   const enviar = (valor: string, forcar = false) => {
     const t = valor.trim();
     if (t.length < 3) {
-      toast.error("Digite um CPF ou pelo menos 3 letras do nome.");
+      toast.error("Digite um CPF, um telefone com DDD ou pelo menos 3 letras do nome.");
       return;
     }
     setTermo(t);
@@ -81,7 +81,7 @@ function ConsultaServidorPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Pesquisar Cliente</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Digite o CPF ou o nome do cliente para ver telefones, endereços e dados cadastrais.
+          Digite o CPF, o nome ou o telefone com DDD do cliente para ver telefones, endereços e dados cadastrais.
         </p>
       </div>
 
@@ -97,7 +97,7 @@ function ConsultaServidorPage() {
             <Input
               value={termo}
               onChange={(e) => setTermo(e.target.value)}
-              placeholder="CPF ou nome do cliente"
+              placeholder="CPF, nome ou telefone com DDD"
               className="flex-1"
               autoFocus
             />
@@ -118,8 +118,8 @@ function ConsultaServidorPage() {
         </div>
       )}
 
-      {/* Lista de pessoas na busca por nome */}
-      {!busca.isPending && resultado?.tipo === "nome" && (
+      {/* Lista de pessoas na busca por nome ou telefone */}
+      {!busca.isPending && (resultado?.tipo === "nome" || resultado?.tipo === "telefone") && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
@@ -128,7 +128,7 @@ function ConsultaServidorPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             {resultado.pessoas.length === 0 && (
-              <p className="text-sm text-muted-foreground">Nenhuma pessoa encontrada com esse nome.</p>
+              <p className="text-sm text-muted-foreground">Nenhuma pessoa encontrada com essa busca.</p>
             )}
             {resultado.pessoas.map((p) => (
               <button
