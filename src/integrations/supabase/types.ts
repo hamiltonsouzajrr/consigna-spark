@@ -2807,6 +2807,72 @@ export type Database = {
         }
         Relationships: []
       }
+      rockdata_consultas: {
+        Row: {
+          consultado_em: string
+          consultado_por: string | null
+          cpf: string
+          created_at: string
+          id: string
+          nome: string | null
+          resultado: Json
+          updated_at: string
+        }
+        Insert: {
+          consultado_em?: string
+          consultado_por?: string | null
+          cpf: string
+          created_at?: string
+          id?: string
+          nome?: string | null
+          resultado?: Json
+          updated_at?: string
+        }
+        Update: {
+          consultado_em?: string
+          consultado_por?: string | null
+          cpf?: string
+          created_at?: string
+          id?: string
+          nome?: string | null
+          resultado?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rockdata_consultas_log: {
+        Row: {
+          cpf: string | null
+          created_at: string
+          id: string
+          nome: string | null
+          origem: string
+          termo: string
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          cpf?: string | null
+          created_at?: string
+          id?: string
+          nome?: string | null
+          origem: string
+          termo: string
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          cpf?: string | null
+          created_at?: string
+          id?: string
+          nome?: string | null
+          origem?: string
+          termo?: string
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       safeconsig_leads: {
         Row: {
           consultado_em: string

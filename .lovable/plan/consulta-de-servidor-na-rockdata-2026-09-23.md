@@ -12,14 +12,17 @@ Nova opção no menu lateral, "Consulta de servidor", onde a consultora busca a 
 - Histórico das próprias consultas na mesma tela, com data e termo pesquisado.
 - Busca por nome devolve a lista de pessoas encontradas; a consultora escolhe uma e aí o sistema abre a ficha completa.
 - Toda consulta fica registrada com quem consultou e quando (auditoria).
+- Mostra dentro da área pesquisas recentes 
 
 ## Onde fica
 
-Nova opção "Consulta de servidor" no grupo de prospecção do menu lateral, disponível para consultoras e administradores, em `/consulta-servidor`. A antiga tela de Pesquisas (Nova Vida) sai do menu e deixa de ser a porta de entrada das consultas.
+Nova opção "Pesquisar Cliente" no grupo de prospecção do menu lateral, disponível para consultoras e administradores, em `/consulta-servidor`. A antiga tela de Pesquisas (Nova Vida) sai do menu e deixa de ser a porta de entrada das consultas.
 
 ## Ponto importante sobre a RockData
 
-A RockData não oferece integração pronta (API): o endereço informado é um site com login (ASP.NET/IIS, redireciona para `/Conta/Login`). Então o sistema vai reproduzir, pelo servidor, exatamente os passos que uma pessoa faria no site: entrar com usuário/senha/cliente, enviar a busca e ler a resposta. Isso funciona, mas depende do site continuar igual — se a RockData mudar a tela ou o login, a consulta para e precisa de ajuste. Vale pedir a eles a documentação de API; com ela a integração fica definitiva. Também é preciso confirmar com a RockData que o uso automatizado do acesso é permitido.
+A RockData não oferece integração pronta (API): o endereço informado é um site com login (ASP.NET/IIS, redireciona para `/Conta/Login`). Então o sistema vai reproduzir, pelo servidor, exatamente os passos que uma pessoa faria no site: entrar com usuário/senha/cliente, enviar a busca e ler a resposta. Isso funciona, mas depende do site continuar igual — se a RockData mudar a tela ou o login, a consulta para e precisa de ajuste.
+
+Vale pedir a eles a documentação de API; com ela a integração fica definitiva. Também é preciso confirmar com a RockData que o uso automatizado do acesso é permitido.
 
 ## Detalhes técnicos
 
