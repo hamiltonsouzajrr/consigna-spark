@@ -42,6 +42,7 @@ const navSections: NavSection[] = [
     section: "Prospecção",
     items: [
       { to: "/prospeccao", label: "CRM", full: "CRM DE PROSPECÇÃO - FILA, SCORE E FOLLOW-UP", icon: Phone, exact: true, consultoraOnly: true },
+      { to: "/consulta-servidor", label: "Pesquisar Cliente", full: "PESQUISAR CLIENTE - TELEFONES, ENDEREÇOS E DADOS", icon: Search },
       { to: "/tomadores-al", label: "Tomadores com Margem – AL", full: "CLIENTES TOMADORES COM MARGEM - AL", icon: Wallet },
       
       { to: "/prospeccao/recentes", label: "Recentes Prospectados", icon: Flame, consultoraOnly: true },
