@@ -2,13 +2,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { normalizeCpf } from "@/lib/cpf";
+import { normalizeCpf, isValidCpf } from "@/lib/cpf";
 import type { RockdataFicha, RockdataPessoaLista } from "@/lib/consultas/rockdata.server";
 
 const DIAS_VALIDADE = 90;
 
+type TipoBusca = "cpf" | "nome" | "telefone";
+
 export type ConsultaResultado = {
-  tipo: "cpf" | "nome";
+  tipo: TipoBusca;
   origem: "banco" | "rockdata";
   cpf: string | null;
   consultadoEm: string | null;
@@ -40,9 +42,24 @@ export const consultarServidor = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<ConsultaResultado> => {
     const termo = data.termo.trim();
     const digitos = normalizeCpf(termo);
-    const soNumeros = /^[\d.\-/\s]+$/.test(termo);
-    const ehCpf = soNumeros && digitos.length >= 8 && digitos.length <= 11;
-    const cpf = ehCpf ? digitos.padStart(11, "0") : null;
+    const soNumeros = /^[\d.\-()/+\s]+$/.test(termo);
+    // 11 dígitos com CPF válido → CPF. Demais números com 10–11 dígitos → telefone (DDD + número).
+    const ehCpf = soNumeros && digitos.length === 11 && isValidCpf(digitos);
+    const ehTelefone = !ehCpf && soNumeros && digitos.length >= 10 && digitos.length <= 13;
+    const cpf = ehCpf ? digitos : null;
+    const telefone = ehTelefone ? rockdataNormalize(digitos) : null;
+
+    function rockdataNormalize(d: string): string {
+      return d.length > 11 && d.startsWith("55") ? d.slice(2) : d;
+    }
+
+    if (soNumeros && !ehCpf && !ehTelefone) {
+      throw new Error(
+        "Número incompleto. Para buscar por telefone, digite o DDD + número (ex.: 82999998888).",
+      );
+    }
+
+    const tipoBusca: TipoBusca = ehCpf ? "cpf" : ehTelefone ? "telefone" : "nome";
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const rockdata = await import("@/lib/consultas/rockdata.server");
@@ -51,12 +68,74 @@ export const consultarServidor = createServerFn({ method: "POST" })
       await supabaseAdmin.from("rockdata_consultas_log").insert({
         user_id: context.userId,
         termo,
-        tipo: ehCpf ? "cpf" : "nome",
+        tipo: tipoBusca,
         origem,
         cpf,
         nome,
       });
     };
+
+    const localParaPessoa = (r: { cpf: string; nome: string | null; resultado: unknown }) => {
+      const f = r.resultado as unknown as RockdataFicha | null;
+      return {
+        cpf: r.cpf,
+        nome: r.nome ?? f?.pessoa?.nome ?? "",
+        idade: f?.pessoa?.idade ?? null,
+        bairro: null,
+        cidade: null,
+        uf: null,
+      };
+    };
+
+    // Busca por telefone: primeiro nas fichas já salvas; depois na RockData.
+    if (telefone) {
+      const { data: locaisTel } = await supabaseAdmin
+        .from("rockdata_consultas")
+        .select("cpf,nome,resultado")
+        .contains("telefones", [telefone])
+        .order("nome")
+        .limit(50);
+
+      if (locaisTel?.length) {
+        await registrar("banco", null);
+        return {
+          tipo: "telefone",
+          origem: "banco",
+          cpf: null,
+          consultadoEm: null,
+          ficha: null,
+          pessoas: locaisTel.map(localParaPessoa),
+          mensagem: "Encontrado nas consultas já salvas no sistema, sem nova consulta.",
+        };
+      }
+
+      try {
+        const pessoas = await rockdata.consultarPorTelefone(telefone);
+        await registrar("rockdata", null);
+        return {
+          tipo: "telefone",
+          origem: "rockdata",
+          cpf: null,
+          consultadoEm: null,
+          ficha: null,
+          pessoas,
+          mensagem: pessoas.length ? null : "Nenhuma pessoa encontrada com esse telefone.",
+        };
+      } catch (e) {
+        console.error("[rockdata] busca por telefone falhou:", e);
+        await registrar("banco", null);
+        return {
+          tipo: "telefone",
+          origem: "banco",
+          cpf: null,
+          consultadoEm: null,
+          ficha: null,
+          pessoas: [],
+          mensagem:
+            "A RockData está fora do ar e esse telefone ainda não está em nenhuma ficha salva no sistema.",
+        };
+      }
+    }
 
     // Busca por nome: lista de pessoas (sempre na RockData, é uma busca ampla).
     if (!cpf) {
