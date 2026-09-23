@@ -1,0 +1,2 @@
+DROP POLICY IF EXISTS "rockdata_consultas_select_auth" ON public.rockdata_consultas;
+CREATE POLICY "rockdata_consultas_select_admin" ON public.rockdata_consultas FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'));
