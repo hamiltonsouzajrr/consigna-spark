@@ -19,9 +19,24 @@ export type RockdataPessoa = {
 export type RockdataFicha = {
   pessoa: RockdataPessoa;
   telefones: string[];
+  telefonesDetalhe?: RockdataTelefone[];
   emails: string[];
   enderecos: string[];
   tabelas: RockdataTabela[];
+};
+
+export type NivelTelefone = "confiavel" | "bom" | "duvidoso" | "invalido";
+
+export type RockdataTelefone = {
+  numero: string;
+  tipo: "celular" | "fixo" | null;
+  whatsapp: boolean;
+  restricao: boolean;
+  /** Estrelas da RockData, 0 a 5. */
+  qualificacao: number;
+  score: number;
+  nivel: NivelTelefone;
+  sinais: string[];
 };
 
 export type RockdataPessoaLista = {
@@ -164,9 +179,37 @@ function coletar(tabelas: RockdataTabela[], padrao: RegExp): string[] {
   return [...set];
 }
 
+/** Lê a tabela de telefones com os ícones da RockData (tipo, WhatsApp, restrição, estrelas). */
+function lerTelefonesDetalhe(html: string): RockdataTelefone[] {
+  const out: RockdataTelefone[] = [];
+  const vistos = new Set<string>();
+  const semComentarios = html.replace(/<!--[\s\S]*?-->/g, "");
+  for (const t of semComentarios.match(/<table[\s\S]*?<\/table>/g) ?? []) {
+    if (!/Qualifica/i.test(t) || !/Telefone/i.test(t)) continue;
+    for (const tr of t.match(/<tr[\s\S]*?<\/tr>/g) ?? []) {
+      const tds = tr.match(/<td[\s\S]*?<\/td>/g) ?? [];
+      if (tds.length < 2) continue;
+      const numero = texto(tds[0]!);
+      if (!/\d{4}/.test(numero) || vistos.has(numero)) continue;
+      vistos.add(numero);
+      const tipoTd = tds[1] ?? "";
+      const tipo = /title="Celular"/i.test(tipoTd) ? "celular" : /title="(Fixo|Residencial|Comercial)"/i.test(tipoTd) || /fa-phone/.test(tipoTd) ? "fixo" : null;
+      const whatsapp = /fa-whatsapp/.test(tds[2] ?? "");
+      const restricao = /fa-lock\b/.test(tds[3] ?? "") && !/fa-unlock/.test(tds[3] ?? "");
+      const estrelasHtml = tds[tds.length - 1] ?? "";
+      const cheias = (estrelasHtml.match(/fa-star"/g) ?? []).length + (estrelasHtml.match(/fa-star /g) ?? []).length;
+      const meias = (estrelasHtml.match(/fa-star-half/g) ?? []).length;
+      const qualificacao = cheias + meias * 0.5;
+      out.push({ numero, tipo, whatsapp, restricao, qualificacao, score: 0, nivel: "duvidoso", sinais: [] });
+    }
+  }
+  return out;
+}
+
 export function parseFicha(html: string): RockdataFicha {
   const campos = lerCampos(html);
   const tabelas = lerTabelas(html);
+  const telefonesDetalhe = lerTelefonesDetalhe(html);
   return {
     pessoa: {
       cpf: valorCampo(campos, "CPF"),
@@ -177,7 +220,8 @@ export function parseFicha(html: string): RockdataFicha {
       mae: valorCampo(campos, "Nome da mãe", "Nome da mae"),
       campos,
     },
-    telefones: coletar(tabelas, /telefone/),
+    telefones: telefonesDetalhe.length ? telefonesDetalhe.map((t) => t.numero) : coletar(tabelas, /telefone/),
+    telefonesDetalhe,
     emails: coletar(tabelas, /email/),
     enderecos: coletar(tabelas, /endere/),
     tabelas,
