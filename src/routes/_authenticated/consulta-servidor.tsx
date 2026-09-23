@@ -16,6 +16,7 @@ import {
 } from "@/lib/consultas/rockdata.functions";
 import { formatCpf, normalizeCpf } from "@/lib/cpf";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
+import { TelefonesRanking } from "@/components/consultas/TelefonesRanking";
 
 export const Route = createFileRoute("/_authenticated/consulta-servidor")({
   head: () => ({
