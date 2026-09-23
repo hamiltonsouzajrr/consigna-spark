@@ -198,6 +198,8 @@ function ConsultaServidorPage() {
                   }))
             }
           />
+
+          <div className="grid gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
