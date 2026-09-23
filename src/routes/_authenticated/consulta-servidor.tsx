@@ -264,7 +264,7 @@ function ConsultaServidorPage() {
           </div>
 
           {ficha.tabelas
-            .filter((t) => !/telefone|email|endere/i.test(t.colunas.join(" ")))
+            .filter((t) => !/^(telefone|tipos|email|endere)/i.test(t.colunas[0] ?? ""))
             .map((t, i) => (
               <Card key={`tab-${i}`}>
                 <CardHeader>
