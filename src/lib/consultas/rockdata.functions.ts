@@ -317,10 +317,10 @@ async function rankearTelefones(ficha: RockdataFicha): Promise<RockdataFicha> {
     try {
       const { data: toms } = await (supabaseAdmin as any)
         .from("tomadores_al")
-        .select("telefones_manuais")
-        .overlaps("telefones_manuais", numeros)
+        .select("telefones")
+        .overlaps("telefones", numeros)
         .limit(50);
-      for (const t of toms ?? []) for (const n of (t.telefones_manuais ?? []) as string[]) informado.add(dig(n));
+      for (const t of toms ?? []) for (const n of (t.telefones ?? []) as string[]) informado.add(dig(n));
     } catch {
       /* coluna opcional */
     }
