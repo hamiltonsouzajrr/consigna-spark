@@ -222,7 +222,6 @@ async function consultarLista(campo: "nome" | "telefone", valor: string): Promis
     uf: "",
     cep: "",
     numeroCep: "",
-    telefone: "",
     email: "",
     dtNascimentoAbertura: "",
     tipoPessoa: "pf",
