@@ -22,7 +22,19 @@ export type RockdataFicha = {
   telefonesDetalhe?: RockdataTelefone[];
   emails: string[];
   enderecos: string[];
+  enderecosDetalhe?: RockdataEndereco[];
   tabelas: RockdataTabela[];
+};
+
+export type RockdataEndereco = {
+  logradouro: string | null;
+  numero: string | null;
+  complemento: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  uf: string | null;
+  cep: string | null;
+  completo: string;
 };
 
 export type NivelTelefone = "confiavel" | "bom" | "duvidoso" | "invalido";
@@ -179,6 +191,33 @@ function coletar(tabelas: RockdataTabela[], padrao: RegExp): string[] {
   return [...set];
 }
 
+function lerEnderecosDetalhe(tabelas: RockdataTabela[]): RockdataEndereco[] {
+  const limpar = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const aliases: Record<Exclude<keyof RockdataEndereco, "completo">, string[]> = {
+    logradouro: ["endereco", "logradouro", "rua"], numero: ["numero", "n"], complemento: ["complemento", "compl"],
+    bairro: ["bairro"], cidade: ["cidade", "municipio"], uf: ["uf", "estado"], cep: ["cep"],
+  };
+  const out: RockdataEndereco[] = [];
+  for (const tabela of tabelas) {
+    const cols = tabela.colunas.map(limpar);
+    if (!cols.some((c) => aliases.logradouro.includes(c)) || !cols.some((c) => aliases.cep.includes(c) || aliases.bairro.includes(c) || aliases.cidade.includes(c))) continue;
+    for (const linha of tabela.linhas) {
+      const pegar = (chaves: string[]) => {
+        const i = cols.findIndex((c) => chaves.includes(c));
+        return i >= 0 && linha[i] ? linha[i] : null;
+      };
+      const endereco = {
+        logradouro: pegar(aliases.logradouro), numero: pegar(aliases.numero), complemento: pegar(aliases.complemento),
+        bairro: pegar(aliases.bairro), cidade: pegar(aliases.cidade), uf: pegar(aliases.uf), cep: pegar(aliases.cep),
+      };
+      const completo = [endereco.logradouro, endereco.numero, endereco.complemento, endereco.bairro, endereco.cidade, endereco.uf, endereco.cep]
+        .filter(Boolean).join(", ");
+      if (completo && !out.some((e) => e.completo === completo)) out.push({ ...endereco, completo });
+    }
+  }
+  return out;
+}
+
 /** Lê a tabela de telefones com os ícones da RockData (tipo, WhatsApp, restrição, estrelas). */
 function lerTelefonesDetalhe(html: string): RockdataTelefone[] {
   const out: RockdataTelefone[] = [];
@@ -210,6 +249,7 @@ export function parseFicha(html: string): RockdataFicha {
   const campos = lerCampos(html);
   const tabelas = lerTabelas(html);
   const telefonesDetalhe = lerTelefonesDetalhe(html);
+  const enderecosDetalhe = lerEnderecosDetalhe(tabelas);
   return {
     pessoa: {
       cpf: valorCampo(campos, "CPF"),
@@ -223,7 +263,8 @@ export function parseFicha(html: string): RockdataFicha {
     telefones: telefonesDetalhe.length ? telefonesDetalhe.map((t) => t.numero) : coletar(tabelas, /telefone/),
     telefonesDetalhe,
     emails: coletar(tabelas, /email/),
-    enderecos: coletar(tabelas, /endere/),
+    enderecos: enderecosDetalhe.length ? enderecosDetalhe.map((e) => e.completo) : coletar(tabelas, /endere/),
+    enderecosDetalhe,
     tabelas,
   };
 }

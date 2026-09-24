@@ -54,16 +54,17 @@ export function TelefonesRanking({ cpf, telefones }: { cpf: string | null; telef
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{t.numero}</span>
                 <Badge variant="outline" className={NIVEL_CLASSE[t.nivel]}>
-                  {NIVEL_ROTULO[t.nivel]} · {t.score}
+                  {NIVEL_ROTULO[t.nivel]}
                 </Badge>
                 {t.tipo && <Badge variant="secondary">{t.tipo === "celular" ? "Celular" : "Fixo"}</Badge>}
                 {t.whatsapp && <Badge variant="secondary">WhatsApp</Badge>}
                 {t.restricao && <Badge variant="destructive">Restrição</Badge>}
-                {t.qualificacao > 0 && (
-                  <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
-                    <Star className="h-3 w-3" /> {t.qualificacao.toLocaleString("pt-BR")}/5
-                  </span>
-                )}
+                <span className="flex items-center gap-1 text-xs text-muted-foreground" aria-label={`${Math.round(t.score / 20)} de 5 estrelas de confiança`}>
+                  {[1, 2, 3, 4, 5].map((estrela) => (
+                    <Star key={estrela} className={`h-3.5 w-3.5 ${estrela <= Math.round(t.score / 20) ? "fill-warning text-warning" : "text-muted-foreground/35"}`} />
+                  ))}
+                  <span>{Math.round(t.score / 20)}/5</span>
+                </span>
               </div>
               {t.sinais.length > 0 && <p className="text-xs text-muted-foreground">{t.sinais.join(" · ")}</p>}
             </div>
