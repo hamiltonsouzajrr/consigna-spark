@@ -2138,6 +2138,145 @@ export type Database = {
         }
         Relationships: []
       }
+      quitacao_clientes: {
+        Row: {
+          abertas: number | null
+          cod_ordem: string
+          consultant_id: string | null
+          cpf: string
+          created_at: string
+          id: string
+          importado_em: string
+          lote_id: string | null
+          nome: string
+          pagas: number | null
+          parcela: number | null
+          plano: number | null
+          prazos: Json
+          qtd_contratos: number | null
+          removido_em: string | null
+          reserva: number | null
+          resultado: string
+          saldo: number | null
+          status: string | null
+          ultimo_contato_em: string | null
+          updated_at: string
+        }
+        Insert: {
+          abertas?: number | null
+          cod_ordem?: string
+          consultant_id?: string | null
+          cpf: string
+          created_at?: string
+          id?: string
+          importado_em?: string
+          lote_id?: string | null
+          nome: string
+          pagas?: number | null
+          parcela?: number | null
+          plano?: number | null
+          prazos?: Json
+          qtd_contratos?: number | null
+          removido_em?: string | null
+          reserva?: number | null
+          resultado?: string
+          saldo?: number | null
+          status?: string | null
+          ultimo_contato_em?: string | null
+          updated_at?: string
+        }
+        Update: {
+          abertas?: number | null
+          cod_ordem?: string
+          consultant_id?: string | null
+          cpf?: string
+          created_at?: string
+          id?: string
+          importado_em?: string
+          lote_id?: string | null
+          nome?: string
+          pagas?: number | null
+          parcela?: number | null
+          plano?: number | null
+          prazos?: Json
+          qtd_contratos?: number | null
+          removido_em?: string | null
+          reserva?: number | null
+          resultado?: string
+          saldo?: number | null
+          status?: string | null
+          ultimo_contato_em?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quitacao_clientes_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "quitacao_lotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quitacao_contatos: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          nota: string | null
+          resultado: string
+          user_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          nota?: string | null
+          resultado: string
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          nota?: string | null
+          resultado?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quitacao_contatos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "quitacao_clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quitacao_lotes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          nome: string
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome: string
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome?: string
+          total?: number
+        }
+        Relationships: []
+      }
       radar_consultoras: {
         Row: {
           ativo: boolean
