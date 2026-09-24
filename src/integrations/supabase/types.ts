@@ -1616,6 +1616,47 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_calculos: {
+        Row: {
+          calculadora: string
+          created_at: string
+          entradas: Json
+          id: string
+          lead_id: string
+          resultado: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calculadora: string
+          created_at?: string
+          entradas?: Json
+          id?: string
+          lead_id: string
+          resultado?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calculadora?: string
+          created_at?: string
+          entradas?: Json
+          id?: string
+          lead_id?: string
+          resultado?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_calculos_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prospect_competicao_semanas: {
         Row: {
           closes_at: string
