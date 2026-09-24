@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Sparkles, TrendingUp, CreditCard, Wallet, Building2, Star } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { BotaoSalvarCalculo } from "@/components/calculadoras/ClienteCalculoProvider";
 
 export const Route = createFileRoute("/_authenticated/alagoas")({
   beforeLoad: () => { throw redirect({ to: "/calculadoras", search: { aba: "bancos" } }); },
@@ -175,6 +176,7 @@ function ProdutoCard({ p }: { p: Produto }) {
           ? <>Multiplicador <span className="font-mono text-foreground">{p.multiplicador}×</span></>
           : p.obs}
       </div>
+      {valor > 0 && <div className="mt-4"><BotaoSalvarCalculo calculadora="bancos" entradas={{ produto: p.nome, tipo: p.tipo, margem: m, prazo: p.prazo ?? null, coeficiente: p.coeficiente ?? null, multiplicador: p.multiplicador ?? null }} resultado={{ valorLiberado: valor, parcela }} /></div>}
     </div>
   );
 }
@@ -265,6 +267,7 @@ function CaixaPrazos() {
           Confirmar com o setor de Digitação
         </p>
       </div>
+      {valor > 0 && <div className="mt-4 flex justify-center"><BotaoSalvarCalculo calculadora="bancos" entradas={{ produto: "Caixa Econômica", convenente: CAIXA_TABELA[conv].label, margem: m, prazo: prazoEfetivo, coeficiente: coef }} resultado={{ valorLiberado: valor, parcela }} /></div>}
     </div>
   );
 }

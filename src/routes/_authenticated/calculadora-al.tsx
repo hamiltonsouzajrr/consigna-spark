@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { BotaoSalvarCalculo } from "@/components/calculadoras/ClienteCalculoProvider";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
@@ -258,6 +259,7 @@ function ResultsDisplay({
         <Button variant="outline" onClick={onNovo}>
           <RefreshCw className="h-4 w-4" /> Novo cálculo
         </Button>
+        <BotaoSalvarCalculo calculadora="contracheque" entradas={{ salarioBase: salarioNum, descontos }} resultado={{ salarioLiquido: liquido, totalDescontos: totalDesc, margens: Object.fromEntries(MARGENS.map((m) => [m.label, liquido * m.pct])) }} disabled={excede} />
       </div>
     </div>
   );
