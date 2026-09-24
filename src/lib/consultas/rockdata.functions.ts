@@ -325,6 +325,7 @@ export const listarConsultasRecentes = createServerFn({ method: "GET" })
       .from("rockdata_consultas_log")
       .select("id,termo,tipo,origem,cpf,nome,created_at")
       .eq("user_id", context.userId)
+      .in("origem", ["banco", "rockdata"])
       .order("created_at", { ascending: false })
       .limit(20);
     return (data ?? []).map((r) => ({
@@ -346,7 +347,7 @@ async function rankearTelefones(ficha: RockdataFicha): Promise<RockdataFicha> {
     ficha.telefonesDetalhe?.length
       ? ficha.telefonesDetalhe
       : ficha.telefones.map((numero) => ({
-          numero, tipo: null, whatsapp: false, restricao: false, qualificacao: 0, score: 0, nivel: "duvidoso" as const, sinais: [],
+          numero, tipo: null, whatsapp: false, restricao: false, qualificacao: 0, score: 0, nivel: "desconhecido" as const, sinais: [],
         }));
   const dig = (v: string) => {
     let d = v.replace(/\D/g, "");
