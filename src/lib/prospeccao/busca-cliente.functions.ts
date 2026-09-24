@@ -3,7 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { formatCpf, normalizeCpf } from "@/lib/cpf";
+import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
 
 const LIMITE = 50;
 
@@ -74,7 +74,7 @@ export const buscarCliente = createServerFn({ method: "GET" })
     const termo = data.termo.trim();
     const digitos = normalizeCpf(termo);
     const soNumeros = /^[\d.\-/\s]+$/.test(termo);
-    const ehCpf = soNumeros && digitos.length >= 8 && digitos.length <= 11;
+    const ehCpf = soNumeros && digitos.length >= 8 && digitos.length <= 11 && isValidCpf(digitos.padStart(11, "0"));
     const ehTelefone = soNumeros && !ehCpf && digitos.length >= 10 && digitos.length <= 13;
     const telefone = ehTelefone && digitos.startsWith("55") ? digitos.slice(2) : digitos;
     const cpfCheio = ehCpf ? digitos.padStart(11, "0") : null;
