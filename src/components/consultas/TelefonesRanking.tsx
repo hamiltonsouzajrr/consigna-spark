@@ -14,6 +14,7 @@ const NIVEL_CLASSE: Record<NivelTelefone, string> = {
   bom: "bg-primary/15 text-primary border-primary/30",
   duvidoso: "bg-warning/15 text-warning border-warning/30",
   invalido: "bg-destructive/15 text-destructive border-destructive/30",
+  desconhecido: "bg-muted text-muted-foreground border-border",
 };
 
 const soDigitos = (v: string) => v.replace(/\D/g, "");
@@ -59,12 +60,14 @@ export function TelefonesRanking({ cpf, telefones }: { cpf: string | null; telef
                 {t.tipo && <Badge variant="secondary">{t.tipo === "celular" ? "Celular" : "Fixo"}</Badge>}
                 {t.whatsapp && <Badge variant="secondary">WhatsApp</Badge>}
                 {t.restricao && <Badge variant="destructive">Restrição</Badge>}
-                <span className="flex items-center gap-1 text-xs text-muted-foreground" aria-label={`${Math.round(t.score / 20)} de 5 estrelas de confiança`}>
-                  {[1, 2, 3, 4, 5].map((estrela) => (
-                    <Star key={estrela} className={`h-3.5 w-3.5 ${estrela <= Math.round(t.score / 20) ? "fill-warning text-warning" : "text-muted-foreground/35"}`} />
-                  ))}
-                  <span>{Math.round(t.score / 20)}/5</span>
-                </span>
+                {t.nivel !== "desconhecido" && (
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground" aria-label={`${Math.round(t.score / 20)} de 5 estrelas de confiança`}>
+                    {[1, 2, 3, 4, 5].map((estrela) => (
+                      <Star key={estrela} className={`h-3.5 w-3.5 ${estrela <= Math.round(t.score / 20) ? "fill-warning text-warning" : "text-muted-foreground/35"}`} />
+                    ))}
+                    <span>{Math.round(t.score / 20)}/5</span>
+                  </span>
+                )}
               </div>
               {t.sinais.length > 0 && <p className="text-xs text-muted-foreground">{t.sinais.join(" · ")}</p>}
             </div>

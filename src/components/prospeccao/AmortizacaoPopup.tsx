@@ -23,6 +23,8 @@ import { esteiraListar, esteiraRegistrarContato, type EsteiraContrato } from "@/
 
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const hojeISO = () => new Date(Date.now() - 3 * 3600_000).toISOString().slice(0, 10);
+const DISPENSADO_KEY = "amortizacao-popup-dispensado";
+const SOM_KEY = "amortizacao-popup-som";
 
 const RESULTADOS = [
   { value: "amortizou", label: "Amortizou" },
@@ -77,13 +79,27 @@ export function AmortizacaoPopup() {
 
   useEffect(() => {
     if (pendentes.length > 0) {
+      const chaveHoje = `${user?.id ?? ""}:${hoje}`;
+      try {
+        if (window.localStorage.getItem(DISPENSADO_KEY) === chaveHoje) return;
+      } catch { /* armazenamento indisponível */ }
       setOpen(true);
       if (!tocou) {
-        toque();
+        try {
+          if (window.localStorage.getItem(SOM_KEY) !== chaveHoje) {
+            toque();
+            window.localStorage.setItem(SOM_KEY, chaveHoje);
+          }
+        } catch { toque(); }
         setTocou(true);
       }
     }
-  }, [pendentes.length, tocou]);
+  }, [pendentes.length, tocou, user?.id, hoje]);
+
+  const fecharHoje = () => {
+    try { window.localStorage.setItem(DISPENSADO_KEY, `${user?.id ?? ""}:${hoje}`); } catch { /* ignore */ }
+    setOpen(false);
+  };
 
   if (!user || pendentes.length === 0) return null;
 
@@ -190,8 +206,8 @@ export function AmortizacaoPopup() {
         </div>
 
         <DialogFooter className="gap-2 sm:justify-between">
-          <Button variant="ghost" onClick={() => setOpen(false)}>
-            Fechar por agora
+          <Button variant="ghost" onClick={fecharHoje}>
+            Lembrar amanhã
           </Button>
           <Button asChild onClick={() => setOpen(false)}>
             <Link to="/prospeccao/amortizacao">Abrir minha carteira</Link>

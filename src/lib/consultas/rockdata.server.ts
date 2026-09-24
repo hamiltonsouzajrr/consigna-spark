@@ -37,7 +37,7 @@ export type RockdataEndereco = {
   completo: string;
 };
 
-export type NivelTelefone = "confiavel" | "bom" | "duvidoso" | "invalido";
+export type NivelTelefone = "confiavel" | "bom" | "duvidoso" | "invalido" | "desconhecido";
 
 export type RockdataTelefone = {
   numero: string;
@@ -86,26 +86,46 @@ async function login(): Promise<string> {
     throw new RockdataError("Acesso à RockData não está configurado no sistema.");
   }
 
+  const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36";
+  const inicial = await fetch(`${BASE}/`, {
+    headers: { "User-Agent": userAgent },
+  });
+  if (!inicial.ok) throw new RockdataError("A RockData está indisponível neste momento.");
+  const cookiesIniciais = inicial.headers.getSetCookie?.() ?? [inicial.headers.get("set-cookie") ?? ""];
+  const jar = new Map<string, string>();
+  const guardarCookies = (cookies: string[]) => {
+    for (const cookie of cookies) {
+      const par = cookie.split(";")[0]?.trim();
+      if (!par?.includes("=")) continue;
+      const separador = par.indexOf("=");
+      jar.set(par.slice(0, separador), par.slice(separador + 1));
+    }
+  };
+  guardarCookies(cookiesIniciais);
+
   const body = new URLSearchParams({ Usuario: usuario, Senha: senha, Cliente: cliente });
   const res = await fetch(`${BASE}/`, {
     method: "POST",
     redirect: "manual",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Cookie: [...jar].map(([nome, valor]) => `${nome}=${valor}`).join("; "),
+      Origin: BASE,
+      Referer: `${BASE}/`,
+      "User-Agent": userAgent,
+    },
     body: body.toString(),
   });
 
   const cookies = res.headers.getSetCookie?.() ?? [];
   const raw = cookies.length ? cookies : [res.headers.get("set-cookie") ?? ""];
-  const jar = raw
-    .filter(Boolean)
-    .map((c) => c.split(";")[0]!.trim())
-    .filter((c) => c.includes("="));
+  guardarCookies(raw);
 
-  const temAuth = jar.some((c) => c.startsWith(".ASPXAUTH="));
+  const temAuth = jar.has(".ASPXAUTH");
   if (!temAuth) {
     throw new RockdataError("Não foi possível entrar na RockData com o acesso cadastrado.");
   }
-  return jar.join("; ");
+  return [...jar].map(([nome, valor]) => `${nome}=${valor}`).join("; ");
 }
 
 async function postLocalizador(cookie: string, acao: string, dados: Record<string, string>) {
@@ -116,6 +136,9 @@ async function postLocalizador(cookie: string, acao: string, dados: Record<strin
       Cookie: cookie,
       "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
       "X-Requested-With": "XMLHttpRequest",
+      Origin: BASE,
+      Referer: `${BASE}/Localizador`,
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",
     },
     body: new URLSearchParams(dados).toString(),
   });
