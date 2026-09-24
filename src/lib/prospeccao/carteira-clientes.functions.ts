@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
 import { isValidCpf } from "@/lib/cpf";
 
 const fichaSchema = z.object({
@@ -53,8 +54,8 @@ export type CalculoCarteira = {
   leadId: string;
   clienteNome: string;
   calculadora: "bancos" | "contracheque" | "banese";
-  entradas: Record<string, unknown>;
-  resultado: Record<string, unknown>;
+  entradas: Json;
+  resultado: Json;
   criadoEm: string;
 };
 
@@ -74,7 +75,9 @@ export const salvarFichaNaCarteira = createServerFn({ method: "POST" })
     if (buscaError) throw new Error(buscaError.message);
     const deOutra = (existentes ?? []).find((row) => row.consultant_id && row.consultant_id !== context.userId);
     if (deOutra) {
-      const { data: perfil } = await supabaseAdmin.from("profiles").select("nome_completo,email").eq("user_id", deOutra.consultant_id).maybeSingle();
+      const responsavelId = deOutra.consultant_id;
+      if (!responsavelId) throw new Error("Este cliente já pertence a outra consultora.");
+      const { data: perfil } = await supabaseAdmin.from("profiles").select("nome_completo,email").eq("user_id", responsavelId).maybeSingle();
       throw new Error(`Este cliente já pertence a ${perfil?.nome_completo || perfil?.email || "outra consultora"}.`);
     }
     const proprio = (existentes ?? []).find((row) => row.consultant_id === context.userId || !row.consultant_id);
@@ -137,8 +140,8 @@ export const salvarCalculoCliente = createServerFn({ method: "POST" })
       user_id: context.userId,
       lead_id: data.leadId,
       calculadora: data.calculadora,
-      entradas: data.entradas,
-      resultado: data.resultado,
+      entradas: data.entradas as Json,
+      resultado: data.resultado as Json,
     }).select("id").single();
     if (error) throw new Error(error.message);
     return { id: calculo.id as string };
@@ -169,7 +172,7 @@ export const listarClientesRockdata = createServerFn({ method: "GET" })
       calculos: (calculos ?? []).map((row) => ({
         id: row.id, leadId: row.lead_id, clienteNome: nomePorId.get(row.lead_id) ?? "Cliente",
         calculadora: row.calculadora as CalculoCarteira["calculadora"],
-        entradas: row.entradas as Record<string, unknown>, resultado: row.resultado as Record<string, unknown>, criadoEm: row.created_at,
+        entradas: row.entradas, resultado: row.resultado, criadoEm: row.created_at,
       })),
     };
   });
