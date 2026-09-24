@@ -21,7 +21,6 @@ export type LeadAchado = {
   endereco: string | null;
   origem: string | null;
   renda: number | null;
-  rawData: Record<string, unknown> | null;
 };
 
 export type TomadorAchado = {
@@ -170,7 +169,6 @@ export const buscarCliente = createServerFn({ method: "GET" })
         endereco: enderecoDoRaw(l.raw_data as Record<string, unknown> | null, l.cidade),
         origem: l.origem ?? null,
         renda: l.renda ?? null,
-        rawData: (l.raw_data as Record<string, unknown> | null) ?? null,
       })),
       tomadores: (tomadoresR.data ?? []).map((t) => ({
         id: t.id,
