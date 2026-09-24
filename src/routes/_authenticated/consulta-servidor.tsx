@@ -227,7 +227,7 @@ function ConsultaServidorPage() {
                       <div>
                         <p className="text-xs text-muted-foreground">Origem</p>
                         <p className="text-sm font-medium">{m.origem === "planilha" ? "Cliente importado" : "Conversão registrada"}</p>
-                        {m.atualizadoEm && <p className="text-xs text-muted-foreground">Atualizada em {new Date(`${m.atualizadoEm}T12:00:00`).toLocaleDateString("pt-BR")}</p>}
+                        {m.atualizadoEm && <p className="text-xs text-muted-foreground">Atualizada em {new Date(m.atualizadoEm.length === 10 ? `${m.atualizadoEm}T12:00:00` : m.atualizadoEm).toLocaleDateString("pt-BR")}</p>}
                       </div>
                     </div>
                   );

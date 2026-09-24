@@ -14,6 +14,7 @@ const NIVEL_CLASSE: Record<NivelTelefone, string> = {
   bom: "bg-primary/15 text-primary border-primary/30",
   duvidoso: "bg-warning/15 text-warning border-warning/30",
   invalido: "bg-destructive/15 text-destructive border-destructive/30",
+  desconhecido: "bg-muted text-muted-foreground border-border",
 };
 
 const soDigitos = (v: string) => v.replace(/\D/g, "");
