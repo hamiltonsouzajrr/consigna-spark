@@ -1,11 +1,16 @@
-import { Copy, Mail, MapPin, RefreshCw, User, WalletCards } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Check, Copy, Mail, MapPin, RefreshCw, Save, User, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { TelefonesRanking } from "@/components/consultas/TelefonesRanking";
 import { PRAZO_CARTAO, PRAZO_EMPRESTIMO_PADRAO, valorLiberado } from "@/lib/prospeccao/coeficientes";
 import type { ConsultaResultado } from "@/lib/consultas/rockdata.functions";
+import { salvarFichaNaCarteira } from "@/lib/prospeccao/carteira-clientes.functions";
 
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const copiar = (valor: string) => { navigator.clipboard?.writeText(valor); toast.success("Copiado"); };
@@ -13,6 +18,17 @@ const rotuloMargem = (tipo: string | null) => tipo === "cartao_credito" ? "Cart�
 
 export function RockdataFichaPanel({ resultado, onAtualizar }: { resultado: ConsultaResultado; onAtualizar: () => void }) {
   const ficha = resultado.ficha;
+  const salvarFicha = useServerFn(salvarFichaNaCarteira);
+  const queryClient = useQueryClient();
+  const salvar = useMutation({
+    mutationFn: () => ficha ? salvarFicha({ data: { ficha } }) : Promise.reject(new Error("Ficha indisponível")),
+    onSuccess: (res) => {
+      toast.success(res.atualizado ? "Dados atualizados em Minha carteira." : "Cliente salvo em Minha carteira.");
+      queryClient.invalidateQueries({ queryKey: ["clientes-rockdata-carteira"] });
+      queryClient.invalidateQueries({ queryKey: ["conversoes-leads"] });
+    },
+    onError: (error: Error) => toast.error(error.message || "Não foi possível salvar o cliente."),
+  });
   if (!ficha) return (
     <Card><CardContent className="space-y-2 py-5">
       <p className="text-sm font-medium">{resultado.pessoas.length} pessoa(s) encontrada(s) na RockData</p>
@@ -27,6 +43,7 @@ export function RockdataFichaPanel({ resultado, onAtualizar }: { resultado: Cons
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={resultado.origem === "banco" ? "secondary" : "default"}>{resultado.origem === "banco" ? "Ficha salva" : "Consulta RockData"}</Badge>
           {resultado.consultadoEm && <span className="text-xs text-muted-foreground">{new Date(resultado.consultadoEm).toLocaleDateString("pt-BR")}</span>}
+          {salvar.isSuccess ? <Button asChild size="sm" variant="outline" className="gap-2"><Link to="/prospeccao/conversoes"><Check className="h-4 w-4" />Salvo em Minha carteira</Link></Button> : <AlertDialog><AlertDialogTrigger asChild><Button size="sm" className="gap-2"><Save className="h-4 w-4" />Salvar em Minha carteira</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Salvar este cliente na sua carteira?</AlertDialogTitle><AlertDialogDescription asChild><div className="space-y-2 text-left"><p><strong>{ficha.pessoa.nome ?? "Cliente"}</strong> · {ficha.pessoa.cpf ?? resultado.cpf ?? "CPF não informado"}</p><p>{ficha.telefones.join(" · ") || "Sem telefones"}</p><p>{ficha.enderecos[0] ?? "Sem endereço"}</p><p>A ficha será vinculada à sua carteira sem registrar uma venda.</p></div></AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => salvar.mutate()} disabled={salvar.isPending}>Confirmar e salvar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>}
           <Button size="sm" variant="outline" className="gap-2" onClick={onAtualizar}><RefreshCw className="h-4 w-4" />Atualizar na RockData</Button>
         </div>
       </CardHeader>

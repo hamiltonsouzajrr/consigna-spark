@@ -23,6 +23,7 @@ import {
 import { ArrowLeft, Plus, Trash2, Pencil, CalendarClock, Wallet, CheckCircle2, Clock, XCircle, X } from "lucide-react";
 import { CarteiraTabs } from "@/components/prospeccao/CarteiraTabs";
 import { ClientesPlanilhaCards } from "@/components/prospeccao/ClientesPlanilhaCards";
+import { ClientesRockdataCards } from "@/components/prospeccao/ClientesRockdataCards";
 import {
   listarConversoes,
   criarConversao,
@@ -302,6 +303,7 @@ function Page() {
       </div>
 
       <ClientesPlanilhaCards />
+      <ClientesRockdataCards />
 
       {isLoading ? (
         <div className="space-y-3">
