@@ -19,8 +19,11 @@ export function pontuarTelefone(t: RockdataTelefone, interno: SinaisInternos = {
   if (interno.contatadoCrm) { score += 10; sinais.push("Já contatado pelo CRM"); }
   if (interno.informadoConsultora) { score += 10; sinais.push("Informado por consultora"); }
   score = Math.max(0, Math.min(100, score));
+  const semSinais =
+    t.qualificacao <= 0 && !t.tipo && !t.whatsapp && !t.restricao &&
+    !interno.respondeuWhatsapp && !interno.contatadoCrm && !interno.informadoConsultora;
   const nivel: NivelTelefone =
-    t.restricao && score < 30 ? "invalido" : score >= 55 ? "confiavel" : score >= 35 ? "bom" : score >= 15 ? "duvidoso" : "invalido";
+    semSinais ? "desconhecido" : t.restricao && score < 30 ? "invalido" : score >= 55 ? "confiavel" : score >= 35 ? "bom" : score >= 15 ? "duvidoso" : "invalido";
   return { ...t, score, nivel, sinais };
 }
 
@@ -29,4 +32,5 @@ export const NIVEL_ROTULO: Record<NivelTelefone, string> = {
   bom: "Bom",
   duvidoso: "Duvidoso",
   invalido: "Inválido",
+  desconhecido: "Sem avaliação",
 };

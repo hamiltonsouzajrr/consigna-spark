@@ -25,7 +25,7 @@ export type RockdataFicha = {
   tabelas: RockdataTabela[];
 };
 
-export type NivelTelefone = "confiavel" | "bom" | "duvidoso" | "invalido";
+export type NivelTelefone = "confiavel" | "bom" | "duvidoso" | "invalido" | "desconhecido";
 
 export type RockdataTelefone = {
   numero: string;
