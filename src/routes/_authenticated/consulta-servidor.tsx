@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Search, RefreshCw, Phone, Mail, MapPin, User, History, Loader2, Copy } from "lucide-react";
+import { Search, RefreshCw, Phone, Mail, MapPin, User, History, Loader2, Copy, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import {
 import { formatCpf, normalizeCpf } from "@/lib/cpf";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { TelefonesRanking } from "@/components/consultas/TelefonesRanking";
+import { PRAZO_CARTAO, PRAZO_EMPRESTIMO_PADRAO, valorLiberado } from "@/lib/prospeccao/coeficientes";
 
 export const Route = createFileRoute("/_authenticated/consulta-servidor")({
   head: () => ({
@@ -40,6 +41,15 @@ function copiar(valor: string) {
 
 function soDigitos(v: string) {
   return v.replace(/\D/g, "");
+}
+
+const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+function rotuloMargem(tipo: string | null) {
+  if (tipo === "cartao_credito") return "Cartão de crédito";
+  if (tipo === "cartao_beneficio") return "Cartão benefício";
+  if (tipo === "emprestimo") return "Empréstimo";
+  return "Margem registrada";
 }
 
 function ConsultaServidorPage() {
@@ -186,6 +196,44 @@ function ConsultaServidorPage() {
                   <p className="text-sm font-medium">{c.valor}</p>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <WalletCards className="h-4 w-4" /> Margens salvas em Minha carteira
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {(resultado?.margensCarteira ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhuma margem real foi registrada para este CPF em Minha carteira.</p>
+              ) : (
+                (resultado?.margensCarteira ?? []).map((m, i) => {
+                  const prazo = m.prazo ?? (m.tipo?.startsWith("cartao") ? PRAZO_CARTAO : PRAZO_EMPRESTIMO_PADRAO);
+                  const estimativa = valorLiberado(m.margemRestante, prazo);
+                  return (
+                    <div key={`${m.origem}-${m.atualizadoEm ?? i}`} className="grid gap-3 rounded-lg border p-3 sm:grid-cols-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">{rotuloMargem(m.tipo)} · valor real</p>
+                        <p className="font-semibold">Usada: {m.margemUsada != null ? BRL.format(m.margemUsada) : "Não informada"}</p>
+                        <p className="text-sm">Restante: {m.margemRestante != null ? BRL.format(m.margemRestante) : "Não informada"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Estimativa da calculadora</p>
+                        <p className="font-semibold">{estimativa != null ? BRL.format(estimativa) : "Sem margem restante"}</p>
+                        <p className="text-xs text-muted-foreground">Prazo considerado: {prazo} meses</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Origem</p>
+                        <p className="text-sm font-medium">{m.origem === "planilha" ? "Cliente importado" : "Conversão registrada"}</p>
+                        {m.atualizadoEm && <p className="text-xs text-muted-foreground">Atualizada em {new Date(`${m.atualizadoEm}T12:00:00`).toLocaleDateString("pt-BR")}</p>}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <p className="text-xs text-muted-foreground">A estimativa usa a margem restante real e os mesmos coeficientes da calculadora.</p>
             </CardContent>
           </Card>
 
