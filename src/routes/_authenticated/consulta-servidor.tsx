@@ -1,179 +1,364 @@
+// Consulta de servidor (RockData): busca por CPF ou nome, reaproveitando o banco por 90 dias.
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Calculator, ChevronDown, Database, Loader2, MapPin, Phone, Search, Sparkles, User } from "lucide-react";
+import { Search, RefreshCw, Phone, Mail, MapPin, User, History, Loader2, Copy, WalletCards } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { RockdataFichaPanel } from "@/components/consultas/RockdataFichaPanel";
-import { buscarCliente, type BuscaClienteResultado, type LeadAchado, type PromovidoAchado, type TomadorAchado } from "@/lib/prospeccao/busca-cliente.functions";
-import { consultarServidor, type ConsultaResultado } from "@/lib/consultas/rockdata.functions";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  consultarServidor,
+  listarConsultasRecentes,
+  type ConsultaResultado,
+} from "@/lib/consultas/rockdata.functions";
+import { formatCpf, normalizeCpf } from "@/lib/cpf";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
+import { TelefonesRanking } from "@/components/consultas/TelefonesRanking";
 import { PRAZO_CARTAO, PRAZO_EMPRESTIMO_PADRAO, valorLiberado } from "@/lib/prospeccao/coeficientes";
 
 export const Route = createFileRoute("/_authenticated/consulta-servidor")({
-  head: () => ({ meta: [
-    { title: "Pesquisar Cliente | Grupo Positive" },
-    { name: "description", content: "Localize clientes nas planilhas e compare os dados com a RockData quando necessário." },
-    { name: "robots", content: "noindex, nofollow" },
-    { property: "og:title", content: "Pesquisar Cliente" },
-    { property: "og:description", content: "Busca interna de clientes com comparação opcional de dados cadastrais." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Pesquisar Cliente | Grupo Positive" },
+      { name: "description", content: "Consulte telefones, endereços e dados cadastrais do cliente por CPF, nome ou telefone." },
+      { name: "robots", content: "noindex, nofollow" },
+      { property: "og:title", content: "Pesquisar Cliente" },
+      { property: "og:description", content: "Consulta de telefones, endereços e dados cadastrais do cliente." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: ConsultaServidorPage,
 });
 
-type ClienteSelecionado =
-  | { fonte: "CRM"; item: LeadAchado }
-  | { fonte: "Tomadores AL"; item: TomadorAchado }
-  | { fonte: "Diário Oficial"; item: PromovidoAchado };
+function copiar(valor: string) {
+  navigator.clipboard?.writeText(valor);
+  toast.success("Copiado");
+}
+
+function soDigitos(v: string) {
+  return v.replace(/\D/g, "");
+}
 
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-const dinheiro = (valor: number | null) => valor == null ? "Não informada na planilha" : BRL.format(valor);
+
+function rotuloMargem(tipo: string | null) {
+  if (tipo === "cartao_credito") return "Cartão de crédito";
+  if (tipo === "cartao_beneficio") return "Cartão benefício";
+  if (tipo === "emprestimo") return "Empréstimo";
+  return "Margem registrada";
+}
 
 function ConsultaServidorPage() {
   const [termo, setTermo] = useState("");
-  const [resultado, setResultado] = useState<BuscaClienteResultado | null>(null);
-  const [selecionado, setSelecionado] = useState<ClienteSelecionado | null>(null);
-  const [plusAberto, setPlusAberto] = useState(false);
-  const [rockdata, setRockdata] = useState<ConsultaResultado | null>(null);
-  const buscarInterno = useServerFn(buscarCliente);
-  const consultarRockdata = useServerFn(consultarServidor);
+  const [resultado, setResultado] = useState<ConsultaResultado | null>(null);
+  const consultar = useServerFn(consultarServidor);
+  const listar = useServerFn(listarConsultasRecentes);
+  const qc = useQueryClient();
+
+  const historico = useQuery({
+    queryKey: ["consultas-recentes"],
+    queryFn: () => listar(),
+  });
 
   const busca = useMutation({
-    mutationFn: (valor: string) => buscarInterno({ data: { termo: valor } }),
-    onSuccess: (data) => { setResultado(data); setSelecionado(null); setPlusAberto(false); setRockdata(null); },
-    onError: () => toast.error("Não foi possível pesquisar no banco do sistema."),
-  });
-  const buscaPlus = useMutation({
-    mutationFn: (v: { cpf: string; atualizar?: boolean }) => consultarRockdata({ data: { termo: v.cpf.replace(/\D/g, ""), forcarAtualizacao: v.atualizar ?? false } }),
-    onSuccess: (data) => setRockdata(data),
-    onError: (e: Error) => toast.error(e.message || "Não foi possível comparar com a RockData."),
+    mutationFn: (v: { termo: string; forcarAtualizacao?: boolean }) =>
+      consultar({ data: { termo: v.termo, forcarAtualizacao: v.forcarAtualizacao ?? false } }),
+    onSuccess: (r) => {
+      setResultado(r);
+      if (r.mensagem) toast.info(r.mensagem);
+      qc.invalidateQueries({ queryKey: ["consultas-recentes"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Não foi possível consultar agora."),
   });
 
-  const enviar = () => {
-    const valor = termo.trim();
-    if (valor.length < 3) return toast.error("Digite um CPF, telefone com DDD ou pelo menos 3 letras do nome.");
-    busca.mutate(valor);
+  const enviar = (valor: string, forcar = false) => {
+    const t = valor.trim();
+    if (t.length < 3) {
+      toast.error("Digite um CPF, um telefone com DDD ou pelo menos 3 letras do nome.");
+      return;
+    }
+    setTermo(t);
+    busca.mutate({ termo: t, forcarAtualizacao: forcar });
   };
-  const cpfSelecionado = selecionado
-    ? selecionado.fonte === "Tomadores AL" ? selecionado.item.documento : selecionado.item.cpf
-    : null;
-  const total = resultado ? resultado.leads.length + resultado.tomadores.length + resultado.promovidos.length : 0;
+
+  const ficha = resultado?.ficha ?? null;
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-5 p-4">
+    <div className="mx-auto w-full max-w-5xl space-y-6 p-4">
       <div>
-        <h1 className="text-2xl font-bold">Pesquisar Cliente</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Consulte primeiro as planilhas do sistema por CPF, nome ou telefone.</p>
+        <h1 className="text-2xl font-bold tracking-tight">Pesquisar Cliente</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Digite o CPF, o nome ou o telefone com DDD do cliente para ver telefones, endereços e dados cadastrais.
+        </p>
       </div>
 
-      <Card><CardContent className="pt-6">
-        <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(e) => { e.preventDefault(); enviar(); }}>
-          <Input value={termo} onChange={(e) => setTermo(e.target.value)} placeholder="CPF, nome completo ou telefone com DDD" autoFocus />
-          <Button type="submit" disabled={busca.isPending} className="gap-2">
-            {busca.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Pesquisar no sistema
-          </Button>
-        </form>
-        <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground"><Database className="h-3.5 w-3.5" /> Esta busca não consulta nem gera cobrança na RockData.</p>
-      </CardContent></Card>
+      <Card>
+        <CardContent className="pt-6">
+          <form
+            className="flex flex-col gap-2 sm:flex-row"
+            onSubmit={(e) => {
+              e.preventDefault();
+              enviar(termo);
+            }}
+          >
+            <Input
+              value={termo}
+              onChange={(e) => setTermo(e.target.value)}
+              placeholder="CPF, nome ou telefone com DDD"
+              className="flex-1"
+              autoFocus
+            />
+            <Button type="submit" disabled={busca.isPending} className="gap-2">
+              {busca.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              Pesquisar
+            </Button>
+          </form>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Consultas já feitas são reaproveitadas por 90 dias, sem nova cobrança.
+          </p>
+        </CardContent>
+      </Card>
 
-      {resultado && !selecionado && (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">{total} resultado(s) encontrado(s) nas planilhas importadas.</p>
-          {resultado.leads.length > 0 && <Grupo titulo="CRM" quantidade={resultado.leads.length}>
-            {resultado.leads.map((item) => <Resultado key={item.id} nome={item.nome} cpf={item.cpf} detalhe={[item.telefone, item.endereco, item.origem].filter(Boolean).join(" · ")} onClick={() => setSelecionado({ fonte: "CRM", item })} />)}
-          </Grupo>}
-          {resultado.tomadores.length > 0 && <Grupo titulo="Tomadores AL" quantidade={resultado.tomadores.length}>
-            {resultado.tomadores.map((item) => <Resultado key={item.id} nome={item.nome} cpf={item.documento} detalhe={[item.telefones[0], item.cargo, item.orgao].filter(Boolean).join(" · ")} onClick={() => setSelecionado({ fonte: "Tomadores AL", item })} />)}
-          </Grupo>}
-          {resultado.promovidos.length > 0 && <Grupo titulo="Diário Oficial" quantidade={resultado.promovidos.length}>
-            {resultado.promovidos.map((item) => <Resultado key={item.id} nome={item.nome} cpf={item.cpf} detalhe={[item.cargo, item.orgao].filter(Boolean).join(" · ")} onClick={() => setSelecionado({ fonte: "Diário Oficial", item })} />)}
-          </Grupo>}
-          {total === 0 && <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Nenhum cliente foi encontrado nas planilhas do sistema.</CardContent></Card>}
+      {busca.isPending && (
+        <div className="flex items-center justify-center gap-2 rounded-xl border bg-card py-12 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Consultando...
         </div>
       )}
 
-      {selecionado && (
+      {/* Lista de pessoas na busca por nome ou telefone */}
+      {!busca.isPending && (resultado?.tipo === "nome" || resultado?.tipo === "telefone") && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              {resultado.pessoas.length} pessoa(s) encontrada(s) para “{termo}”
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {resultado.pessoas.length === 0 && (
+              <p className="text-sm text-muted-foreground">Nenhuma pessoa encontrada com essa busca.</p>
+            )}
+            {resultado.pessoas.map((p) => (
+              <button
+                key={p.cpf}
+                type="button"
+                onClick={() => enviar(p.cpf)}
+                className="flex w-full flex-col items-start gap-1 rounded-lg border p-3 text-left transition hover:bg-accent sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <p className="font-medium">{p.nome}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatCpf(p.cpf)} {p.idade ? `• ${p.idade}` : ""}{" "}
+                    {p.cidade ? `• ${p.bairro ? `${p.bairro}, ` : ""}${p.cidade}${p.uf ? `/${p.uf}` : ""}` : ""}
+                  </p>
+                </div>
+                <Badge variant="secondary">Ver dados</Badge>
+              </button>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Ficha completa */}
+      {!busca.isPending && ficha && (
         <div className="space-y-4">
-          <Button variant="ghost" size="sm" onClick={() => { setSelecionado(null); setPlusAberto(false); setRockdata(null); }}>← Voltar aos resultados</Button>
-          <FichaInterna selecionado={selecionado} />
-          <Card className="border-primary/30">
-            <CardHeader className="pb-3">
-              <Button variant="ghost" className="h-auto w-full justify-between p-0 text-left" onClick={() => setPlusAberto((v) => !v)}>
-                <span className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /><span><strong>Busca Plus</strong><span className="block text-xs font-normal text-muted-foreground">Comparar os dados com a RockData</span></span></span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${plusAberto ? "rotate-180" : ""}`} />
-              </Button>
-            </CardHeader>
-            {plusAberto && <CardContent className="space-y-4 border-t pt-4">
-              {!cpfSelecionado && <p className="text-sm text-muted-foreground">Este registro não possui CPF para fazer a comparação.</p>}
-              {cpfSelecionado && !rockdata && <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">A consulta só será feita após sua confirmação. Dados salvos por até 90 dias serão reutilizados.</p>
-                <Button onClick={() => buscaPlus.mutate({ cpf: cpfSelecionado })} disabled={buscaPlus.isPending} className="gap-2">
-                  {buscaPlus.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Comparar agora
+          <Card>
+            <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <User className="h-4 w-4" /> {ficha.pessoa.nome ?? "Cliente"}
+              </CardTitle>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={resultado?.origem === "banco" ? "secondary" : "default"}>
+                  {resultado?.origem === "banco" ? "Dados salvos no sistema" : "Consulta nova"}
+                </Badge>
+                {resultado?.consultadoEm && (
+                  <span className="text-xs text-muted-foreground">
+                    Consultado em {new Date(resultado.consultadoEm).toLocaleDateString("pt-BR")}
+                  </span>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => resultado?.cpf && enviar(resultado.cpf, true)}
+                >
+                  <RefreshCw className="h-4 w-4" /> Atualizar dados
                 </Button>
-              </div>}
-              {rockdata?.ficha && <RockdataFichaPanel resultado={rockdata} atualizar={() => cpfSelecionado && buscaPlus.mutate({ cpf: cpfSelecionado, atualizar: true })} />}
-            </CardContent>}
+              </div>
+            </CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-2">
+              {ficha.pessoa.campos.map((c, i) => (
+                <div key={`${c.label}-${i}`} className="rounded-lg border p-2">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">{c.label}</p>
+                  <p className="text-sm font-medium">{c.valor}</p>
+                </div>
+              ))}
+            </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <WalletCards className="h-4 w-4" /> Margens salvas em Minha carteira
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {(resultado?.margensCarteira ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhuma margem real foi registrada para este CPF em Minha carteira.</p>
+              ) : (
+                (resultado?.margensCarteira ?? []).map((m, i) => {
+                  const prazo = m.prazo ?? (m.tipo?.startsWith("cartao") ? PRAZO_CARTAO : PRAZO_EMPRESTIMO_PADRAO);
+                  const estimativa = valorLiberado(m.margemRestante, prazo);
+                  return (
+                    <div key={`${m.origem}-${m.atualizadoEm ?? i}`} className="grid gap-3 rounded-lg border p-3 sm:grid-cols-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">{rotuloMargem(m.tipo)} · valor real</p>
+                        <p className="font-semibold">Usada: {m.margemUsada != null ? BRL.format(m.margemUsada) : "Não informada"}</p>
+                        <p className="text-sm">Restante: {m.margemRestante != null ? BRL.format(m.margemRestante) : "Não informada"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Estimativa da calculadora</p>
+                        <p className="font-semibold">{estimativa != null ? BRL.format(estimativa) : "Sem margem restante"}</p>
+                        <p className="text-xs text-muted-foreground">Prazo considerado: {prazo} meses</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Origem</p>
+                        <p className="text-sm font-medium">{m.origem === "planilha" ? "Cliente importado" : "Conversão registrada"}</p>
+                        {m.atualizadoEm && <p className="text-xs text-muted-foreground">Atualizada em {new Date(m.atualizadoEm.length === 10 ? `${m.atualizadoEm}T12:00:00` : m.atualizadoEm).toLocaleDateString("pt-BR")}</p>}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <p className="text-xs text-muted-foreground">A estimativa usa a margem restante real e os mesmos coeficientes da calculadora.</p>
+            </CardContent>
+          </Card>
+
+          <TelefonesRanking
+            cpf={resultado?.cpf ?? null}
+            telefones={
+              ficha.telefonesDetalhe?.length
+                ? ficha.telefonesDetalhe
+                : ficha.telefones.map((numero) => ({
+                    numero, tipo: null, whatsapp: false, restricao: false, qualificacao: 0, score: 0, nivel: "duvidoso" as const, sinais: [],
+                  }))
+            }
+          />
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <MapPin className="h-4 w-4" /> Endereços ({ficha.enderecos.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {ficha.enderecos.length === 0 && (
+                  <p className="text-sm text-muted-foreground">Nenhum endereço disponível.</p>
+                )}
+                {ficha.enderecos.map((e) => (
+                  <div key={e} className="flex items-start justify-between gap-2 rounded-lg border p-2 text-sm">
+                    <span>{e}</span>
+                    <Button size="sm" variant="ghost" onClick={() => copiar(e)}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Mail className="h-4 w-4" /> E-mails ({ficha.emails.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {ficha.emails.length === 0 && (
+                  <p className="text-sm text-muted-foreground">Nenhum e-mail disponível.</p>
+                )}
+                {ficha.emails.map((e) => (
+                  <div key={e} className="flex items-center justify-between gap-2 rounded-lg border p-2 text-sm">
+                    <span className="break-all">{e}</span>
+                    <Button size="sm" variant="ghost" onClick={() => copiar(e)}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+
+          {ficha.tabelas
+            .filter((t) => !/^(telefone|tipos|email|endere)/i.test(t.colunas[0] ?? ""))
+            .map((t, i) => (
+              <Card key={`tab-${i}`}>
+                <CardHeader>
+                  <CardTitle className="text-base">Outras informações</CardTitle>
+                </CardHeader>
+                <CardContent className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-muted-foreground">
+                        {t.colunas.map((c) => (
+                          <th key={c} className="px-2 py-1 font-medium">
+                            {c}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {t.linhas.map((l, j) => (
+                        <tr key={j} className="border-t">
+                          {l.map((c, k) => (
+                            <td key={k} className="px-2 py-1">
+                              {c}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            ))}
         </div>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <History className="h-4 w-4" /> Pesquisas recentes
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {(historico.data ?? []).length === 0 && (
+            <p className="text-sm text-muted-foreground">Você ainda não fez consultas.</p>
+          )}
+          {(historico.data ?? []).map((h) => (
+            <button
+              key={h.id}
+              type="button"
+              onClick={() => enviar(h.cpf ? h.cpf : h.termo)}
+              className="flex w-full flex-wrap items-center justify-between gap-2 rounded-lg border p-2 text-left text-sm transition hover:bg-accent"
+            >
+              <span className="font-medium">
+                {h.nome && h.tipo === "cpf" ? h.nome : h.termo}
+                {h.cpf ? <span className="ml-2 text-muted-foreground">{formatCpf(h.cpf)}</span> : null}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {new Date(h.criadoEm).toLocaleString("pt-BR")} •{" "}
+                {h.origem === "banco" ? "do sistema" : "consulta nova"}
+              </span>
+            </button>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
-function Grupo({ titulo, quantidade, children }: { titulo: string; quantidade: number; children: React.ReactNode }) {
-  return <Card className="overflow-hidden"><div className="flex items-center gap-2 border-b bg-muted/40 px-4 py-3"><span className="font-semibold">{titulo}</span><Badge variant="secondary">{quantidade}</Badge></div><div>{children}</div></Card>;
-}
-
-function Resultado({ nome, cpf, detalhe, onClick }: { nome: string; cpf: string | null; detalhe: string; onClick: () => void }) {
-  return <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 last:border-b-0"><div className="min-w-0"><p className="font-semibold">{nome}</p><p className="text-xs text-muted-foreground">{[cpf, detalhe].filter(Boolean).join(" · ") || "Sem detalhes adicionais"}</p></div><Button size="sm" variant="secondary" onClick={onClick}>Ver ficha</Button></div>;
-}
-
-function Margem({ titulo, valor, prazo }: { titulo: string; valor: number | null; prazo: number }) {
-  const liberado = valorLiberado(valor, prazo);
-  return <div className="border-l-2 border-primary pl-3"><p className="text-xs text-muted-foreground">{titulo}</p><p className="font-semibold">{dinheiro(valor)}</p>{liberado != null && <p className="text-xs text-success">≈ {BRL.format(liberado)} liberados em {prazo}x</p>}</div>;
-}
-
-function FichaInterna({ selecionado }: { selecionado: ClienteSelecionado }) {
-  const item = selecionado.item;
-  const nome = item.nome;
-  let cpf: string | null = null;
-  let telefone: string | null = null;
-  let endereco: string | null = null;
-  let principal: number | null = null;
-  let cartao: number | null = null;
-  let beneficio: number | null = null;
-  if (selecionado.fonte === "CRM") {
-    cpf = selecionado.item.cpf;
-    telefone = selecionado.item.telefone;
-    endereco = selecionado.item.endereco;
-    principal = selecionado.item.orcamento;
-  } else if (selecionado.fonte === "Tomadores AL") {
-    cpf = selecionado.item.documento;
-    telefone = selecionado.item.telefones[0] ?? null;
-    principal = selecionado.item.margemEmprestimo;
-    cartao = selecionado.item.margemCartao;
-    beneficio = selecionado.item.margemCartaoBeneficio;
-  } else {
-    cpf = selecionado.item.cpf;
-  }
-  return <Card>
-    <CardHeader><div className="flex flex-wrap items-center justify-between gap-2"><CardTitle className="flex items-center gap-2"><User className="h-5 w-5" /> {nome}</CardTitle><Badge>{selecionado.fonte}</Badge></div></CardHeader>
-    <CardContent className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div><p className="text-xs text-muted-foreground">CPF</p><p className="font-medium">{cpf ?? "Não informado"}</p></div>
-        <div><p className="flex items-center gap-1 text-xs text-muted-foreground"><Phone className="h-3 w-3" /> Telefone</p><p className="font-medium">{telefone ?? "Não informado"}</p></div>
-        <div className="sm:col-span-2"><p className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3" /> Endereço</p><p className="font-medium">{endereco ?? "Não informado na planilha"}</p></div>
-      </div>
-      <div>
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold"><Calculator className="h-4 w-4" /> Margens e valores aproximados</h3>
-        <div className="grid gap-4 sm:grid-cols-3"><Margem titulo="Empréstimo" valor={principal} prazo={PRAZO_EMPRESTIMO_PADRAO} /><Margem titulo="Cartão de crédito" valor={cartao} prazo={PRAZO_CARTAO} /><Margem titulo="Cartão benefício" valor={beneficio} prazo={PRAZO_CARTAO} /></div>
-        <p className="mt-3 text-xs text-muted-foreground">Estimativas calculadas com os mesmos coeficientes da calculadora. O valor final pode variar conforme o banco.</p>
-      </div>
-    </CardContent>
-  </Card>;
-}
+export { normalizeCpf };

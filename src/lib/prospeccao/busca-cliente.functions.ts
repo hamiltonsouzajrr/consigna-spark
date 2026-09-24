@@ -3,7 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { formatCpf, isValidCpf, normalizeCpf } from "@/lib/cpf";
+import { formatCpf, normalizeCpf } from "@/lib/cpf";
 
 const LIMITE = 50;
 
@@ -18,9 +18,6 @@ export type LeadAchado = {
   orcamento: number | null;
   consultant_id: string | null;
   responsavel: string | null;
-  endereco: string | null;
-  origem: string | null;
-  renda: number | null;
 };
 
 export type TomadorAchado = {
@@ -33,8 +30,6 @@ export type TomadorAchado = {
   margemCartao: number | null;
   responsavel: string | null;
   status: string | null;
-  telefones: string[];
-  margemCartaoBeneficio: number | null;
 };
 
 export type PromovidoAchado = {
@@ -45,11 +40,10 @@ export type PromovidoAchado = {
   dataPromocao: string | null;
   responsavel: string | null;
   status: string | null;
-  cpf: string | null;
 };
 
 export type BuscaClienteResultado = {
-  tipo: "cpf" | "nome" | "telefone";
+  tipo: "cpf" | "nome";
   termo: string;
   cpfNormalizado: string | null;
   leads: LeadAchado[];
@@ -74,9 +68,7 @@ export const buscarCliente = createServerFn({ method: "GET" })
     const termo = data.termo.trim();
     const digitos = normalizeCpf(termo);
     const soNumeros = /^[\d.\-/\s]+$/.test(termo);
-    const ehCpf = soNumeros && digitos.length >= 8 && digitos.length <= 11 && isValidCpf(digitos.padStart(11, "0"));
-    const ehTelefone = soNumeros && !ehCpf && digitos.length >= 10 && digitos.length <= 13;
-    const telefone = ehTelefone && digitos.startsWith("55") ? digitos.slice(2) : digitos;
+    const ehCpf = soNumeros && digitos.length >= 8 && digitos.length <= 11;
     const cpfCheio = ehCpf ? digitos.padStart(11, "0") : null;
     const variantes = ehCpf ? variantesCpf(digitos) : [];
     const like = `%${termo.replace(/[%_]/g, "")}%`;
@@ -88,13 +80,9 @@ export const buscarCliente = createServerFn({ method: "GET" })
     const leadsQ = (() => {
       let q = supabaseAdmin
         .from("prospect_leads")
-        .select("id,nome,cpf,telefone,telefones,cidade,situacao,status,orcamento,renda,origem,raw_data,consultant_id")
+        .select("id,nome,cpf,telefone,cidade,situacao,status,orcamento,consultant_id")
         .limit(LIMITE);
-      q = ehCpf
-        ? q.in("cpf", variantes)
-        : ehTelefone
-          ? q.or(`telefone.ilike.%${telefone.slice(-8)}%,telefones.cs.{${telefone}}`)
-          : q.ilike("nome", like).order("nome");
+      q = ehCpf ? q.in("cpf", variantes) : q.ilike("nome", like).order("nome");
       return q;
     })();
 
@@ -102,14 +90,10 @@ export const buscarCliente = createServerFn({ method: "GET" })
       let q = supabaseAdmin
         .from("tomadores_al")
         .select(
-          "id,nome,documento,orgao,descricao_cargo,margem_disp_emprestimo,margem_disp_cartao_credito,margem_util_cartao_beneficio,consultora_responsavel,status_abordagem,telefones",
+          "id,nome,documento,orgao,descricao_cargo,margem_disp_emprestimo,margem_disp_cartao_credito,consultora_responsavel,status_abordagem",
         )
         .limit(LIMITE);
-      q = ehCpf
-        ? q.in("documento", variantes)
-        : ehTelefone
-          ? q.overlaps("telefones", [telefone])
-          : q.ilike("nome", like).order("nome");
+      q = ehCpf ? q.in("documento", variantes) : q.ilike("nome", like).order("nome");
       return q;
     })();
 
@@ -120,9 +104,7 @@ export const buscarCliente = createServerFn({ method: "GET" })
           "id,nome_servidor,nome_completo,cargo_promovido,cargo_atual,orgao,orgao_lotacao,data_promocao,data_publicacao,consultora_responsavel,status_abordagem,cpf_confirmado",
         )
         .limit(LIMITE);
-      if (ehTelefone) {
-        return q.limit(0);
-      } else if (ehCpf && cpfCheio) {
+      if (ehCpf && cpfCheio) {
         q = q.or(`cpf_confirmado.eq.${cpfCheio},cpf_confirmado.eq.${formatCpf(cpfCheio)}`);
       } else {
         q = q.or(`nome_servidor.ilike.${like},nome_completo.ilike.${like}`);
@@ -152,7 +134,7 @@ export const buscarCliente = createServerFn({ method: "GET" })
     }
 
     return {
-      tipo: ehCpf ? "cpf" : ehTelefone ? "telefone" : "nome",
+      tipo: ehCpf ? "cpf" : "nome",
       termo,
       cpfNormalizado: cpfCheio ? formatCpf(cpfCheio) : null,
       leads: leadsRows.map((l) => ({
@@ -166,9 +148,6 @@ export const buscarCliente = createServerFn({ method: "GET" })
         orcamento: l.orcamento ?? null,
         consultant_id: l.consultant_id ?? null,
         responsavel: l.consultant_id ? responsavelPorId.get(l.consultant_id) ?? null : null,
-        endereco: enderecoDoRaw(l.raw_data as Record<string, unknown> | null, l.cidade),
-        origem: l.origem ?? null,
-        renda: l.renda ?? null,
       })),
       tomadores: (tomadoresR.data ?? []).map((t) => ({
         id: t.id,
@@ -180,8 +159,6 @@ export const buscarCliente = createServerFn({ method: "GET" })
         margemCartao: t.margem_disp_cartao_credito ?? null,
         responsavel: t.consultora_responsavel ?? null,
         status: t.status_abordagem ?? null,
-        telefones: (t.telefones as string[] | null) ?? [],
-        margemCartaoBeneficio: t.margem_util_cartao_beneficio ?? null,
       })),
       promovidos: (promovidosR.data ?? []).map((r) => ({
         id: r.id,
@@ -191,7 +168,6 @@ export const buscarCliente = createServerFn({ method: "GET" })
         dataPromocao: r.data_promocao || r.data_publicacao || null,
         responsavel: r.consultora_responsavel ?? null,
         status: r.status_abordagem ?? null,
-        cpf: r.cpf_confirmado ? formatCpf(r.cpf_confirmado) : null,
       })),
       truncado: {
         leads: leadsRows.length >= LIMITE,
@@ -200,17 +176,3 @@ export const buscarCliente = createServerFn({ method: "GET" })
       },
     };
   });
-
-function enderecoDoRaw(raw: Record<string, unknown> | null, cidade: string | null): string | null {
-  if (!raw) return cidade;
-  const normalizar = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const campos = ["endereco", "logradouro", "rua", "numero", "complemento", "bairro", "cidade", "municipio", "uf", "estado", "cep"];
-  const valores: string[] = [];
-  for (const alvo of campos) {
-    const chave = Object.keys(raw).find((k) => normalizar(k) === normalizar(alvo));
-    const valor = chave ? String(raw[chave] ?? "").trim() : "";
-    if (valor && !valores.includes(valor)) valores.push(valor);
-  }
-  if (cidade && !valores.includes(cidade)) valores.push(cidade);
-  return valores.length ? valores.join(", ") : null;
-}

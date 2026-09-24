@@ -9,6 +9,15 @@ const DIAS_VALIDADE = 90;
 
 type TipoBusca = "cpf" | "nome" | "telefone";
 
+export type MargemCarteira = {
+  origem: "conversao" | "planilha";
+  tipo: string | null;
+  margemUsada: number | null;
+  margemRestante: number | null;
+  prazo: number | null;
+  atualizadoEm: string | null;
+};
+
 export type ConsultaResultado = {
   tipo: TipoBusca;
   origem: "banco" | "rockdata";
@@ -17,6 +26,7 @@ export type ConsultaResultado = {
   ficha: RockdataFicha | null;
   pessoas: RockdataPessoaLista[];
   mensagem: string | null;
+  margensCarteira?: MargemCarteira[];
 };
 
 export type ConsultaHistoricoItem = {
@@ -63,6 +73,54 @@ export const consultarServidor = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const rockdata = await import("@/lib/consultas/rockdata.server");
+
+    const carregarMargensCarteira = async (cpfCliente: string): Promise<MargemCarteira[]> => {
+      const variantes = [cpfCliente, cpfCliente.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4")];
+      const [{ data: conversoes }, { data: contratos }] = await Promise.all([
+        supabaseAdmin
+          .from("prospect_conversoes")
+          .select("margem_usada,margem_restante_valor,tipo_margem,prazo,updated_at,data_operacao")
+          .eq("user_id", context.userId)
+          .in("cpf", variantes)
+          .order("data_operacao", { ascending: false })
+          .limit(5),
+        supabaseAdmin
+          .from("esteira_contratos")
+          .select("id,prazo,data_venda")
+          .eq("consultant_id", context.userId)
+          .in("cpf", variantes)
+          .is("removido_em", null)
+          .order("data_venda", { ascending: false })
+          .limit(5),
+      ]);
+      const contratoIds = (contratos ?? []).map((c) => c.id);
+      const { data: ajustes } = contratoIds.length
+        ? await supabaseAdmin
+            .from("esteira_ajustes_consultora")
+            .select("contrato_id,margem_usada,margem_restante_valor,prazo,updated_at")
+            .eq("consultant_id", context.userId)
+            .in("contrato_id", contratoIds)
+        : { data: [] };
+      const contratoPorId = new Map((contratos ?? []).map((c) => [c.id, c]));
+      return [
+        ...(conversoes ?? []).map((c) => ({
+          origem: "conversao" as const,
+          tipo: c.tipo_margem ?? null,
+          margemUsada: c.margem_usada != null ? Number(c.margem_usada) : null,
+          margemRestante: c.margem_restante_valor != null ? Number(c.margem_restante_valor) : null,
+          prazo: c.prazo ?? null,
+          atualizadoEm: c.updated_at ?? c.data_operacao ?? null,
+        })),
+        ...(ajustes ?? []).map((a) => ({
+          origem: "planilha" as const,
+          tipo: null,
+          margemUsada: a.margem_usada != null ? Number(a.margem_usada) : null,
+          margemRestante: a.margem_restante_valor != null ? Number(a.margem_restante_valor) : null,
+          prazo: a.prazo ?? contratoPorId.get(a.contrato_id)?.prazo ?? null,
+          atualizadoEm: a.updated_at ?? contratoPorId.get(a.contrato_id)?.data_venda ?? null,
+        })),
+      ].filter((m) => m.margemUsada != null || m.margemRestante != null);
+    };
 
     const registrar = async (origem: string, nome: string | null) => {
       await supabaseAdmin.from("rockdata_consultas_log").insert({
@@ -207,6 +265,7 @@ export const consultarServidor = createServerFn({ method: "POST" })
         ficha: await rankearTelefones(cache.resultado as unknown as RockdataFicha),
         pessoas: [],
         mensagem: null,
+        margensCarteira: await carregarMargensCarteira(cpf),
       };
     }
 
@@ -233,6 +292,7 @@ export const consultarServidor = createServerFn({ method: "POST" })
         ficha: await rankearTelefones(ficha),
         pessoas: [],
         mensagem: null,
+        margensCarteira: await carregarMargensCarteira(cpf),
       };
     } catch (e) {
       console.error("[rockdata] consulta por CPF falhou:", e);
@@ -247,6 +307,7 @@ export const consultarServidor = createServerFn({ method: "POST" })
           ficha: await rankearTelefones(cache.resultado as unknown as RockdataFicha),
           pessoas: [],
           mensagem: "A RockData não respondeu agora; mostrando a última consulta salva.",
+          margensCarteira: await carregarMargensCarteira(cpf),
         };
       }
       throw new Error(

@@ -22,19 +22,7 @@ export type RockdataFicha = {
   telefonesDetalhe?: RockdataTelefone[];
   emails: string[];
   enderecos: string[];
-  enderecosDetalhe?: RockdataEndereco[];
   tabelas: RockdataTabela[];
-};
-
-export type RockdataEndereco = {
-  logradouro: string | null;
-  numero: string | null;
-  complemento: string | null;
-  bairro: string | null;
-  cidade: string | null;
-  uf: string | null;
-  cep: string | null;
-  completo: string;
 };
 
 export type NivelTelefone = "confiavel" | "bom" | "duvidoso" | "invalido" | "desconhecido";
@@ -86,46 +74,26 @@ async function login(): Promise<string> {
     throw new RockdataError("Acesso à RockData não está configurado no sistema.");
   }
 
-  const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36";
-  const inicial = await fetch(`${BASE}/`, {
-    headers: { "User-Agent": userAgent },
-  });
-  if (!inicial.ok) throw new RockdataError("A RockData está indisponível neste momento.");
-  const cookiesIniciais = inicial.headers.getSetCookie?.() ?? [inicial.headers.get("set-cookie") ?? ""];
-  const jar = new Map<string, string>();
-  const guardarCookies = (cookies: string[]) => {
-    for (const cookie of cookies) {
-      const par = cookie.split(";")[0]?.trim();
-      if (!par?.includes("=")) continue;
-      const separador = par.indexOf("=");
-      jar.set(par.slice(0, separador), par.slice(separador + 1));
-    }
-  };
-  guardarCookies(cookiesIniciais);
-
   const body = new URLSearchParams({ Usuario: usuario, Senha: senha, Cliente: cliente });
   const res = await fetch(`${BASE}/`, {
     method: "POST",
     redirect: "manual",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Cookie: [...jar].map(([nome, valor]) => `${nome}=${valor}`).join("; "),
-      Origin: BASE,
-      Referer: `${BASE}/`,
-      "User-Agent": userAgent,
-    },
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: body.toString(),
   });
 
   const cookies = res.headers.getSetCookie?.() ?? [];
   const raw = cookies.length ? cookies : [res.headers.get("set-cookie") ?? ""];
-  guardarCookies(raw);
+  const jar = raw
+    .filter(Boolean)
+    .map((c) => c.split(";")[0]!.trim())
+    .filter((c) => c.includes("="));
 
-  const temAuth = jar.has(".ASPXAUTH");
+  const temAuth = jar.some((c) => c.startsWith(".ASPXAUTH="));
   if (!temAuth) {
     throw new RockdataError("Não foi possível entrar na RockData com o acesso cadastrado.");
   }
-  return [...jar].map(([nome, valor]) => `${nome}=${valor}`).join("; ");
+  return jar.join("; ");
 }
 
 async function postLocalizador(cookie: string, acao: string, dados: Record<string, string>) {
@@ -136,9 +104,6 @@ async function postLocalizador(cookie: string, acao: string, dados: Record<strin
       Cookie: cookie,
       "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
       "X-Requested-With": "XMLHttpRequest",
-      Origin: BASE,
-      Referer: `${BASE}/Localizador`,
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",
     },
     body: new URLSearchParams(dados).toString(),
   });
@@ -214,33 +179,6 @@ function coletar(tabelas: RockdataTabela[], padrao: RegExp): string[] {
   return [...set];
 }
 
-function lerEnderecosDetalhe(tabelas: RockdataTabela[]): RockdataEndereco[] {
-  const limpar = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const aliases: Record<Exclude<keyof RockdataEndereco, "completo">, string[]> = {
-    logradouro: ["endereco", "logradouro", "rua"], numero: ["numero", "n"], complemento: ["complemento", "compl"],
-    bairro: ["bairro"], cidade: ["cidade", "municipio"], uf: ["uf", "estado"], cep: ["cep"],
-  };
-  const out: RockdataEndereco[] = [];
-  for (const tabela of tabelas) {
-    const cols = tabela.colunas.map(limpar);
-    if (!cols.some((c) => aliases.logradouro.includes(c)) || !cols.some((c) => aliases.cep.includes(c) || aliases.bairro.includes(c) || aliases.cidade.includes(c))) continue;
-    for (const linha of tabela.linhas) {
-      const pegar = (chaves: string[]) => {
-        const i = cols.findIndex((c) => chaves.includes(c));
-        return i >= 0 && linha[i] ? linha[i] : null;
-      };
-      const endereco = {
-        logradouro: pegar(aliases.logradouro), numero: pegar(aliases.numero), complemento: pegar(aliases.complemento),
-        bairro: pegar(aliases.bairro), cidade: pegar(aliases.cidade), uf: pegar(aliases.uf), cep: pegar(aliases.cep),
-      };
-      const completo = [endereco.logradouro, endereco.numero, endereco.complemento, endereco.bairro, endereco.cidade, endereco.uf, endereco.cep]
-        .filter(Boolean).join(", ");
-      if (completo && !out.some((e) => e.completo === completo)) out.push({ ...endereco, completo });
-    }
-  }
-  return out;
-}
-
 /** Lê a tabela de telefones com os ícones da RockData (tipo, WhatsApp, restrição, estrelas). */
 function lerTelefonesDetalhe(html: string): RockdataTelefone[] {
   const out: RockdataTelefone[] = [];
@@ -272,7 +210,6 @@ export function parseFicha(html: string): RockdataFicha {
   const campos = lerCampos(html);
   const tabelas = lerTabelas(html);
   const telefonesDetalhe = lerTelefonesDetalhe(html);
-  const enderecosDetalhe = lerEnderecosDetalhe(tabelas);
   return {
     pessoa: {
       cpf: valorCampo(campos, "CPF"),
@@ -286,8 +223,7 @@ export function parseFicha(html: string): RockdataFicha {
     telefones: telefonesDetalhe.length ? telefonesDetalhe.map((t) => t.numero) : coletar(tabelas, /telefone/),
     telefonesDetalhe,
     emails: coletar(tabelas, /email/),
-    enderecos: enderecosDetalhe.length ? enderecosDetalhe.map((e) => e.completo) : coletar(tabelas, /endere/),
-    enderecosDetalhe,
+    enderecos: coletar(tabelas, /endere/),
     tabelas,
   };
 }
