@@ -41,7 +41,7 @@
 - [x] Consultora pode ajustar margem utilizada, margem restante e prazo sem alterar a planilha original
 
 ## Pesquisar Cliente
-- [ ] Tornar as planilhas importadas a busca principal por CPF, nome ou telefone
-- [ ] Mostrar ficha consolidada com endereço, margens e valores aproximados pela calculadora
-- [ ] Deixar a comparação RockData compacta e acionada somente pela consultora
-- [ ] Organizar endereço RockData e confiança dos telefones em até cinco estrelas
+- [x] Tornar as planilhas importadas a busca principal por CPF, nome ou telefone
+- [x] Mostrar ficha consolidada com endereço, margens e valores aproximados pela calculadora
+- [x] Deixar a comparação RockData compacta e acionada somente pela consultora
+- [x] Organizar endereço RockData e confiança dos telefones em até cinco estrelas
