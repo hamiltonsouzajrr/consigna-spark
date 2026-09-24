@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LogOut, BadgeDollarSign, Calculator, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, PhoneCall, Flame, CalendarClock, Home, Trophy, Star, MessageSquare, Clock, Sparkles, Radar, Wallet, PartyPopper, LayoutDashboard, AlertTriangle, PiggyBank } from "lucide-react";
+import { LogOut, BadgeDollarSign, Calculator, ShieldCheck, TrendingUp, Search, QrCode, Menu, Users, MessageCircle, Target, Phone, PhoneCall, Flame, CalendarClock, Home, Trophy, Star, MessageSquare, Clock, Sparkles, Radar, Wallet, PartyPopper, LayoutDashboard, AlertTriangle, PiggyBank, CreditCard } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -44,6 +44,7 @@ const navSections: NavSection[] = [
       { to: "/prospeccao", label: "CRM", full: "CRM DE PROSPECÇÃO - FILA, SCORE E FOLLOW-UP", icon: Phone, exact: true, consultoraOnly: true },
       { to: "/consulta-servidor", label: "Pesquisar Cliente", full: "PESQUISAR CLIENTE - TELEFONES, ENDEREÇOS E DADOS", icon: Search },
       { to: "/tomadores-al", label: "Tomadores com Margem – AL", full: "CLIENTES TOMADORES COM MARGEM - AL", icon: Wallet },
+      { to: "/quitacao", label: "Quitação - Cartão de crédito", full: "QUITAÇÃO - CARTÃO DE CRÉDITO - COMPRA DE DÍVIDA", icon: CreditCard },
       
       { to: "/prospeccao/recentes", label: "Recentes Prospectados", icon: Flame, consultoraOnly: true },
       { to: "/prospeccao/promovidos-recentes", label: "Promovidos Recentemente", full: "PROMOVIDOS RECENTEMENTE - ALTA CHANCE DE CONVERSÃO", icon: PartyPopper, consultoraOnly: true },
