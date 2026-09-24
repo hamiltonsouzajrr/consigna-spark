@@ -141,12 +141,26 @@ function Margem({ titulo, valor, prazo }: { titulo: string; valor: number | null
 function FichaInterna({ selecionado }: { selecionado: ClienteSelecionado }) {
   const item = selecionado.item;
   const nome = item.nome;
-  const cpf = selecionado.fonte === "Tomadores AL" ? item.documento : item.cpf;
-  const telefone = selecionado.fonte === "CRM" ? item.telefone : selecionado.fonte === "Tomadores AL" ? item.telefones[0] ?? null : null;
-  const endereco = selecionado.fonte === "CRM" ? item.endereco : null;
-  const principal = selecionado.fonte === "CRM" ? item.orcamento : selecionado.fonte === "Tomadores AL" ? item.margemEmprestimo : null;
-  const cartao = selecionado.fonte === "Tomadores AL" ? item.margemCartao : null;
-  const beneficio = selecionado.fonte === "Tomadores AL" ? item.margemCartaoBeneficio : null;
+  let cpf: string | null = null;
+  let telefone: string | null = null;
+  let endereco: string | null = null;
+  let principal: number | null = null;
+  let cartao: number | null = null;
+  let beneficio: number | null = null;
+  if (selecionado.fonte === "CRM") {
+    cpf = selecionado.item.cpf;
+    telefone = selecionado.item.telefone;
+    endereco = selecionado.item.endereco;
+    principal = selecionado.item.orcamento;
+  } else if (selecionado.fonte === "Tomadores AL") {
+    cpf = selecionado.item.documento;
+    telefone = selecionado.item.telefones[0] ?? null;
+    principal = selecionado.item.margemEmprestimo;
+    cartao = selecionado.item.margemCartao;
+    beneficio = selecionado.item.margemCartaoBeneficio;
+  } else {
+    cpf = selecionado.item.cpf;
+  }
   return <Card>
     <CardHeader><div className="flex flex-wrap items-center justify-between gap-2"><CardTitle className="flex items-center gap-2"><User className="h-5 w-5" /> {nome}</CardTitle><Badge>{selecionado.fonte}</Badge></div></CardHeader>
     <CardContent className="space-y-5">
