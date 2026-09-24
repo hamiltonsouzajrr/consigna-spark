@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlagoasPage } from "./alagoas";
 import { CalculadoraALPage } from "./calculadora-al";
 import { SimulacaoAlagoasPage } from "./simulacao-alagoas";
+import { ClienteCalculoProvider } from "@/components/calculadoras/ClienteCalculoProvider";
 
 type Aba = "bancos" | "contracheque" | "banese";
 
@@ -28,6 +29,7 @@ function Calculadoras() {
   const navigate = useNavigate();
   return (
     <AppShell>
+      <ClienteCalculoProvider>
       <Tabs value={aba} onValueChange={(value) => navigate({ to: "/calculadoras", search: { aba: value as Aba }, replace: true })}>
         <TabsList className="mb-6 grid h-auto w-full grid-cols-1 gap-1 sm:grid-cols-3">
           <TabsTrigger value="bancos">Prévia AL — todos os bancos</TabsTrigger>
@@ -38,6 +40,7 @@ function Calculadoras() {
         <TabsContent value="contracheque"><CalculadoraALPage embedded /></TabsContent>
         <TabsContent value="banese"><SimulacaoAlagoasPage embedded /></TabsContent>
       </Tabs>
+      </ClienteCalculoProvider>
     </AppShell>
   );
 }

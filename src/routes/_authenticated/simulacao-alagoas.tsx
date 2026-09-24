@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Calculator, Eraser, AlertTriangle } from "lucide-react";
 import { COEFICIENTES } from "@/lib/prospeccao/coeficientes";
+import { BotaoSalvarCalculo } from "@/components/calculadoras/ClienteCalculoProvider";
 
 export const Route = createFileRoute("/_authenticated/simulacao-alagoas")({
   beforeLoad: () => { throw redirect({ to: "/calculadoras", search: { aba: "banese" } }); },
@@ -194,6 +195,7 @@ export function SimulacaoAlagoasPage({ embedded = false }: { embedded?: boolean 
             </div>
 
             {resultado && (
+              <div className="space-y-3">
               <div
                 className="rounded-xl p-5 text-white"
                 style={{ background: "linear-gradient(135deg, #003B7A, #00A651)" }}
@@ -214,6 +216,8 @@ export function SimulacaoAlagoasPage({ embedded = false }: { embedded?: boolean 
                     <p className="font-semibold">{resultado.idade} anos</p>
                   </div>
                 </div>
+              </div>
+              <BotaoSalvarCalculo calculadora="banese" entradas={{ idade: idadeNum, parcela: parcelaNum, prazo: prazoNum }} resultado={{ valorLiberado: resultado.valorLiberado, coeficiente: resultado.coeficiente, prazoEfetivo: resultado.prazoEfetivo }} />
               </div>
             )}
           </CardContent>
