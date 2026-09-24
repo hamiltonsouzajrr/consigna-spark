@@ -154,7 +154,7 @@ export const quitacaoAdminEditar = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { assertAdmin } = await import("./prospeccao.server");
     await assertAdmin(context.supabase, context.userId);
-    const patch: Record<string, string | null> = {};
+    const patch: { consultant_id?: string | null; removido_em?: string } = {};
     if (data.consultant_id !== undefined) patch.consultant_id = data.consultant_id;
     if (data.remover) patch.removido_em = new Date().toISOString();
     const { error } = await context.supabase.from("quitacao_clientes").update(patch).eq("id", data.id);
