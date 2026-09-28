@@ -96,7 +96,7 @@ async function login(): Promise<string> {
   return jar.join("; ");
 }
 
-async function postLocalizador(cookie: string, acao: string, dados: Record<string, string>) {
+async function postLocalizador(cookie: string, acao: string, dados: Record<string, string>, tentativa = 0): Promise<string> {
   const res = await fetch(`${BASE}/Localizador/Consulta/${acao}`, {
     method: "POST",
     redirect: "manual",
@@ -109,7 +109,12 @@ async function postLocalizador(cookie: string, acao: string, dados: Record<strin
   });
   const html = await res.text();
   if (res.status >= 300 && res.status < 400) {
-    throw new RockdataError("A RockData não retornou dados para esta consulta.");
+    // Sessão recusada/expirada: refaz o login uma vez e tenta de novo.
+    if (tentativa < 1) {
+      const novo = await login();
+      return postLocalizador(novo, acao, dados, tentativa + 1);
+    }
+    throw new RockdataError("A sessão da RockData foi recusada. Verifique o acesso cadastrado (usuário, senha e cliente).");
   }
   if (!res.ok) throw new RockdataError("A RockData está indisponível neste momento.");
   return html;

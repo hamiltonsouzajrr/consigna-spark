@@ -116,7 +116,13 @@ export const buscarClientesParaCalculo = createServerFn({ method: "GET" })
     if (termo.length < 2) return [];
     const d = digits(termo);
     let query = context.supabase.from("prospect_leads").select("id,nome,cpf,telefone,raw_data").eq("consultant_id", context.userId).limit(20);
-    query = d.length >= 3 ? query.ilike("cpf", `%${d}%`) : query.ilike("nome", `%${termo}%`);
+    if (d.length >= 3) {
+      // CPF pode estar salvo só com dígitos ou formatado (000.000.000-00): casa ambos.
+      const padraoFormatado = d.split("").join("[.\\-\\s]?");
+      query = query.or(`cpf.ilike.%${d}%,cpf.match.${padraoFormatado},nome.ilike.%${termo.replace(/[,()%]/g, "")}%`);
+    } else {
+      query = query.ilike("nome", `%${termo}%`);
+    }
     const { data: rows, error } = await query.order("nome");
     if (error) throw new Error(error.message);
     return (rows ?? []).map((row) => ({
