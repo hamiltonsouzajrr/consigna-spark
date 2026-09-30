@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type Prazo = { bruto: number | null; troco: number | null };
+export type ContratoOp = { banco: string; contrato: string; tipo: string; parcelas: string; restantes: number | null; parcela: number | null; saldo: number | null };
 export type QuitacaoCliente = {
   id: string;
   lote_id: string | null;
@@ -22,10 +23,20 @@ export type QuitacaoCliente = {
   resultado: string;
   ultimo_contato_em: string | null;
   importado_em: string;
+  matricula: string | null;
+  perfil: string | null;
+  ritmo: string | null;
+  competencia: string | null;
+  banco_previsto: string | null;
+  credito_previsto: number | null;
+  troco_previsto: number | null;
+  contratos: ContratoOp[];
+  formato: string;
 };
 
+const s = (n: number) => z.string().max(n).nullable().optional();
 const clienteIn = z.object({
-  cpf: z.string().min(11).max(11),
+  cpf: z.string().regex(/^(\d{11})?$/),
   nome: z.string().min(1).max(200),
   status: z.string().max(120).nullable(),
   cod_ordem: z.string().max(60),
@@ -37,6 +48,18 @@ const clienteIn = z.object({
   abertas: z.number().int().nullable(),
   plano: z.number().int().nullable(),
   prazos: z.record(z.object({ bruto: z.number().nullable(), troco: z.number().nullable() })),
+  matricula: s(40),
+  perfil: s(60),
+  ritmo: s(40),
+  competencia: s(80),
+  banco_previsto: s(120),
+  credito_previsto: z.number().nullable().optional(),
+  troco_previsto: z.number().nullable().optional(),
+  contratos: z.array(z.object({
+    banco: z.string().max(120), contrato: z.string().max(160), tipo: z.string().max(40), parcelas: z.string().max(20),
+    restantes: z.number().nullable(), parcela: z.number().nullable(), saldo: z.number().nullable(),
+  })).max(100).optional(),
+  formato: z.enum(["calculados", "oportunidades"]).optional(),
 });
 
 async function isAdmin(supabase: any, userId: string) {
