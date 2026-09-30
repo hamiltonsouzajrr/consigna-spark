@@ -205,7 +205,9 @@ export const quitacaoRegistrar = createServerFn({ method: "POST" })
     // Fechado/recusado encerram o acompanhamento; os demais podem ter retorno agendado.
     const encerrado = data.resultado === "fechado" || data.resultado === "recusado";
     const retorno = encerrado ? null : data.retorno ? new Date(`${data.retorno}T12:00:00-03:00`).toISOString() : null;
-    const patch: Record<string, unknown> = { resultado: data.resultado, ultimo_contato_em: agora };
+    const patch = { resultado: data.resultado, ultimo_contato_em: agora } as {
+      resultado: string; ultimo_contato_em: string; retorno_em?: string | null;
+    };
     if (encerrado || data.retorno !== undefined) patch.retorno_em = retorno;
     await supabaseAdmin.from("quitacao_clientes").update(patch).eq("id", data.id);
     const { error } = await context.supabase.from("quitacao_contatos").insert({
