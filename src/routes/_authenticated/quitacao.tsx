@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CreditCard, Upload, Trash2, Phone, MessageCircle, AlertTriangle } from "lucide-react";
+import { CreditCard, Upload, Trash2, Phone, MessageCircle, AlertTriangle, Flame, ArrowRight, FileText } from "lucide-react";
 import { isValidCpf } from "@/lib/cpf";
 import {
   quitacaoListar, quitacaoImportar, quitacaoExcluirLote, quitacaoAdminEditar, quitacaoRegistrar, quitacaoTelefones,
