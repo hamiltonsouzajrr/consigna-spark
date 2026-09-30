@@ -435,6 +435,7 @@ export const quitacaoTelefones = createServerFn({ method: "GET" })
       const vals = [...new Set([m, semDv, m.replace(/\D/g, "")].filter(Boolean))];
       jobs.push(supabaseAdmin.from("tomadores_al").select("telefones").in("matricula", vals).limit(10));
     }
+    if (data.cpf) jobs.push(supabaseAdmin.from("rockdata_consultas").select("telefones").eq("cpf", data.cpf).limit(3));
     const res = await Promise.all(jobs);
     for (const r of res) for (const row of (r.data ?? []) as any[]) { add(row.telefone); (row.telefones ?? []).forEach(add); }
     return { telefones: [...set].slice(0, 8) };
@@ -477,12 +478,14 @@ export const quitacaoTelefonesLote = createServerFn({ method: "POST" })
 
     for (let i = 0; i < cpfKeys.length; i += 400) {
       const slice = cpfKeys.slice(i, i + 400);
-      const [leads, tom] = await Promise.all([
+      const [leads, tom, rock] = await Promise.all([
         supabaseAdmin.from("prospect_leads").select("cpf,telefone,telefones").in("cpf", slice).limit(2000),
         supabaseAdmin.from("tomadores_al").select("documento,telefones").in("documento", slice).limit(2000),
+        supabaseAdmin.from("rockdata_consultas").select("cpf,telefones").in("cpf", slice).limit(2000),
       ]);
       for (const r of (leads.data ?? []) as any[]) push(porCpf, String(r.cpf ?? ""), [r.telefone, ...(r.telefones ?? [])]);
       for (const r of (tom.data ?? []) as any[]) push(porCpf, String(r.documento ?? ""), r.telefones ?? []);
+      for (const r of (rock.data ?? []) as any[]) push(porCpf, String(r.cpf ?? ""), r.telefones ?? []);
     }
     for (let i = 0; i < mats.length; i += 400) {
       const { data: rows } = await supabaseAdmin
