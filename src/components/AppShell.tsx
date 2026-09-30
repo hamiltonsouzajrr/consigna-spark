@@ -45,6 +45,7 @@ const navSections: NavSection[] = [
       { to: "/consulta-servidor", label: "Pesquisar Cliente", full: "PESQUISAR CLIENTE - TELEFONES, ENDEREÇOS E DADOS", icon: Search },
       { to: "/tomadores-al", label: "Tomadores com Margem – AL", full: "CLIENTES TOMADORES COM MARGEM - AL", icon: Wallet },
       { to: "/quitacao", label: "Quitação - Cartão de crédito", full: "QUITAÇÃO - CARTÃO DE CRÉDITO - COMPRA DE DÍVIDA", icon: CreditCard },
+      { to: "/quitacao-ng", label: "Quitação - Cartão de Crédito (NG)", full: "QUITAÇÃO - CARTÃO DE CRÉDITO (NG) - TRANSFER NG", icon: CreditCard },
       
       { to: "/prospeccao/recentes", label: "Recentes Prospectados", icon: Flame, consultoraOnly: true },
       { to: "/prospeccao/promovidos-recentes", label: "Promovidos Recentemente", full: "PROMOVIDOS RECENTEMENTE - ALTA CHANCE DE CONVERSÃO", icon: PartyPopper, consultoraOnly: true },

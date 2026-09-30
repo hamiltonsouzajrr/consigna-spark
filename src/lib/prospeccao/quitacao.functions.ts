@@ -33,7 +33,60 @@ export type QuitacaoCliente = {
   troco_previsto: number | null;
   contratos: ContratoOp[];
   formato: string;
+  produto: string;
+  etapa: string;
+  prioridade: number | null;
+  apto_roteiro: boolean;
+  troco_simulado: number | null;
+  taxa_simulada: string | null;
+  liberacao_prevista: string | null;
+  checklist: Record<string, boolean>;
 };
+
+const produtoZ = z.enum(["geral", "ng"]).default("geral");
+const modoZ = z.enum(["quantidade", "valor"]).default("quantidade");
+const trocoDe = (prazos: unknown, previsto?: number | null) => {
+  let b: number | null = previsto ?? null;
+  for (const v of Object.values((prazos ?? {}) as Record<string, { troco: number | null }>)) if (v?.troco != null && (b == null || v.troco > b)) b = v.troco;
+  return b ?? 0;
+};
+
+/** Alocação gulosa: por quantidade (menor fila) ou por valor (menor troco somado, desempate pela fila). */
+function criarAlocador(ids: string[], modo: "quantidade" | "valor") {
+  const fila = new Map<string, number>(ids.map((i) => [i, 0]));
+  const soma = new Map<string, number>(ids.map((i) => [i, 0]));
+  return {
+    carregar(uid: string | null, troco: number) {
+      if (!uid || !fila.has(uid)) return;
+      fila.set(uid, fila.get(uid)! + 1); soma.set(uid, soma.get(uid)! + Math.max(0, troco));
+    },
+    descarregar(uid: string | null, troco: number) {
+      if (!uid || !fila.has(uid)) return;
+      fila.set(uid, Math.max(0, fila.get(uid)! - 1)); soma.set(uid, Math.max(0, soma.get(uid)! - Math.max(0, troco)));
+    },
+    proxima(troco: number, exceto?: string | null) {
+      let best: string | null = null;
+      for (const id of fila.keys()) {
+        if (id === exceto) continue;
+        if (best === null) { best = id; continue; }
+        const a = modo === "valor" ? soma.get(id)! - soma.get(best)! : fila.get(id)! - fila.get(best)!;
+        const tie = modo === "valor" ? fila.get(id)! - fila.get(best)! : 0;
+        if (a < 0 || (a === 0 && tie < 0)) best = id;
+      }
+      if (best) this.carregar(best, troco);
+      return best;
+    },
+  };
+}
+
+async function cargaAtual(supabaseAdmin: any, produto: string, aloc: ReturnType<typeof criarAlocador>) {
+  for (let from = 0; ; from += 1000) {
+    const { data } = await supabaseAdmin.from("quitacao_clientes").select("consultant_id,prazos,troco_previsto")
+      .eq("produto", produto).is("removido_em", null).not("consultant_id", "is", null).range(from, from + 999);
+    for (const r of data ?? []) aloc.carregar(r.consultant_id, trocoDe(r.prazos, r.troco_previsto));
+    if (!data || data.length < 1000) break;
+  }
+}
 
 const s = (n: number) => z.string().max(n).nullable().optional();
 const clienteIn = z.object({
@@ -74,13 +127,15 @@ export const quitacaoMeuPerfil = createServerFn({ method: "GET" })
 
 export const quitacaoListar = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d) => z.object({ produto: produtoZ }).parse(d ?? {}))
+  .handler(async ({ context, data: input }) => {
     const admin = await isAdmin(context.supabase, context.userId);
     const out: QuitacaoCliente[] = [];
     for (let from = 0; ; from += 1000) {
       let q = context.supabase
         .from("quitacao_clientes")
         .select("*")
+        .eq("produto", input.produto)
         .is("removido_em", null)
         .range(from, from + 999);
       if (!admin) q = q.eq("consultant_id", context.userId);
@@ -95,7 +150,7 @@ export const quitacaoListar = createServerFn({ method: "GET" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { listConsultantUsers } = await import("./prospeccao.server");
       consultoras = await listConsultantUsers(supabaseAdmin);
-      const { data } = await context.supabase.from("quitacao_lotes").select("id,nome,total,created_at").order("created_at", { ascending: false });
+      const { data } = await context.supabase.from("quitacao_lotes").select("id,nome,total,created_at").eq("produto", input.produto).order("created_at", { ascending: false });
       lotes = (data ?? []) as typeof lotes;
     }
     return { admin, clientes: out, consultoras, lotes };
@@ -103,15 +158,19 @@ export const quitacaoListar = createServerFn({ method: "GET" })
 
 export const quitacaoImportar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ nome: z.string().min(1).max(200), clientes: z.array(clienteIn).max(20000), distribuir: z.boolean() }).parse(d))
+  .inputValidator((d) => z.object({
+    nome: z.string().min(1).max(200), clientes: z.array(clienteIn).max(20000), distribuir: z.boolean(), produto: produtoZ, modo: modoZ,
+  }).parse(d))
   .handler(async ({ context, data }) => {
     const { assertAdmin, listConsultantUsers } = await import("./prospeccao.server");
     await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { NG, prioridadeNg } = await import("./ng-roteiro");
+    const ng = data.produto === "ng";
 
     const { data: lote, error: le } = await supabaseAdmin
       .from("quitacao_lotes")
-      .insert({ nome: data.nome, total: data.clientes.length, created_by: context.userId })
+      .insert({ nome: data.nome, total: data.clientes.length, created_by: context.userId, produto: data.produto } as any)
       .select("id")
       .single();
     if (le) throw new Error(le.message);
@@ -120,42 +179,44 @@ export const quitacaoImportar = createServerFn({ method: "POST" })
     const existentes = new Map<string, { id: string; consultant_id: string | null }>();
     const cpfs = [...new Set(data.clientes.map((c) => c.cpf))];
     for (let i = 0; i < cpfs.length; i += 500) {
-      const { data: ex } = await supabaseAdmin.from("quitacao_clientes").select("id,cpf,cod_ordem,consultant_id").in("cpf", cpfs.slice(i, i + 500));
+      const { data: ex } = await supabaseAdmin.from("quitacao_clientes").select("id,cpf,cod_ordem,consultant_id")
+        .eq("produto", data.produto).in("cpf", cpfs.slice(i, i + 500));
       for (const e of ex ?? []) existentes.set(`${e.cpf}|${e.cod_ordem}`, { id: e.id, consultant_id: e.consultant_id });
     }
 
-    // Distribuição igualitária pela menor fila
     const consultoras = data.distribuir ? await listConsultantUsers(supabaseAdmin) : [];
-    const fila = new Map<string, number>(consultoras.map((c) => [c.id, 0]));
-    if (consultoras.length) {
-      const { data: carga } = await supabaseAdmin.from("quitacao_clientes").select("consultant_id").is("removido_em", null).not("consultant_id", "is", null).limit(50000);
-      for (const r of carga ?? []) if (r.consultant_id && fila.has(r.consultant_id)) fila.set(r.consultant_id, (fila.get(r.consultant_id) ?? 0) + 1);
-    }
-    const proxima = () => {
-      let best: string | null = null;
-      for (const [id, n] of fila) if (best === null || n < (fila.get(best) ?? 0)) best = id;
-      if (best) fila.set(best, (fila.get(best) ?? 0) + 1);
-      return best;
-    };
+    const aloc = criarAlocador(consultoras.map((c) => c.id), data.modo);
+    if (consultoras.length) await cargaAtual(supabaseAdmin, data.produto, aloc);
 
-    let novos = 0, atualizados = 0;
+    let novos = 0, atualizados = 0, foraRoteiro = 0;
     const agora = new Date().toISOString();
-    const rows = data.clientes.map((c) => {
+    const base = data.clientes.map((c) => {
+      const troco = trocoDe(c.prazos, c.troco_previsto);
+      const apto = !ng || troco >= NG.trocoMinimo;
+      if (!apto) foraRoteiro++;
+      return { c, troco, apto };
+    });
+    // Maior troco primeiro, para o equilíbrio por valor funcionar.
+    base.sort((a, b) => b.troco - a.troco);
+    const rows = base.map(({ c, troco, apto }) => {
       const ex = existentes.get(`${c.cpf}|${c.cod_ordem}`);
       if (ex) atualizados++; else novos++;
       return {
         ...c,
+        produto: data.produto,
+        apto_roteiro: apto,
+        prioridade: ng ? prioridadeNg(c) : null,
         lote_id: lote.id,
         importado_em: agora,
         removido_em: null,
-        consultant_id: ex?.consultant_id ?? (data.distribuir ? proxima() : null),
+        consultant_id: ex?.consultant_id ?? (data.distribuir && apto ? aloc.proxima(troco) : null),
       };
     });
     for (let i = 0; i < rows.length; i += 500) {
-      const { error } = await supabaseAdmin.from("quitacao_clientes").upsert(rows.slice(i, i + 500) as any, { onConflict: "cpf,cod_ordem" });
+      const { error } = await supabaseAdmin.from("quitacao_clientes").upsert(rows.slice(i, i + 500) as any, { onConflict: "produto,cpf,cod_ordem" });
       if (error) throw new Error(error.message);
     }
-    return { novos, atualizados };
+    return { novos, atualizados, foraRoteiro };
   });
 
 export const quitacaoExcluirLote = createServerFn({ method: "POST" })
@@ -220,7 +281,7 @@ export const quitacaoRegistrar = createServerFn({ method: "POST" })
 /** Distribui igualmente (menor fila) os clientes de quitação que estão sem consultora. */
 export const quitacaoDistribuirPendentes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ loteId: z.string().uuid().nullable().optional() }).parse(d ?? {}))
+  .inputValidator((d) => z.object({ loteId: z.string().uuid().nullable().optional(), produto: produtoZ, modo: modoZ }).parse(d ?? {}))
   .handler(async ({ context, data }) => {
     const { assertAdmin, listConsultantUsers } = await import("./prospeccao.server");
     await assertAdmin(context.supabase, context.userId);
@@ -229,24 +290,22 @@ export const quitacaoDistribuirPendentes = createServerFn({ method: "POST" })
     const consultoras = await listConsultantUsers(supabaseAdmin);
     if (!consultoras.length) throw new Error("Nenhuma consultora ativa encontrada.");
 
-    let q = supabaseAdmin.from("quitacao_clientes").select("id").is("removido_em", null).is("consultant_id", null).limit(20000);
-    if (data?.loteId) q = q.eq("lote_id", data.loteId);
+    let q = supabaseAdmin.from("quitacao_clientes").select("id,prazos,troco_previsto")
+      .eq("produto", data.produto).eq("apto_roteiro", true).is("removido_em", null).is("consultant_id", null).limit(20000);
+    if (data.loteId) q = q.eq("lote_id", data.loteId);
     const { data: pend, error: pe } = await q;
     if (pe) throw new Error(pe.message);
     if (!pend?.length) return { atribuidos: 0, consultoras: consultoras.length };
 
-    const fila = new Map<string, number>(consultoras.map((c) => [c.id, 0]));
-    const { data: carga } = await supabaseAdmin
-      .from("quitacao_clientes").select("consultant_id").is("removido_em", null).not("consultant_id", "is", null).limit(50000);
-    for (const r of carga ?? []) if (r.consultant_id && fila.has(r.consultant_id)) fila.set(r.consultant_id, (fila.get(r.consultant_id) ?? 0) + 1);
+    const aloc = criarAlocador(consultoras.map((c) => c.id), data.modo);
+    await cargaAtual(supabaseAdmin, data.produto, aloc);
+    const itens = pend.map((r: any) => ({ id: r.id as string, troco: trocoDe(r.prazos, r.troco_previsto) })).sort((a, b) => b.troco - a.troco);
 
     const porConsultora = new Map<string, string[]>();
-    for (const row of pend) {
-      let best: string | null = null;
-      for (const [id, n] of fila) if (best === null || n < (fila.get(best) ?? 0)) best = id;
+    for (const it of itens) {
+      const best = aloc.proxima(it.troco);
       if (!best) break;
-      fila.set(best, (fila.get(best) ?? 0) + 1);
-      (porConsultora.get(best) ?? porConsultora.set(best, []).get(best)!).push(row.id);
+      (porConsultora.get(best) ?? porConsultora.set(best, []).get(best)!).push(it.id);
     }
 
     let atribuidos = 0;
@@ -264,7 +323,9 @@ export const quitacaoDistribuirPendentes = createServerFn({ method: "POST" })
 /** Redistribui igualmente clientes sem contato há X dias (opcionalmente de uma consultora). */
 export const quitacaoRedistribuir = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ diasSemContato: z.number().int().min(0).max(365), deConsultora: z.string().uuid().nullable().optional() }).parse(d))
+  .inputValidator((d) => z.object({
+    diasSemContato: z.number().int().min(0).max(365), deConsultora: z.string().uuid().nullable().optional(), produto: produtoZ, modo: modoZ,
+  }).parse(d))
   .handler(async ({ context, data }) => {
     const { assertAdmin, listConsultantUsers } = await import("./prospeccao.server");
     await assertAdmin(context.supabase, context.userId);
@@ -274,32 +335,27 @@ export const quitacaoRedistribuir = createServerFn({ method: "POST" })
 
     const corte = new Date(Date.now() - data.diasSemContato * 86400_000).toISOString();
     let q = supabaseAdmin
-      .from("quitacao_clientes").select("id,consultant_id,ultimo_contato_em,importado_em")
-      .is("removido_em", null).not("consultant_id", "is", null)
+      .from("quitacao_clientes").select("id,consultant_id,ultimo_contato_em,importado_em,prazos,troco_previsto")
+      .eq("produto", data.produto).is("removido_em", null).not("consultant_id", "is", null)
       .in("resultado", ["novo", "sem_contato"]).limit(20000);
+    if (data.produto === "ng") q = q.in("etapa", ["novo", "contatado"]);
     if (data.deConsultora) q = q.eq("consultant_id", data.deConsultora);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
 
-    const alvo = (rows ?? []).filter((r) => (r.ultimo_contato_em ?? r.importado_em) <= corte);
+    const alvo = (rows ?? []).filter((r: any) => (r.ultimo_contato_em ?? r.importado_em) <= corte)
+      .map((r: any) => ({ ...r, troco: trocoDe(r.prazos, r.troco_previsto) })).sort((a: any, b: any) => b.troco - a.troco);
     if (!alvo.length) return { movidos: 0 };
 
-    const fila = new Map<string, number>(consultoras.map((c) => [c.id, 0]));
-    const { data: carga } = await supabaseAdmin
-      .from("quitacao_clientes").select("consultant_id").is("removido_em", null).not("consultant_id", "is", null).limit(50000);
-    for (const r of carga ?? []) if (r.consultant_id && fila.has(r.consultant_id)) fila.set(r.consultant_id, (fila.get(r.consultant_id) ?? 0) + 1);
-    for (const r of alvo) if (r.consultant_id && fila.has(r.consultant_id)) fila.set(r.consultant_id, Math.max(0, (fila.get(r.consultant_id) ?? 0) - 1));
+    const aloc = criarAlocador(consultoras.map((c) => c.id), data.modo);
+    await cargaAtual(supabaseAdmin, data.produto, aloc);
+    for (const r of alvo) aloc.descarregar(r.consultant_id, r.troco);
 
     const porConsultora = new Map<string, string[]>();
     let movidos = 0;
     for (const r of alvo) {
-      let best: string | null = null;
-      for (const [id, n] of fila) {
-        if (id === r.consultant_id) continue;
-        if (best === null || n < (fila.get(best) ?? 0)) best = id;
-      }
+      const best = aloc.proxima(r.troco, r.consultant_id);
       if (!best) continue;
-      fila.set(best, (fila.get(best) ?? 0) + 1);
       (porConsultora.get(best) ?? porConsultora.set(best, []).get(best)!).push(r.id);
     }
     for (const [uid, ids] of porConsultora) {
@@ -311,6 +367,50 @@ export const quitacaoRedistribuir = createServerFn({ method: "POST" })
       }
     }
     return { movidos };
+  });
+
+/** Andamento da proposta NG: etapa, checklist do roteiro e valores simulados. */
+export const quitacaoNgAtualizar = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    id: z.string().uuid(),
+    etapa: z.enum(["novo", "contatado", "interessado", "documentos", "digitada", "validacao", "liberada", "recusada"]).optional(),
+    checklist: z.record(z.boolean()).optional(),
+    troco_simulado: z.number().min(0).max(1_000_000).nullable().optional(),
+    taxa_simulada: z.string().max(20).nullable().optional(),
+    nota: z.string().max(1000).optional(),
+    retorno: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  }).parse(d))
+  .handler(async ({ context, data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { previsaoLiberacao } = await import("./ng-roteiro");
+    const { data: c } = await supabaseAdmin.from("quitacao_clientes").select("consultant_id,etapa,liberacao_prevista").eq("id", data.id).maybeSingle();
+    const admin = await isAdmin(context.supabase, context.userId);
+    if (!c || (!admin && c.consultant_id !== context.userId)) throw new Error("Cliente não pertence a você.");
+    const agora = new Date().toISOString();
+    const patch: Record<string, unknown> = {};
+    if (data.checklist) patch.checklist = data.checklist;
+    if (data.troco_simulado !== undefined) patch.troco_simulado = data.troco_simulado;
+    if (data.taxa_simulada !== undefined) patch.taxa_simulada = data.taxa_simulada;
+    const encerrada = data.etapa === "liberada" || data.etapa === "recusada";
+    const retorno = encerrada ? null : data.retorno ? new Date(`${data.retorno}T12:00:00-03:00`).toISOString() : undefined;
+    if (data.etapa) {
+      patch.etapa = data.etapa;
+      patch.ultimo_contato_em = agora;
+      patch.resultado = data.etapa === "liberada" ? "fechado" : data.etapa === "recusada" ? "recusado"
+        : ["digitada", "validacao", "documentos"].includes(data.etapa) ? "proposta" : data.etapa === "interessado" ? "interessado" : "sem_contato";
+      if ((data.etapa === "digitada" || data.etapa === "validacao") && !c.liberacao_prevista) patch.liberacao_prevista = previsaoLiberacao().toISOString();
+      if (retorno !== undefined) patch.retorno_em = retorno;
+    }
+    const { error } = await supabaseAdmin.from("quitacao_clientes").update(patch as any).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    if (data.etapa) {
+      await context.supabase.from("quitacao_contatos").insert({
+        cliente_id: data.id, user_id: context.userId, resultado: String(patch.resultado), etapa: data.etapa,
+        nota: data.nota ?? null, retorno_em: retorno ?? null,
+      } as any);
+    }
+    return { ok: true, liberacao_prevista: (patch.liberacao_prevista as string | undefined) ?? c.liberacao_prevista };
   });
 
 export const quitacaoTelefones = createServerFn({ method: "GET" })
@@ -335,6 +435,7 @@ export const quitacaoTelefones = createServerFn({ method: "GET" })
       const vals = [...new Set([m, semDv, m.replace(/\D/g, "")].filter(Boolean))];
       jobs.push(supabaseAdmin.from("tomadores_al").select("telefones").in("matricula", vals).limit(10));
     }
+    if (data.cpf) jobs.push(supabaseAdmin.from("rockdata_consultas").select("telefones").eq("cpf", data.cpf).limit(3));
     const res = await Promise.all(jobs);
     for (const r of res) for (const row of (r.data ?? []) as any[]) { add(row.telefone); (row.telefones ?? []).forEach(add); }
     return { telefones: [...set].slice(0, 8) };
@@ -377,12 +478,14 @@ export const quitacaoTelefonesLote = createServerFn({ method: "POST" })
 
     for (let i = 0; i < cpfKeys.length; i += 400) {
       const slice = cpfKeys.slice(i, i + 400);
-      const [leads, tom] = await Promise.all([
+      const [leads, tom, rock] = await Promise.all([
         supabaseAdmin.from("prospect_leads").select("cpf,telefone,telefones").in("cpf", slice).limit(2000),
         supabaseAdmin.from("tomadores_al").select("documento,telefones").in("documento", slice).limit(2000),
+        supabaseAdmin.from("rockdata_consultas").select("cpf,telefones").in("cpf", slice).limit(2000),
       ]);
       for (const r of (leads.data ?? []) as any[]) push(porCpf, String(r.cpf ?? ""), [r.telefone, ...(r.telefones ?? [])]);
       for (const r of (tom.data ?? []) as any[]) push(porCpf, String(r.documento ?? ""), r.telefones ?? []);
+      for (const r of (rock.data ?? []) as any[]) push(porCpf, String(r.cpf ?? ""), r.telefones ?? []);
     }
     for (let i = 0; i < mats.length; i += 400) {
       const { data: rows } = await supabaseAdmin
