@@ -160,8 +160,12 @@ function QuitacaoPage() {
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState("todos");
   const [trocoMin, setTrocoMin] = useState("");
+  const [perfil, setPerfil] = useState("todos");
+  const [tipo, setTipo] = useState("todos");
+  const [soProposta, setSoProposta] = useState(false);
   const [aberto, setAberto] = useState<QuitacaoCliente | null>(null);
   const refresh = () => qc.invalidateQueries({ queryKey: ["quitacao"] });
+  const perfis = useMemo(() => [...new Set((data?.clientes ?? []).map((c) => c.perfil).filter(Boolean))] as string[], [data]);
 
   const lista = useMemo(() => {
     const q = key(busca);
@@ -169,10 +173,13 @@ function QuitacaoPage() {
     const min = num(trocoMin) ?? -Infinity;
     return (data?.clientes ?? [])
       .filter((c) => filtro === "todos" || c.resultado === filtro)
-      .filter((c) => !q || key(c.nome).includes(q) || (qd.length >= 3 && c.cpf.includes(qd)))
+      .filter((c) => perfil === "todos" || c.perfil === perfil)
+      .filter((c) => tipo === "todos" || (c.contratos ?? []).some((k) => k.tipo === tipo))
+      .filter((c) => !soProposta || c.troco_previsto != null)
+      .filter((c) => !q || key(c.nome).includes(q) || (qd.length >= 3 && (c.cpf.includes(qd) || (c.matricula ?? "").replace(/\D/g, "").includes(qd))))
       .filter((c) => (melhorTroco(c)?.troco ?? -Infinity) >= min)
       .sort((a, b) => Number(quaseQuitado(b)) - Number(quaseQuitado(a)) || (melhorTroco(b)?.troco ?? 0) - (melhorTroco(a)?.troco ?? 0));
-  }, [data, busca, filtro, trocoMin]);
+  }, [data, busca, filtro, trocoMin, perfil, tipo, soProposta]);
 
   return (
     <AppShell>
@@ -185,12 +192,24 @@ function QuitacaoPage() {
         {data?.admin && <AdminPainel data={data} onChange={refresh} />}
 
         <Card className="flex flex-wrap items-center gap-2 p-3">
-          <Input className="max-w-xs" placeholder="Buscar nome ou CPF" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="max-w-xs" placeholder="Buscar nome, CPF ou matrícula" value={busca} onChange={(e) => setBusca(e.target.value)} />
           <Input className="w-40" placeholder="Troco mínimo (R$)" value={trocoMin} onChange={(e) => setTrocoMin(e.target.value)} />
           <select className="h-9 rounded-md border bg-background px-2 text-sm" value={filtro} onChange={(e) => setFiltro(e.target.value)}>
             <option value="todos">Todos</option>
             {Object.entries(RESULTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
+          {!!perfis.length && (
+            <select className="h-9 rounded-md border bg-background px-2 text-sm" value={perfil} onChange={(e) => setPerfil(e.target.value)}>
+              <option value="todos">Todos os perfis</option>
+              {perfis.map((p) => <option key={p} value={p}>{p}</option>)}
+            </select>
+          )}
+          <select className="h-9 rounded-md border bg-background px-2 text-sm" value={tipo} onChange={(e) => setTipo(e.target.value)}>
+            <option value="todos">Cartão e empréstimo</option>
+            <option value="Cartão">Com cartão</option>
+            <option value="Empréstimo">Com empréstimo</option>
+          </select>
+          <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={soProposta} onChange={(e) => setSoProposta(e.target.checked)} /> Tem proposta</label>
           <span className="ml-auto text-sm text-muted-foreground">{lista.length} clientes</span>
         </Card>
 
@@ -203,17 +222,21 @@ function QuitacaoPage() {
             {lista.slice(0, 300).map((c) => {
               const m = melhorTroco(c);
               const r = RESULTADOS[c.resultado] ?? RESULTADOS.novo;
+              const op = c.formato === "oportunidades";
               return (
                 <Card key={c.id} className="cursor-pointer space-y-1.5 p-4 transition hover:border-primary" onClick={() => setAberto(c)}>
                   <div className="flex items-start justify-between gap-2">
                     <p className="min-w-0 truncate font-medium">{c.nome}</p>
                     <Badge variant="secondary" className={`border-0 ${r.cls}`}>{r.label}</Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground">Saldo {brl(c.saldo)} · parcela {brl(c.parcela)} · {c.pagas ?? "?"}/{c.plano ?? "?"} pagas</p>
-                  <p className={`text-sm font-semibold ${m && m.troco > 0 ? "text-emerald-700" : "text-rose-700"}`}>
-                    Troco {m ? `${brl(m.troco)} em ${m.prazo}x` : "—"}
+                  <p className="text-xs text-muted-foreground">
+                    {op ? `Mat. ${c.matricula} · ${c.qtd_contratos ?? 0} contrato(s) · parcelas ${brl(c.parcela)}` : `Saldo ${brl(c.saldo)} · parcela ${brl(c.parcela)} · ${c.pagas ?? "?"}/${c.plano ?? "?"} pagas`}
+                  </p>
+                  <p className={`text-sm font-semibold ${m && m.troco > 0 ? "text-emerald-700" : m ? "text-rose-700" : "text-muted-foreground"}`}>
+                    {m ? `Troco ${brl(m.troco)} em ${m.prazo}x` : "Sem proposta prevista"}
                   </p>
                   <div className="flex flex-wrap gap-1">
+                    {c.perfil && <Badge variant="outline" className="text-[10px]">{c.perfil}</Badge>}
                     {quaseQuitado(c) && <Badge variant="outline" className="text-[10px]">Quase quitado</Badge>}
                     {desatualizado(c) && <Badge variant="outline" className="border-amber-400 text-[10px] text-amber-700">Valores com +30 dias</Badge>}
                   </div>
