@@ -3585,6 +3585,7 @@ export type Database = {
       reiniciar_prospect_leads: {
         Args: {
           _consultoras: string[]
+          _desde?: string
           _dias_min?: number
           _limite?: number
           _simular?: boolean

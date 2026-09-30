@@ -22,11 +22,13 @@ export function ReiniciarBaseCard({ consultantIds }: { consultantIds: string[] }
   const [previa, setPrevia] = useState<Resultado | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function chamar(simular: boolean): Promise<Resultado | null> {
+  const [progresso, setProgresso] = useState<number | null>(null);
+
+  async function chamar(simular: boolean, desde?: string): Promise<Resultado | null> {
     if (!consultantIds.length) { toast.error("Selecione ao menos uma consultora."); return null; }
     const { data, error } = await (supabase.rpc as any)("reiniciar_prospect_leads", {
       _consultoras: consultantIds, _status: ESCOPOS[escopo].status,
-      _dias_min: Number(dias), _limite: 50000, _simular: simular,
+      _dias_min: Number(dias), _limite: 800, _simular: simular, _desde: desde ?? null,
     });
     if (error) { toast.error(error.message); return null; }
     return (Array.isArray(data) ? data[0] : data) as Resultado;
@@ -38,14 +40,26 @@ export function ReiniciarBaseCard({ consultantIds }: { consultantIds: string[] }
     if (!previa) return;
     if (!confirm(`Reiniciar ${previa.reiniciados} lead(s)? Nenhum volta para quem já atendeu.`)) return;
     setBusy(true);
+    const desde = new Date().toISOString();
+    const tot = { reiniciados: 0, atribuidos: 0, esgotados: 0 };
+    setProgresso(0);
     try {
-      const r = await chamar(false);
-      if (r) {
-        toast.success(`${r.reiniciados} reiniciados, ${r.atribuidos} entregues a novas consultoras, ${r.esgotados} sem ninguém disponível.`);
-        setPrevia(null);
-        qc.invalidateQueries();
+      for (let i = 0; i < 500; i++) {
+        const r = await chamar(false, desde);
+        if (!r) {
+          if (tot.reiniciados) toast.info(`${tot.reiniciados} já foram reiniciados. Toque de novo para continuar.`);
+          return;
+        }
+        if (!Number(r.reiniciados)) break;
+        tot.reiniciados += Number(r.reiniciados);
+        tot.atribuidos += Number(r.atribuidos);
+        tot.esgotados += Number(r.esgotados);
+        setProgresso(tot.reiniciados);
       }
-    } finally { setBusy(false); }
+      toast.success(`${tot.reiniciados} reiniciados, ${tot.atribuidos} entregues a novas consultoras, ${tot.esgotados} sem ninguém disponível.`);
+      setPrevia(null);
+      qc.invalidateQueries();
+    } finally { setBusy(false); setProgresso(null); }
   }
 
   return (
@@ -81,6 +95,11 @@ export function ReiniciarBaseCard({ consultantIds }: { consultantIds: string[] }
         <p className="mt-3 rounded-md bg-muted p-2 text-xs">
           {previa.reiniciados} lead(s) voltam para a base · {previa.atribuidos} podem ir para outra consultora ·{" "}
           {previa.esgotados} já passaram por todas e ficarão sem responsável.
+        </p>
+      )}
+      {progresso !== null && (
+        <p className="mt-3 text-xs font-medium">
+          Reiniciando… {progresso.toLocaleString("pt-BR")} de {(previa?.reiniciados ?? 0).toLocaleString("pt-BR")}
         </p>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
