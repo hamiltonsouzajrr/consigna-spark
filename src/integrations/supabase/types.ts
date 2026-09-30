@@ -2176,70 +2176,97 @@ export type Database = {
       quitacao_clientes: {
         Row: {
           abertas: number | null
+          banco_previsto: string | null
           cod_ordem: string
+          competencia: string | null
           consultant_id: string | null
+          contratos: Json
           cpf: string
           created_at: string
+          credito_previsto: number | null
+          formato: string
           id: string
           importado_em: string
           lote_id: string | null
+          matricula: string | null
           nome: string
           pagas: number | null
           parcela: number | null
+          perfil: string | null
           plano: number | null
           prazos: Json
           qtd_contratos: number | null
           removido_em: string | null
           reserva: number | null
           resultado: string
+          ritmo: string | null
           saldo: number | null
           status: string | null
+          troco_previsto: number | null
           ultimo_contato_em: string | null
           updated_at: string
         }
         Insert: {
           abertas?: number | null
+          banco_previsto?: string | null
           cod_ordem?: string
+          competencia?: string | null
           consultant_id?: string | null
+          contratos?: Json
           cpf: string
           created_at?: string
+          credito_previsto?: number | null
+          formato?: string
           id?: string
           importado_em?: string
           lote_id?: string | null
+          matricula?: string | null
           nome: string
           pagas?: number | null
           parcela?: number | null
+          perfil?: string | null
           plano?: number | null
           prazos?: Json
           qtd_contratos?: number | null
           removido_em?: string | null
           reserva?: number | null
           resultado?: string
+          ritmo?: string | null
           saldo?: number | null
           status?: string | null
+          troco_previsto?: number | null
           ultimo_contato_em?: string | null
           updated_at?: string
         }
         Update: {
           abertas?: number | null
+          banco_previsto?: string | null
           cod_ordem?: string
+          competencia?: string | null
           consultant_id?: string | null
+          contratos?: Json
           cpf?: string
           created_at?: string
+          credito_previsto?: number | null
+          formato?: string
           id?: string
           importado_em?: string
           lote_id?: string | null
+          matricula?: string | null
           nome?: string
           pagas?: number | null
           parcela?: number | null
+          perfil?: string | null
           plano?: number | null
           prazos?: Json
           qtd_contratos?: number | null
           removido_em?: string | null
           reserva?: number | null
           resultado?: string
+          ritmo?: string | null
           saldo?: number | null
           status?: string | null
+          troco_previsto?: number | null
           ultimo_contato_em?: string | null
           updated_at?: string
         }
