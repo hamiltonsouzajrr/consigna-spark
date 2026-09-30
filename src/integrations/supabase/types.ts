@@ -2176,7 +2176,9 @@ export type Database = {
       quitacao_clientes: {
         Row: {
           abertas: number | null
+          apto_roteiro: boolean
           banco_previsto: string | null
+          checklist: Json
           cod_ordem: string
           competencia: string | null
           consultant_id: string | null
@@ -2184,9 +2186,11 @@ export type Database = {
           cpf: string
           created_at: string
           credito_previsto: number | null
+          etapa: string
           formato: string
           id: string
           importado_em: string
+          liberacao_prevista: string | null
           lote_id: string | null
           matricula: string | null
           nome: string
@@ -2195,6 +2199,8 @@ export type Database = {
           perfil: string | null
           plano: number | null
           prazos: Json
+          prioridade: number | null
+          produto: string
           qtd_contratos: number | null
           removido_em: string | null
           reserva: number | null
@@ -2203,13 +2209,17 @@ export type Database = {
           ritmo: string | null
           saldo: number | null
           status: string | null
+          taxa_simulada: string | null
           troco_previsto: number | null
+          troco_simulado: number | null
           ultimo_contato_em: string | null
           updated_at: string
         }
         Insert: {
           abertas?: number | null
+          apto_roteiro?: boolean
           banco_previsto?: string | null
+          checklist?: Json
           cod_ordem?: string
           competencia?: string | null
           consultant_id?: string | null
@@ -2217,9 +2227,11 @@ export type Database = {
           cpf: string
           created_at?: string
           credito_previsto?: number | null
+          etapa?: string
           formato?: string
           id?: string
           importado_em?: string
+          liberacao_prevista?: string | null
           lote_id?: string | null
           matricula?: string | null
           nome: string
@@ -2228,6 +2240,8 @@ export type Database = {
           perfil?: string | null
           plano?: number | null
           prazos?: Json
+          prioridade?: number | null
+          produto?: string
           qtd_contratos?: number | null
           removido_em?: string | null
           reserva?: number | null
@@ -2236,13 +2250,17 @@ export type Database = {
           ritmo?: string | null
           saldo?: number | null
           status?: string | null
+          taxa_simulada?: string | null
           troco_previsto?: number | null
+          troco_simulado?: number | null
           ultimo_contato_em?: string | null
           updated_at?: string
         }
         Update: {
           abertas?: number | null
+          apto_roteiro?: boolean
           banco_previsto?: string | null
+          checklist?: Json
           cod_ordem?: string
           competencia?: string | null
           consultant_id?: string | null
@@ -2250,9 +2268,11 @@ export type Database = {
           cpf?: string
           created_at?: string
           credito_previsto?: number | null
+          etapa?: string
           formato?: string
           id?: string
           importado_em?: string
+          liberacao_prevista?: string | null
           lote_id?: string | null
           matricula?: string | null
           nome?: string
@@ -2261,6 +2281,8 @@ export type Database = {
           perfil?: string | null
           plano?: number | null
           prazos?: Json
+          prioridade?: number | null
+          produto?: string
           qtd_contratos?: number | null
           removido_em?: string | null
           reserva?: number | null
@@ -2269,7 +2291,9 @@ export type Database = {
           ritmo?: string | null
           saldo?: number | null
           status?: string | null
+          taxa_simulada?: string | null
           troco_previsto?: number | null
+          troco_simulado?: number | null
           ultimo_contato_em?: string | null
           updated_at?: string
         }
@@ -2287,6 +2311,7 @@ export type Database = {
         Row: {
           cliente_id: string
           created_at: string
+          etapa: string | null
           id: string
           nota: string | null
           resultado: string
@@ -2296,6 +2321,7 @@ export type Database = {
         Insert: {
           cliente_id: string
           created_at?: string
+          etapa?: string | null
           id?: string
           nota?: string | null
           resultado: string
@@ -2305,6 +2331,7 @@ export type Database = {
         Update: {
           cliente_id?: string
           created_at?: string
+          etapa?: string | null
           id?: string
           nota?: string | null
           resultado?: string
@@ -2327,6 +2354,7 @@ export type Database = {
           created_by: string | null
           id: string
           nome: string
+          produto: string
           total: number
         }
         Insert: {
@@ -2334,6 +2362,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           nome: string
+          produto?: string
           total?: number
         }
         Update: {
@@ -2341,6 +2370,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           nome?: string
+          produto?: string
           total?: number
         }
         Relationships: []
