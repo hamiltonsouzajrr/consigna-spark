@@ -435,3 +435,124 @@ function FichaDialog({ cliente: c, admin, consultoras, onClose, onChange }: {
 function Info({ l, v }: { l: string; v: string }) {
   return <div className="rounded border p-2"><p className="text-[11px] text-muted-foreground">{l}</p><p className="font-medium">{v}</p></div>;
 }
+
+/* ---------- Tema escuro dos cards de oportunidade ---------- */
+
+function restantes(c: QuitacaoCliente): number | null {
+  if (c.formato === "oportunidades") {
+    const rs = (c.contratos ?? []).map((k) => k.restantes).filter((n): n is number => n != null);
+    return rs.length ? Math.min(...rs) : null;
+  }
+  if (c.plano != null && c.pagas != null) return Math.max(0, c.plano - c.pagas);
+  return null;
+}
+
+function Ring({ rest, total }: { rest: number | null; total: number | null }) {
+  const R = 34, CIRC = 2 * Math.PI * R;
+  const prog = rest != null && total ? Math.min(1, Math.max(0, (total - rest) / total)) : 0;
+  return (
+    <div className="relative h-24 w-24 shrink-0">
+      <svg viewBox="0 0 84 84" className="h-full w-full -rotate-90">
+        <circle cx="42" cy="42" r={R} fill="none" strokeWidth="7" className="stroke-night-line" />
+        <circle cx="42" cy="42" r={R} fill="none" strokeWidth="7" strokeLinecap="round"
+          className="stroke-night-green" strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - prog)} />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-2xl font-bold text-night-green">{rest ?? "?"}</span>
+        <span className="text-[9px] font-medium tracking-wide text-night-dim">RESTANTES</span>
+      </div>
+    </div>
+  );
+}
+
+function QuitCard({ c, onOpen }: { c: QuitacaoCliente; onOpen: () => void }) {
+  const m = melhorTroco(c);
+  const r = RESULTADOS[c.resultado] ?? RESULTADOS.novo;
+  const op = c.formato === "oportunidades";
+  const rest = restantes(c);
+  const total = op ? null : c.plano;
+  const imediata = rest != null && rest <= 1;
+  const principal = op ? (c.contratos ?? [])[0] : null;
+  const banco = op ? (principal?.banco || principal?.contrato || "—") : (c.banco_previsto ?? "—");
+  return (
+    <button type="button" onClick={onOpen}
+      className="group w-full cursor-pointer space-y-3 rounded-2xl border border-night-green-deep/60 bg-night-card p-4 text-left shadow-lg transition hover:border-night-green">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-base font-bold tracking-wide text-night-text">{c.nome}</p>
+          <p className="truncate text-xs text-night-dim">
+            {op ? `Matrícula ${c.matricula}${c.competencia ? ` · ${c.competencia}` : ""}` : `CPF ${c.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")}`}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {imediata && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-night-green px-2.5 py-1 text-[10px] font-bold tracking-wide text-night">
+              <Flame className="h-3 w-3" /> QUITAÇÃO IMEDIATA
+            </span>
+          )}
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${r.cls}`}>{r.label}</span>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {c.perfil && <span className="rounded-full bg-night px-2.5 py-0.5 text-[10px] font-semibold tracking-wide text-night-dim">{c.perfil.toUpperCase()}</span>}
+        {quaseQuitado(c) && !imediata && <span className="rounded-full bg-night px-2.5 py-0.5 text-[10px] font-semibold text-night-green">QUASE QUITADO</span>}
+        {desatualizado(c) && <span className="rounded-full bg-night px-2.5 py-0.5 text-[10px] font-semibold text-amber-400">VALORES +30 DIAS</span>}
+      </div>
+      <div className="flex items-center gap-4">
+        <Ring rest={rest} total={total} />
+        <div className="min-w-0 text-sm">
+          <p className="truncate font-semibold tracking-wide text-night-text">{banco}</p>
+          <p className="text-xs text-night-dim">
+            {op ? `${c.qtd_contratos ?? 0} contrato(s)` : `${c.pagas ?? "?"}/${c.plano ?? "?"} pagas`}
+          </p>
+          <p className="text-xs text-night-dim">Parcela {brl(c.parcela)} · Saldo {brl(c.saldo)}</p>
+        </div>
+      </div>
+      <div className="flex items-end justify-between gap-2 border-t border-night-line pt-3">
+        <div>
+          <p className="text-[10px] font-semibold tracking-widest text-night-dim">TROCO PREVISTO</p>
+          {m ? (
+            <>
+              <p className={`text-2xl font-bold ${m.troco > 0 ? "text-night-green" : "text-rose-400"}`}>{brl(m.troco)}</p>
+              <p className="text-xs text-night-dim">{c.banco_previsto ? `${c.banco_previsto} · ` : ""}{m.prazo}x</p>
+            </>
+          ) : <p className="text-sm text-night-dim">Sem proposta prevista</p>}
+        </div>
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-night-dim transition group-hover:text-night-green">
+          <FileText className="h-3.5 w-3.5" /> Ver ficha <ArrowRight className="h-3.5 w-3.5" />
+        </span>
+      </div>
+    </button>
+  );
+}
+
+function ResumoNoturno({ lista }: { lista: QuitacaoCliente[] }) {
+  const total = lista.length;
+  const imediatas = lista.filter((c) => { const r = restantes(c); return r != null && r <= 1; }).length;
+  const ate6 = lista.filter((c) => { const r = restantes(c); return r != null && r <= 6; }).length;
+  const ate30 = lista.filter((c) => { const r = restantes(c); return r != null && r <= 30; }).length;
+  const trocoTotal = lista.reduce((s, c) => s + Math.max(0, melhorTroco(c)?.troco ?? 0), 0);
+  const fechados = lista.filter((c) => c.resultado === "fechado").length;
+  const stats: { l: string; v: string; sub?: string; destaque?: boolean }[] = [
+    { l: "CLIENTES NA FILA", v: String(total), sub: `${fechados} fechados` },
+    { l: "QUITAÇÃO IMEDIATA", v: String(imediatas), sub: "1 parcela ou menos", destaque: true },
+    { l: "ATÉ 6 PARCELAS", v: String(ate6), sub: `${ate30} com até 30 parcelas` },
+    { l: "TROCO PREVISTO TOTAL", v: brl(trocoTotal), sub: "Somando a fila filtrada" },
+  ];
+  return (
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {stats.map((s) => (
+        <div key={s.l} className={`rounded-2xl border p-4 ${s.destaque ? "border-night-green-deep/60 bg-night-card" : "border-night-line bg-night-card/60"}`}>
+          <p className="text-[10px] font-semibold tracking-widest text-night-dim">{s.l}</p>
+          <p className={`mt-1 text-2xl font-bold ${s.destaque ? "text-night-green" : "text-night-text"}`}>{s.v}</p>
+          {s.sub && <p className="mt-0.5 text-xs text-night-dim">{s.sub}</p>}
+          {s.destaque && total > 0 && (
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-night">
+              <div className="h-full rounded-full bg-night-green" style={{ width: `${Math.round((imediatas / total) * 100)}%` }} />
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
