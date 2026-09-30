@@ -2199,6 +2199,7 @@ export type Database = {
           removido_em: string | null
           reserva: number | null
           resultado: string
+          retorno_em: string | null
           ritmo: string | null
           saldo: number | null
           status: string | null
@@ -2231,6 +2232,7 @@ export type Database = {
           removido_em?: string | null
           reserva?: number | null
           resultado?: string
+          retorno_em?: string | null
           ritmo?: string | null
           saldo?: number | null
           status?: string | null
@@ -2263,6 +2265,7 @@ export type Database = {
           removido_em?: string | null
           reserva?: number | null
           resultado?: string
+          retorno_em?: string | null
           ritmo?: string | null
           saldo?: number | null
           status?: string | null
@@ -2287,6 +2290,7 @@ export type Database = {
           id: string
           nota: string | null
           resultado: string
+          retorno_em: string | null
           user_id: string
         }
         Insert: {
@@ -2295,6 +2299,7 @@ export type Database = {
           id?: string
           nota?: string | null
           resultado: string
+          retorno_em?: string | null
           user_id: string
         }
         Update: {
@@ -2303,6 +2308,7 @@ export type Database = {
           id?: string
           nota?: string | null
           resultado?: string
+          retorno_em?: string | null
           user_id?: string
         }
         Relationships: [
