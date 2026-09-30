@@ -1,0 +1,2 @@
+DROP POLICY IF EXISTS "Autenticados leem fontes" ON public.fontes_diario_oficial;
+CREATE POLICY "Admins leem fontes" ON public.fontes_diario_oficial FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'));

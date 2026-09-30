@@ -41,3 +41,4 @@
 - [x] Consultora pode ajustar margem utilizada, margem restante e prazo sem alterar a planilha original
 - [x] Salvar ficha RockData em Minha carteira e identificar cálculos por cliente
 - [x] Pesquisar Cliente: comparar RockData e planilha com coluna de diferenças
+- [x] Login RockData: refazer sessão automaticamente quando expirar
