@@ -382,7 +382,7 @@ export const quitacaoTelefonesLote = createServerFn({ method: "POST" })
         supabaseAdmin.from("tomadores_al").select("documento,telefones").in("documento", slice).limit(2000),
       ]);
       for (const r of (leads.data ?? []) as any[]) push(porCpf, String(r.cpf ?? ""), [r.telefone, ...(r.telefones ?? [])]);
-      for (const r of (tom.data ?? []) as any[]) push(porCpf, String(r.cpf ?? ""), r.telefones ?? []);
+      for (const r of (tom.data ?? []) as any[]) push(porCpf, String(r.documento ?? ""), r.telefones ?? []);
     }
     for (let i = 0; i < mats.length; i += 400) {
       const { data: rows } = await supabaseAdmin
