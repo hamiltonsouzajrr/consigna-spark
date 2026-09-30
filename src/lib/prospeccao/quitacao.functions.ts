@@ -33,7 +33,60 @@ export type QuitacaoCliente = {
   troco_previsto: number | null;
   contratos: ContratoOp[];
   formato: string;
+  produto: string;
+  etapa: string;
+  prioridade: number | null;
+  apto_roteiro: boolean;
+  troco_simulado: number | null;
+  taxa_simulada: string | null;
+  liberacao_prevista: string | null;
+  checklist: Record<string, boolean>;
 };
+
+const produtoZ = z.enum(["geral", "ng"]).default("geral");
+const modoZ = z.enum(["quantidade", "valor"]).default("quantidade");
+const trocoDe = (prazos: unknown, previsto?: number | null) => {
+  let b: number | null = previsto ?? null;
+  for (const v of Object.values((prazos ?? {}) as Record<string, { troco: number | null }>)) if (v?.troco != null && (b == null || v.troco > b)) b = v.troco;
+  return b ?? 0;
+};
+
+/** Alocação gulosa: por quantidade (menor fila) ou por valor (menor troco somado, desempate pela fila). */
+function criarAlocador(ids: string[], modo: "quantidade" | "valor") {
+  const fila = new Map<string, number>(ids.map((i) => [i, 0]));
+  const soma = new Map<string, number>(ids.map((i) => [i, 0]));
+  return {
+    carregar(uid: string | null, troco: number) {
+      if (!uid || !fila.has(uid)) return;
+      fila.set(uid, fila.get(uid)! + 1); soma.set(uid, soma.get(uid)! + Math.max(0, troco));
+    },
+    descarregar(uid: string | null, troco: number) {
+      if (!uid || !fila.has(uid)) return;
+      fila.set(uid, Math.max(0, fila.get(uid)! - 1)); soma.set(uid, Math.max(0, soma.get(uid)! - Math.max(0, troco)));
+    },
+    proxima(troco: number, exceto?: string | null) {
+      let best: string | null = null;
+      for (const id of fila.keys()) {
+        if (id === exceto) continue;
+        if (best === null) { best = id; continue; }
+        const a = modo === "valor" ? soma.get(id)! - soma.get(best)! : fila.get(id)! - fila.get(best)!;
+        const tie = modo === "valor" ? fila.get(id)! - fila.get(best)! : 0;
+        if (a < 0 || (a === 0 && tie < 0)) best = id;
+      }
+      if (best) this.carregar(best, troco);
+      return best;
+    },
+  };
+}
+
+async function cargaAtual(supabaseAdmin: any, produto: string, aloc: ReturnType<typeof criarAlocador>) {
+  for (let from = 0; ; from += 1000) {
+    const { data } = await supabaseAdmin.from("quitacao_clientes").select("consultant_id,prazos,troco_previsto")
+      .eq("produto", produto).is("removido_em", null).not("consultant_id", "is", null).range(from, from + 999);
+    for (const r of data ?? []) aloc.carregar(r.consultant_id, trocoDe(r.prazos, r.troco_previsto));
+    if (!data || data.length < 1000) break;
+  }
+}
 
 const s = (n: number) => z.string().max(n).nullable().optional();
 const clienteIn = z.object({
