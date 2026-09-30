@@ -96,23 +96,51 @@ async function login(): Promise<string> {
   return jar.join("; ");
 }
 
+/** Login com novas tentativas para falhas passageiras do portal. */
+async function loginComRetentativa(): Promise<string> {
+  let ultimo: unknown;
+  for (let i = 0; i < 3; i++) {
+    try {
+      return await login();
+    } catch (e) {
+      ultimo = e;
+      await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+    }
+  }
+  throw ultimo;
+}
+
+/** O portal às vezes devolve a tela de login (200) quando a sessão expira. */
+function pareceTelaLogin(html: string): boolean {
+  return /name=["']Senha["']/i.test(html) && /name=["']Usuario["']/i.test(html);
+}
+
 async function postLocalizador(cookie: string, acao: string, dados: Record<string, string>, tentativa = 0): Promise<string> {
-  const res = await fetch(`${BASE}/Localizador/Consulta/${acao}`, {
-    method: "POST",
-    redirect: "manual",
-    headers: {
-      Cookie: cookie,
-      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-      "X-Requested-With": "XMLHttpRequest",
-    },
-    body: new URLSearchParams(dados).toString(),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/Localizador/Consulta/${acao}`, {
+      method: "POST",
+      redirect: "manual",
+      headers: {
+        Cookie: cookie,
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: new URLSearchParams(dados).toString(),
+    });
+  } catch {
+    if (tentativa < 2) return postLocalizador(await loginComRetentativa(), acao, dados, tentativa + 1);
+    throw new RockdataError("A RockData está indisponível neste momento.");
+  }
   const html = await res.text();
-  if (res.status >= 300 && res.status < 400) {
-    // Sessão recusada/expirada: refaz o login uma vez e tenta de novo.
-    if (tentativa < 1) {
-      const novo = await login();
-      return postLocalizador(novo, acao, dados, tentativa + 1);
+  const expirou =
+    (res.status >= 300 && res.status < 400) || res.status === 401 || res.status === 403 ||
+    res.status >= 500 || (res.ok && pareceTelaLogin(html));
+  if (expirou) {
+    // Sessão expirada ou recusada: refaz o login sozinho e tenta de novo.
+    if (tentativa < 2) {
+      await new Promise((r) => setTimeout(r, 300 * (tentativa + 1)));
+      return postLocalizador(await loginComRetentativa(), acao, dados, tentativa + 1);
     }
     throw new RockdataError("A sessão da RockData foi recusada. Verifique o acesso cadastrado (usuário, senha e cliente).");
   }
