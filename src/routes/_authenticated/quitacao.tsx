@@ -218,32 +218,12 @@ function QuitacaoPage() {
             {data?.admin ? "Nenhum cliente. Envie a planilha acima." : "Nenhum cliente de quitação atribuído a você ainda."}
           </Card>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {lista.slice(0, 300).map((c) => {
-              const m = melhorTroco(c);
-              const r = RESULTADOS[c.resultado] ?? RESULTADOS.novo;
-              const op = c.formato === "oportunidades";
-              return (
-                <Card key={c.id} className="cursor-pointer space-y-1.5 p-4 transition hover:border-primary" onClick={() => setAberto(c)}>
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="min-w-0 truncate font-medium">{c.nome}</p>
-                    <Badge variant="secondary" className={`border-0 ${r.cls}`}>{r.label}</Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {op ? `Mat. ${c.matricula} · ${c.qtd_contratos ?? 0} contrato(s) · parcelas ${brl(c.parcela)}` : `Saldo ${brl(c.saldo)} · parcela ${brl(c.parcela)} · ${c.pagas ?? "?"}/${c.plano ?? "?"} pagas`}
-                  </p>
-                  <p className={`text-sm font-semibold ${m && m.troco > 0 ? "text-emerald-700" : m ? "text-rose-700" : "text-muted-foreground"}`}>
-                    {m ? `Troco ${brl(m.troco)} em ${m.prazo}x` : "Sem proposta prevista"}
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {c.perfil && <Badge variant="outline" className="text-[10px]">{c.perfil}</Badge>}
-                    {quaseQuitado(c) && <Badge variant="outline" className="text-[10px]">Quase quitado</Badge>}
-                    {desatualizado(c) && <Badge variant="outline" className="border-amber-400 text-[10px] text-amber-700">Valores com +30 dias</Badge>}
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
+          <>
+            <ResumoNoturno lista={lista} />
+            <div className="grid gap-3 lg:grid-cols-2">
+              {lista.slice(0, 300).map((c) => <QuitCard key={c.id} c={c} onOpen={() => setAberto(c)} />)}
+            </div>
+          </>
         )}
         {lista.length > 300 && <p className="text-center text-xs text-muted-foreground">Mostrando 300 de {lista.length}. Use a busca ou os filtros.</p>}
       </div>
