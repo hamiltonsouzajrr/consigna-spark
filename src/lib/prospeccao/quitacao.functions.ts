@@ -127,13 +127,15 @@ export const quitacaoMeuPerfil = createServerFn({ method: "GET" })
 
 export const quitacaoListar = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d) => z.object({ produto: produtoZ }).parse(d ?? {}))
+  .handler(async ({ context, data: input }) => {
     const admin = await isAdmin(context.supabase, context.userId);
     const out: QuitacaoCliente[] = [];
     for (let from = 0; ; from += 1000) {
       let q = context.supabase
         .from("quitacao_clientes")
         .select("*")
+        .eq("produto", input.produto)
         .is("removido_em", null)
         .range(from, from + 999);
       if (!admin) q = q.eq("consultant_id", context.userId);
@@ -148,7 +150,7 @@ export const quitacaoListar = createServerFn({ method: "GET" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { listConsultantUsers } = await import("./prospeccao.server");
       consultoras = await listConsultantUsers(supabaseAdmin);
-      const { data } = await context.supabase.from("quitacao_lotes").select("id,nome,total,created_at").order("created_at", { ascending: false });
+      const { data } = await context.supabase.from("quitacao_lotes").select("id,nome,total,created_at").eq("produto", input.produto).order("created_at", { ascending: false });
       lotes = (data ?? []) as typeof lotes;
     }
     return { admin, clientes: out, consultoras, lotes };
@@ -156,15 +158,19 @@ export const quitacaoListar = createServerFn({ method: "GET" })
 
 export const quitacaoImportar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ nome: z.string().min(1).max(200), clientes: z.array(clienteIn).max(20000), distribuir: z.boolean() }).parse(d))
+  .inputValidator((d) => z.object({
+    nome: z.string().min(1).max(200), clientes: z.array(clienteIn).max(20000), distribuir: z.boolean(), produto: produtoZ, modo: modoZ,
+  }).parse(d))
   .handler(async ({ context, data }) => {
     const { assertAdmin, listConsultantUsers } = await import("./prospeccao.server");
     await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { NG, prioridadeNg } = await import("./ng-roteiro");
+    const ng = data.produto === "ng";
 
     const { data: lote, error: le } = await supabaseAdmin
       .from("quitacao_lotes")
-      .insert({ nome: data.nome, total: data.clientes.length, created_by: context.userId })
+      .insert({ nome: data.nome, total: data.clientes.length, created_by: context.userId, produto: data.produto } as any)
       .select("id")
       .single();
     if (le) throw new Error(le.message);
@@ -173,42 +179,44 @@ export const quitacaoImportar = createServerFn({ method: "POST" })
     const existentes = new Map<string, { id: string; consultant_id: string | null }>();
     const cpfs = [...new Set(data.clientes.map((c) => c.cpf))];
     for (let i = 0; i < cpfs.length; i += 500) {
-      const { data: ex } = await supabaseAdmin.from("quitacao_clientes").select("id,cpf,cod_ordem,consultant_id").in("cpf", cpfs.slice(i, i + 500));
+      const { data: ex } = await supabaseAdmin.from("quitacao_clientes").select("id,cpf,cod_ordem,consultant_id")
+        .eq("produto", data.produto).in("cpf", cpfs.slice(i, i + 500));
       for (const e of ex ?? []) existentes.set(`${e.cpf}|${e.cod_ordem}`, { id: e.id, consultant_id: e.consultant_id });
     }
 
-    // Distribuição igualitária pela menor fila
     const consultoras = data.distribuir ? await listConsultantUsers(supabaseAdmin) : [];
-    const fila = new Map<string, number>(consultoras.map((c) => [c.id, 0]));
-    if (consultoras.length) {
-      const { data: carga } = await supabaseAdmin.from("quitacao_clientes").select("consultant_id").is("removido_em", null).not("consultant_id", "is", null).limit(50000);
-      for (const r of carga ?? []) if (r.consultant_id && fila.has(r.consultant_id)) fila.set(r.consultant_id, (fila.get(r.consultant_id) ?? 0) + 1);
-    }
-    const proxima = () => {
-      let best: string | null = null;
-      for (const [id, n] of fila) if (best === null || n < (fila.get(best) ?? 0)) best = id;
-      if (best) fila.set(best, (fila.get(best) ?? 0) + 1);
-      return best;
-    };
+    const aloc = criarAlocador(consultoras.map((c) => c.id), data.modo);
+    if (consultoras.length) await cargaAtual(supabaseAdmin, data.produto, aloc);
 
-    let novos = 0, atualizados = 0;
+    let novos = 0, atualizados = 0, foraRoteiro = 0;
     const agora = new Date().toISOString();
-    const rows = data.clientes.map((c) => {
+    const base = data.clientes.map((c) => {
+      const troco = trocoDe(c.prazos, c.troco_previsto);
+      const apto = !ng || troco >= NG.trocoMinimo;
+      if (!apto) foraRoteiro++;
+      return { c, troco, apto };
+    });
+    // Maior troco primeiro, para o equilíbrio por valor funcionar.
+    base.sort((a, b) => b.troco - a.troco);
+    const rows = base.map(({ c, troco, apto }) => {
       const ex = existentes.get(`${c.cpf}|${c.cod_ordem}`);
       if (ex) atualizados++; else novos++;
       return {
         ...c,
+        produto: data.produto,
+        apto_roteiro: apto,
+        prioridade: ng ? prioridadeNg(c) : null,
         lote_id: lote.id,
         importado_em: agora,
         removido_em: null,
-        consultant_id: ex?.consultant_id ?? (data.distribuir ? proxima() : null),
+        consultant_id: ex?.consultant_id ?? (data.distribuir && apto ? aloc.proxima(troco) : null),
       };
     });
     for (let i = 0; i < rows.length; i += 500) {
-      const { error } = await supabaseAdmin.from("quitacao_clientes").upsert(rows.slice(i, i + 500) as any, { onConflict: "cpf,cod_ordem" });
+      const { error } = await supabaseAdmin.from("quitacao_clientes").upsert(rows.slice(i, i + 500) as any, { onConflict: "produto,cpf,cod_ordem" });
       if (error) throw new Error(error.message);
     }
-    return { novos, atualizados };
+    return { novos, atualizados, foraRoteiro };
   });
 
 export const quitacaoExcluirLote = createServerFn({ method: "POST" })
