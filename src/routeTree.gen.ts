@@ -23,6 +23,7 @@ import { Route as AuthenticatedContratoRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPesquisasRouteImport } from './routes/_authenticated/pesquisas'
 import { Route as AuthenticatedQrcodesRouteImport } from './routes/_authenticated/qrcodes'
 import { Route as AuthenticatedQuitacaoRouteImport } from './routes/_authenticated/quitacao'
+import { Route as AuthenticatedQuitacaoNgRouteImport } from './routes/_authenticated/quitacao-ng'
 import { Route as AuthenticatedRadarRouteImport } from './routes/_authenticated/radar'
 import { Route as AuthenticatedRhRouteImport } from './routes/_authenticated/rh'
 import { Route as AuthenticatedSimulacaoAlagoasRouteImport } from './routes/_authenticated/simulacao-alagoas'
@@ -167,6 +168,11 @@ const AuthenticatedQrcodesRoute = AuthenticatedQrcodesRouteImport.update({
 const AuthenticatedQuitacaoRoute = AuthenticatedQuitacaoRouteImport.update({
   id: '/quitacao',
   path: '/quitacao',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedQuitacaoNgRoute = AuthenticatedQuitacaoNgRouteImport.update({
+  id: '/quitacao-ng',
+  path: '/quitacao-ng',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRadarRoute = AuthenticatedRadarRouteImport.update({
@@ -605,6 +611,7 @@ export interface FileRoutesByFullPath {
   '/pesquisas': typeof AuthenticatedPesquisasRoute
   '/qrcodes': typeof AuthenticatedQrcodesRoute
   '/quitacao': typeof AuthenticatedQuitacaoRoute
+  '/quitacao-ng': typeof AuthenticatedQuitacaoNgRoute
   '/radar': typeof AuthenticatedRadarRouteWithChildren
   '/rh': typeof AuthenticatedRhRouteWithChildren
   '/simulacao-alagoas': typeof AuthenticatedSimulacaoAlagoasRoute
@@ -693,6 +700,7 @@ export interface FileRoutesByTo {
   '/pesquisas': typeof AuthenticatedPesquisasRoute
   '/qrcodes': typeof AuthenticatedQrcodesRoute
   '/quitacao': typeof AuthenticatedQuitacaoRoute
+  '/quitacao-ng': typeof AuthenticatedQuitacaoNgRoute
   '/simulacao-alagoas': typeof AuthenticatedSimulacaoAlagoasRoute
   '/tomadores-al': typeof AuthenticatedTomadoresAlRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
@@ -780,6 +788,7 @@ export interface FileRoutesById {
   '/_authenticated/pesquisas': typeof AuthenticatedPesquisasRoute
   '/_authenticated/qrcodes': typeof AuthenticatedQrcodesRoute
   '/_authenticated/quitacao': typeof AuthenticatedQuitacaoRoute
+  '/_authenticated/quitacao-ng': typeof AuthenticatedQuitacaoNgRoute
   '/_authenticated/radar': typeof AuthenticatedRadarRouteWithChildren
   '/_authenticated/rh': typeof AuthenticatedRhRouteWithChildren
   '/_authenticated/simulacao-alagoas': typeof AuthenticatedSimulacaoAlagoasRoute
@@ -870,6 +879,7 @@ export interface FileRouteTypes {
     | '/pesquisas'
     | '/qrcodes'
     | '/quitacao'
+    | '/quitacao-ng'
     | '/radar'
     | '/rh'
     | '/simulacao-alagoas'
@@ -958,6 +968,7 @@ export interface FileRouteTypes {
     | '/pesquisas'
     | '/qrcodes'
     | '/quitacao'
+    | '/quitacao-ng'
     | '/simulacao-alagoas'
     | '/tomadores-al'
     | '/whatsapp'
@@ -1044,6 +1055,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pesquisas'
     | '/_authenticated/qrcodes'
     | '/_authenticated/quitacao'
+    | '/_authenticated/quitacao-ng'
     | '/_authenticated/radar'
     | '/_authenticated/rh'
     | '/_authenticated/simulacao-alagoas'
@@ -1236,6 +1248,13 @@ declare module '@tanstack/react-router' {
       path: '/quitacao'
       fullPath: '/quitacao'
       preLoaderRoute: typeof AuthenticatedQuitacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/quitacao-ng': {
+      id: '/_authenticated/quitacao-ng'
+      path: '/quitacao-ng'
+      fullPath: '/quitacao-ng'
+      preLoaderRoute: typeof AuthenticatedQuitacaoNgRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/radar': {
@@ -1895,6 +1914,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPesquisasRoute: typeof AuthenticatedPesquisasRoute
   AuthenticatedQrcodesRoute: typeof AuthenticatedQrcodesRoute
   AuthenticatedQuitacaoRoute: typeof AuthenticatedQuitacaoRoute
+  AuthenticatedQuitacaoNgRoute: typeof AuthenticatedQuitacaoNgRoute
   AuthenticatedRadarRoute: typeof AuthenticatedRadarRouteWithChildren
   AuthenticatedRhRoute: typeof AuthenticatedRhRouteWithChildren
   AuthenticatedSimulacaoAlagoasRoute: typeof AuthenticatedSimulacaoAlagoasRoute
@@ -1932,6 +1952,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPesquisasRoute: AuthenticatedPesquisasRoute,
   AuthenticatedQrcodesRoute: AuthenticatedQrcodesRoute,
   AuthenticatedQuitacaoRoute: AuthenticatedQuitacaoRoute,
+  AuthenticatedQuitacaoNgRoute: AuthenticatedQuitacaoNgRoute,
   AuthenticatedRadarRoute: AuthenticatedRadarRouteWithChildren,
   AuthenticatedRhRoute: AuthenticatedRhRouteWithChildren,
   AuthenticatedSimulacaoAlagoasRoute: AuthenticatedSimulacaoAlagoasRoute,
