@@ -1985,6 +1985,41 @@ export type Database = {
           },
         ]
       }
+      prospect_leads_atendimentos: {
+        Row: {
+          atendido_em: string
+          consultant_id: string
+          created_at: string
+          id: string
+          lead_id: string
+          status_final: string | null
+        }
+        Insert: {
+          atendido_em?: string
+          consultant_id: string
+          created_at?: string
+          id?: string
+          lead_id: string
+          status_final?: string | null
+        }
+        Update: {
+          atendido_em?: string
+          consultant_id?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+          status_final?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_leads_atendimentos_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prospect_metas: {
         Row: {
           created_at: string
@@ -3545,6 +3580,21 @@ export type Database = {
           consultoras: number
           reiniciados: number
           sem_dono: number
+        }[]
+      }
+      reiniciar_prospect_leads: {
+        Args: {
+          _consultoras: string[]
+          _dias_min?: number
+          _limite?: number
+          _simular?: boolean
+          _status?: string[]
+        }
+        Returns: {
+          atribuidos: number
+          consultoras: number
+          esgotados: number
+          reiniciados: number
         }[]
       }
       reiniciar_tomadores_trabalhados: {
