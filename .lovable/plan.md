@@ -1,39 +1,21 @@
-# Categorizar planilhas já importadas (PM Ativos / PM Inativos / Aposentados e Pensionistas - AL)
+# Reiniciar a base de leads do CRM sem repetir consultora
 
-## O que existe hoje (verificado na base)
+## O que muda para você
+No painel admin, na aba Distribuição, entra um botão novo: **"Reiniciar base do CRM"**. Antes de confirmar, você escolhe:
+- Quais leads voltam: "Não quer agora", "Sem resposta / em aberto parado há X dias" (7/15/30) ou todos, exceto os que fecharam venda.
+- Uma prévia mostra quantos leads voltam e para quantas consultoras eles podem ir.
 
-- 37.435 leads importados de planilhas.
-- Apenas 832 têm dados extras salvos (órgão, cargo, matrícula) — são os vindos do Diário Oficial.
-- **Nenhum lead tem categoria** (PM ativo/inativo, aposentado/pensionista) e praticamente nenhum tem idade ou data de nascimento (menos de 90 mencionam algo).
-- Conclusão: as planilhas antigas foram importadas sem guardar categoria e idade, então **não é possível categorizar retroativamente com o que está salvo**.
+Depois de confirmar:
+1. O sistema guarda quem já atendeu cada lead e o resultado.
+2. O lead volta como "Novo", sem responsável e sem tarefas pendentes.
+3. A redistribuição é feita por igual e **nunca devolve o lead a quem já o atendeu**, nem nesta nem em reinícios futuros.
+4. Se todas as consultoras ativas já atenderam um lead, ele fica "Sem responsável" e aparece contado como "esgotado" no resumo.
 
-## Caminhos possíveis
-
-### Opção A — Reimportar as planilhas com categoria (recomendada)
-1. Na tela de importação de leads, adicionar mapeamento de colunas novas: **Categoria** (PM Ativo / PM Inativo / Aposentado / Pensionista) e **Data de nascimento ou Idade**.
-2. Se a planilha não tiver a coluna de categoria, o admin escolhe a categoria do lote inteiro no upload (ex.: "esta planilha é toda de PM Ativos").
-3. Reimportar as planilhas antigas: o sistema reconhece CPF já existente e **atualiza** categoria/idade em vez de duplicar.
-4. Criar colunas `categoria` e `data_nascimento` em `prospect_leads` (hoje não existem), com índice para filtro.
-
-### Opção B — Categorizar o que dá pelo Órgão (parcial, só 832 leads)
-- Leads do Diário Oficial com Órgão "Polícia Militar" / "Corpo de Bombeiros" podem ser marcados como PM, mas **não dá para saber se são ativos ou inativos** pelo dado salvo. Cobriria só ~2% da base.
-
-### Opção C — Enriquecer pela RockData
-- Para leads com CPF, consultar a RockData para obter idade/categoria. Lento para 37 mil leads e depende do servidor externo; viável sob demanda (ao abrir a ficha), não em massa.
-
-## Escopo proposto (Opção A + filtro para consultoras)
-
-1. **Banco:** colunas `categoria` (texto) e `data_nascimento` (data) em `prospect_leads`, com índices; migração com GRANTs/RLS conforme padrão.
-2. **Importação (admin):** mapear colunas de categoria/nascimento da planilha + seletor de categoria padrão para o lote; reimportação atualiza leads existentes pelo CPF sem duplicar.
-3. **CRM da consultora:** filtro por categoria (PM Ativos / PM Inativos / Aposentados e Pensionistas) e faixa de idade (ex.: 30–45, 46–60, 60+), aplicado aos leads da própria consultora.
-4. **Distribuição (admin):** ao distribuir leads, poder filtrar o lote por categoria/faixa de idade antes de repartir igualitariamente.
-
-## Fora de escopo
-- Enriquecimento em massa via RockData (fica para depois, sob demanda).
-- Alterar pontuação, fórmulas ou confirmação de vendas.
+Vendas fechadas, anotações e o histórico de contatos continuam guardados. Pontos da competição não são alterados.
 
 ## Detalhes técnicos
-- Migração: `ALTER TABLE prospect_leads ADD COLUMN categoria text, ADD COLUMN data_nascimento date;` + índices `(categoria)` e `(data_nascimento)`.
-- Importação: estender `leads-admin.functions.ts` (`findField` com sinônimos: categoria/vínculo/situação; nascimento/idade) e upsert por CPF normalizado.
-- Idade calculada em tempo de consulta a partir de `data_nascimento`; quando a planilha só trouxer idade, salvar nascimento aproximado (ano atual - idade).
-- Filtros no CRM: chips de categoria + seletor de faixa etária na listagem de leads da consultora.
+- Nova tabela `prospect_leads_atendimentos` (lead_id, consultant_id, status_final, atendido_em), com índice único (lead_id, consultant_id), GRANTs, RLS: somente administradores leem.
+- Registrar histórico também sempre que o dono de um lead mudar (gatilho em `prospect_leads` quando `consultant_id` muda), para cobrir redistribuições manuais.
+- Função `reiniciar_prospect_leads(_status[], _dias_min, _limite)`, security definer e restrita a administradores: grava histórico, limpa `consultant_id`/`atribuido_em`/`next_follow_up_at`, status "novo", cancela tarefas pendentes, redistribui por menor fila excluindo consultoras presentes no histórico do lead; retorna reiniciados/atribuidos/esgotados.
+- Ajustar a distribuição normal do CRM para também pular consultoras que já atenderam o lead.
+- Função de prévia (contagem) e botão com confirmação em `DistribuicaoTab.tsx`.
