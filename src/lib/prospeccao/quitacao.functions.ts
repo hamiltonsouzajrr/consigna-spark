@@ -208,20 +208,27 @@ export const quitacaoRegistrar = createServerFn({ method: "POST" })
 
 export const quitacaoTelefones = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ cpf: z.string().regex(/^\d{11}$/) }).parse(d))
+  .inputValidator((d) => z.object({ cpf: z.string().regex(/^(\d{11})?$/), matricula: z.string().max(40).optional() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const fmt = `${data.cpf.slice(0, 3)}.${data.cpf.slice(3, 6)}.${data.cpf.slice(6, 9)}-${data.cpf.slice(9)}`;
     const set = new Set<string>();
     const add = (v: unknown) => {
       const d = String(v ?? "").replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "");
       if (d.length === 10 || d.length === 11) set.add(d);
     };
-    const [a, b] = await Promise.all([
-      supabaseAdmin.from("prospect_leads").select("telefone,telefones").in("cpf", [data.cpf, fmt]).limit(10),
-      supabaseAdmin.from("tomadores_al").select("telefones").in("cpf", [data.cpf, fmt]).limit(10),
-    ]);
-    for (const r of (a.data ?? []) as any[]) { add(r.telefone); (r.telefones ?? []).forEach(add); }
-    for (const r of (b.data ?? []) as any[]) (r.telefones ?? []).forEach(add);
+    const jobs: PromiseLike<any>[] = [];
+    if (data.cpf) {
+      const fmt = `${data.cpf.slice(0, 3)}.${data.cpf.slice(3, 6)}.${data.cpf.slice(6, 9)}-${data.cpf.slice(9)}`;
+      jobs.push(supabaseAdmin.from("prospect_leads").select("telefone,telefones").in("cpf", [data.cpf, fmt]).limit(10));
+      jobs.push(supabaseAdmin.from("tomadores_al").select("telefones").in("cpf" as any, [data.cpf, fmt]).limit(10));
+    }
+    if (data.matricula) {
+      const m = data.matricula.trim();
+      const semDv = m.split("-")[0].replace(/\D/g, "");
+      const vals = [...new Set([m, semDv, m.replace(/\D/g, "")].filter(Boolean))];
+      jobs.push(supabaseAdmin.from("tomadores_al").select("telefones").in("matricula", vals).limit(10));
+    }
+    const res = await Promise.all(jobs);
+    for (const r of res) for (const row of (r.data ?? []) as any[]) { add(row.telefone); (row.telefones ?? []).forEach(add); }
     return { telefones: [...set].slice(0, 8) };
   });
