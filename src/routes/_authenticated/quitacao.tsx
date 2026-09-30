@@ -46,11 +46,45 @@ const RESULTADOS: Record<string, { label: string; cls: string }> = {
 
 function melhorTroco(c: QuitacaoCliente) {
   let best: { prazo: string; troco: number } | null = null;
+  if (c.troco_previsto != null) best = { prazo: (c.banco_previsto ?? "").match(/(\d+)x/i)?.[1] ?? "?", troco: c.troco_previsto };
   for (const p of PRAZOS) {
     const t = c.prazos?.[p]?.troco;
     if (t != null && (!best || t > best.troco)) best = { prazo: p, troco: t };
   }
   return best;
+}
+
+function lerOportunidades(rows: Record<string, unknown>[]) {
+  const porMat = new Map<string, any>();
+  for (const r of rows) {
+    const nome = String(pick(r, (k) => k === "servidor") ?? "").trim();
+    const mat = String(pick(r, (k) => k === "matricula") ?? "").trim();
+    if (!nome || !mat) continue;
+    const cur = porMat.get(mat) ?? {
+      cpf: "", nome, status: null, cod_ordem: `MAT:${mat}`.slice(0, 60), saldo: 0, parcela: 0, reserva: null, qtd_contratos: 0,
+      pagas: null, abertas: null, plano: null, prazos: {}, matricula: mat, formato: "oportunidades", contratos: [],
+      competencia: null, perfil: null, ritmo: null, banco_previsto: null, credito_previsto: null, troco_previsto: null,
+    };
+    const txt = (v: unknown) => { const t = String(v ?? "").trim(); return t || null; };
+    cur.competencia ??= txt(pick(r, (k) => k === "competencia"));
+    cur.perfil ??= txt(pick(r, (k) => k === "perfil"));
+    cur.ritmo ??= txt(pick(r, (k) => k.startsWith("ritmo")));
+    cur.banco_previsto ??= txt(pick(r, (k) => k === "banco previsto"));
+    cur.credito_previsto ??= num(pick(r, (k) => k === "credito previsto"));
+    cur.troco_previsto ??= num(pick(r, (k) => k === "troco previsto"));
+    const parcela = num(pick(r, (k) => k === "parcela")), saldo = num(pick(r, (k) => k === "saldo"));
+    cur.contratos.push({
+      banco: String(pick(r, (k) => k === "banco") ?? "").slice(0, 120),
+      contrato: String(pick(r, (k) => k === "contrato") ?? "").slice(0, 160),
+      tipo: String(pick(r, (k) => k === "tipo") ?? "").slice(0, 40),
+      parcelas: String(pick(r, (k) => k === "parcelas") ?? "").slice(0, 20),
+      restantes: num(pick(r, (k) => k === "restantes")), parcela, saldo,
+    });
+    cur.parcela += parcela ?? 0; cur.saldo += saldo ?? 0; cur.qtd_contratos++;
+    porMat.set(mat, cur);
+  }
+  const clientes = [...porMat.values()].map((c) => ({ ...c, parcela: Math.round(c.parcela * 100) / 100, saldo: Math.round(c.saldo * 100) / 100 }));
+  return { clientes, invalidos: 0 };
 }
 const quaseQuitado = (c: QuitacaoCliente) => !!c.pagas && !!c.plano && c.pagas / c.plano >= 0.5;
 const desatualizado = (c: QuitacaoCliente) => Date.now() - new Date(c.importado_em).getTime() > 30 * 86400_000;
@@ -69,7 +103,14 @@ function pick(row: Record<string, unknown>, test: (k: string) => boolean) {
 }
 
 async function lerPlanilha(file: File) {
-  const wb = XLSX.read(await file.arrayBuffer());
+  const isCsv = /\.csv$/i.test(file.name);
+  const wb = isCsv
+    ? XLSX.read((await file.text()).replace(/^\uFEFF/, ""), { type: "string", FS: ";", raw: true } as any)
+    : XLSX.read(await file.arrayBuffer());
+  const primeira = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[wb.SheetNames[0]], { defval: null, raw: !isCsv ? true : false });
+  if (primeira.length && Object.keys(primeira[0]).some((k) => key(k) === "servidor") && Object.keys(primeira[0]).some((k) => key(k) === "matricula")) {
+    return lerOportunidades(primeira);
+  }
   const porCpf = new Map<string, any>();
   let invalidos = 0;
   for (const nomeAba of wb.SheetNames) {
@@ -119,8 +160,12 @@ function QuitacaoPage() {
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState("todos");
   const [trocoMin, setTrocoMin] = useState("");
+  const [perfil, setPerfil] = useState("todos");
+  const [tipo, setTipo] = useState("todos");
+  const [soProposta, setSoProposta] = useState(false);
   const [aberto, setAberto] = useState<QuitacaoCliente | null>(null);
   const refresh = () => qc.invalidateQueries({ queryKey: ["quitacao"] });
+  const perfis = useMemo(() => [...new Set((data?.clientes ?? []).map((c) => c.perfil).filter(Boolean))] as string[], [data]);
 
   const lista = useMemo(() => {
     const q = key(busca);
@@ -128,10 +173,13 @@ function QuitacaoPage() {
     const min = num(trocoMin) ?? -Infinity;
     return (data?.clientes ?? [])
       .filter((c) => filtro === "todos" || c.resultado === filtro)
-      .filter((c) => !q || key(c.nome).includes(q) || (qd.length >= 3 && c.cpf.includes(qd)))
+      .filter((c) => perfil === "todos" || c.perfil === perfil)
+      .filter((c) => tipo === "todos" || (c.contratos ?? []).some((k) => k.tipo === tipo))
+      .filter((c) => !soProposta || c.troco_previsto != null)
+      .filter((c) => !q || key(c.nome).includes(q) || (qd.length >= 3 && (c.cpf.includes(qd) || (c.matricula ?? "").replace(/\D/g, "").includes(qd))))
       .filter((c) => (melhorTroco(c)?.troco ?? -Infinity) >= min)
       .sort((a, b) => Number(quaseQuitado(b)) - Number(quaseQuitado(a)) || (melhorTroco(b)?.troco ?? 0) - (melhorTroco(a)?.troco ?? 0));
-  }, [data, busca, filtro, trocoMin]);
+  }, [data, busca, filtro, trocoMin, perfil, tipo, soProposta]);
 
   return (
     <AppShell>
@@ -144,12 +192,24 @@ function QuitacaoPage() {
         {data?.admin && <AdminPainel data={data} onChange={refresh} />}
 
         <Card className="flex flex-wrap items-center gap-2 p-3">
-          <Input className="max-w-xs" placeholder="Buscar nome ou CPF" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="max-w-xs" placeholder="Buscar nome, CPF ou matrícula" value={busca} onChange={(e) => setBusca(e.target.value)} />
           <Input className="w-40" placeholder="Troco mínimo (R$)" value={trocoMin} onChange={(e) => setTrocoMin(e.target.value)} />
           <select className="h-9 rounded-md border bg-background px-2 text-sm" value={filtro} onChange={(e) => setFiltro(e.target.value)}>
             <option value="todos">Todos</option>
             {Object.entries(RESULTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
+          {!!perfis.length && (
+            <select className="h-9 rounded-md border bg-background px-2 text-sm" value={perfil} onChange={(e) => setPerfil(e.target.value)}>
+              <option value="todos">Todos os perfis</option>
+              {perfis.map((p) => <option key={p} value={p}>{p}</option>)}
+            </select>
+          )}
+          <select className="h-9 rounded-md border bg-background px-2 text-sm" value={tipo} onChange={(e) => setTipo(e.target.value)}>
+            <option value="todos">Cartão e empréstimo</option>
+            <option value="Cartão">Com cartão</option>
+            <option value="Empréstimo">Com empréstimo</option>
+          </select>
+          <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={soProposta} onChange={(e) => setSoProposta(e.target.checked)} /> Tem proposta</label>
           <span className="ml-auto text-sm text-muted-foreground">{lista.length} clientes</span>
         </Card>
 
@@ -162,17 +222,21 @@ function QuitacaoPage() {
             {lista.slice(0, 300).map((c) => {
               const m = melhorTroco(c);
               const r = RESULTADOS[c.resultado] ?? RESULTADOS.novo;
+              const op = c.formato === "oportunidades";
               return (
                 <Card key={c.id} className="cursor-pointer space-y-1.5 p-4 transition hover:border-primary" onClick={() => setAberto(c)}>
                   <div className="flex items-start justify-between gap-2">
                     <p className="min-w-0 truncate font-medium">{c.nome}</p>
                     <Badge variant="secondary" className={`border-0 ${r.cls}`}>{r.label}</Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground">Saldo {brl(c.saldo)} · parcela {brl(c.parcela)} · {c.pagas ?? "?"}/{c.plano ?? "?"} pagas</p>
-                  <p className={`text-sm font-semibold ${m && m.troco > 0 ? "text-emerald-700" : "text-rose-700"}`}>
-                    Troco {m ? `${brl(m.troco)} em ${m.prazo}x` : "—"}
+                  <p className="text-xs text-muted-foreground">
+                    {op ? `Mat. ${c.matricula} · ${c.qtd_contratos ?? 0} contrato(s) · parcelas ${brl(c.parcela)}` : `Saldo ${brl(c.saldo)} · parcela ${brl(c.parcela)} · ${c.pagas ?? "?"}/${c.plano ?? "?"} pagas`}
+                  </p>
+                  <p className={`text-sm font-semibold ${m && m.troco > 0 ? "text-emerald-700" : m ? "text-rose-700" : "text-muted-foreground"}`}>
+                    {m ? `Troco ${brl(m.troco)} em ${m.prazo}x` : "Sem proposta prevista"}
                   </p>
                   <div className="flex flex-wrap gap-1">
+                    {c.perfil && <Badge variant="outline" className="text-[10px]">{c.perfil}</Badge>}
                     {quaseQuitado(c) && <Badge variant="outline" className="text-[10px]">Quase quitado</Badge>}
                     {desatualizado(c) && <Badge variant="outline" className="border-amber-400 text-[10px] text-amber-700">Valores com +30 dias</Badge>}
                   </div>
@@ -284,7 +348,7 @@ function FichaDialog({ cliente: c, admin, consultoras, onClose, onChange }: {
   const registrar = useServerFn(quitacaoRegistrar);
   const editar = useServerFn(quitacaoAdminEditar);
   const tel = useServerFn(quitacaoTelefones);
-  const { data: fones } = useQuery({ queryKey: ["quitacao-tel", c?.cpf], enabled: !!c, queryFn: () => tel({ data: { cpf: c!.cpf } }) });
+  const { data: fones } = useQuery({ queryKey: ["quitacao-tel", c?.id], enabled: !!c, queryFn: () => tel({ data: { cpf: c!.cpf, matricula: c!.matricula ?? undefined } }) });
   const [nota, setNota] = useState("");
   if (!c) return null;
   const m = melhorTroco(c);
@@ -303,8 +367,35 @@ function FichaDialog({ cliente: c, admin, consultoras, onClose, onChange }: {
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader><DialogTitle>{c.nome}</DialogTitle></DialogHeader>
         <div className="space-y-3 text-sm">
-          <p className="text-muted-foreground">CPF {c.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")} · Ordem {c.cod_ordem || "—"} · {c.status ?? "sem status"}</p>
+          {c.formato === "oportunidades" ? (
+            <p className="text-muted-foreground">Matrícula {c.matricula} · {c.cpf ? `CPF ${c.cpf}` : "sem CPF"} · {c.competencia ?? "—"}</p>
+          ) : (
+            <p className="text-muted-foreground">CPF {c.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")} · Ordem {c.cod_ordem || "—"} · {c.status ?? "sem status"}</p>
+          )}
           {desatualizado(c) && <p className="flex items-center gap-1 text-amber-700"><AlertTriangle className="h-4 w-4" /> Valores importados há mais de 30 dias — reconfira antes de oferecer.</p>}
+          {c.formato === "oportunidades" ? (
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                <Info l="Soma das parcelas" v={brl(c.parcela)} /><Info l="Saldo devedor total" v={brl(c.saldo)} />
+                <Info l="Perfil" v={c.perfil ?? "—"} /><Info l="Ritmo (meses)" v={c.ritmo ?? "—"} />
+              </div>
+              <div className="rounded-md border border-emerald-300 bg-emerald-50 p-3">
+                <p className="text-xs font-medium text-emerald-800">Proposta prevista</p>
+                {c.troco_previsto != null || c.credito_previsto != null ? (
+                  <p className="text-emerald-900">{c.banco_previsto ?? "—"} · crédito {brl(c.credito_previsto)} · <b>troco {brl(c.troco_previsto)}</b></p>
+                ) : <p className="text-xs text-muted-foreground">Sem proposta na planilha.</p>}
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="text-left text-muted-foreground"><tr><th>Banco / contrato</th><th>Tipo</th><th>Parcelas</th><th>Rest.</th><th>Parcela</th><th>Saldo</th></tr></thead>
+                  <tbody>{(c.contratos ?? []).map((k, i) => (
+                    <tr key={i} className="border-t"><td className="py-1">{k.contrato || k.banco}</td><td>{k.tipo}</td><td>{k.parcelas}</td><td>{k.restantes ?? "—"}</td><td>{brl(k.parcela)}</td><td>{brl(k.saldo)}</td></tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+          <>
           <div className="grid grid-cols-2 gap-2">
             <Info l="Saldo devedor" v={brl(c.saldo)} /><Info l="Parcela atual" v={brl(c.parcela)} />
             <Info l="Parcelas pagas" v={`${c.pagas ?? "—"} de ${c.plano ?? "—"}`} /><Info l="Em aberto" v={String(c.abertas ?? "—")} />
@@ -318,10 +409,12 @@ function FichaDialog({ cliente: c, admin, consultoras, onClose, onChange }: {
                 <td className={t != null && t < 0 ? "text-rose-700" : "font-medium text-emerald-700"}>{brl(t)}{t != null && t < 0 ? " · não compensa" : ""}</td></tr>;
             })}</tbody>
           </table>
+          </>
+          )}
           <div className="space-y-1">
             <p className="text-xs font-medium">Telefones encontrados no sistema</p>
             {!fones?.telefones.length ? (
-              <p className="text-xs text-muted-foreground">Nenhum. <Link to="/consulta-servidor" search={{ q: c.cpf } as any} className="underline">Pesquisar cliente</Link></p>
+              <p className="text-xs text-muted-foreground">Nenhum. <Link to="/consulta-servidor" search={{ q: c.cpf || c.nome } as any} className="underline">Pesquisar cliente</Link></p>
             ) : fones.telefones.map((t) => (
               <div key={t} className="flex items-center gap-2">
                 <span className="font-mono text-xs">{t}</span>
