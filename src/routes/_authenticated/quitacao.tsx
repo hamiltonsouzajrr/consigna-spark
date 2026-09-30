@@ -348,7 +348,7 @@ function FichaDialog({ cliente: c, admin, consultoras, onClose, onChange }: {
   const registrar = useServerFn(quitacaoRegistrar);
   const editar = useServerFn(quitacaoAdminEditar);
   const tel = useServerFn(quitacaoTelefones);
-  const { data: fones } = useQuery({ queryKey: ["quitacao-tel", c?.cpf], enabled: !!c, queryFn: () => tel({ data: { cpf: c!.cpf } }) });
+  const { data: fones } = useQuery({ queryKey: ["quitacao-tel", c?.id], enabled: !!c, queryFn: () => tel({ data: { cpf: c!.cpf, matricula: c!.matricula ?? undefined } }) });
   const [nota, setNota] = useState("");
   if (!c) return null;
   const m = melhorTroco(c);
@@ -367,8 +367,35 @@ function FichaDialog({ cliente: c, admin, consultoras, onClose, onChange }: {
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader><DialogTitle>{c.nome}</DialogTitle></DialogHeader>
         <div className="space-y-3 text-sm">
-          <p className="text-muted-foreground">CPF {c.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")} · Ordem {c.cod_ordem || "—"} · {c.status ?? "sem status"}</p>
+          {c.formato === "oportunidades" ? (
+            <p className="text-muted-foreground">Matrícula {c.matricula} · {c.cpf ? `CPF ${c.cpf}` : "sem CPF"} · {c.competencia ?? "—"}</p>
+          ) : (
+            <p className="text-muted-foreground">CPF {c.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")} · Ordem {c.cod_ordem || "—"} · {c.status ?? "sem status"}</p>
+          )}
           {desatualizado(c) && <p className="flex items-center gap-1 text-amber-700"><AlertTriangle className="h-4 w-4" /> Valores importados há mais de 30 dias — reconfira antes de oferecer.</p>}
+          {c.formato === "oportunidades" ? (
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                <Info l="Soma das parcelas" v={brl(c.parcela)} /><Info l="Saldo devedor total" v={brl(c.saldo)} />
+                <Info l="Perfil" v={c.perfil ?? "—"} /><Info l="Ritmo (meses)" v={c.ritmo ?? "—"} />
+              </div>
+              <div className="rounded-md border border-emerald-300 bg-emerald-50 p-3">
+                <p className="text-xs font-medium text-emerald-800">Proposta prevista</p>
+                {c.troco_previsto != null || c.credito_previsto != null ? (
+                  <p className="text-emerald-900">{c.banco_previsto ?? "—"} · crédito {brl(c.credito_previsto)} · <b>troco {brl(c.troco_previsto)}</b></p>
+                ) : <p className="text-xs text-muted-foreground">Sem proposta na planilha.</p>}
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="text-left text-muted-foreground"><tr><th>Banco / contrato</th><th>Tipo</th><th>Parcelas</th><th>Rest.</th><th>Parcela</th><th>Saldo</th></tr></thead>
+                  <tbody>{(c.contratos ?? []).map((k, i) => (
+                    <tr key={i} className="border-t"><td className="py-1">{k.contrato || k.banco}</td><td>{k.tipo}</td><td>{k.parcelas}</td><td>{k.restantes ?? "—"}</td><td>{brl(k.parcela)}</td><td>{brl(k.saldo)}</td></tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+          <>
           <div className="grid grid-cols-2 gap-2">
             <Info l="Saldo devedor" v={brl(c.saldo)} /><Info l="Parcela atual" v={brl(c.parcela)} />
             <Info l="Parcelas pagas" v={`${c.pagas ?? "—"} de ${c.plano ?? "—"}`} /><Info l="Em aberto" v={String(c.abertas ?? "—")} />
@@ -382,10 +409,12 @@ function FichaDialog({ cliente: c, admin, consultoras, onClose, onChange }: {
                 <td className={t != null && t < 0 ? "text-rose-700" : "font-medium text-emerald-700"}>{brl(t)}{t != null && t < 0 ? " · não compensa" : ""}</td></tr>;
             })}</tbody>
           </table>
+          </>
+          )}
           <div className="space-y-1">
             <p className="text-xs font-medium">Telefones encontrados no sistema</p>
             {!fones?.telefones.length ? (
-              <p className="text-xs text-muted-foreground">Nenhum. <Link to="/consulta-servidor" search={{ q: c.cpf } as any} className="underline">Pesquisar cliente</Link></p>
+              <p className="text-xs text-muted-foreground">Nenhum. <Link to="/consulta-servidor" search={{ q: c.cpf || c.nome } as any} className="underline">Pesquisar cliente</Link></p>
             ) : fones.telefones.map((t) => (
               <div key={t} className="flex items-center gap-2">
                 <span className="font-mono text-xs">{t}</span>
