@@ -419,7 +419,7 @@ function AdminPainel({ data, onChange }: { data: Awaited<ReturnType<typeof quita
 
       {!!porConsultora.length && (
         <div className="-mx-1 overflow-x-auto px-1">
-          <table className="w-full min-w-[540px] text-sm">
+          <table className="w-full min-w-[760px] text-sm">
             <thead className="text-left text-xs text-muted-foreground">
               <tr><th className="py-1">Consultora</th><th>Clientes</th><th>Trabalhados</th><th>Interessados</th><th>Fechados</th><th>Retorno hoje</th><th>Troco potencial</th></tr>
             </thead>

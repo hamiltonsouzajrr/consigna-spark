@@ -327,7 +327,7 @@ export const quitacaoTelefones = createServerFn({ method: "GET" })
     if (data.cpf) {
       const fmt = `${data.cpf.slice(0, 3)}.${data.cpf.slice(3, 6)}.${data.cpf.slice(6, 9)}-${data.cpf.slice(9)}`;
       jobs.push(supabaseAdmin.from("prospect_leads").select("telefone,telefones").in("cpf", [data.cpf, fmt]).limit(10));
-      jobs.push(supabaseAdmin.from("tomadores_al").select("telefones").in("cpf" as any, [data.cpf, fmt]).limit(10));
+      jobs.push(supabaseAdmin.from("tomadores_al").select("telefones").in("documento", [data.cpf, fmt]).limit(10));
     }
     if (data.matricula) {
       const m = data.matricula.trim();
@@ -379,10 +379,10 @@ export const quitacaoTelefonesLote = createServerFn({ method: "POST" })
       const slice = cpfKeys.slice(i, i + 400);
       const [leads, tom] = await Promise.all([
         supabaseAdmin.from("prospect_leads").select("cpf,telefone,telefones").in("cpf", slice).limit(2000),
-        supabaseAdmin.from("tomadores_al").select("cpf,telefones").in("cpf" as any, slice).limit(2000),
+        supabaseAdmin.from("tomadores_al").select("documento,telefones").in("documento", slice).limit(2000),
       ]);
       for (const r of (leads.data ?? []) as any[]) push(porCpf, String(r.cpf ?? ""), [r.telefone, ...(r.telefones ?? [])]);
-      for (const r of (tom.data ?? []) as any[]) push(porCpf, String(r.cpf ?? ""), r.telefones ?? []);
+      for (const r of (tom.data ?? []) as any[]) push(porCpf, String(r.documento ?? ""), r.telefones ?? []);
     }
     for (let i = 0; i < mats.length; i += 400) {
       const { data: rows } = await supabaseAdmin
