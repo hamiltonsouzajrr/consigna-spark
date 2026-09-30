@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { ReiniciarBaseCard } from "./ReiniciarBaseCard";
 import {
   adminDistributeLeads,
   adminPreviewDistribution,
@@ -348,6 +349,7 @@ export function DistribuicaoTab({
       </div>
 
       <div className="mt-5 grid min-w-0 gap-4 md:grid-cols-2">
+        <ReiniciarBaseCard consultantIds={[...selected]} />
         {/* 1. Entregar clientes */}
         <div className="min-w-0 rounded-lg border p-4 md:col-span-2">
           <p className="mb-1 flex items-center gap-2 text-sm font-medium">

@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.prospect_leads_historico_dono() FROM public, anon, authenticated;
