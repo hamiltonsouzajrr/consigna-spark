@@ -337,3 +337,63 @@ export const quitacaoTelefones = createServerFn({ method: "GET" })
     for (const r of res) for (const row of (r.data ?? []) as any[]) { add(row.telefone); (row.telefones ?? []).forEach(add); }
     return { telefones: [...set].slice(0, 8) };
   });
+
+/** Telefones de vários clientes de uma vez, para os atalhos de contato nos cards. */
+export const quitacaoTelefonesLote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      itens: z.array(z.object({
+        id: z.string().uuid(),
+        cpf: z.string().regex(/^(\d{11})?$/),
+        matricula: z.string().max(40).nullable().optional(),
+      })).max(300),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const limpar = (v: unknown) => {
+      const d = String(v ?? "").replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "");
+      return d.length === 10 || d.length === 11 ? d : null;
+    };
+    const fmtCpf = (c: string) => `${c.slice(0, 3)}.${c.slice(3, 6)}.${c.slice(6, 9)}-${c.slice(9)}`;
+    const matVals = (m: string) => [...new Set([m.trim(), m.split("-")[0].replace(/\D/g, ""), m.replace(/\D/g, "")].filter(Boolean))];
+
+    const cpfs = [...new Set(data.itens.map((i) => i.cpf).filter(Boolean))];
+    const mats = [...new Set(data.itens.flatMap((i) => (i.matricula ? matVals(i.matricula) : [])))];
+    const cpfKeys = cpfs.flatMap((c) => [c, fmtCpf(c)]);
+
+    const porCpf = new Map<string, Set<string>>();
+    const porMat = new Map<string, Set<string>>();
+    const push = (map: Map<string, Set<string>>, k: string, tels: unknown[]) => {
+      const key = k.replace(/\D/g, "");
+      if (!key) return;
+      const set = map.get(key) ?? new Set<string>();
+      for (const t of tels) { const v = limpar(t); if (v) set.add(v); }
+      if (set.size) map.set(key, set);
+    };
+
+    for (let i = 0; i < cpfKeys.length; i += 400) {
+      const slice = cpfKeys.slice(i, i + 400);
+      const [leads, tom] = await Promise.all([
+        supabaseAdmin.from("prospect_leads").select("cpf,telefone,telefones").in("cpf", slice).limit(2000),
+        supabaseAdmin.from("tomadores_al").select("cpf,telefones").in("cpf" as any, slice).limit(2000),
+      ]);
+      for (const r of (leads.data ?? []) as any[]) push(porCpf, String(r.cpf ?? ""), [r.telefone, ...(r.telefones ?? [])]);
+      for (const r of (tom.data ?? []) as any[]) push(porCpf, String(r.cpf ?? ""), r.telefones ?? []);
+    }
+    for (let i = 0; i < mats.length; i += 400) {
+      const { data: rows } = await supabaseAdmin
+        .from("tomadores_al").select("matricula,telefones").in("matricula", mats.slice(i, i + 400)).limit(2000);
+      for (const r of (rows ?? []) as any[]) push(porMat, String(r.matricula ?? ""), r.telefones ?? []);
+    }
+
+    const out: Record<string, string[]> = {};
+    for (const it of data.itens) {
+      const set = new Set<string>();
+      if (it.cpf) for (const t of porCpf.get(it.cpf) ?? []) set.add(t);
+      if (it.matricula) for (const m of matVals(it.matricula)) for (const t of porMat.get(m.replace(/\D/g, "")) ?? []) set.add(t);
+      if (set.size) out[it.id] = [...set].slice(0, 4);
+    }
+    return { telefones: out };
+  });
