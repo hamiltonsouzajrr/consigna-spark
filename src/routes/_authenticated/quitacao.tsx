@@ -1,20 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CreditCard, Upload, Trash2, Phone, MessageCircle, AlertTriangle, Flame, ArrowRight, FileText } from "lucide-react";
+import {
+  CreditCard, Upload, Trash2, Phone, MessageCircle, AlertTriangle, Flame, ArrowRight, FileText,
+  SlidersHorizontal, CalendarClock, Users, Shuffle, Send,
+} from "lucide-react";
 import { isValidCpf } from "@/lib/cpf";
 import {
   quitacaoListar, quitacaoImportar, quitacaoExcluirLote, quitacaoAdminEditar, quitacaoRegistrar, quitacaoTelefones,
+  quitacaoTelefonesLote, quitacaoDistribuirPendentes, quitacaoRedistribuir,
   type QuitacaoCliente,
 } from "@/lib/prospeccao/quitacao.functions";
 
@@ -53,6 +56,19 @@ function melhorTroco(c: QuitacaoCliente) {
   }
   return best;
 }
+
+/** Mensagem pronta de WhatsApp para o cliente. */
+function mensagem(c: QuitacaoCliente) {
+  const m = melhorTroco(c);
+  const primeiro = c.nome.split(" ")[0];
+  return encodeURIComponent(
+    `Olá, ${primeiro}! Tudo bem? Identificamos que você pode quitar seu contrato atual e ainda receber um troco estimado de ${m ? brl(m.troco) : "valor a confirmar"}${m ? ` em ${m.prazo}x` : ""}. Posso te explicar sem compromisso?`,
+  );
+}
+
+const hojeISO = () => new Date(Date.now() - 3 * 3600_000).toISOString().slice(0, 10);
+const diaLocal = (iso: string | null) => (iso ? new Date(iso).toISOString().slice(0, 10) : null);
+const retornoHoje = (c: QuitacaoCliente) => !!c.retorno_em && (diaLocal(c.retorno_em) as string) <= hojeISO();
 
 function lerOportunidades(rows: Record<string, unknown>[]) {
   const porMat = new Map<string, any>();
@@ -156,6 +172,7 @@ async function lerPlanilha(file: File) {
 function QuitacaoPage() {
   const qc = useQueryClient();
   const listar = useServerFn(quitacaoListar);
+  const telLote = useServerFn(quitacaoTelefonesLote);
   const { data, isLoading } = useQuery({ queryKey: ["quitacao"], queryFn: () => listar() });
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState("todos");
@@ -163,6 +180,9 @@ function QuitacaoPage() {
   const [perfil, setPerfil] = useState("todos");
   const [tipo, setTipo] = useState("todos");
   const [soProposta, setSoProposta] = useState(false);
+  const [soRetorno, setSoRetorno] = useState(false);
+  const [donoFiltro, setDonoFiltro] = useState("todos");
+  const [filtrosAbertos, setFiltrosAbertos] = useState(false);
   const [aberto, setAberto] = useState<QuitacaoCliente | null>(null);
   const refresh = () => qc.invalidateQueries({ queryKey: ["quitacao"] });
   const perfis = useMemo(() => [...new Set((data?.clientes ?? []).map((c) => c.perfil).filter(Boolean))] as string[], [data]);
@@ -176,41 +196,91 @@ function QuitacaoPage() {
       .filter((c) => perfil === "todos" || c.perfil === perfil)
       .filter((c) => tipo === "todos" || (c.contratos ?? []).some((k) => k.tipo === tipo))
       .filter((c) => !soProposta || c.troco_previsto != null)
+      .filter((c) => !soRetorno || retornoHoje(c))
+      .filter((c) => donoFiltro === "todos" || (donoFiltro === "sem" ? !c.consultant_id : c.consultant_id === donoFiltro))
       .filter((c) => !q || key(c.nome).includes(q) || (qd.length >= 3 && (c.cpf.includes(qd) || (c.matricula ?? "").replace(/\D/g, "").includes(qd))))
       .filter((c) => (melhorTroco(c)?.troco ?? -Infinity) >= min)
-      .sort((a, b) => Number(quaseQuitado(b)) - Number(quaseQuitado(a)) || (melhorTroco(b)?.troco ?? 0) - (melhorTroco(a)?.troco ?? 0));
-  }, [data, busca, filtro, trocoMin, perfil, tipo, soProposta]);
+      .sort((a, b) =>
+        Number(retornoHoje(b)) - Number(retornoHoje(a)) ||
+        Number(quaseQuitado(b)) - Number(quaseQuitado(a)) ||
+        (melhorTroco(b)?.troco ?? 0) - (melhorTroco(a)?.troco ?? 0));
+  }, [data, busca, filtro, trocoMin, perfil, tipo, soProposta, soRetorno, donoFiltro]);
+
+  const visiveis = useMemo(() => lista.slice(0, 300), [lista]);
+  const chaveTel = visiveis.map((c) => c.id).join(",");
+  const { data: fonesLote } = useQuery({
+    queryKey: ["quitacao-tel-lote", chaveTel],
+    enabled: visiveis.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: () => telLote({ data: { itens: visiveis.map((c) => ({ id: c.id, cpf: c.cpf, matricula: c.matricula })) } }),
+  });
+
+  const filtrosAtivos = [
+    filtro !== "todos", perfil !== "todos", tipo !== "todos", soProposta, soRetorno, donoFiltro !== "todos", !!trocoMin,
+  ].filter(Boolean).length;
+  const retornosHoje = (data?.clientes ?? []).filter(retornoHoje).length;
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-6xl space-y-4 p-4">
-        <div>
-          <h1 className="flex items-center gap-2 text-xl font-semibold"><CreditCard className="h-5 w-5 text-primary" /> Quitação — Cartão de crédito</h1>
-          <p className="text-sm text-muted-foreground">Clientes aptos à compra de dívida, ordenados pelo maior troco. Valores vêm da planilha e não são recalculados.</p>
+      <div className="mx-auto max-w-6xl space-y-4 p-3 sm:p-4">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="flex items-center gap-2 text-lg font-semibold sm:text-xl">
+              <CreditCard className="h-5 w-5 shrink-0 text-primary" /> <span className="truncate">Quitação — Cartão de crédito</span>
+            </h1>
+            <p className="text-xs text-muted-foreground sm:text-sm">Clientes aptos à compra de dívida, ordenados pelo maior troco. Valores vêm da planilha.</p>
+          </div>
+          {retornosHoje > 0 && (
+            <button type="button" onClick={() => { setSoRetorno(true); setFiltrosAbertos(true); }}
+              className="shrink-0 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-900">
+              <CalendarClock className="mr-1 inline h-3.5 w-3.5" />{retornosHoje} retorno(s) hoje
+            </button>
+          )}
         </div>
 
         {data?.admin && <AdminPainel data={data} onChange={refresh} />}
 
-        <Card className="flex flex-wrap items-center gap-2 p-3">
-          <Input className="max-w-xs" placeholder="Buscar nome, CPF ou matrícula" value={busca} onChange={(e) => setBusca(e.target.value)} />
-          <Input className="w-40" placeholder="Troco mínimo (R$)" value={trocoMin} onChange={(e) => setTrocoMin(e.target.value)} />
-          <select className="h-9 rounded-md border bg-background px-2 text-sm" value={filtro} onChange={(e) => setFiltro(e.target.value)}>
-            <option value="todos">Todos</option>
-            {Object.entries(RESULTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-          </select>
-          {!!perfis.length && (
-            <select className="h-9 rounded-md border bg-background px-2 text-sm" value={perfil} onChange={(e) => setPerfil(e.target.value)}>
-              <option value="todos">Todos os perfis</option>
-              {perfis.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
-          )}
-          <select className="h-9 rounded-md border bg-background px-2 text-sm" value={tipo} onChange={(e) => setTipo(e.target.value)}>
-            <option value="todos">Cartão e empréstimo</option>
-            <option value="Cartão">Com cartão</option>
-            <option value="Empréstimo">Com empréstimo</option>
-          </select>
-          <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={soProposta} onChange={(e) => setSoProposta(e.target.checked)} /> Tem proposta</label>
-          <span className="ml-auto text-sm text-muted-foreground">{lista.length} clientes</span>
+        <Card className="space-y-2 p-3">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:flex md:flex-wrap">
+            <Input className="min-w-0 md:max-w-xs" placeholder="Buscar nome, CPF ou matrícula" value={busca} onChange={(e) => setBusca(e.target.value)} />
+            <Button type="button" variant={filtrosAtivos ? "default" : "outline"} size="sm" className="shrink-0 md:hidden"
+              onClick={() => setFiltrosAbertos((v) => !v)}>
+              <SlidersHorizontal className="h-4 w-4" />{filtrosAtivos ? ` ${filtrosAtivos}` : ""}
+            </Button>
+            <div className={`${filtrosAbertos ? "grid" : "hidden"} col-span-2 grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center`}>
+              <select className="h-9 rounded-md border bg-background px-2 text-sm" value={filtro} onChange={(e) => setFiltro(e.target.value)}>
+                <option value="todos">Todos os status</option>
+                {Object.entries(RESULTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+              </select>
+              <Input className="h-9" placeholder="Troco mínimo (R$)" value={trocoMin} onChange={(e) => setTrocoMin(e.target.value)} />
+              {!!perfis.length && (
+                <select className="h-9 rounded-md border bg-background px-2 text-sm" value={perfil} onChange={(e) => setPerfil(e.target.value)}>
+                  <option value="todos">Todos os perfis</option>
+                  {perfis.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              )}
+              <select className="h-9 rounded-md border bg-background px-2 text-sm" value={tipo} onChange={(e) => setTipo(e.target.value)}>
+                <option value="todos">Cartão e empréstimo</option>
+                <option value="Cartão">Com cartão</option>
+                <option value="Empréstimo">Com empréstimo</option>
+              </select>
+              {data?.admin && (
+                <select className="h-9 rounded-md border bg-background px-2 text-sm" value={donoFiltro} onChange={(e) => setDonoFiltro(e.target.value)}>
+                  <option value="todos">Todas as consultoras</option>
+                  <option value="sem">Sem consultora</option>
+                  {(data.consultoras ?? []).map((k) => <option key={k.id} value={k.id}>{k.email}</option>)}
+                </select>
+              )}
+              <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={soProposta} onChange={(e) => setSoProposta(e.target.checked)} /> Tem proposta</label>
+              <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={soRetorno} onChange={(e) => setSoRetorno(e.target.checked)} /> Retorno hoje</label>
+              {!!filtrosAtivos && (
+                <Button type="button" size="sm" variant="ghost" onClick={() => {
+                  setFiltro("todos"); setPerfil("todos"); setTipo("todos"); setSoProposta(false); setSoRetorno(false); setDonoFiltro("todos"); setTrocoMin("");
+                }}>Limpar</Button>
+              )}
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">{lista.length} cliente(s) na visão atual</p>
         </Card>
 
         {isLoading ? <Skeleton className="h-40 w-full" /> : !lista.length ? (
@@ -221,7 +291,9 @@ function QuitacaoPage() {
           <>
             <ResumoNoturno lista={lista} />
             <div className="grid gap-3 lg:grid-cols-2">
-              {lista.slice(0, 300).map((c) => <QuitCard key={c.id} c={c} onOpen={() => setAberto(c)} />)}
+              {visiveis.map((c) => (
+                <QuitCard key={c.id} c={c} telefones={fonesLote?.telefones?.[c.id] ?? []} onOpen={() => setAberto(c)} />
+              ))}
             </div>
           </>
         )}
@@ -235,24 +307,30 @@ function QuitacaoPage() {
 function AdminPainel({ data, onChange }: { data: Awaited<ReturnType<typeof quitacaoListar>>; onChange: () => void }) {
   const importar = useServerFn(quitacaoImportar);
   const excluir = useServerFn(quitacaoExcluirLote);
+  const distribuir = useServerFn(quitacaoDistribuirPendentes);
+  const redistribuir = useServerFn(quitacaoRedistribuir);
   const [previa, setPrevia] = useState<{ nome: string; clientes: any[]; invalidos: number; existentes: number } | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [ocupado, setOcupado] = useState(false);
+  const [dias, setDias] = useState("7");
 
   const porConsultora = useMemo(() => {
-    const m = new Map<string, { total: number; trabalhados: number; interessados: number; fechados: number; troco: number }>();
+    const m = new Map<string, { total: number; trabalhados: number; interessados: number; fechados: number; retornos: number; troco: number }>();
     for (const c of data.clientes) {
       const k = c.consultant_id ?? "sem";
-      const v = m.get(k) ?? { total: 0, trabalhados: 0, interessados: 0, fechados: 0, troco: 0 };
+      const v = m.get(k) ?? { total: 0, trabalhados: 0, interessados: 0, fechados: 0, retornos: 0, troco: 0 };
       v.total++;
       if (c.resultado !== "novo") v.trabalhados++;
       if (c.resultado === "interessado" || c.resultado === "proposta") v.interessados++;
       if (c.resultado === "fechado") v.fechados++;
+      if (retornoHoje(c)) v.retornos++;
       v.troco += Math.max(0, melhorTroco(c)?.troco ?? 0);
       m.set(k, v);
     }
-    return [...m.entries()];
+    return [...m.entries()].sort((a, b) => (a[0] === "sem" ? -1 : b[0] === "sem" ? 1 : b[1].total - a[1].total));
   }, [data.clientes]);
   const email = (id: string) => (id === "sem" ? "Sem consultora" : data.consultoras.find((c) => c.id === id)?.email ?? id.slice(0, 8));
+  const semDono = data.clientes.filter((c) => !c.consultant_id).length;
 
   async function onFile(f: File) {
     try {
@@ -261,18 +339,18 @@ function AdminPainel({ data, onChange }: { data: Awaited<ReturnType<typeof quita
       setPrevia({ nome: f.name, clientes, invalidos, existentes: clientes.filter((c) => chaves.has(`${c.cpf}|${c.cod_ordem}`)).length });
     } catch (e) { toast.error("Não consegui ler a planilha: " + (e as Error).message); }
   }
-  async function confirmar(distribuir: boolean) {
+  async function confirmar(distribuirAgora: boolean) {
     if (!previa) return;
     setEnviando(true);
     try {
-      const r = await importar({ data: { nome: previa.nome, clientes: previa.clientes, distribuir } });
+      const r = await importar({ data: { nome: previa.nome, clientes: previa.clientes, distribuir: distribuirAgora } });
       toast.success(`${r.novos} novos e ${r.atualizados} atualizados.`);
       setPrevia(null); onChange();
     } catch (e) { toast.error((e as Error).message); } finally { setEnviando(false); }
   }
 
   return (
-    <Card className="space-y-4 p-4">
+    <Card className="space-y-4 p-3 sm:p-4">
       <div className="flex flex-wrap items-center gap-3">
         <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border bg-primary px-3 py-2 text-sm text-primary-foreground">
           <Upload className="h-4 w-4" /> Enviar planilha
@@ -293,13 +371,44 @@ function AdminPainel({ data, onChange }: { data: Awaited<ReturnType<typeof quita
         </div>
       )}
 
+      <div className="space-y-2 rounded-md border p-3">
+        <p className="flex items-center gap-2 text-sm font-medium"><Users className="h-4 w-4" /> Distribuição</p>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-muted-foreground">{semDono} cliente(s) sem consultora</span>
+          <Button size="sm" disabled={ocupado || !semDono} onClick={async () => {
+            setOcupado(true);
+            try {
+              const r = await distribuir({ data: { loteId: null } });
+              toast.success(`${r.atribuidos} cliente(s) distribuídos entre ${r.consultoras} consultora(s).`);
+              onChange();
+            } catch (e) { toast.error((e as Error).message); } finally { setOcupado(false); }
+          }}><Send className="mr-1 h-3.5 w-3.5" /> Distribuir igualmente</Button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Sem contato há</span>
+          <Input className="h-9 w-16" value={dias} onChange={(e) => setDias(e.target.value)} />
+          <span className="text-muted-foreground">dias</span>
+          <Button size="sm" variant="outline" disabled={ocupado} onClick={async () => {
+            const d = Number(dias);
+            if (!Number.isFinite(d) || d < 0) return toast.error("Informe um número de dias válido.");
+            if (!confirm(`Passar para outra consultora os clientes sem contato há ${d} dias ou mais?`)) return;
+            setOcupado(true);
+            try {
+              const r = await redistribuir({ data: { diasSemContato: Math.round(d), deConsultora: null } });
+              toast.success(`${r.movidos} cliente(s) passaram para outra consultora.`);
+              onChange();
+            } catch (e) { toast.error((e as Error).message); } finally { setOcupado(false); }
+          }}><Shuffle className="mr-1 h-3.5 w-3.5" /> Passar para outra consultora</Button>
+        </div>
+      </div>
+
       {!!data.lotes.length && (
         <div className="space-y-1">
           <p className="text-sm font-medium">Planilhas enviadas</p>
           {data.lotes.map((l) => (
-            <div key={l.id} className="flex items-center justify-between rounded border px-3 py-1.5 text-sm">
-              <span>{l.nome} · {l.total} clientes · {new Date(l.created_at).toLocaleDateString("pt-BR")}</span>
-              <Button size="sm" variant="ghost" className="text-rose-700" onClick={async () => {
+            <div key={l.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded border px-3 py-1.5 text-sm">
+              <span className="min-w-0 truncate">{l.nome} · {l.total} clientes · {new Date(l.created_at).toLocaleDateString("pt-BR")}</span>
+              <Button size="sm" variant="ghost" className="shrink-0 text-rose-700" onClick={async () => {
                 if (!confirm("Excluir esta planilha e todos os clientes dela?")) return;
                 await excluir({ data: { loteId: l.id } }); toast.success("Planilha excluída."); onChange();
               }}><Trash2 className="h-4 w-4" /></Button>
@@ -309,11 +418,18 @@ function AdminPainel({ data, onChange }: { data: Awaited<ReturnType<typeof quita
       )}
 
       {!!porConsultora.length && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs text-muted-foreground"><tr><th className="py-1">Consultora</th><th>Clientes</th><th>Trabalhados</th><th>Interessados</th><th>Fechados</th><th>Troco potencial</th></tr></thead>
+        <div className="-mx-1 overflow-x-auto px-1">
+          <table className="w-full min-w-[540px] text-sm">
+            <thead className="text-left text-xs text-muted-foreground">
+              <tr><th className="py-1">Consultora</th><th>Clientes</th><th>Trabalhados</th><th>Interessados</th><th>Fechados</th><th>Retorno hoje</th><th>Troco potencial</th></tr>
+            </thead>
             <tbody>{porConsultora.map(([id, v]) => (
-              <tr key={id} className="border-t"><td className="py-1">{email(id)}</td><td>{v.total}</td><td>{v.trabalhados}</td><td>{v.interessados}</td><td>{v.fechados}</td><td>{brl(v.troco)}</td></tr>
+              <tr key={id} className="border-t">
+                <td className="max-w-[200px] truncate py-1">{email(id)}</td>
+                <td>{v.total}</td><td>{v.trabalhados}</td><td>{v.interessados}</td><td>{v.fechados}</td>
+                <td className={v.retornos ? "font-medium text-amber-700" : ""}>{v.retornos}</td>
+                <td>{brl(v.troco)}</td>
+              </tr>
             ))}</tbody>
           </table>
         </div>
@@ -330,27 +446,34 @@ function FichaDialog({ cliente: c, admin, consultoras, onClose, onChange }: {
   const tel = useServerFn(quitacaoTelefones);
   const { data: fones } = useQuery({ queryKey: ["quitacao-tel", c?.id], enabled: !!c, queryFn: () => tel({ data: { cpf: c!.cpf, matricula: c!.matricula ?? undefined } }) });
   const [nota, setNota] = useState("");
+  const [retorno, setRetorno] = useState("");
+  useEffect(() => { setNota(""); setRetorno(c?.retorno_em ? (diaLocal(c.retorno_em) as string) : ""); }, [c?.id]);
   if (!c) return null;
   const m = melhorTroco(c);
-  const primeiro = c.nome.split(" ")[0];
-  const msg = encodeURIComponent(`Olá, ${primeiro}! Tudo bem? Identificamos que você pode quitar seu contrato atual e ainda receber um troco estimado de ${m ? brl(m.troco) : "valor a confirmar"}${m ? ` em ${m.prazo}x` : ""}. Posso te explicar sem compromisso?`);
+  const msg = mensagem(c);
 
   async function marcar(resultado: "sem_contato" | "interessado" | "proposta" | "fechado" | "recusado") {
     try {
-      await registrar({ data: { id: c!.id, resultado, nota: nota || undefined } });
-      toast.success("Contato registrado."); setNota(""); onChange(); onClose();
+      await registrar({ data: { id: c!.id, resultado, nota: nota || undefined, retorno: retorno || null } });
+      toast.success(retorno && resultado !== "fechado" && resultado !== "recusado" ? "Contato registrado e retorno agendado." : "Contato registrado.");
+      setNota(""); onChange(); onClose();
     } catch (e) { toast.error((e as Error).message); }
   }
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader><DialogTitle>{c.nome}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle className="pr-6 text-base sm:text-lg">{c.nome}</DialogTitle></DialogHeader>
         <div className="space-y-3 text-sm">
           {c.formato === "oportunidades" ? (
             <p className="text-muted-foreground">Matrícula {c.matricula} · {c.cpf ? `CPF ${c.cpf}` : "sem CPF"} · {c.competencia ?? "—"}</p>
           ) : (
             <p className="text-muted-foreground">CPF {c.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")} · Ordem {c.cod_ordem || "—"} · {c.status ?? "sem status"}</p>
+          )}
+          {c.retorno_em && (
+            <p className="flex items-center gap-1 text-amber-700">
+              <CalendarClock className="h-4 w-4" /> Retorno agendado para {new Date(c.retorno_em).toLocaleDateString("pt-BR")}
+            </p>
           )}
           {desatualizado(c) && <p className="flex items-center gap-1 text-amber-700"><AlertTriangle className="h-4 w-4" /> Valores importados há mais de 30 dias — reconfira antes de oferecer.</p>}
           {c.formato === "oportunidades" ? (
@@ -365,13 +488,20 @@ function FichaDialog({ cliente: c, admin, consultoras, onClose, onChange }: {
                   <p className="text-emerald-900">{c.banco_previsto ?? "—"} · crédito {brl(c.credito_previsto)} · <b>troco {brl(c.troco_previsto)}</b></p>
                 ) : <p className="text-xs text-muted-foreground">Sem proposta na planilha.</p>}
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead className="text-left text-muted-foreground"><tr><th>Banco / contrato</th><th>Tipo</th><th>Parcelas</th><th>Rest.</th><th>Parcela</th><th>Saldo</th></tr></thead>
-                  <tbody>{(c.contratos ?? []).map((k, i) => (
-                    <tr key={i} className="border-t"><td className="py-1">{k.contrato || k.banco}</td><td>{k.tipo}</td><td>{k.parcelas}</td><td>{k.restantes ?? "—"}</td><td>{brl(k.parcela)}</td><td>{brl(k.saldo)}</td></tr>
-                  ))}</tbody>
-                </table>
+              <div className="space-y-2">
+                <p className="text-xs font-medium">Contratos ({(c.contratos ?? []).length})</p>
+                {(c.contratos ?? []).map((k, i) => (
+                  <div key={i} className="rounded-md border p-2 text-xs">
+                    <p className="truncate font-medium">{k.contrato || k.banco}</p>
+                    <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5 text-muted-foreground">
+                      <span>Tipo: <b className="text-foreground">{k.tipo || "—"}</b></span>
+                      <span>Parcelas: <b className="text-foreground">{k.parcelas || "—"}</b></span>
+                      <span>Restantes: <b className="text-foreground">{k.restantes ?? "—"}</b></span>
+                      <span>Parcela: <b className="text-foreground">{brl(k.parcela)}</b></span>
+                      <span className="col-span-2">Saldo: <b className="text-foreground">{brl(k.saldo)}</b></span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </>
           ) : (
@@ -381,14 +511,21 @@ function FichaDialog({ cliente: c, admin, consultoras, onClose, onChange }: {
             <Info l="Parcelas pagas" v={`${c.pagas ?? "—"} de ${c.plano ?? "—"}`} /><Info l="Em aberto" v={String(c.abertas ?? "—")} />
             <Info l="Reserva no site" v={brl(c.reserva)} /><Info l="Contratos" v={String(c.qtd_contratos ?? "—")} />
           </div>
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs text-muted-foreground"><tr><th>Prazo</th><th>Valor bruto</th><th>Troco</th></tr></thead>
-            <tbody>{PRAZOS.filter((p) => c.prazos?.[p]).map((p) => {
+          <div className="space-y-1">
+            <p className="text-xs font-medium">Troco por prazo</p>
+            {PRAZOS.filter((p) => c.prazos?.[p]).map((p) => {
               const t = c.prazos[p].troco;
-              return <tr key={p} className="border-t"><td className="py-1">{p}x</td><td>{brl(c.prazos[p].bruto)}</td>
-                <td className={t != null && t < 0 ? "text-rose-700" : "font-medium text-emerald-700"}>{brl(t)}{t != null && t < 0 ? " · não compensa" : ""}</td></tr>;
-            })}</tbody>
-          </table>
+              return (
+                <div key={p} className="grid grid-cols-3 items-center gap-2 rounded border px-2 py-1 text-xs">
+                  <span className="font-medium">{p}x</span>
+                  <span className="text-muted-foreground">{brl(c.prazos[p].bruto)}</span>
+                  <span className={t != null && t < 0 ? "text-right text-rose-700" : "text-right font-medium text-emerald-700"}>
+                    {brl(t)}{t != null && t < 0 ? " ·  não compensa" : ""}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
           </>
           )}
           <div className="space-y-1">
@@ -404,23 +541,28 @@ function FichaDialog({ cliente: c, admin, consultoras, onClose, onChange }: {
             ))}
           </div>
           <Input placeholder="Observação (opcional)" value={nota} onChange={(e) => setNota(e.target.value)} />
-          <div className="flex flex-wrap gap-2">
+          <label className="block space-y-1">
+            <span className="text-xs font-medium">Retornar neste dia (opcional)</span>
+            <Input type="date" value={retorno} onChange={(e) => setRetorno(e.target.value)} />
+            <span className="block text-[11px] text-muted-foreground">Ao marcar Interessado ou Proposta, o cliente aparece no topo da lista no dia escolhido.</span>
+          </label>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <Button size="sm" variant="outline" onClick={() => marcar("sem_contato")}>Sem contato</Button>
             <Button size="sm" variant="outline" onClick={() => marcar("interessado")}>Interessado</Button>
             <Button size="sm" variant="outline" onClick={() => marcar("proposta")}>Proposta enviada</Button>
             <Button size="sm" onClick={() => marcar("fechado")}>Fechado</Button>
-            <Button size="sm" variant="ghost" className="text-rose-700" onClick={() => marcar("recusado")}>Recusado</Button>
+            <Button size="sm" variant="ghost" className="col-span-2 text-rose-700" onClick={() => marcar("recusado")}>Recusado</Button>
           </div>
           {c.resultado === "fechado" && <Button asChild size="sm" variant="secondary"><Link to="/prospeccao/conversoes">Registrar venda em Minha carteira</Link></Button>}
           {admin && (
             <div className="flex flex-wrap items-center gap-2 border-t pt-3">
-              <select className="h-9 rounded-md border bg-background px-2 text-sm" defaultValue={c.consultant_id ?? ""} onChange={async (e) => {
+              <select className="h-9 min-w-0 flex-1 rounded-md border bg-background px-2 text-sm" defaultValue={c.consultant_id ?? ""} onChange={async (e) => {
                 await editar({ data: { id: c.id, consultant_id: e.target.value || null } }); toast.success("Responsável alterado."); onChange();
               }}>
                 <option value="">Sem consultora</option>
                 {consultoras.map((k) => <option key={k.id} value={k.id}>{k.email}</option>)}
               </select>
-              <Button size="sm" variant="ghost" className="text-rose-700" onClick={async () => {
+              <Button size="sm" variant="ghost" className="shrink-0 text-rose-700" onClick={async () => {
                 if (!confirm("Remover este cliente da quitação?")) return;
                 await editar({ data: { id: c.id, remover: true } }); toast.success("Cliente removido."); onChange(); onClose();
               }}><Trash2 className="mr-1 h-4 w-4" /> Remover</Button>
@@ -451,21 +593,21 @@ function Ring({ rest, total }: { rest: number | null; total: number | null }) {
   const R = 34, CIRC = 2 * Math.PI * R;
   const prog = rest != null && total ? Math.min(1, Math.max(0, (total - rest) / total)) : 0;
   return (
-    <div className="relative h-24 w-24 shrink-0">
+    <div className="relative h-20 w-20 shrink-0 sm:h-24 sm:w-24">
       <svg viewBox="0 0 84 84" className="h-full w-full -rotate-90">
         <circle cx="42" cy="42" r={R} fill="none" strokeWidth="7" className="stroke-night-line" />
         <circle cx="42" cy="42" r={R} fill="none" strokeWidth="7" strokeLinecap="round"
           className="stroke-night-green" strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - prog)} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-bold text-night-green">{rest ?? "?"}</span>
+        <span className="text-xl font-bold text-night-green sm:text-2xl">{rest ?? "?"}</span>
         <span className="text-[9px] font-medium tracking-wide text-night-dim">RESTANTES</span>
       </div>
     </div>
   );
 }
 
-function QuitCard({ c, onOpen }: { c: QuitacaoCliente; onOpen: () => void }) {
+function QuitCard({ c, telefones, onOpen }: { c: QuitacaoCliente; telefones: string[]; onOpen: () => void }) {
   const m = melhorTroco(c);
   const r = RESULTADOS[c.resultado] ?? RESULTADOS.novo;
   const op = c.formato === "oportunidades";
@@ -474,12 +616,16 @@ function QuitCard({ c, onOpen }: { c: QuitacaoCliente; onOpen: () => void }) {
   const imediata = rest != null && rest <= 1;
   const principal = op ? (c.contratos ?? [])[0] : null;
   const banco = op ? (principal?.banco || principal?.contrato || "—") : (c.banco_previsto ?? "—");
+  const fone = telefones[0];
+  const msg = mensagem(c);
   return (
-    <button type="button" onClick={onOpen}
-      className="group w-full cursor-pointer space-y-3 rounded-2xl border border-night-green-deep/60 bg-night-card p-4 text-left shadow-lg transition hover:border-night-green">
-      <div className="flex items-start justify-between gap-2">
+    <div
+      role="button" tabIndex={0} onClick={onOpen}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
+      className="group w-full cursor-pointer space-y-3 rounded-2xl border border-night-green-deep/60 bg-night-card p-3 text-left shadow-lg transition hover:border-night-green sm:p-4">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
         <div className="min-w-0">
-          <p className="truncate text-base font-bold tracking-wide text-night-text">{c.nome}</p>
+          <p className="truncate text-sm font-bold tracking-wide text-night-text sm:text-base">{c.nome}</p>
           <p className="truncate text-xs text-night-dim">
             {op ? `Matrícula ${c.matricula}${c.competencia ? ` · ${c.competencia}` : ""}` : `CPF ${c.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")}`}
           </p>
@@ -494,35 +640,52 @@ function QuitCard({ c, onOpen }: { c: QuitacaoCliente; onOpen: () => void }) {
         </div>
       </div>
       <div className="flex flex-wrap gap-1.5">
+        {retornoHoje(c) && <span className="rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-bold text-night">RETORNO HOJE</span>}
         {c.perfil && <span className="rounded-full bg-night px-2.5 py-0.5 text-[10px] font-semibold tracking-wide text-night-dim">{c.perfil.toUpperCase()}</span>}
         {quaseQuitado(c) && !imediata && <span className="rounded-full bg-night px-2.5 py-0.5 text-[10px] font-semibold text-night-green">QUASE QUITADO</span>}
         {desatualizado(c) && <span className="rounded-full bg-night px-2.5 py-0.5 text-[10px] font-semibold text-amber-400">VALORES +30 DIAS</span>}
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <Ring rest={rest} total={total} />
         <div className="min-w-0 text-sm">
           <p className="truncate font-semibold tracking-wide text-night-text">{banco}</p>
           <p className="text-xs text-night-dim">
             {op ? `${c.qtd_contratos ?? 0} contrato(s)` : `${c.pagas ?? "?"}/${c.plano ?? "?"} pagas`}
           </p>
-          <p className="text-xs text-night-dim">Parcela {brl(c.parcela)} · Saldo {brl(c.saldo)}</p>
+          <p className="truncate text-xs text-night-dim">Parcela {brl(c.parcela)} · Saldo {brl(c.saldo)}</p>
         </div>
       </div>
-      <div className="flex items-end justify-between gap-2 border-t border-night-line pt-3">
-        <div>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 border-t border-night-line pt-3">
+        <div className="min-w-0">
           <p className="text-[10px] font-semibold tracking-widest text-night-dim">TROCO PREVISTO</p>
           {m ? (
             <>
-              <p className={`text-2xl font-bold ${m.troco > 0 ? "text-night-green" : "text-rose-400"}`}>{brl(m.troco)}</p>
-              <p className="text-xs text-night-dim">{c.banco_previsto ? `${c.banco_previsto} · ` : ""}{m.prazo}x</p>
+              <p className={`text-xl font-bold sm:text-2xl ${m.troco > 0 ? "text-night-green" : "text-rose-400"}`}>{brl(m.troco)}</p>
+              <p className="truncate text-xs text-night-dim">{c.banco_previsto ? `${c.banco_previsto} · ` : ""}{m.prazo}x</p>
             </>
           ) : <p className="text-sm text-night-dim">Sem proposta prevista</p>}
         </div>
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-night-dim transition group-hover:text-night-green">
-          <FileText className="h-3.5 w-3.5" /> Ver ficha <ArrowRight className="h-3.5 w-3.5" />
-        </span>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {fone ? (
+            <>
+              <a href={`tel:${fone}`} onClick={(e) => e.stopPropagation()} aria-label="Ligar para o cliente"
+                className="grid h-9 w-9 place-items-center rounded-full bg-night text-night-text transition hover:bg-night-line">
+                <Phone className="h-4 w-4" />
+              </a>
+              <a href={`https://wa.me/55${fone}?text=${msg}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} aria-label="Falar no WhatsApp"
+                className="grid h-9 w-9 place-items-center rounded-full bg-night-green text-night transition hover:opacity-90">
+                <MessageCircle className="h-4 w-4" />
+              </a>
+            </>
+          ) : (
+            <span className="text-[10px] text-night-dim">Sem telefone</span>
+          )}
+          <span className="hidden items-center gap-1 text-xs font-medium text-night-dim transition group-hover:text-night-green sm:inline-flex">
+            <FileText className="h-3.5 w-3.5" /> Ficha <ArrowRight className="h-3.5 w-3.5" />
+          </span>
+        </div>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -533,18 +696,19 @@ function ResumoNoturno({ lista }: { lista: QuitacaoCliente[] }) {
   const ate30 = lista.filter((c) => { const r = restantes(c); return r != null && r <= 30; }).length;
   const trocoTotal = lista.reduce((s, c) => s + Math.max(0, melhorTroco(c)?.troco ?? 0), 0);
   const fechados = lista.filter((c) => c.resultado === "fechado").length;
+  const retornos = lista.filter(retornoHoje).length;
   const stats: { l: string; v: string; sub?: string; destaque?: boolean }[] = [
     { l: "CLIENTES NA FILA", v: String(total), sub: `${fechados} fechados` },
     { l: "QUITAÇÃO IMEDIATA", v: String(imediatas), sub: "1 parcela ou menos", destaque: true },
-    { l: "ATÉ 6 PARCELAS", v: String(ate6), sub: `${ate30} com até 30 parcelas` },
-    { l: "TROCO PREVISTO TOTAL", v: brl(trocoTotal), sub: "Somando a fila filtrada" },
+    { l: "RETORNOS HOJE", v: String(retornos), sub: `${ate6} com até 6 parcelas` },
+    { l: "TROCO PREVISTO TOTAL", v: brl(trocoTotal), sub: `${ate30} com até 30 parcelas` },
   ];
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
       {stats.map((s) => (
-        <div key={s.l} className={`rounded-2xl border p-4 ${s.destaque ? "border-night-green-deep/60 bg-night-card" : "border-night-line bg-night-card/60"}`}>
+        <div key={s.l} className={`rounded-2xl border p-3 sm:p-4 ${s.destaque ? "border-night-green-deep/60 bg-night-card" : "border-night-line bg-night-card/60"}`}>
           <p className="text-[10px] font-semibold tracking-widest text-night-dim">{s.l}</p>
-          <p className={`mt-1 text-2xl font-bold ${s.destaque ? "text-night-green" : "text-night-text"}`}>{s.v}</p>
+          <p className={`mt-1 text-xl font-bold sm:text-2xl ${s.destaque ? "text-night-green" : "text-night-text"}`}>{s.v}</p>
           {s.sub && <p className="mt-0.5 text-xs text-night-dim">{s.sub}</p>}
           {s.destaque && total > 0 && (
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-night">
