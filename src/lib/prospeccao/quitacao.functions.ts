@@ -22,6 +22,7 @@ export type QuitacaoCliente = {
   consultant_id: string | null;
   resultado: string;
   ultimo_contato_em: string | null;
+  retorno_em: string | null;
   importado_em: string;
   matricula: string | null;
   perfil: string | null;
