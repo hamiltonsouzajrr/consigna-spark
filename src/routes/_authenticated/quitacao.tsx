@@ -46,11 +46,45 @@ const RESULTADOS: Record<string, { label: string; cls: string }> = {
 
 function melhorTroco(c: QuitacaoCliente) {
   let best: { prazo: string; troco: number } | null = null;
+  if (c.troco_previsto != null) best = { prazo: (c.banco_previsto ?? "").match(/(\d+)x/i)?.[1] ?? "?", troco: c.troco_previsto };
   for (const p of PRAZOS) {
     const t = c.prazos?.[p]?.troco;
     if (t != null && (!best || t > best.troco)) best = { prazo: p, troco: t };
   }
   return best;
+}
+
+function lerOportunidades(rows: Record<string, unknown>[]) {
+  const porMat = new Map<string, any>();
+  for (const r of rows) {
+    const nome = String(pick(r, (k) => k === "servidor") ?? "").trim();
+    const mat = String(pick(r, (k) => k === "matricula") ?? "").trim();
+    if (!nome || !mat) continue;
+    const cur = porMat.get(mat) ?? {
+      cpf: "", nome, status: null, cod_ordem: `MAT:${mat}`.slice(0, 60), saldo: 0, parcela: 0, reserva: null, qtd_contratos: 0,
+      pagas: null, abertas: null, plano: null, prazos: {}, matricula: mat, formato: "oportunidades", contratos: [],
+      competencia: null, perfil: null, ritmo: null, banco_previsto: null, credito_previsto: null, troco_previsto: null,
+    };
+    const txt = (v: unknown) => { const t = String(v ?? "").trim(); return t || null; };
+    cur.competencia ??= txt(pick(r, (k) => k === "competencia"));
+    cur.perfil ??= txt(pick(r, (k) => k === "perfil"));
+    cur.ritmo ??= txt(pick(r, (k) => k.startsWith("ritmo")));
+    cur.banco_previsto ??= txt(pick(r, (k) => k === "banco previsto"));
+    cur.credito_previsto ??= num(pick(r, (k) => k === "credito previsto"));
+    cur.troco_previsto ??= num(pick(r, (k) => k === "troco previsto"));
+    const parcela = num(pick(r, (k) => k === "parcela")), saldo = num(pick(r, (k) => k === "saldo"));
+    cur.contratos.push({
+      banco: String(pick(r, (k) => k === "banco") ?? "").slice(0, 120),
+      contrato: String(pick(r, (k) => k === "contrato") ?? "").slice(0, 160),
+      tipo: String(pick(r, (k) => k === "tipo") ?? "").slice(0, 40),
+      parcelas: String(pick(r, (k) => k === "parcelas") ?? "").slice(0, 20),
+      restantes: num(pick(r, (k) => k === "restantes")), parcela, saldo,
+    });
+    cur.parcela += parcela ?? 0; cur.saldo += saldo ?? 0; cur.qtd_contratos++;
+    porMat.set(mat, cur);
+  }
+  const clientes = [...porMat.values()].map((c) => ({ ...c, parcela: Math.round(c.parcela * 100) / 100, saldo: Math.round(c.saldo * 100) / 100 }));
+  return { clientes, invalidos: 0 };
 }
 const quaseQuitado = (c: QuitacaoCliente) => !!c.pagas && !!c.plano && c.pagas / c.plano >= 0.5;
 const desatualizado = (c: QuitacaoCliente) => Date.now() - new Date(c.importado_em).getTime() > 30 * 86400_000;
@@ -69,7 +103,14 @@ function pick(row: Record<string, unknown>, test: (k: string) => boolean) {
 }
 
 async function lerPlanilha(file: File) {
-  const wb = XLSX.read(await file.arrayBuffer());
+  const isCsv = /\.csv$/i.test(file.name);
+  const wb = isCsv
+    ? XLSX.read((await file.text()).replace(/^\uFEFF/, ""), { type: "string", FS: ";", raw: true } as any)
+    : XLSX.read(await file.arrayBuffer());
+  const primeira = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[wb.SheetNames[0]], { defval: null, raw: !isCsv ? true : false });
+  if (primeira.length && Object.keys(primeira[0]).some((k) => key(k) === "servidor") && Object.keys(primeira[0]).some((k) => key(k) === "matricula")) {
+    return lerOportunidades(primeira);
+  }
   const porCpf = new Map<string, any>();
   let invalidos = 0;
   for (const nomeAba of wb.SheetNames) {
