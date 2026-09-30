@@ -20,6 +20,7 @@ import {
   quitacaoTelefonesLote, quitacaoDistribuirPendentes, quitacaoRedistribuir, quitacaoNgAtualizar,
   type QuitacaoCliente,
 } from "@/lib/prospeccao/quitacao.functions";
+import { MULT_PRINCIPAL } from "@/lib/al/credito";
 import { NG, NG_ETAPAS, NG_CHECKLIST, agoraMaceio, previsaoLiberacao } from "@/lib/prospeccao/ng-roteiro";
 
 type Produto = "geral" | "ng";
@@ -175,6 +176,7 @@ export function QuitacaoPage({ produto = "geral" }: { produto?: Produto }) {
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
   const [etapa, setEtapa] = useState("todos");
   const [soApto, setSoApto] = useState(true);
+  const [maxRest, setMaxRest] = useState<number | null>(ng ? 6 : null);
   const [aberto, setAberto] = useState<QuitacaoCliente | null>(null);
   const refresh = () => qc.invalidateQueries({ queryKey: ["quitacao", produto] });
   const perfis = useMemo(() => [...new Set((data?.clientes ?? []).map((c) => c.perfil).filter(Boolean))] as string[], [data]);
@@ -194,12 +196,14 @@ export function QuitacaoPage({ produto = "geral" }: { produto?: Produto }) {
       .filter((c) => donoFiltro === "todos" || (donoFiltro === "sem" ? !c.consultant_id : c.consultant_id === donoFiltro))
       .filter((c) => !q || key(c.nome).includes(q) || (qd.length >= 3 && (c.cpf.includes(qd) || (c.matricula ?? "").replace(/\D/g, "").includes(qd))))
       .filter((c) => (melhorTroco(c)?.troco ?? -Infinity) >= min)
+      .filter((c) => { if (maxRest == null) return true; const r = restantes(c); return r != null && r <= maxRest; })
       .sort((a, b) =>
         Number(retornoHoje(b)) - Number(retornoHoje(a)) ||
+        (ng ? (restantes(a) ?? 999) - (restantes(b) ?? 999) : 0) ||
         (ng ? (b.prioridade ?? 0) - (a.prioridade ?? 0) : 0) ||
         Number(quaseQuitado(b)) - Number(quaseQuitado(a)) ||
         (melhorTroco(b)?.troco ?? 0) - (melhorTroco(a)?.troco ?? 0));
-  }, [data, busca, filtro, trocoMin, perfil, tipo, soProposta, soRetorno, donoFiltro, ng, etapa, soApto]);
+  }, [data, busca, filtro, trocoMin, perfil, tipo, soProposta, soRetorno, donoFiltro, ng, etapa, soApto, maxRest]);
 
   const visiveis = useMemo(() => lista.slice(0, 300), [lista]);
   const chaveTel = visiveis.map((c) => c.id).join(",");
@@ -292,6 +296,18 @@ export function QuitacaoPage({ produto = "geral" }: { produto?: Produto }) {
           </Card>
         ) : (
           <>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-medium text-muted-foreground">Faltam até:</span>
+              {([1, 3, 6, 12, null] as const).map((n) => {
+                const qtd = (data?.clientes ?? []).filter((c) => { const r = restantes(c); return n == null || (r != null && r <= n); }).length;
+                return (
+                  <button key={String(n)} type="button" onClick={() => setMaxRest(n)}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${maxRest === n ? "border-night-green bg-night-card text-night-green" : "border-border bg-background text-foreground"}`}>
+                    {n == null ? "Todos" : n === 1 ? "Quitação imediata (1)" : `${n} parcelas`} · {qtd}
+                  </button>
+                );
+              })}
+            </div>
             <ResumoNoturno lista={lista} />
             <div className="grid gap-3 lg:grid-cols-2">
               {visiveis.map((c) => (
@@ -545,6 +561,8 @@ function FichaDialog({ ng, cliente: c, admin, consultoras, onClose, onChange }: 
             <Info l="Parcelas pagas" v={`${c.pagas ?? "—"} de ${c.plano ?? "—"}`} /><Info l="Em aberto" v={String(c.abertas ?? "—")} />
             <Info l="Reserva no site" v={brl(c.reserva)} /><Info l="Contratos" v={String(c.qtd_contratos ?? "—")} />
           </div>
+          <p className="text-xs text-muted-foreground">{dataDados(c)}{desatualizado(c) ? " · dados com mais de 30 dias: confirme o saldo antes de oferecer" : ""}</p>
+          <DuasFormas c={c} ng={ng} />
           <div className="space-y-1">
             <p className="text-xs font-medium">Troco por prazo</p>
             {PRAZOS.filter((p) => c.prazos?.[p]).map((p) => {
@@ -636,7 +654,7 @@ function Ring({ rest, total }: { rest: number | null; total: number | null }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-xl font-bold text-night-green sm:text-2xl">{rest ?? "?"}</span>
-        <span className="text-[9px] font-medium tracking-wide text-night-dim">RESTANTES</span>
+        <span className="text-[8px] font-medium leading-none text-night-dim sm:text-[9px]">restantes</span>
       </div>
     </div>
   );
@@ -650,7 +668,8 @@ function QuitCard({ ng, c, telefones, onOpen }: { ng?: boolean; c: QuitacaoClien
   const total = op ? null : c.plano;
   const imediata = rest != null && rest <= 1;
   const principal = op ? (c.contratos ?? [])[0] : null;
-  const banco = op ? (principal?.banco || principal?.contrato || "—") : (c.banco_previsto ?? "—");
+  const banco = op ? (principal?.banco || principal?.contrato || "—") : (c.banco_previsto ?? (ng ? "Compra de dívida NG" : "Compra de dívida"));
+  const prestes = rest != null && rest <= 6;
   const fone = telefones[0];
   const msg = mensagem(c);
   return (
@@ -684,7 +703,8 @@ function QuitCard({ ng, c, telefones, onOpen }: { ng?: boolean; c: QuitacaoClien
         {ng && !c.apto_roteiro && <span className="rounded-full bg-night px-2.5 py-0.5 text-[10px] font-bold text-rose-400">NÃO ATENDE O ROTEIRO</span>}
         {retornoHoje(c) && <span className="rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-bold text-night">RETORNO HOJE</span>}
         {c.perfil && <span className="rounded-full bg-night px-2.5 py-0.5 text-[10px] font-semibold tracking-wide text-night-dim">{c.perfil.toUpperCase()}</span>}
-        {quaseQuitado(c) && !imediata && <span className="rounded-full bg-night px-2.5 py-0.5 text-[10px] font-semibold text-night-green">QUASE QUITADO</span>}
+        {prestes && !imediata && <span className="rounded-full bg-night-green/20 px-2.5 py-0.5 text-[10px] font-bold text-night-green">CLIENTE PRESTES A QUITAR</span>}
+        {quaseQuitado(c) && !imediata && !prestes && <span className="rounded-full bg-night px-2.5 py-0.5 text-[10px] font-semibold text-night-green">QUASE QUITADO</span>}
         {desatualizado(c) && <span className="rounded-full bg-night px-2.5 py-0.5 text-[10px] font-semibold text-amber-400">VALORES +30 DIAS</span>}
       </div>
       <div className="flex items-center gap-3 sm:gap-4">
@@ -695,6 +715,8 @@ function QuitCard({ ng, c, telefones, onOpen }: { ng?: boolean; c: QuitacaoClien
             {op ? `${c.qtd_contratos ?? 0} contrato(s)` : `${c.pagas ?? "?"}/${c.plano ?? "?"} pagas`}
           </p>
           <p className="truncate text-xs text-night-dim">Parcela {brl(c.parcela)} · Saldo {brl(c.saldo)}</p>
+          {rest != null && <p className="mt-0.5 text-xs font-semibold text-night-green">Faltam {rest} parcela(s) · quitar hoje {brl(c.saldo)}</p>}
+          <p className="text-[10px] text-night-dim">{dataDados(c)}</p>
         </div>
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 border-t border-night-line pt-3">
@@ -748,7 +770,7 @@ function ResumoNoturno({ lista }: { lista: QuitacaoCliente[] }) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
       {stats.map((s) => (
-        <div key={s.l} className={`rounded-2xl border p-3 sm:p-4 ${s.destaque ? "border-night-green-deep/60 bg-night-card" : "border-night-line bg-night-card/60"}`}>
+        <div key={s.l} className={`rounded-2xl border p-3 sm:p-4 ${s.destaque ? "border-night-green-deep/60 bg-night-card" : "border-night-line bg-night-card"}`}>
           <p className="text-[10px] font-semibold tracking-widest text-night-dim">{s.l}</p>
           <p className={`mt-1 text-xl font-bold sm:text-2xl ${s.destaque ? "text-night-green" : "text-night-text"}`}>{s.v}</p>
           {s.sub && <p className="mt-0.5 text-xs text-night-dim">{s.sub}</p>}
@@ -856,15 +878,43 @@ function NgPainel({ c, nota, retorno, onChange }: { c: QuitacaoCliente; nota: st
         ))}
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <Input placeholder="Valor líquido simulado (R$)" value={troco} onChange={(e) => setTroco(e.target.value)} />
+        <label className="col-span-2 text-xs font-medium">Valor líquido que saiu na simulação (R$)</label>
+        <Input placeholder="Ex.: 12.500,00" value={troco} onChange={(e) => setTroco(e.target.value)} />
         <Button size="sm" variant="outline" disabled={salvando} onClick={() => salvar()}>Salvar simulação</Button>
       </div>
       {c.liberacao_prevista && <p className="text-xs text-emerald-800">Liberação prevista: {new Date(c.liberacao_prevista).toLocaleString("pt-BR", { timeZone: "America/Maceio" })}</p>}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {Object.entries(NG_ETAPAS).filter(([k]) => k !== "novo").map(([k, v]) => (
-          <Button key={k} size="sm" variant={k === "liberada" ? "default" : k === "recusada" ? "ghost" : "outline"} disabled={salvando}
-            className={k === "recusada" ? "text-rose-700" : ""} onClick={() => salvar(k)}>{v.label}</Button>
-        ))}
+      <div className="space-y-1">
+        <label className="text-xs font-medium">Andamento da proposta</label>
+        <select disabled={salvando} value={c.etapa ?? "novo"} onChange={(e) => salvar(e.target.value)}
+          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+          {Object.entries(NG_ETAPAS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+function dataDados(c: QuitacaoCliente) {
+  const d = c.importado_em ? new Date(c.importado_em).toLocaleDateString("pt-BR") : null;
+  if (c.competencia) return `Dados de ${c.competencia}${d ? ` · importado em ${d}` : ""}`;
+  return d ? `Dados de ${d} (importação)` : "";
+}
+
+function DuasFormas({ c, ng }: { c: QuitacaoCliente; ng: boolean }) {
+  const m = melhorTroco(c);
+  const livre = c.parcela ?? null;
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      <div className="space-y-1 rounded-lg border p-3 text-xs">
+        <p className="text-sm font-semibold">Cliente quita com dinheiro próprio</p>
+        <p>Valor para quitar: <b>{brl(c.saldo)}</b></p>
+        <p>Margem que fica livre: <b>{brl(livre)}</b> por mês</p>
+        {livre != null && <p className="text-muted-foreground">Com essa margem poderia pegar aprox. {brl(livre * MULT_PRINCIPAL.min)} a {brl(livre * MULT_PRINCIPAL.max)} (estimativa).</p>}
+      </div>
+      <div className="space-y-1 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950">
+        <p className="text-sm font-semibold">Empresa quita e refaz a margem</p>
+        <p>Troco estimado: <b>{m ? `${brl(m.troco)} em ${m.prazo}x` : "—"}</b>{ng ? ` (taxa da planilha ${NG.taxaPlanilha})` : ""}</p>
+        <p className="font-semibold">Solicitar validação da gerência antes da operação — serviço à parte.</p>
       </div>
     </div>
   );
