@@ -193,6 +193,7 @@ export const quitacaoRegistrar = createServerFn({ method: "POST" })
       id: z.string().uuid(),
       resultado: z.enum(["sem_contato", "interessado", "proposta", "fechado", "recusado"]),
       nota: z.string().max(1000).optional(),
+      retorno: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
     }).parse(d),
   )
   .handler(async ({ context, data }) => {
@@ -201,10 +202,113 @@ export const quitacaoRegistrar = createServerFn({ method: "POST" })
     const admin = await isAdmin(context.supabase, context.userId);
     if (!c || (!admin && c.consultant_id !== context.userId)) throw new Error("Cliente não pertence a você.");
     const agora = new Date().toISOString();
-    await supabaseAdmin.from("quitacao_clientes").update({ resultado: data.resultado, ultimo_contato_em: agora }).eq("id", data.id);
-    const { error } = await context.supabase.from("quitacao_contatos").insert({ cliente_id: data.id, user_id: context.userId, resultado: data.resultado, nota: data.nota ?? null });
+    // Fechado/recusado encerram o acompanhamento; os demais podem ter retorno agendado.
+    const encerrado = data.resultado === "fechado" || data.resultado === "recusado";
+    const retorno = encerrado ? null : data.retorno ? new Date(`${data.retorno}T12:00:00-03:00`).toISOString() : null;
+    const patch: Record<string, unknown> = { resultado: data.resultado, ultimo_contato_em: agora };
+    if (encerrado || data.retorno !== undefined) patch.retorno_em = retorno;
+    await supabaseAdmin.from("quitacao_clientes").update(patch).eq("id", data.id);
+    const { error } = await context.supabase.from("quitacao_contatos").insert({
+      cliente_id: data.id, user_id: context.userId, resultado: data.resultado, nota: data.nota ?? null, retorno_em: retorno,
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+/** Distribui igualmente (menor fila) os clientes de quitação que estão sem consultora. */
+export const quitacaoDistribuirPendentes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ loteId: z.string().uuid().nullable().optional() }).parse(d ?? {}))
+  .handler(async ({ context, data }) => {
+    const { assertAdmin, listConsultantUsers } = await import("./prospeccao.server");
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const consultoras = await listConsultantUsers(supabaseAdmin);
+    if (!consultoras.length) throw new Error("Nenhuma consultora ativa encontrada.");
+
+    let q = supabaseAdmin.from("quitacao_clientes").select("id").is("removido_em", null).is("consultant_id", null).limit(20000);
+    if (data?.loteId) q = q.eq("lote_id", data.loteId);
+    const { data: pend, error: pe } = await q;
+    if (pe) throw new Error(pe.message);
+    if (!pend?.length) return { atribuidos: 0, consultoras: consultoras.length };
+
+    const fila = new Map<string, number>(consultoras.map((c) => [c.id, 0]));
+    const { data: carga } = await supabaseAdmin
+      .from("quitacao_clientes").select("consultant_id").is("removido_em", null).not("consultant_id", "is", null).limit(50000);
+    for (const r of carga ?? []) if (r.consultant_id && fila.has(r.consultant_id)) fila.set(r.consultant_id, (fila.get(r.consultant_id) ?? 0) + 1);
+
+    const porConsultora = new Map<string, string[]>();
+    for (const row of pend) {
+      let best: string | null = null;
+      for (const [id, n] of fila) if (best === null || n < (fila.get(best) ?? 0)) best = id;
+      if (!best) break;
+      fila.set(best, (fila.get(best) ?? 0) + 1);
+      (porConsultora.get(best) ?? porConsultora.set(best, []).get(best)!).push(row.id);
+    }
+
+    let atribuidos = 0;
+    for (const [uid, ids] of porConsultora) {
+      for (let i = 0; i < ids.length; i += 500) {
+        const slice = ids.slice(i, i + 500);
+        const { error } = await supabaseAdmin.from("quitacao_clientes").update({ consultant_id: uid }).in("id", slice);
+        if (error) throw new Error(error.message);
+        atribuidos += slice.length;
+      }
+    }
+    return { atribuidos, consultoras: porConsultora.size };
+  });
+
+/** Redistribui igualmente clientes sem contato há X dias (opcionalmente de uma consultora). */
+export const quitacaoRedistribuir = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ diasSemContato: z.number().int().min(0).max(365), deConsultora: z.string().uuid().nullable().optional() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const { assertAdmin, listConsultantUsers } = await import("./prospeccao.server");
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const consultoras = await listConsultantUsers(supabaseAdmin);
+    if (!consultoras.length) throw new Error("Nenhuma consultora ativa encontrada.");
+
+    const corte = new Date(Date.now() - data.diasSemContato * 86400_000).toISOString();
+    let q = supabaseAdmin
+      .from("quitacao_clientes").select("id,consultant_id,ultimo_contato_em,importado_em")
+      .is("removido_em", null).not("consultant_id", "is", null)
+      .in("resultado", ["novo", "sem_contato"]).limit(20000);
+    if (data.deConsultora) q = q.eq("consultant_id", data.deConsultora);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+
+    const alvo = (rows ?? []).filter((r) => (r.ultimo_contato_em ?? r.importado_em) <= corte);
+    if (!alvo.length) return { movidos: 0 };
+
+    const fila = new Map<string, number>(consultoras.map((c) => [c.id, 0]));
+    const { data: carga } = await supabaseAdmin
+      .from("quitacao_clientes").select("consultant_id").is("removido_em", null).not("consultant_id", "is", null).limit(50000);
+    for (const r of carga ?? []) if (r.consultant_id && fila.has(r.consultant_id)) fila.set(r.consultant_id, (fila.get(r.consultant_id) ?? 0) + 1);
+    for (const r of alvo) if (r.consultant_id && fila.has(r.consultant_id)) fila.set(r.consultant_id, Math.max(0, (fila.get(r.consultant_id) ?? 0) - 1));
+
+    const porConsultora = new Map<string, string[]>();
+    let movidos = 0;
+    for (const r of alvo) {
+      let best: string | null = null;
+      for (const [id, n] of fila) {
+        if (id === r.consultant_id) continue;
+        if (best === null || n < (fila.get(best) ?? 0)) best = id;
+      }
+      if (!best) continue;
+      fila.set(best, (fila.get(best) ?? 0) + 1);
+      (porConsultora.get(best) ?? porConsultora.set(best, []).get(best)!).push(r.id);
+    }
+    for (const [uid, ids] of porConsultora) {
+      for (let i = 0; i < ids.length; i += 500) {
+        const slice = ids.slice(i, i + 500);
+        const { error: ue } = await supabaseAdmin.from("quitacao_clientes").update({ consultant_id: uid }).in("id", slice);
+        if (ue) throw new Error(ue.message);
+        movidos += slice.length;
+      }
+    }
+    return { movidos };
   });
 
 export const quitacaoTelefones = createServerFn({ method: "GET" })
