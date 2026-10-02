@@ -282,7 +282,7 @@ export function QuitacaoPage({ produto = "geral" }: { produto?: Produto }) {
               <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={soRetorno} onChange={(e) => setSoRetorno(e.target.checked)} /> Retorno hoje</label>
               {!!filtrosAtivos && (
                 <Button type="button" size="sm" variant="ghost" onClick={() => {
-                  setFiltro("todos"); setPerfil("todos"); setTipo("todos"); setSoProposta(false); setSoRetorno(false); setDonoFiltro("todos"); setTrocoMin("");
+                  setFiltro("todos"); setPerfil("todos"); setTipo("todos"); setSoProposta(false); setSoRetorno(false); setDonoFiltro("todos"); setTrocoMin(""); setMaxRest(null); setEtapa("todos");
                 }}>Limpar</Button>
               )}
             </div>
@@ -290,25 +290,35 @@ export function QuitacaoPage({ produto = "geral" }: { produto?: Produto }) {
           <p className="text-xs text-muted-foreground">{lista.length} cliente(s) na visão atual</p>
         </Card>
 
+        {!isLoading && !!data?.clientes?.length && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Faltam até:</span>
+            {([1, 3, 6, 12, null] as const).map((n) => {
+              const qtd = (data?.clientes ?? []).filter((c) => { const r = restantes(c); return n == null || (r != null && r <= n); }).length;
+              return (
+                <button key={String(n)} type="button" onClick={() => setMaxRest(n)}
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${maxRest === n ? "border-night-green bg-night-card text-night-green" : "border-border bg-background text-foreground"}`}>
+                  {n == null ? "Todos" : n === 1 ? "Quitação imediata (1)" : `${n} parcelas`} · {qtd}
+                </button>
+              );
+            })}
+          </div>
+        )}
         {isLoading ? <Skeleton className="h-40 w-full" /> : !lista.length ? (
-          <Card className="p-8 text-center text-sm text-muted-foreground">
-            {data?.admin ? "Nenhum cliente. Envie a planilha acima." : "Nenhum cliente de quitação atribuído a você ainda."}
+          <Card className="space-y-3 p-8 text-center text-sm text-muted-foreground">
+            {data?.clientes?.length ? (
+              <>
+                <p>Nenhum cliente com esses filtros.</p>
+                <Button type="button" size="sm" variant="outline" onClick={() => {
+                  setMaxRest(null); setFiltro("todos"); setPerfil("todos"); setTipo("todos"); setSoProposta(false); setSoRetorno(false); setDonoFiltro("todos"); setTrocoMin(""); setEtapa("todos"); setSoApto(false); setBusca("");
+                }}>Mostrar todos</Button>
+              </>
+            ) : data?.admin ? "Nenhum cliente. Envie a planilha acima." : "Nenhum cliente de quitação atribuído a você ainda."}
           </Card>
         ) : (
           <>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs font-medium text-muted-foreground">Faltam até:</span>
-              {([1, 3, 6, 12, null] as const).map((n) => {
-                const qtd = (data?.clientes ?? []).filter((c) => { const r = restantes(c); return n == null || (r != null && r <= n); }).length;
-                return (
-                  <button key={String(n)} type="button" onClick={() => setMaxRest(n)}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${maxRest === n ? "border-night-green bg-night-card text-night-green" : "border-border bg-background text-foreground"}`}>
-                    {n == null ? "Todos" : n === 1 ? "Quitação imediata (1)" : `${n} parcelas`} · {qtd}
-                  </button>
-                );
-              })}
-            </div>
             <ResumoNoturno lista={lista} />
+
             <div className="grid gap-3 lg:grid-cols-2">
               {visiveis.map((c) => (
                 <QuitCard key={c.id} ng={ng} c={c} telefones={fonesLote?.telefones?.[c.id] ?? []} onOpen={() => setAberto(c)} />
