@@ -136,10 +136,20 @@ export const getApprovalByToken = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("legal_approvals")
-      .select("nome_completo, consultant_email, status")
+      .select("nome_completo, consultant_email, status, created_at, gravado_em")
       .eq("token", data.token)
       .maybeSingle();
-    if (!row) return { ok: false, nome_completo: null, consultant_email: null, status: null };
+    const negado = { ok: false, nome_completo: null, consultant_email: null, status: null } as const;
+    if (!row) {
+      console.warn("[aprovacao] token inválido");
+      return negado;
+    }
+    // Link de uso único e com validade: expira em 7 dias e após a gravação concluída.
+    const expirado = Date.now() - new Date(row.created_at as string).getTime() > 7 * 86_400_000;
+    if (expirado || row.gravado_em) {
+      console.warn("[aprovacao] token expirado ou já utilizado");
+      return negado;
+    }
     return { ok: true, nome_completo: row.nome_completo, consultant_email: row.consultant_email, status: row.status };
   });
 
