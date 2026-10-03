@@ -49,6 +49,11 @@ export async function autorizarCron(request: Request): Promise<CronAuthResult> {
 
   if (valido) return { ok: true };
 
+  console.warn("[cron-auth] tentativa não autorizada", {
+    rota: new URL(request.url).pathname,
+    ip: request.headers.get("cf-connecting-ip") ?? null,
+  });
+
   return {
     ok: false,
     response: new Response(JSON.stringify({ error: "Não autorizado" }), {
